@@ -1,0 +1,138 @@
+.userPageTitleContainer {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+  align-content: center;
+
+  width: 90%;
+  margin: 30px auto 10px auto;
+  padding: 0.8rem 2rem;
+
+  border-radius: 15px;
+  background-color: #f8edd3;
+  font-family: 'Metamorphous', sans-serif;
+}
+
+.userPageTitle {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+  align-content: center;
+  gap: 8px;
+
+  font-size: 10px;
+}
+
+.plus {
+  font-size: 1.6rem;
+  color: #a87304;
+  cursor: pointer;
+
+  transition:
+    transform 0.3s ease,
+    color 0.3s ease;
+}
+
+.plus:hover {
+  color: #dab971;
+  transform: scale(1.1);
+}
+
+.plus:active {
+  color: #a87304;
+  transform: scale(1.1);
+}
+
+.userPageSercherContainer {
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+  max-width: 35vw;
+}
+
+.userPageSercher {
+  width: 100%;
+  padding: 5px;
+
+  border: none;
+  border-bottom: 2px solid #a87304;
+  background-color: transparent;
+  font-family: 'Metamorphous', sans-serif;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  outline: none;
+  transition: border-color 0.3s ease;
+}
+
+.userPageSercher::placeholder {
+  color: #999;
+}
+
+.userPageSercher:focus {
+  border-color: #dab971;
+  box-shadow: none;
+}
+
+.searchIcon {
+  margin-left: 10px;
+
+  font-size: 20px;
+  color: #a87304;
+
+  cursor: pointer;
+}
+
+@media screen and (min-width: 1200px) {
+  .userPageTitleContainer {
+    width: 80%;
+  }
+
+  .userPageTitle {
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .plus {
+    font-size: 2rem;
+  }
+
+  .userPageSercherContainer {
+    max-width: 30vw;
+  }
+
+  .userPageSercher {
+    font-size: 12px;
+  }
+
+  .searchIcon {
+    font-size: 20px;
+  }
+}
+
+@media screen and (min-width: 1800px) {
+  .userPageTitleContainer {
+    width: 80%;
+  }
+
+  .userPageTitle {
+    gap: 20px;
+    padding: 5px;
+    font-size: 16px;
+  }
+
+  .plus {
+    font-size: 3rem;
+  }
+
+  .userPageSercher {
+    font-size: 12px;
+  }
+
+  .searchIcon {
+    margin-right: 10px;
+    font-size: 24px;
+  }
+}

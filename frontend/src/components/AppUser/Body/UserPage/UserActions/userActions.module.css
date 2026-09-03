@@ -1,0 +1,19 @@
+.actionButtons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.extraButton {
+  background-color: #f0f0f0;
+  border: none;
+  padding: 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.extraButton:hover {
+  background-color: #dcdcdc;
+}

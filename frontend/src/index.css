@@ -1,0 +1,81 @@
+* {
+  box-sizing: border-box;
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  font-synthesis: none;
+  font-family: var(--font-family);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--color-dark);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+:root {
+  --color-background-header: #521e00;
+
+  --color-primary: #54612b;
+  --color-primary-hover: #373f1c;
+
+  --color-light: #ffffff;
+  --color-dark: #664631;
+
+  --color-form-edit: #866539;
+
+  --color-text-light: #f5f5f5;
+  --color-text-grey: #333333;
+
+  --color-border-1: #b87937;
+  --color-border-2: #ccc;
+
+  --color-shadow: #9fb033;
+
+  --color-button-bg: #f8edd3;
+  --color-button-send: #9fb033;
+  --color-button-background-red: #8a2d16;
+  --color-button-background-red-hover: #742917;
+
+  --color-hover: #a87304;
+  --color-hover-friend: #fcf6e7;
+  --color-hover-filter: #9fb033;
+
+  --color-active: #c6a65f;
+
+  --color-error: #d9534f;
+
+  --font-family: 'Metamorphous', sans-serif;
+  --font-family-2: 'Pixelify Sans', sans-serif;
+
+  --radius-low: 8px;
+  --radius-medium: 15px;
+  --radius-big: 25px;
+
+  --padding-low: 8px;
+  --padding-medium: 10px;
+  --padding-big: 15px;
+  --padding-big-extra: 25px;
+
+  --gap-low: 5px;
+  --gap-medium: 10px;
+  --gap-big: 15px;
+}
+
+@media screen and (min-width: 1800px) {
+}

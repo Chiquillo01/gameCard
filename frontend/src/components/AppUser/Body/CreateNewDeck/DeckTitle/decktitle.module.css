@@ -1,0 +1,29 @@
+.deckTitle {
+  text-align: center;
+  margin: 20px 0;
+  font-family: 'Metamorphous', sans-serif;
+  color: #f8edd3;
+}
+
+.titleText {
+  font-size: clamp(1.5rem, 5vw, 2.5rem);
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.titleText:hover {
+  color: #ffd700;
+}
+
+.titleInput {
+  font-size: clamp(1.2rem, 4vw, 2rem);
+  font-weight: bold;
+  border: none;
+  outline: none;
+  text-align: center;
+  width: 75%;
+  margin: 0 auto;
+  background: #f8edd3;
+  color: #664631;
+}

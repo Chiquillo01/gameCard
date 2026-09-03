@@ -1,0 +1,18 @@
+.bodyUserCollectionPageContainer {
+  height: 100vh;
+}
+
+.cardsCollectedWrapper {
+  flex: 1;
+  width: 80%;
+  background-color: #f8edd3;
+  border-radius: 12px;
+  margin: 30px auto 10px auto;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+}
+
+.cardsCollectedWrapper {
+  flex: 2;
+}

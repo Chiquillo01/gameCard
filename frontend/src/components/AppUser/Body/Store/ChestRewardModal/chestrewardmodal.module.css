@@ -1,0 +1,59 @@
+.modal {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  width: 400px;
+  max-width: 90vw;
+  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.title {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  font-weight: bold;
+  font-family: 'Metamorphous', sans-serif;
+}
+
+.cardsList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+}
+
+.cardName {
+  font-size: 1rem;
+  font-weight: bold;
+  font-family: 'Metamorphous', sans-serif;
+  padding: 5px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  color: black;
+}
+
+.closeButton {
+  background-color: #54612b;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: 'Metamorphous', sans-serif;
+}
+
+.closeButton:hover {
+  background-color: #373f1c;
+}

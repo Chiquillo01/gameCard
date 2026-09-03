@@ -1,0 +1,30 @@
+.authButton {
+  flex: 1;
+  margin-top: 20px;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: bold;
+  border: none;
+  border-bottom: 2px solid var(--color-button-bg);
+  border-radius: 0 0 20px 20px;
+  background-color: transparent;
+  cursor: pointer;
+  color: var(--color-button-send);
+  transition:
+    transform 0.2s ease,
+    background-color 0.3s ease-in-out;
+}
+
+.authButton:hover {
+  transform: translateY(-4px);
+}
+
+.authButton:active {
+  transform: translateY(0);
+}
+
+@media screen and (min-width: 1800px) {
+  .authButton {
+    font-size: 14px;
+  }
+}

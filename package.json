@@ -1,0 +1,22 @@
+{
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "start:frontend": "dotenv -- turbo run dev --scope='frontend'",
+    "start:backend": "dotenv -- turbo run dev --scope='backend'",
+    "dev": "dotenv -- turbo run dev ",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.0.0",
+    "prettier": "^3.4.2",
+    "turbo": "^1.13.3"
+  },
+  "dependencies": {
+    "react-icons": "^5.5.0"
+  }
+}

@@ -1,0 +1,28 @@
+.filterButton {
+  padding: 3px;
+
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background-color: transparent;
+
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-family: 'Metamorphous', sans-serif;
+  font-size: 12px;
+}
+
+.filterButton:hover {
+  border-bottom: 1px solid #a87304;
+}
+
+.filterButton.active {
+  background-color: #54612b;
+  color: white;
+}
+
+@media screen and (min-width: 1200px) {
+  .filterButton {
+    padding: 10px;
+    font-size: 14px;
+  }
+}

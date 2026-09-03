@@ -1,0 +1,24 @@
+.editButton {
+  padding: 8px;
+
+  background-color: #53612b;
+  border: none;
+  border-radius: 5px;
+
+  color: aliceblue;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.editButton:hover {
+  background-color: #727848;
+}
+
+.editButton:active {
+  background-color: #6e7731;
+}
+
+.svg {
+  width: 2vw;
+  height: 2vh;
+}

@@ -1,0 +1,59 @@
+.userContainer {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.notification {
+  margin-top: 20px;
+  font-size: 1.5rem;
+  color: var(-color-text-light);
+}
+
+.userIconImage img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  transition: transform 0.4s ease-in-out;
+}
+
+.userIconImage:hover img {
+  transform: scale(1.1);
+}
+
+.modal {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 80px;
+  right: 0;
+  padding: 5px;
+  width: 220px;
+  background: var(--color-background-header);
+  border: 1px solid var(--color-border-1);
+  border-radius: 8px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.modal button {
+  padding: 10px;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: 50px;
+  text-align: left;
+  font-size: 14px;
+  font-family: var(--font-family);
+  color: var(--color-text-light);
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+.modal button:hover {
+  background: var(--color-hover);
+  border-radius: 50px;
+}

@@ -1,0 +1,58 @@
+.footer {
+  display: grid;
+  grid-template-columns: 1fr 3fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
+  justify-items: center;
+  align-items: start;
+
+  background-color: #0a0a0a;
+  color: white;
+  font-size: 14px;
+  padding: 20px;
+}
+
+/* Estilo para las secciones del footer */
+.footerSection {
+  padding: 10px;
+}
+
+/* Títulos de las secciones */
+.footerSection h4 {
+  margin-bottom: 10px;
+  font-size: 16px;
+  text-align: center;
+  grid-column: span 3;
+}
+
+.footerLinkTitle {
+  text-decoration: none;
+  color: white;
+  margin: 5px 0;
+  font-size: 14px;
+  transition: color 0.3s;
+  text-align: center;
+}
+
+/* Enlaces dentro de las secciones */
+.footerLink {
+  text-decoration: none;
+  color: white;
+  display: block;
+  margin: 5px 0;
+  font-size: 14px;
+  transition: color 0.3s;
+  text-align: center;
+}
+
+.footerLink:hover {
+  color: #ff8c00;
+}
+
+/* Ajustes para enlaces en la segunda fila */
+.footerSection.links {
+  grid-column: span 3;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+}

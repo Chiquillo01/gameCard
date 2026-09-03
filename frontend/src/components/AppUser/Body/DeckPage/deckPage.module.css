@@ -1,0 +1,142 @@
+.deckPageContainer {
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.deckPageDeck {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: center;
+  width: 80%;
+  margin: 1rem;
+  padding: 20px;
+  border-radius: 20px;
+  background-color: #f8edd3;
+}
+
+.plusContainer {
+  all: unset;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  cursor: pointer;
+}
+
+.plus {
+  font-size: 6rem;
+  color: #a87304;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    color 0.3s ease;
+}
+
+.plus:hover {
+  color: #dab971;
+  transform: scale(1.1);
+}
+
+.plus:active {
+  color: #a87304;
+  transform: scale(1.05);
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-2px);
+  }
+
+  50% {
+    transform: translateX(2px);
+  }
+
+  75% {
+    transform: translateX(-2px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.deckContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 18%;
+  transition:
+    transform 0.2s ease,
+    opacity 0.3s ease;
+  text-decoration: none;
+}
+
+.deckContainer:hover {
+  transform: scale(1.05);
+}
+
+.deckContainer img {
+  width: 100%;
+  max-width: 12rem;
+  height: auto;
+}
+
+.deckTitle {
+  margin-top: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  font-family: 'Metamorphous', sans-serif;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.deckContainer:hover .deckTitle {
+  color: #a87304;
+}
+
+@media (max-width: 1024px) {
+  .deckPageDeck {
+    justify-content: center;
+  }
+
+  .deckContainer {
+    width: 30%;
+  }
+}
+
+@media (max-width: 768px) {
+  .deckPageDeck {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .deckPlusContainer,
+  .deckContainer {
+    width: 30%;
+  }
+
+  .plus {
+    font-size: 6rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .deckPlusContainer,
+  .deckContainer {
+    width: 50%;
+  }
+
+  .plus {
+    font-size: 3rem;
+  }
+}

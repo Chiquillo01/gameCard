@@ -1,0 +1,153 @@
+.purchaseHistoryContainer {
+  width: 90%;
+  margin: 30px auto 10px auto;
+  padding: 0.8rem 2rem;
+  border-radius: 15px;
+  background-color: #f8edd3;
+  font-family: 'Metamorphous', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.orderTable {
+  width: 100%;
+  max-width: 90%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 2px solid #a87304;
+}
+
+.orderTable th,
+.orderTable td {
+  padding: 12px;
+  border: 1px solid #a87304;
+  text-align: center;
+  font-family: 'Metamorphous', sans-serif;
+}
+
+.orderTable th {
+  background-color: #521e00;
+  color: white;
+  font-size: 1rem;
+}
+
+.orderTable tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.priceItem,
+.balanceItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  font-weight: bold;
+}
+
+.coinIcon,
+.gemIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.completed {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.failed {
+  color: #e74c3c;
+  font-weight: bold;
+}
+
+.loading {
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.paginationButton {
+  padding: 6px 12px;
+  background-color: #f8edd3;
+  border: 1px solid #a87304;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'Metamorphous', sans-serif;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+  background-color: #dab971;
+}
+
+.paginationButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.activePage {
+  background-color: #a87304;
+  color: white;
+  transform: scale(1.05);
+}
+
+@media screen and (min-width: 1800px) {
+  .purchaseHistoryContainer {
+    width: 80%;
+  }
+
+  .orderTable {
+    max-width: 1000px;
+  }
+}
+
+@media screen and (min-width: 1200px) {
+  .purchaseHistoryContainer {
+    width: 80%;
+  }
+
+  .orderTable {
+    max-width: 900px;
+  }
+}
+
+@media (max-width: 768px) {
+  .purchaseHistoryContainer {
+    width: 95%;
+  }
+
+  .orderTable th,
+  .orderTable td {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .purchaseHistoryContainer {
+    width: 95%;
+    padding: 12px;
+  }
+
+  .orderTable {
+    font-size: 0.8rem;
+  }
+
+  .coinIcon,
+  .gemIcon {
+    width: 14px;
+    height: 14px;
+  }
+}

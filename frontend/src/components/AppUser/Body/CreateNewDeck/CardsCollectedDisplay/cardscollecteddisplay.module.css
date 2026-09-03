@@ -1,0 +1,209 @@
+:root {
+  --color-primary: #54612b;
+  --color-primary-hover: #373f1c;
+  --color-light: #ffffff;
+  --color-dark: #664631;
+  --color-text-light: #f5f5f5;
+  --color-button-bg: #f8edd3;
+  --font-family: 'Metamorphous', sans-serif;
+}
+
+.cardsCollected {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+  overflow-y: auto;
+  overflow: hidden;
+  background-color: var(--color-light);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 10;
+}
+
+.buttonWrapper {
+  position: relative;
+  height: 100%;
+}
+
+.controlButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary);
+  color: var(--color-light);
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition:
+    background-color 0.3s ease,
+    transform 0.2s ease;
+  font-family: var(--font-family);
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+  height: 100%;
+}
+
+.controlButton:hover {
+  background-color: var(--color-primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.3);
+}
+
+.controlButton:active {
+  transform: translateY(0);
+  box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+.icon {
+  margin-right: 0.5rem;
+  font-size: 1.8rem;
+}
+
+.controlButton.small {
+  padding: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.controlButton.small .icon {
+  margin-right: 0;
+}
+
+.filterMenuWrapper,
+.sortMenu {
+  position: absolute;
+  top: calc(100% + 20px);
+  left: 0;
+  background-color: #664631;
+  color: var(--color-text-light);
+  padding: 0.5rem;
+  z-index: 100;
+  min-width: 150px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+  word-wrap: break-word;
+  overflow: hidden;
+}
+
+.filterMenuWrapper {
+  min-width: 40vw;
+}
+
+.controls .sortOption {
+  display: block;
+  background-color: var(--color-button-bg);
+  color: var(--color-dark);
+  border: none;
+  width: 100%;
+  text-align: left;
+  margin-top: 0.2rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-family: var(--font-family);
+}
+
+.controls .sortOption:hover {
+  background-color: #cfc4aa;
+}
+
+.cardsList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+  justify-content: start;
+}
+
+.cardWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cardAmount {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: var(--color-primary);
+  color: var(--color-light);
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 50%;
+  font-weight: bold;
+  font-family: 'Roboto', sans-serif;
+}
+
+@media (max-width: 829px) and (min-width: 769px) {
+  .controls {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .controlButton {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .controlButton .icon {
+    margin-right: 0;
+  }
+
+  .controlButton span {
+    display: none;
+  }
+
+  .cardsList {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .controls {
+    gap: 8px;
+  }
+
+  .controlButton {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .controlButton .icon {
+    margin-right: 0;
+  }
+
+  .controlButton span {
+    display: none;
+  }
+
+  .cardsList {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .controls {
+    gap: 4px;
+  }
+
+  .cardsList {
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 8px;
+  }
+}

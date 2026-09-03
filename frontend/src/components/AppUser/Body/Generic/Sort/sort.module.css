@@ -1,0 +1,66 @@
+.sortPopupContainer {
+  position: relative;
+  font-family: 'Metamorphous', sans-serif;
+  font-size: 14px;
+}
+
+.sortButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #664631;
+}
+
+.sortButton svg {
+  width: 20px;
+  height: 20px;
+
+  transition:
+    transform 0.4s,
+    color 0.4s;
+}
+
+.popupMenu {
+  position: absolute;
+  top: 3.5rem;
+  right: 0;
+
+  min-width: 16rem;
+  padding: 1rem;
+
+  color: #ffffff;
+  background: #664631;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+
+  z-index: 1000;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.popupMenu h4 {
+  margin-bottom: 0.8rem;
+
+  font-size: larger;
+  font-weight: bold;
+  color: #ffff;
+}
+
+.sortOptionRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.sortOptionRow span {
+  flex: 1;
+  font-weight: 500;
+  color: #ffff;
+}
+
+.sortIcon {
+  margin-right: 0.4rem;
+  font-size: 1.2rem;
+  color: #f8edd3;
+  vertical-align: middle;
+}

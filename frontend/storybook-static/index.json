@@ -1,0 +1,14 @@
+{
+  "v": 5,
+  "entries": {
+    "stories-title--page-title-basic": {
+      "type": "story",
+      "id": "stories-title--page-title-basic",
+      "name": "Page Title Basic",
+      "title": "stories/Title",
+      "importPath": "./src/stories/Title.stories.jsx",
+      "componentPath": "./src/components/AppUser/Body/Generic/PageTitle",
+      "tags": ["dev", "test"]
+    }
+  }
+}

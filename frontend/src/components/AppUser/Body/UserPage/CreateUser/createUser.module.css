@@ -1,0 +1,124 @@
+.modalOverlay {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  width: 100vw;
+  height: 100vh;
+
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+
+  z-index: 100;
+}
+
+.modalContent {
+  padding: 25px 20px;
+  width: 80%;
+  max-width: 450px;
+
+  background-color: #664631;
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+
+  text-align: center;
+  animation: fadeIn 0.3s ease-in-out;
+  font-family: 'Metamorphous', sans-serif;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.titleUserForm {
+  padding-bottom: 2vh;
+  color: #ffffff;
+  text-align: center;
+}
+
+.formConainer input,
+select {
+  width: 100%;
+  padding: 6px;
+  margin: 10px 0;
+
+  border: 1px solid #f8edd3;
+  border-radius: 6px;
+  background-color: #f8edd3;
+
+  font-family: 'Metamorphous', sans-serif;
+  font-size: 10px;
+  transition: border-color 0.3s ease-in-out;
+}
+
+.formConainer input:focus,
+select:focus {
+  border-color: #dab971;
+  outline: none;
+  box-shadow: 0 0 2px #dab971;
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  gap: 10px;
+}
+
+.buttonContainer button {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  font-weight: bold;
+
+  border: none;
+  border-bottom: 2px solid #f8edd3;
+  border-radius: 0 0 20px 20px;
+
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background-color 0.3s ease-in-out;
+}
+
+.buttonContainer button[type='submit'] {
+  background-color: transparent;
+
+  color: #9fb033;
+  font-family: 'Metamorphous', sans-serif;
+}
+
+.buttonContainer button[type='submit']:hover {
+  transform: translateY(-4px);
+}
+
+.buttonContainer button[type='submit']:active {
+  transform: translateY(0);
+}
+
+.cancelButton {
+  background-color: transparent;
+
+  color: #f09e41;
+  font-family: 'Metamorphous', sans-serif;
+}
+
+.cancelButton:hover {
+  transform: translateY(-4px);
+}
+
+.cancelButton:active {
+  transform: translateY(0);
+}
