@@ -1,7 +1,7 @@
 import styles from './profile.module.css';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../../../../../../context/userContext';
 import { updateUser } from '../../../../../../../lib/utils/apiUser';
 import { successToast, errorToast } from '../../../../../../../lib/toastify/toast';

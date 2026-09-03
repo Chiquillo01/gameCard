@@ -2,7 +2,7 @@ import styles from './registerform.module.css';
 import SendButton from '../SendButton';
 import { useForm } from 'react-hook-form';
 import { useMutation } from 'react-query';
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router-dom';
 import { registerUser } from '../../../lib/utils/apiUser';
 import { setUserSession } from '../../../lib/utils/userSession';
 import { errorToast } from '../../../lib/toastify/toast';
