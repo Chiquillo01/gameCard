@@ -7,7 +7,7 @@ import { registerUser } from '../../../lib/utils/apiUser';
 import { setUserSession } from '../../../lib/utils/userSession';
 import { errorToast } from '../../../lib/toastify/toast';
 
-const RegisterForm = () => {
+const RegisterForm = ({ onSwitchMode }) => {
   const navigate = useNavigate();
 
   const registerMutation = useMutation(['registerUser'], registerUser, {
@@ -85,14 +85,21 @@ const RegisterForm = () => {
       </div>
 
       <div className={styles.field}>
-        <label>
+        <label className={styles.checkboxLabel}>
           <input type='checkbox' {...register('policy', { required: 'Debes aceptar las políticas' })} />
           <span>Acepto las políticas</span>
         </label>
         {errors.policy && <p className={styles.error}>{errors.policy.message}</p>}
       </div>
 
-      <SendButton disabled={registerMutation.isLoading} text='Registrarse' />
+      <SendButton isLoading={registerMutation.isLoading} text='FORJAR CUENTA' />
+
+      <div className={styles.switchPrompt}>
+        ¿Ya eres aventurero?{' '}
+        <button type='button' onClick={onSwitchMode}>
+          Inicia sesión
+        </button>
+      </div>
     </form>
   );
 };

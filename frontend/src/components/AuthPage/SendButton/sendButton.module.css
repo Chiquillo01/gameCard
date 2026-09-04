@@ -1,30 +1,26 @@
 .authButton {
-  flex: 1;
-  margin-top: 20px;
-  padding: 8px;
-  font-size: 12px;
-  font-weight: bold;
-  border: none;
-  border-bottom: 2px solid var(--color-button-bg);
-  border-radius: 0 0 20px 20px;
-  background-color: transparent;
+  width: 100%;
+  margin-top: 0.5rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.875rem;
+  color: #fbf3de;
+  background: #c0392b;
+  border: 4px solid #241305;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 0.875rem;
   cursor: pointer;
-  color: var(--color-button-send);
-  transition:
-    transform 0.2s ease,
-    background-color 0.3s ease-in-out;
 }
 
-.authButton:hover {
-  transform: translateY(-4px);
+.authButton:hover:not(:disabled) {
+  background: #a5301f;
 }
 
-.authButton:active {
-  transform: translateY(0);
+.authButton:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.4);
 }
 
-@media screen and (min-width: 1800px) {
-  .authButton {
-    font-size: 14px;
-  }
+.authButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
 }

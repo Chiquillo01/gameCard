@@ -7,7 +7,7 @@ import { loginUser } from '../../../lib/utils/apiUser';
 import { setUserSession } from '../../../lib/utils/userSession';
 import { errorToast } from '../../../lib/toastify/toast';
 
-const LoginForm = () => {
+const LoginForm = ({ onSwitchMode }) => {
   const navigate = useNavigate();
 
   const loginMutation = useMutation(['loginUser'], loginUser, {
@@ -17,9 +17,9 @@ const LoginForm = () => {
     },
     onError: (e) => {
       if (e.status === 400) {
-        errorToast('Solicitud incorrecta');
+        errorToast('Correo o contraseña incorrectos');
       } else if (e.status === 410) {
-        errorToast('Usuario ya Registrado');
+        errorToast('Usuario no encontrado');
       } else {
         errorToast('Error Interno del Servidor');
       }
@@ -72,7 +72,14 @@ const LoginForm = () => {
         {errors.password && <p className={styles.error}>{errors.password.message}</p>}
       </div>
 
-      <SendButton disabled={loginMutation.isLoading} text='Iniciar Sesión' />
+      <SendButton isLoading={loginMutation.isLoading} text='ENTRAR AL REINO' />
+
+      <div className={styles.switchPrompt}>
+        ¿Aún no tienes cuenta?{' '}
+        <button type='button' onClick={onSwitchMode}>
+          Regístrate
+        </button>
+      </div>
     </form>
   );
 };

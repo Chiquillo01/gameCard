@@ -58,6 +58,15 @@ describe('Auth Controller TEST', () => {
       const response = await fakeRequest.post('/auth/register').send(userData);
       expect(response.status).toBe(400);
     });
+
+    it('should reject registration with a duplicate email in a different case', async () => {
+      const response = await fakeRequest.post('/auth/register').send({
+        ...userData,
+        userName: 'Another Jose',
+        email: userData.email.toUpperCase(),
+      });
+      expect(response.status).toBe(400);
+    });
   });
 
   describe('POST /auth/login', () => {
@@ -77,6 +86,15 @@ describe('Auth Controller TEST', () => {
       });
       expect(response.status).toBe(400);
       expect(response.body.token).toBeUndefined();
+    });
+
+    it('should let the user log in when the email casing differs from registration', async () => {
+      const response = await fakeRequest.post('/auth/login').send({
+        email: userData.email.toUpperCase(),
+        password: userData.password,
+      });
+      expect(response.status).toBe(200);
+      expect(response.body.token).toBeDefined();
     });
 
     it('should reject login for a non-existent email', async () => {

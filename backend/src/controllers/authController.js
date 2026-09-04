@@ -8,12 +8,14 @@ const registerFunction = async (req, res) => {
 
     if (!email || !userName || !password) return res.status(400).send();
 
-    const userExists = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).send();
     }
 
-    const newUser = new User({ userName, email, password, pixelcoins: 1000 });
+    const newUser = new User({ userName, email: normalizedEmail, password, pixelcoins: 1000 });
     const createdUser = await newUser.save();
 
     const newUserCollection = new UserCollection({ userId: createdUser._id, cards: [] });
@@ -38,7 +40,9 @@ const loginFunction = async (req, res) => {
 
     if (!email || !password) return res.status(400).send();
 
-    const foundUser = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const foundUser = await User.findOne({ email: normalizedEmail });
     if (!foundUser) return res.status(410).send();
 
     const isPasswordValid = await foundUser.comparePassword(password);
