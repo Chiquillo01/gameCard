@@ -1,48 +1,678 @@
-.container {
+.page {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(180deg, #0d0620 0%, #1c0f38 30%, #34164a 55%, #5a2150 78%, #7a2c4a 100%);
+}
+
+@media screen and (max-width: 860px) {
+  /* too little vertical room to float the panel over a full-bleed scene without
+     covering the portal — stack a shorter scene banner above a normal-flow, scrollable panel */
+  .page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+    padding: 1.5rem 1rem;
+    gap: 1.5rem;
+  }
+}
+
+/* ============ decorative portal scene, fills the whole screen as a fixed background ============ */
+
+.sceneFrame {
+  position: fixed;
+  inset: 0;
+}
+
+@media screen and (max-width: 860px) {
+  .sceneFrame {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: 46vh;
+    min-height: 260px;
+    flex: 0 0 auto;
+  }
+}
+
+.sceneInner {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* keeps every child's em sizing proportional to a 1440px-wide reference canvas,
+     scaled by viewport width so the scene always fills the screen */
+  font-size: clamp(4px, 1.1111vw, 20px);
+}
+
+.skyNight {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(180deg, #0d0620 0%, #1c0f38 30%, #34164a 55%, #5a2150 78%, #7a2c4a 100%);
+}
+
+.skyDay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+  background-image: linear-gradient(180deg, #6fb6e8 0%, #9ed3ef 35%, #ffe3b0 72%, #ffb997 100%);
+}
+
+.celestialWrap {
+  cursor: pointer;
+  position: absolute;
+  left: 11.875em;
+  top: 4.375em;
+  width: 5.625em;
+  height: 5.625em;
+}
+
+.moon,
+.sun {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+
+.moon {
+  background: #fff3cf;
+  clip-path: polygon(30% 0%, 70% 0%, 88% 8%, 96% 30%, 100% 50%, 96% 70%, 88% 92%, 70% 100%, 30% 100%, 12% 92%, 4% 70%, 0% 50%, 4% 30%, 12% 8%);
+  box-shadow: 0 0 3.125em 1.125em rgba(255, 243, 207, 0.35);
+}
+
+.moonCraters {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 32% 30%, rgba(255, 255, 255, 0.9) 0%, transparent 45%),
+    radial-gradient(circle at 68% 66%, rgba(200, 170, 130, 0.55) 0 12%, transparent 13%),
+    radial-gradient(circle at 40% 68%, rgba(200, 170, 130, 0.5) 0 9%, transparent 10%),
+    radial-gradient(circle at 62% 34%, rgba(200, 170, 130, 0.4) 0 7%, transparent 8%);
+}
+
+.sun {
+  background: radial-gradient(circle at 35% 30%, #fff9e0, #ffd76a 55%, #ff9d3f 100%);
+  clip-path: polygon(
+    35% 0%, 65% 0%, 76% 6%, 94% 6%, 94% 24%, 100% 35%, 100% 65%, 94% 76%, 94% 94%, 76% 94%,
+    65% 100%, 35% 100%, 24% 94%, 6% 94%, 6% 76%, 0% 65%, 0% 35%, 6% 24%, 6% 6%, 24% 6%
+  );
+  box-shadow: 0 0 3.75em 1.375em rgba(255, 200, 90, 0.55);
+}
+
+.starsLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+  animation: twinkle 3s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(0.15625em 0.15625em at 4.2% 10%, #cfc3ff 100%, transparent 100%),
+    radial-gradient(0.125em 0.125em at 9% 27%, #8a7ac0 100%, transparent 100%),
+    radial-gradient(0.1875em 0.1875em at 27.8% 6.7%, #ffffff 100%, transparent 100%),
+    radial-gradient(0.125em 0.125em at 33.3% 24.4%, #8a7ac0 100%, transparent 100%),
+    radial-gradient(0.125em 0.125em at 48.6% 15.6%, #cfc3ff 100%, transparent 100%),
+    radial-gradient(0.15625em 0.15625em at 56.9% 28.9%, #ffffff 100%, transparent 100%),
+    radial-gradient(0.125em 0.125em at 68% 10%, #8a7ac0 100%, transparent 100%),
+    radial-gradient(0.1875em 0.1875em at 75% 23.3%, #cfc3ff 100%, transparent 100%),
+    radial-gradient(0.125em 0.125em at 83.3% 22.2%, #8a7ac0 100%, transparent 100%),
+    radial-gradient(0.15625em 0.15625em at 93% 7.8%, #ffffff 100%, transparent 100%);
+  background-repeat: no-repeat;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.farMountains {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18.125em;
+  height: 6.875em;
+  opacity: 0.75;
+  background: linear-gradient(180deg, #4a3568 0%, #392a55 100%);
+  clip-path: polygon(
+    0% 100%, 0% 55%, 8% 55%, 8% 35%, 18% 35%, 18% 50%, 30% 50%, 30% 20%, 42% 20%, 42% 45%,
+    54% 45%, 54% 12%, 66% 12%, 66% 38%, 78% 38%, 78% 22%, 90% 22%, 90% 48%, 100% 48%, 100% 100%
+  );
+}
+
+.mountains {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 13.75em;
+  height: 7.5em;
+  background: linear-gradient(180deg, #2a1938 0%, #1a0f22 60%, #150c1c 100%);
+  clip-path: polygon(
+    0% 100%, 0% 60%, 5% 60%, 5% 40%, 12% 40%, 12% 55%, 20% 55%, 20% 30%, 28% 30%, 28% 50%,
+    38% 50%, 38% 20%, 46% 20%, 46% 45%, 56% 45%, 56% 15%, 64% 15%, 64% 40%, 74% 40%, 74% 25%,
+    84% 25%, 84% 48%, 92% 48%, 92% 35%, 100% 35%, 100% 100%
+  );
+}
+
+.tower {
+  position: absolute;
+  bottom: 13.75em;
+  width: 4.5em;
+  background: linear-gradient(100deg, #4a3363 0%, #362548 30%, #2c1b3d 62%, #1f1330 100%);
+}
+
+.towerBrick {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: multiply;
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.22) 0 0.1875em, transparent 0.1875em 1.5em),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 0.1875em, transparent 0.1875em 1.625em);
+}
+
+.towerHighlightEdge {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0.5em;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.towerRoofCap {
+  position: absolute;
+  top: -2.5em;
+  left: -0.5em;
+  right: -0.5em;
+  height: 2.5em;
+  background: linear-gradient(100deg, #6b3d16 0%, #4a2a10 55%, #2f1a0a 100%);
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.towerRoofGem {
+  position: absolute;
+  top: -2.875em;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0.625em;
+  height: 0.625em;
+  background: #ffd76a;
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  box-shadow: 0 0 0.625em 0.1875em rgba(255, 215, 106, 0.7);
+}
+
+.towerIvy {
+  position: absolute;
+  bottom: 0;
+  width: 1.625em;
+  height: 7.5em;
+  opacity: 0.85;
+  background:
+    radial-gradient(ellipse at 30% 20%, #3d5a2e 0 40%, transparent 42%),
+    radial-gradient(ellipse at 60% 55%, #2f4a24 0 35%, transparent 37%),
+    radial-gradient(ellipse at 25% 85%, #3d5a2e 0 38%, transparent 40%);
+}
+
+.towerLeft {
+  left: calc(50% - 25em);
+  height: 28.75em;
+}
+
+.towerLeft .towerIvy {
+  left: -0.25em;
+}
+
+.towerRight {
+  right: calc(50% - 25em);
+  height: 25em;
+}
+
+.towerRight .towerIvy {
+  right: -0.25em;
+  background:
+    radial-gradient(ellipse at 70% 20%, #3d5a2e 0 40%, transparent 42%),
+    radial-gradient(ellipse at 40% 55%, #2f4a24 0 35%, transparent 37%),
+    radial-gradient(ellipse at 75% 85%, #3d5a2e 0 38%, transparent 40%);
+}
+
+.towerCrenellation {
+  position: absolute;
+  top: -1em;
+  left: 0;
+  right: 0;
+  height: 1em;
+  background-image: repeating-linear-gradient(90deg, #362548 0 0.875em, transparent 0.875em 1.75em);
+}
+
+.towerLedge {
+  position: absolute;
+  left: -0.625em;
+  right: -0.625em;
+  height: 1.375em;
+  background: linear-gradient(100deg, #4a3363, #2c1b3d);
+}
+
+.towerLight {
+  position: absolute;
+  left: 1.625em;
+  width: 1em;
+  height: 1.25em;
+  background: radial-gradient(circle at 35% 30%, #fff3c4, #ffd76a 55%, #e0a83f 100%);
+  box-shadow: 0 0 0.875em 0.25em rgba(255, 215, 106, 0.8);
+}
+
+.towerLightWarm {
+  background: radial-gradient(circle at 35% 30%, #ffe0c4, #ff8c5a 55%, #d9622f 100%);
+  box-shadow: 0 0 0.875em 0.25em rgba(255, 140, 90, 0.8);
+}
+
+.curtainWall {
+  position: absolute;
+  left: calc(50% - 25em);
+  right: calc(50% - 25em);
+  bottom: 13.75em;
+  height: 5.625em;
+  background: linear-gradient(180deg, #362548 0%, #241730 55%, #1a0f22 100%);
+}
+
+.curtainWallTexture {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 0.125em, transparent 0.125em 1.125em, rgba(0, 0, 0, 0.32) 1.125em 1.25em),
+    repeating-linear-gradient(90deg, transparent 0 1.625em, rgba(0, 0, 0, 0.28) 1.625em 1.75em);
+}
+
+.curtainWallHighlight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 0.375em;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ground {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 13.75em;
+  z-index: 0;
+  background: linear-gradient(180deg, #1c3524 0%, #123020 25%, #0c1a12 70%, #081410 100%);
+  background-image:
+    radial-gradient(#274a30 0.125em, transparent 0.125em),
+    radial-gradient(#1d3524 0.125em, transparent 0.125em),
+    radial-gradient(#16281c 0.125em, transparent 0.125em),
+    radial-gradient(ellipse 0.1875em 0.1875em at 12% 30%, #ffd76a 90%, transparent 100%),
+    radial-gradient(ellipse 0.1875em 0.1875em at 78% 65%, #ff8c5a 90%, transparent 100%),
+    radial-gradient(ellipse 0.1875em 0.1875em at 88% 20%, #cfc3ff 90%, transparent 100%),
+    radial-gradient(ellipse 0.1875em 0.1875em at 20% 75%, #ffd76a 90%, transparent 100%);
+  background-position: 0 0, 1em 1em, 0.5em 1.5em, 0 0, 0 0, 0 0, 0 0;
+  background-size: 2em 2em, 2em 2em, 2em 2em, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-repeat: repeat, repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  border-top: 0.5em solid #0a1410;
+}
+
+.groundLight {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 1.5em;
+  background: linear-gradient(180deg, rgba(90, 140, 90, 0.25), transparent);
+}
+
+.stonePath {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: 9.375em;
+  height: 14.25em;
+  z-index: 0;
+  background-image: repeating-linear-gradient(0deg, #8b8280 0 0.25em, #7a7270 0.25em 1.75em, #58514f 1.75em 2em);
+  clip-path: polygon(30% 100%, 70% 100%, 62% 0%, 38% 0%);
+}
+
+.stonePathLight {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 22%, transparent 78%, rgba(255, 255, 255, 0.1));
+}
+
+.stonePathShade {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(0deg, transparent 0 1.75em, rgba(0, 0, 0, 0.3) 1.75em 2em);
+}
+
+.stonePathMoss {
+  position: absolute;
+  inset: 0;
+  opacity: 0.6;
+  background-image:
+    radial-gradient(ellipse 0.375em 0.1875em at 30% 22%, #4a5a3a 0 90%, transparent 100%),
+    radial-gradient(ellipse 0.3125em 0.1875em at 68% 58%, #4a5a3a 0 90%, transparent 100%),
+    radial-gradient(ellipse 0.3125em 0.1875em at 40% 84%, #4a5a3a 0 90%, transparent 100%);
+}
+
+.portal {
+  position: absolute;
+  left: 50%;
+  bottom: 13.75em;
+  transform: translateX(-50%);
+  width: 28.75em;
   display: flex;
   flex-direction: column;
+  align-items: center;
+}
+
+.titlePlaque {
+  position: relative;
+  background: linear-gradient(160deg, #3a1f0d 0%, #241305 55%, #180b02 100%);
+  border: 0.375em solid #120902;
+  box-shadow: 0 0 0 0.25em #6b3d16, 0.5em 0.5em 0 0 rgba(0, 0, 0, 0.5), inset 0 0.125em 0 rgba(255, 255, 255, 0.08);
+  padding: 0.875em 1.625em;
+  margin-bottom: 1.625em;
+}
+
+.plaqueRivet {
+  position: absolute;
+  width: 0.375em;
+  height: 0.375em;
+  background: #a5672c;
+  box-shadow: 0 0 0.25em 0.0625em rgba(255, 180, 90, 0.6);
+}
+
+.plaqueRivetTL {
+  top: 0.375em;
+  left: 0.375em;
+}
+.plaqueRivetTR {
+  top: 0.375em;
+  right: 0.375em;
+}
+.plaqueRivetBL {
+  bottom: 0.375em;
+  left: 0.375em;
+}
+.plaqueRivetBR {
+  bottom: 0.375em;
+  right: 0.375em;
+}
+
+.titleText {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.375em;
+  color: #ffd76a;
+  letter-spacing: 0.125em;
+  animation: shimmer 2.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    text-shadow: 0.1875em 0.1875em 0 #7a2f0f, 0 0 1.125em rgba(255, 215, 106, 0.5);
+  }
+  50% {
+    text-shadow: 0.1875em 0.1875em 0 #7a2f0f, 0 0 1.75em rgba(255, 215, 106, 0.9);
+  }
+}
+
+.archFrame {
+  position: relative;
+  width: 26.25em;
+  height: 32.5em;
+}
+
+.archStone {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, #837a7c 0%, #6b6264 22%, #5b5254 55%, #47403f 82%, #38312f 100%);
+  clip-path: polygon(
+    0% 100%, 0% 30%, 6% 30%, 6% 20%, 14% 20%, 14% 12%, 24% 12%, 24% 6%, 38% 6%, 38% 2%, 62% 2%, 62% 6%,
+    76% 6%, 76% 12%, 86% 12%, 86% 20%, 94% 20%, 94% 30%, 100% 30%, 100% 100%,
+    88% 100%, 88% 34%, 82% 34%, 82% 24%, 74% 24%, 74% 16%, 60% 16%, 60% 10%, 40% 10%, 40% 16%,
+    26% 16%, 26% 24%, 18% 24%, 18% 34%, 12% 34%, 12% 100%
+  );
+  box-shadow: 0.5em 0.5em 0 0 rgba(0, 0, 0, 0.45);
+}
+
+.archSeams {
+  position: absolute;
+  inset: 0;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.06) 0 0.125em, transparent 0.125em 2.375em, rgba(0, 0, 0, 0.28) 2.375em 2.625em),
+    repeating-linear-gradient(90deg, transparent 0 2.875em, rgba(0, 0, 0, 0.22) 2.875em 3.125em);
+  mix-blend-mode: multiply;
+}
+
+.archMoss {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse 1.375em 0.875em at 10% 78%, rgba(74, 90, 58, 0.55) 0 60%, transparent 70%),
+    radial-gradient(ellipse 1em 0.625em at 92% 60%, rgba(74, 90, 58, 0.45) 0 60%, transparent 70%),
+    radial-gradient(ellipse 0.875em 1.25em at 6% 40%, rgba(74, 90, 58, 0.35) 0 60%, transparent 70%);
+}
+
+.archHighlight {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0.875em;
+  background: linear-gradient(180deg, #a49a9c, #837a7c);
+}
+
+.archVoid {
+  position: absolute;
+  left: 2.125em;
+  right: 2.125em;
+  top: 3.5em;
+  bottom: 0;
+  background: #0c0510;
+  clip-path: polygon(0% 100%, 0% 26%, 10% 26%, 10% 14%, 26% 14%, 26% 4%, 74% 4%, 74% 14%, 90% 14%, 90% 26%, 100% 26%, 100% 100%);
+  display: flex;
   align-items: center;
   justify-content: center;
-
-  min-height: 100vh;
-  padding: 2rem;
-
-  background: linear-gradient(-45deg, var(--color-dark), #a87304, var(--color-background-header), #75300f, #c6a65f);
-  background-size: 150% 150%;
-
-  animation: gradient 12s ease infinite;
 }
 
-.authContent {
+.glowRingOuter {
+  position: absolute;
+  width: 22.5em;
+  height: 22.5em;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 236, 180, 0.65) 0 16%,
+    rgba(255, 199, 80, 0.5) 16% 34%,
+    rgba(255, 130, 70, 0.32) 34% 58%,
+    rgba(150, 70, 150, 0.16) 58% 80%,
+    transparent 80% 100%
+  );
+}
+
+.glowRingInner {
+  position: absolute;
+  width: 9.375em;
+  height: 9.375em;
+  border: 0.25em solid rgba(255, 236, 180, 0.7);
+}
+
+.glowRingDiamond {
+  position: absolute;
+  width: 13.75em;
+  height: 13.75em;
+  border: 0.25em solid rgba(255, 180, 110, 0.4);
+  transform: rotate(45deg);
+}
+
+.glowRingDiamondOuter {
+  position: absolute;
+  width: 17.5em;
+  height: 17.5em;
+  border: 0.125em solid rgba(180, 110, 180, 0.25);
+  transform: rotate(45deg);
+}
+
+.toggleGroup {
+  position: relative;
   display: flex;
   flex-direction: column;
+  gap: 2.125em;
   align-items: center;
-
-  width: 90%;
-  min-height: 430px;
-  padding: 1rem;
-  background-color: var(--color-dark);
-  border: 2px solid var(--color-border-1);
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 2;
 }
 
-@media screen and (min-width: 1800px) {
-  .authContent {
-    width: 25%;
-  }
+.toggleButton {
+  cursor: pointer;
+  width: 5.75em;
+  height: 5.75em;
+  border: 0.25em solid #120902;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #8a5a30, #7a4a24 60%, #5f3a1a 100%);
+  box-shadow:
+    inset 0.125em 0.125em 0 rgba(255, 255, 255, 0.12),
+    inset -0.125em -0.125em 0 rgba(0, 0, 0, 0.3),
+    0 0 0 0.375em #4a2a10,
+    0 0 0 0.625em #241305;
 }
 
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
+.toggleButton svg {
+  width: 2.75em;
+  height: 2.75em;
+}
 
-  50% {
-    background-position: 100% 50%;
-  }
+.toggleButtonActive {
+  background: radial-gradient(circle at 35% 30%, #fff3c4, #ffd76a 60%, #e0a83f 100%);
+  animation: glowpulse 2s infinite;
+}
 
+@keyframes glowpulse {
+  0%,
   100% {
-    background-position: 0% 50%;
+    box-shadow:
+      inset 0.125em 0.125em 0 rgba(255, 255, 255, 0.4),
+      inset -0.125em -0.125em 0 rgba(0, 0, 0, 0.2),
+      0 0 0 0.375em #4a2a10,
+      0 0 0 0.625em #241305,
+      0 0 2.5em 0.625em rgba(255, 199, 80, 0.6);
   }
+  50% {
+    box-shadow:
+      inset 0.125em 0.125em 0 rgba(255, 255, 255, 0.4),
+      inset -0.125em -0.125em 0 rgba(0, 0, 0, 0.2),
+      0 0 0 0.375em #4a2a10,
+      0 0 0 0.625em #241305,
+      0 0 3.75em 1.125em rgba(255, 199, 80, 0.8);
+  }
+}
+
+/* ============ floating hover tooltip, follows the cursor (viewport-fixed, not scaled) ============ */
+
+.tooltip {
+  position: fixed;
+  pointer-events: none;
+  z-index: 20;
+  transition: opacity 0.15s ease;
+  background: #1c1029;
+  border: 3px solid #4a2a10;
+  padding: 0.5rem 0.875rem;
+  font-family: 'VT323', monospace;
+  font-size: 1.25rem;
+  color: #f0e4cf;
+  text-shadow: 1px 1px 0 #000;
+  white-space: nowrap;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.4);
+}
+
+/* ============ functional parchment form panel (independent of scene scaling) ============ */
+
+.panel {
+  position: fixed;
+  top: 50%;
+  right: clamp(16px, 4vw, 64px);
+  transform: translateY(-50%);
+  width: min(400px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  background-image: radial-gradient(#d8bd85 1px, transparent 1px), linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  background-size: 6px 6px, 100% 100%;
+  border: 6px solid #4a2a10;
+  box-shadow: 10px 10px 0 0 rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  padding: 1.875rem 1.875rem 1.75rem;
+  z-index: 6;
+}
+
+@media screen and (max-width: 860px) {
+  .panel {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    transform: none;
+    max-height: none;
+    overflow-y: visible;
+    flex: 0 0 auto;
+  }
+}
+
+.panelInset {
+  position: absolute;
+  inset: 0;
+  border: 2px solid #b89860;
+  pointer-events: none;
+  margin: 6px;
+}
+
+.panelOrnament {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #c0392b;
+  transform: rotate(45deg);
+  box-shadow: 0 0 4px rgba(192, 57, 43, 0.6);
+}
+
+.panelOrnamentTL {
+  top: 10px;
+  left: 10px;
+}
+.panelOrnamentTR {
+  top: 10px;
+  right: 10px;
+}
+.panelOrnamentBL {
+  bottom: 10px;
+  left: 10px;
+}
+.panelOrnamentBR {
+  bottom: 10px;
+  right: 10px;
+}
+
+.panelTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1rem;
+  color: #4a2a10;
+  margin-bottom: 0.375rem;
+}
+
+.panelUnderline {
+  height: 4px;
+  width: 4rem;
+  background: linear-gradient(90deg, #c0392b, #e05a45);
+  margin-bottom: 1.25rem;
 }
