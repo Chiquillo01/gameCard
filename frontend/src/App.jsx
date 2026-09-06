@@ -2,16 +2,15 @@ import AuthPage from './components/AuthPage';
 import NotFound from './components/AppUser/Layout/NotFound';
 import CommingSoon from './components/AppUser/Layout/CommingSoon';
 import Layout from './components/AppUser/Layout';
-import ProfileEditForm from './components/AppUser/Layout/Header/UserIcon/UserModal/Profile';
-import PurchaseHistory from './components/AppUser/Layout/Header/UserIcon/UserModal/PurchaseHistory';
-import UserFriendsManagement from './components/AppUser/Layout/Header/UserIcon/UserModal/UserFriendsManagement';
+import ProfileEditForm from './components/AppUser/Body/Profile';
+import PurchaseHistory from './components/AppUser/Body/PurchaseHistory';
+import UserFriendsManagement from './components/AppUser/Body/UserFriendsManagement';
 import HomePage from './components/AppUser/Body/HomePage';
 import Deck from './components/AppUser/Body/DeckPage';
 import User from './components/AppUser/Body/UserPage';
 import UserCollection from './components/AppUser/Body/UserCollectionPage';
 import CreateNewDeck from './components/AppUser/Body/CreateNewDeck';
 import Store from './components/AppUser/Body/Store';
-import Market from './components/AppUser/Body/Market';
 import CardDetailPage from './components/AppUser/Body/Market/CardDetailPage';
 import DuelPage from './components/AppUser/Body/Duel';
 import { useEffect } from 'react';
@@ -63,7 +62,7 @@ const App = () => {
             <Route path='card-detail/:id' element={<CardDetailPage />} />
             <Route path='collection' element={<UserCollection />} />
             <Route path='store' element={<Store />} />
-            <Route path='market' element={<Market />} />
+            <Route path='market' element={<CommingSoon />} />
             <Route path='user' element={<User />} />
             <Route path='profile' element={<ProfileEditForm />} />
             <Route path='purchase-history' element={<PurchaseHistory />} />

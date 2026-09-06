@@ -17,8 +17,11 @@ const StoreProductSchema = new Schema({
   category: {
     type: String,
     required: true,
-    enum: ['chest', 'structure', 'pixelgems'],
+    enum: ['chest', 'structure', 'pixelgems', 'spEdition'],
   },
+  // exact card names making up a structure deck (category:'structure'); the buyer
+  // gets exactly these cards, unlike chests which draw randomly from an expansion
+  structureCards: { type: [String], default: [] },
 });
 
 const StoreProduct = model('StoreProduct', StoreProductSchema);

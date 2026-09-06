@@ -1,59 +1,61 @@
-.modal {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 12px;
-  width: 400px;
-  max-width: 90vw;
-  text-align: center;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-}
-
 .overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(13, 6, 2, 0.75);
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 6px solid #4a2a10;
+  box-shadow: 8px 8px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 1.5rem;
+  width: 400px;
+  max-width: 90vw;
+  text-align: center;
+  font-family: 'VT323', monospace;
 }
 
 .title {
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-  font-weight: bold;
-  font-family: 'Metamorphous', sans-serif;
+  font-size: 1.0625rem;
+  margin-bottom: 1.25rem;
+  font-family: 'Press Start 2P', monospace;
+  color: #4a2a10;
 }
 
 .cardsList {
   list-style: none;
   padding: 0;
-  margin: 0 0 20px 0;
+  margin: 0 0 1.25rem 0;
 }
 
 .cardName {
-  font-size: 1rem;
-  font-weight: bold;
-  font-family: 'Metamorphous', sans-serif;
-  padding: 5px;
-  border-radius: 8px;
-  margin-bottom: 5px;
-  color: black;
+  font-size: 1.25rem;
+  font-family: 'VT323', monospace;
+  padding: 0.5rem;
+  margin-bottom: 0.375rem;
+  background: rgba(255, 255, 255, 0.35);
+  border: 2px solid #b89860;
+  color: #4a2a10;
 }
 
 .closeButton {
-  background-color: #54612b;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 8px;
+  background: linear-gradient(180deg, #e05a45 0%, #c0392b 55%, #9c2e20 100%);
+  color: #fbf3de;
+  padding: 0.625rem 1.25rem;
+  border: 3px solid #241305;
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.35);
   cursor: pointer;
-  font-size: 1rem;
-  font-family: 'Metamorphous', sans-serif;
+  font-size: 0.8125rem;
+  font-family: 'Press Start 2P', monospace;
 }
 
 .closeButton:hover {
-  background-color: #373f1c;
+  background: linear-gradient(180deg, #f06a52 0%, #d0432f 55%, #a83322 100%);
 }

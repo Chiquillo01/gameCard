@@ -14,7 +14,7 @@ export const getProducts = async () => {
   }
 };
 
-export const buyChest = async (productId) => {
+export const buyChest = async (productId, paymentMethod) => {
   const token = getUserToken();
 
   if (!token) {
@@ -23,7 +23,24 @@ export const buyChest = async (productId) => {
 
   const response = await API.post(
     `/products/${productId}/buy-chest`,
-    { productId },
+    { productId, paymentMethod },
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+  return response.data;
+};
+
+export const buyStructureDeck = async (productId, paymentMethod) => {
+  const token = getUserToken();
+
+  if (!token) {
+    return null;
+  }
+
+  const response = await API.post(
+    `/products/${productId}/buy-structure`,
+    { productId, paymentMethod },
     {
       headers: { Authorization: `Bearer ${token}` },
     },
@@ -44,5 +61,5 @@ export const buyCurrency = async (productId) => {
       headers: { Authorization: `Bearer ${token}` },
     },
   );
-  return response;
+  return response.data;
 };

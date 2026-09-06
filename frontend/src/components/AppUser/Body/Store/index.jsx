@@ -3,10 +3,9 @@ import ProductList from '../Store/ProductList';
 import BalanceBar from '../Store/BalanceBar';
 import ChestRewardModal from './ChestRewardModal';
 import StoreFilter from './StoreFilter';
-import PageTitle from '../Generic/PageTitle';
 import { useState, useEffect } from 'react';
 import { useUser } from '../../../../context/userContext';
-import { getProducts, buyChest, buyCurrency } from '../../../../lib/utils/apiStore';
+import { getProducts, buyChest, buyStructureDeck, buyCurrency } from '../../../../lib/utils/apiStore';
 import { successToast, errorToast } from '../../../../lib/toastify/toast';
 
 const productTranslations = {
@@ -29,9 +28,8 @@ const Store = () => {
       const fetchedProducts = await getProducts();
       const updatedProducts = fetchedProducts.map((product) => ({
         ...product,
-        canAfford:
-          (product.price.pixelcoins && data?.pixelcoins >= product.price.pixelcoins) ||
-          (product.price.pixelgems && data?.pixelgems >= product.price.pixelgems),
+        canAffordPixelcoins: product.price.pixelcoins != null && data?.pixelcoins >= product.price.pixelcoins,
+        canAffordPixelgems: product.price.pixelgems != null && data?.pixelgems >= product.price.pixelgems,
       }));
 
       setProducts(updatedProducts);
@@ -48,18 +46,20 @@ const Store = () => {
     }
   }, [selectedCategory, products]);
 
-  const handleBuyProduct = async (product, closeModal) => {
+  const handleBuyProduct = async (product, paymentMethod, buyFunction, closeModal) => {
     try {
-      const response = await buyChest(product._id);
+      const response = await buyFunction(product._id, paymentMethod);
 
       if (response) {
-        setObtainedCards(response.obtainedCards);
         closeModal();
-        setTimeout(() => setIsRewardModalOpen(true), 300);
-      }
+        if (response.obtainedCards) {
+          setObtainedCards(response.obtainedCards);
+          setTimeout(() => setIsRewardModalOpen(true), 300);
+        }
 
-      if (response.newBalance) {
-        updateUser(response.newBalance);
+        if (response.newBalance) {
+          updateUser(response.newBalance);
+        }
       }
 
       successToast('Compra realizada con éxito');
@@ -78,20 +78,24 @@ const Store = () => {
   };
 
   const getBuyFunction = (category) => {
-    if (category === 'chest') return buyChest;
-    if (category === 'pixelgems') return buyCurrency;
+    if (category === 'chest' || category === 'spEdition') return buyChest;
+    if (category === 'structure') return buyStructureDeck;
     return buyCurrency;
   };
 
   const translatedProduct = productTranslations[selectedCategory] || selectedCategory;
 
   return (
-    <>
+    <div className={styles.storePage}>
       <BalanceBar balance={{ pixelcoins: data?.pixelcoins, pixelgems: data?.pixelgems }} />
 
-      <div className={styles.storeContainer}>
-        <PageTitle title={`Productos: ${translatedProduct}`} />
+      <div className={styles.titleBanner}>
+        <div className={styles.titlePlaque}>
+          <div className={styles.titleText}>{translatedProduct.toUpperCase()}</div>
+        </div>
+      </div>
 
+      <div className={styles.storeContainer}>
         <div className={styles.productsSection}>
           <div className={styles.filterWrapper}>
             <StoreFilter selectedCategory={selectedCategory} setSelectedCategory={setSelectedCategory} />
@@ -100,7 +104,9 @@ const Store = () => {
           <div className={styles.productsContainer}>
             <ProductList
               products={filteredProducts}
-              onBuy={(product, closeModal) => handleBuyProduct(product, getBuyFunction(selectedCategory), closeModal)}
+              onBuy={(product, paymentMethod, closeModal) =>
+                handleBuyProduct(product, paymentMethod, getBuyFunction(product.category), closeModal)
+              }
             />
           </div>
         </div>
@@ -111,7 +117,7 @@ const Store = () => {
         onClose={() => setIsRewardModalOpen(false)}
         obtainedCards={obtainedCards}
       />
-    </>
+    </div>
   );
 };
 

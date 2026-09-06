@@ -817,7 +817,9 @@
 }
 
 .contextButton {
+  display: inline-block;
   cursor: pointer;
+  text-decoration: none;
   font-family: 'Press Start 2P', monospace;
   font-size: 0.875rem;
   color: #fbf3de;

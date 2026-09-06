@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { getUserOrders } from '../../../../../../../lib/utils/apiOrder';
-import PageTitle from '../../../../../Body/Generic/PageTitle';
+import { getUserOrders } from '../../../../lib/utils/apiOrder';
+import PageTitle from '../Generic/PageTitle';
 import styles from './purchasehistory.module.css';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 

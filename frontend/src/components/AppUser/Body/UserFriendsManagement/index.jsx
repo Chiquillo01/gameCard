@@ -3,9 +3,9 @@ import io from 'socket.io-client';
 import { useState, useEffect } from 'react';
 import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { BsPlusCircleDotted } from 'react-icons/bs';
-import { sendInvitation } from '../../../../../../../lib/utils/apiFrienship';
-import { successToast, errorToast } from '../../../../../../../lib/toastify/toast';
-import { useUser } from '../../../../../../../context/userContext';
+import { sendInvitation } from '../../../../lib/utils/apiFrienship';
+import { successToast, errorToast } from '../../../../lib/toastify/toast';
+import { useUser } from '../../../../context/userContext';
 
 const socket = io('http://localhost:3001');
 

@@ -1,5 +1,5 @@
 .overlay {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(13, 6, 2, 0.75);
   position: fixed;
   top: 0;
   left: 0;
@@ -8,108 +8,103 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: fadeIn 0.3s ease-in-out;
+  animation: fadeIn 0.2s ease-in-out;
+  z-index: 1000;
 }
 
 .modal {
-  background: white;
-  padding: 25px;
-  border-radius: 10px;
+  position: relative;
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 6px solid #4a2a10;
+  box-shadow: 8px 8px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 1.75rem;
   text-align: center;
   width: 320px;
-  animation:
-    fadeIn 0.3s ease-in-out,
-    fadeOut 0.3s ease-in-out;
+  max-width: 90vw;
+  font-family: 'VT323', monospace;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.9);
+    transform: scale(0.92);
   }
-
   to {
     opacity: 1;
     transform: scale(1);
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  to {
-    opacity: 0;
-    transform: scale(0.9);
   }
 }
 
 .title {
-  font-size: 1.5rem;
-  font-weight: bold;
-  font-family: 'Metamorphous', sans-serif;
+  font-size: 1.0625rem;
+  font-family: 'Press Start 2P', monospace;
+  color: #4a2a10;
+  margin-bottom: 0.75rem;
 }
 
 .description {
-  font-size: 1.1rem;
-  margin-bottom: 15px;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'VT323', monospace;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: #4a2a10;
 }
 
 .priceContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 0.625rem;
+  margin-bottom: 1rem;
 }
 
 .price {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 0.375rem;
+  font-family: 'VT323', monospace;
   font-weight: bold;
-  font-size: 1.1rem;
-  font-family: 'Metamorphous', sans-serif;
+  font-size: 1.25rem;
+  color: #4a2a10;
 }
 
 .icon {
-  width: 24px;
-  height: 24px;
+  width: 1.5rem;
+  height: 1.5rem;
+  image-rendering: pixelated;
 }
 
 .buttons {
   display: flex;
-  justify-content: space-around;
-  margin-top: 15px;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .confirm,
 .cancel {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  font-family: 'Metamorphous', sans-serif;
+  padding: 0.625rem 1.125rem;
+  border: 3px solid #241305;
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.35);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.75rem;
   cursor: pointer;
-  transition: background-color 0.3s ease-in-out;
 }
 
 .confirm {
-  background-color: #4caf50;
-  color: white;
+  background: linear-gradient(180deg, #e05a45 0%, #c0392b 55%, #9c2e20 100%);
+  color: #fbf3de;
 }
 
 .confirm:hover {
-  background-color: #45a049;
+  background: linear-gradient(180deg, #f06a52 0%, #d0432f 55%, #a83322 100%);
 }
 
 .cancel {
-  background-color: #f44336;
-  color: white;
+  background: linear-gradient(160deg, #8a5a30, #7a4a24 60%, #5f3a1a 100%);
+  color: #f1ddab;
 }
 
 .cancel:hover {
-  background-color: #d32f2f;
+  background: linear-gradient(160deg, #9a6a3c, #8a5a30 60%, #6f4622 100%);
 }
