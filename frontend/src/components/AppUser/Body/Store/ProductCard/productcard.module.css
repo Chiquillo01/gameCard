@@ -1,77 +1,79 @@
 .productCard {
-  background-color: #f8edd3;
-  border: 2px solid #521e00;
-  border-radius: 10px;
-  padding: 15px;
+  position: relative;
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 5px solid #4a2a10;
+  box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 1rem;
   text-align: center;
-  box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.3);
-  transition:
-    transform 0.3s ease-in-out,
-    box-shadow 0.3s ease-in-out;
-  max-width: 250px;
+  max-width: 260px;
+  margin: 0 auto;
+  transition: transform 0.15s ease;
 }
 
 .productCard:hover {
-  transform: scale(1.05);
-  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.4);
+  transform: translateY(-4px);
 }
 
 .productImage {
   width: 100%;
-  border-radius: 10px;
+  border: 3px solid #4a2a10;
+  image-rendering: pixelated;
 }
 
 .productTitle {
-  font-size: 1.2rem;
-  font-weight: bold;
-  font-family: 'Metamorphous', sans-serif;
-  margin: 10px 0;
+  font-size: 1rem;
+  font-family: 'Press Start 2P', monospace;
+  color: #4a2a10;
+  margin: 0.75rem 0;
 }
 
 .productDescription {
-  font-size: 0.9rem;
-  font-family: 'Roboto', sans-serif;
-  color: #555;
-  margin-bottom: 10px;
+  font-size: 1.0625rem;
+  font-family: 'VT323', monospace;
+  color: #6b4a28;
+  margin-bottom: 0.625rem;
 }
 
-.priceContainer {
+.buyOptions {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.price {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: bold;
-  font-family: 'Metamorphous', sans-serif;
+  gap: 0.625rem;
+  flex-wrap: wrap;
 }
 
 .icon {
-  width: 20px;
-  height: 20px;
+  width: 1.25rem;
+  height: 1.25rem;
+  image-rendering: pixelated;
 }
 
 .buyButton {
-  background-color: #ffcc00;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 5px;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  background: linear-gradient(180deg, #e05a45 0%, #c0392b 55%, #9c2e20 100%);
+  color: #fbf3de;
+  border: 4px solid #241305;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.3);
+  padding: 0.625rem 0.75rem;
   cursor: pointer;
-  font-family: 'Metamorphous', sans-serif;
-  font-weight: bold;
-  transition: background-color 0.3s ease-in-out;
+  font-family: 'VT323', monospace;
+  font-size: 1.125rem;
 }
 
-.buyButton:hover {
-  background-color: #ffaa00;
+.buyButton:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f06a52 0%, #d0432f 55%, #a83322 100%);
+}
+
+.buyButton:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.4);
 }
 
 .buyButton:disabled {
-  background-color: #ccc;
+  background: linear-gradient(180deg, #a89a86, #7a6d5c);
   cursor: not-allowed;
+  opacity: 0.8;
 }

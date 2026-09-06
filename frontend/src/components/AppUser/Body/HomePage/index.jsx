@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from 'react-query';
 import styles from './homePage.module.css';
 import { removeSession } from '../../../../lib/utils/userSession';
@@ -203,9 +203,9 @@ const HomePage = () => {
           <div className={styles.contextTitle}>{zone.title}</div>
           <div className={styles.contextButtons}>
             {zone.buttons.map((btn) => (
-              <div key={btn.to} className={styles.contextButton} onClick={() => navigate(btn.to)} role='button' tabIndex={0}>
+              <Link key={btn.to} to={btn.to} className={styles.contextButton}>
                 {btn.label}
-              </div>
+              </Link>
             ))}
           </div>
           <button className={styles.backLink} onClick={() => setFocus(null)}>

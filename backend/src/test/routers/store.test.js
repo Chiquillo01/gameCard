@@ -38,6 +38,7 @@ describe('Store Controller TEST', () => {
   let userToken;
   let adminToken;
   let chestId;
+  let structureDeckId;
 
   beforeAll(async () => {
     await Promise.all([
@@ -48,6 +49,8 @@ describe('Store Controller TEST', () => {
       makeCard({ rarity: 'epic' }).save(),
       makeCard({ rarity: 'epic' }).save(),
       makeCard({ rarity: 'legendary' }).save(),
+      makeCard({ name: 'Structure Card One', rarity: 'common' }).save(),
+      makeCard({ name: 'Structure Card Two', rarity: 'common' }).save(),
     ]);
 
     const chest = new StoreProduct({
@@ -61,6 +64,18 @@ describe('Store Controller TEST', () => {
     });
     await chest.save();
     chestId = chest._id.toString();
+
+    const structureDeck = new StoreProduct({
+      name: 'Test Structure Deck',
+      description: 'A structure deck used for tests',
+      price: { pixelcoins: 100 },
+      reward: { cards: 2 },
+      imageUrl: 'structure.png',
+      category: 'structure',
+      structureCards: ['Structure Card One', 'Structure Card Two'],
+    });
+    await structureDeck.save();
+    structureDeckId = structureDeck._id.toString();
 
     const user = await fakeRequest.post('/auth/register').send({
       userName: 'Store Buyer',
@@ -87,21 +102,63 @@ describe('Store Controller TEST', () => {
       const response = await fakeRequest
         .post(`/store/products/${chestId}/buy-chest`)
         .set('Authorization', `Bearer ${userToken}`)
-        .send({ productId: chestId });
+        .send({ productId: chestId, paymentMethod: 'pixelcoins' });
 
       expect(response.status).toBe(200);
       expect(response.body.obtainedCards).toHaveLength(6);
       expect(response.body.newBalance.pixelcoins).toBe(900);
     });
 
-    it('should reject the purchase when the user cannot afford it', async () => {
+    it('should reject the purchase when the payment method is missing or invalid', async () => {
       const response = await fakeRequest
         .post(`/store/products/${chestId}/buy-chest`)
         .set('Authorization', `Bearer ${userToken}`)
         .send({ productId: chestId });
 
+      expect(response.status).toBe(410);
+    });
+
+    it('should reject the purchase when the user cannot afford it', async () => {
+      const response = await fakeRequest
+        .post(`/store/products/${chestId}/buy-chest`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ productId: chestId, paymentMethod: 'pixelcoins' });
+
       // second purchase: balance is now 900 -> 800, still affordable, so buy once more to drain it
       expect([200, 410]).toContain(response.status);
+    });
+  });
+
+  describe('POST /store/products/:productId/buy-structure', () => {
+    it('should let a user buy a structure deck and receive exactly its fixed cards', async () => {
+      const response = await fakeRequest
+        .post(`/store/products/${structureDeckId}/buy-structure`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ productId: structureDeckId, paymentMethod: 'pixelcoins' });
+
+      expect(response.status).toBe(200);
+      const names = response.body.obtainedCards.map((c) => c.name).sort();
+      expect(names).toEqual(['Structure Card One', 'Structure Card Two']);
+    });
+
+    it('should reject a structure deck whose card list does not match real cards', async () => {
+      const brokenDeck = new StoreProduct({
+        name: 'Broken Structure Deck',
+        description: 'References a card that does not exist',
+        price: { pixelcoins: 10 },
+        reward: { cards: 1 },
+        imageUrl: 'structure2.png',
+        category: 'structure',
+        structureCards: ['Nonexistent Card'],
+      });
+      await brokenDeck.save();
+
+      const response = await fakeRequest
+        .post(`/store/products/${brokenDeck._id}/buy-structure`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ productId: brokenDeck._id.toString() });
+
+      expect(response.status).toBe(404);
     });
   });
 

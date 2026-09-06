@@ -3,7 +3,18 @@ import Modal from 'react-modal';
 import styles from './storemodal.module.css';
 import { useUser } from '../../../../../context/userContext';
 
-const StoreModal = ({ isOpen, onClose, onConfirm, product }) => {
+const PAYMENT_LABELS = {
+  pixelcoins: {
+    icon: 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png',
+    unit: 'Pixelcoins',
+  },
+  pixelgems: {
+    icon: 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100320/gema4tcg_laiqk5.png',
+    unit: 'Pixelgems',
+  },
+};
+
+const StoreModal = ({ isOpen, onClose, onConfirm, product, paymentMethod }) => {
   const { updateUser } = useUser();
 
   if (!product) return null;
@@ -14,13 +25,16 @@ const StoreModal = ({ isOpen, onClose, onConfirm, product }) => {
     }
 
     try {
-      const response = await onConfirm(product);
+      const response = await onConfirm(product, paymentMethod);
       if (response?.data?.newBalance) {
         updateUser(response.data.newBalance);
       }
       onClose();
     } catch (error) {}
   };
+
+  const amount = paymentMethod ? product.price[paymentMethod] : null;
+  const payment = PAYMENT_LABELS[paymentMethod];
 
   return (
     <Modal
@@ -36,27 +50,14 @@ const StoreModal = ({ isOpen, onClose, onConfirm, product }) => {
       </p>
 
       <div className={styles.priceContainer}>
-        {product.price.pixelcoins && (
+        {payment ? (
           <div className={styles.price}>
-            <img
-              src='https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png'
-              alt='Pixelcoins'
-              className={styles.icon}
-            />
-            <span>{product.price.pixelcoins} Pixelcoins</span>
+            <img src={payment.icon} alt={payment.unit} className={styles.icon} />
+            <span>
+              {amount} {payment.unit}
+            </span>
           </div>
-        )}
-        {product.price.pixelgems && (
-          <div className={styles.price}>
-            <img
-              src='https://res.cloudinary.com/dsd7efrba/image/upload/v1739100320/gema4tcg_laiqk5.png'
-              alt='Pixelgems'
-              className={styles.icon}
-            />
-            <span>{product.price.pixelgems} Pixelgems</span>
-          </div>
-        )}
-        {product.price.euros && (
+        ) : (
           <div className={styles.price}>
             💵 <span>{product.price.euros} Euros</span>
           </div>

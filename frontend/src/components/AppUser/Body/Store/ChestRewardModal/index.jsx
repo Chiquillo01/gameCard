@@ -2,7 +2,7 @@ import React from 'react';
 import Modal from 'react-modal';
 import styles from './chestrewardmodal.module.css';
 
-const ChestRewardModal = ({ isOpen, onClose, obtainedCards }) => {
+const ChestRewardModal = ({ isOpen, onClose, obtainedCards = [] }) => {
   return (
     <Modal
       isOpen={isOpen}
