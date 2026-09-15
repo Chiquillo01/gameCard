@@ -14,7 +14,7 @@ export const getProducts = async () => {
   }
 };
 
-export const buyChest = async (productId, paymentMethod) => {
+export const buyChest = async (productId, paymentMethod, quantity = 1) => {
   const token = getUserToken();
 
   if (!token) {
@@ -23,7 +23,7 @@ export const buyChest = async (productId, paymentMethod) => {
 
   const response = await API.post(
     `/products/${productId}/buy-chest`,
-    { productId, paymentMethod },
+    { productId, paymentMethod, quantity },
     {
       headers: { Authorization: `Bearer ${token}` },
     },
@@ -31,7 +31,7 @@ export const buyChest = async (productId, paymentMethod) => {
   return response.data;
 };
 
-export const buyStructureDeck = async (productId, paymentMethod) => {
+export const buyStructureDeck = async (productId, paymentMethod, quantity = 1) => {
   const token = getUserToken();
 
   if (!token) {
@@ -40,7 +40,7 @@ export const buyStructureDeck = async (productId, paymentMethod) => {
 
   const response = await API.post(
     `/products/${productId}/buy-structure`,
-    { productId, paymentMethod },
+    { productId, paymentMethod, quantity },
     {
       headers: { Authorization: `Bearer ${token}` },
     },
@@ -48,7 +48,7 @@ export const buyStructureDeck = async (productId, paymentMethod) => {
   return response.data;
 };
 
-export const buyCurrency = async (productId) => {
+export const buyCurrency = async (productId, paymentMethod, quantity = 1) => {
   const token = getUserToken();
   if (!token) {
     return null;
@@ -56,7 +56,7 @@ export const buyCurrency = async (productId) => {
 
   const response = await API.post(
     `/products/${productId}/buy-currency`,
-    { productId },
+    { productId, quantity },
     {
       headers: { Authorization: `Bearer ${token}` },
     },
