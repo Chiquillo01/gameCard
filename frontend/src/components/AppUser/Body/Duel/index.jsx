@@ -8,6 +8,8 @@ import { getUserDecks } from '../../../../lib/utils/apiDeck';
 import { startPveDuel, getDuelState, sendDuelAction } from '../../../../lib/utils/apiDuel';
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 
+const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
+
 const PHASE_LABELS = {
   draw: 'Robo',
   standby: 'Espera',
@@ -93,19 +95,30 @@ const DuelPage = () => {
   if (!matchId) {
     return (
       <div className={styles.duelPage}>
-        <h2>Nueva Partida</h2>
-        <div className={styles.picker}>
-          <select value={selectedDeckId} onChange={(e) => setSelectedDeckId(e.target.value)}>
-            <option value=''>Elige un mazo</option>
-            {decks.map((d) => (
-              <option key={d._id} value={d._id}>
-                {d.deckTitle}
-              </option>
-            ))}
-          </select>
-          <button className={styles.startButton} disabled={!selectedDeckId || starting} onClick={handleStart}>
-            {starting ? 'Iniciando...' : 'Jugar contra la IA'}
-          </button>
+        <div className={styles.pickerWrapper}>
+          <div className={styles.titleBanner}>
+            <div className={styles.titlePlaque}>
+              <div className={styles.titleText}>Nueva Partida</div>
+            </div>
+          </div>
+
+          <div className={styles.picker}>
+            <select
+              className={styles.deckSelect}
+              value={selectedDeckId}
+              onChange={(e) => setSelectedDeckId(e.target.value)}
+            >
+              <option value=''>Elige un mazo</option>
+              {decks.map((d) => (
+                <option key={d._id} value={d._id}>
+                  {d.deckTitle}
+                </option>
+              ))}
+            </select>
+            <button className={styles.startButton} disabled={!selectedDeckId || starting} onClick={handleStart}>
+              {starting ? 'Iniciando...' : 'Jugar contra la IA'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -151,8 +164,10 @@ const DuelPage = () => {
   return (
     <div className={styles.duelPage}>
       {view.status === 'finished' && (
-        <div className={styles.gameOver}>
-          {view.winnerIndex === you ? '¡Has ganado la partida!' : view.winnerIndex === opp ? 'Has perdido la partida.' : 'Partida terminada.'}
+        <div className={styles.gameOverOverlay}>
+          <div className={styles.gameOverPlaque}>
+            {view.winnerIndex === you ? '¡Victoria!' : view.winnerIndex === opp ? 'Derrota' : 'Partida terminada'}
+          </div>
         </div>
       )}
 
@@ -160,15 +175,19 @@ const DuelPage = () => {
         <span className={styles.turnInfo}>
           Turno {view.turnNumber} · {isMyTurn ? 'Tu turno' : 'Turno del rival'} · Fase: {PHASE_LABELS[view.phase] || view.phase}
         </span>
-        <div>
-          <button className={styles.actionButton} disabled={!isMyTurn || view.status !== 'active'} onClick={() => act({ type: 'ADVANCE_PHASE' })}>
+        <div className={styles.topBarActions}>
+          <button
+            className={styles.actionButton}
+            disabled={!isMyTurn || view.status !== 'active'}
+            onClick={() => act({ type: 'ADVANCE_PHASE' })}
+          >
             Avanzar fase
-          </button>{' '}
+          </button>
           {selectedAttacker && enemy.field.monsters.every((m) => !m) && (
-            <button className={styles.actionButton} onClick={onDirectAttack}>
+            <button className={styles.directAttackButton} onClick={onDirectAttack}>
               Ataque directo
             </button>
-          )}{' '}
+          )}
           <button className={styles.surrenderButton} onClick={() => act({ type: 'SURRENDER' })}>
             Rendirse
           </button>
@@ -176,28 +195,36 @@ const DuelPage = () => {
       </div>
 
       <div className={styles.board}>
-        <div className={styles.playerRow}>
+        <div className={`${styles.playerRow} ${styles.enemyRow}`}>
           <div className={styles.playerHeader}>
-            <span>Rival — VP: {enemy.vp}</span>
-            <span>Mano: {enemy.handCount}</span>
+            <span className={styles.vpBadge}>VP: {enemy.vp}</span>
+            <span className={styles.handCountBadge}>Mano: {enemy.handCount}</span>
           </div>
           <div className={styles.zoneRow}>
             {enemy.field.support.map((s, i) => (
-              <div key={`es${i}`} className={styles.slot}>
+              <div key={`es${i}`} className={styles.slot} title='Soporte'>
                 {s && <div className={styles.faceDown} />}
               </div>
             ))}
-            <div className={styles.slot} title='Territorio'>
-              {enemy.field.territory && <img src={enemy.field.territory.image} alt={enemy.field.territory.name} title={enemy.field.territory.name} />}
+            <div className={`${styles.slot} ${styles.territorySlot}`} title='Territorio'>
+              {enemy.field.territory && (
+                <img src={enemy.field.territory.image} alt={enemy.field.territory.name} title={enemy.field.territory.name} />
+              )}
             </div>
           </div>
           <div className={styles.zoneRow}>
             {enemy.field.monsters.map((m, i) => (
-              <div key={`em${i}`} className={`${styles.slot} ${m?.position === 'defense' ? styles.defense : ''}`} onClick={() => m && !m.faceDown && onEnemyMonsterClick(m)}>
+              <div
+                key={`em${i}`}
+                className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''}`}
+                onClick={() => m && !m.faceDown && onEnemyMonsterClick(m)}
+              >
                 {m && !m.faceDown && (
                   <>
                     <img src={m.image} alt={m.name} title={m.name} />
-                    <span className={styles.statBadge}>{m.atk} / {m.def}</span>
+                    <span className={styles.statBadge}>
+                      {m.atk} / {m.def}
+                    </span>
                   </>
                 )}
                 {m && m.faceDown && <div className={styles.faceDown} />}
@@ -206,22 +233,24 @@ const DuelPage = () => {
           </div>
         </div>
 
-        <div className={styles.playerRow}>
-          <div className={styles.playerHeader}>
-            <span>Tú — VP: {me.vp}</span>
-            <span>Pixeles: {me.pixelcoins}</span>
-          </div>
+        <div className={styles.divider} />
+
+        <div className={`${styles.playerRow} ${styles.ownRow}`}>
           <div className={styles.zoneRow}>
             {me.field.monsters.map((m, i) => (
               <div
                 key={`mm${i}`}
-                className={`${styles.slot} ${m?.position === 'defense' ? styles.defense : ''} ${m && m.instanceId === selectedAttacker ? styles.selected : ''}`}
+                className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''} ${
+                  m && m.instanceId === selectedAttacker ? styles.selected : ''
+                }`}
                 onClick={() => onOwnMonsterClick(m)}
               >
                 {m && (
                   <>
                     <img src={m.image} alt={m.name} title={m.name} />
-                    <span className={styles.statBadge}>{m.atk} / {m.def}</span>
+                    <span className={styles.statBadge}>
+                      {m.atk} / {m.def}
+                    </span>
                   </>
                 )}
               </div>
@@ -229,13 +258,19 @@ const DuelPage = () => {
           </div>
           <div className={styles.zoneRow}>
             {me.field.support.map((s, i) => (
-              <div key={`ms${i}`} className={styles.slot}>
+              <div key={`ms${i}`} className={styles.slot} title='Soporte'>
                 {s && <img src={s.image} alt={s.name} title={s.name} />}
               </div>
             ))}
-            <div className={styles.slot} title='Territorio'>
+            <div className={`${styles.slot} ${styles.territorySlot}`} title='Territorio'>
               {me.field.territory && <img src={me.field.territory.image} alt={me.field.territory.name} title={me.field.territory.name} />}
             </div>
+          </div>
+          <div className={styles.playerHeader}>
+            <span className={styles.vpBadge}>VP: {me.vp}</span>
+            <span className={styles.pixelBadge}>
+              <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {me.pixelcoins}
+            </span>
           </div>
         </div>
 
@@ -250,7 +285,7 @@ const DuelPage = () => {
 
       <div className={styles.log}>
         {view.log.map((l, i) => (
-          <div key={i}>
+          <div key={i} className={styles.logLine}>
             [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
           </div>
         ))}
