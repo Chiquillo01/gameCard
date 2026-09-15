@@ -9,7 +9,12 @@ const getUserCollection = async (req, res) => {
     if (!userCollection) {
       return res.status(404).send();
     }
-    res.status(200).json(userCollection);
+    // A card the collection references can be gone from the Card collection (e.g. a full
+    // re-import that reassigns ids) — populate() then leaves cardId as null. Drop those instead
+    // of shipping a dangling reference the client can't render.
+    const cleaned = userCollection.toObject();
+    cleaned.cards = cleaned.cards.filter((c) => c.cardId);
+    res.status(200).json(cleaned);
   } catch (e) {
     res.status(500).send();
   }

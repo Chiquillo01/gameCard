@@ -5,15 +5,20 @@ import FilterMenu from '../FilterMenu';
 import CardItem from '../CardItem';
 import styles from './cardscollecteddisplay.module.css';
 
+const RARITY_RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
+
 const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [sortVisible, setSortVisible] = useState(false);
+  // Single-select per filter (matches a plain <select>'s value) — matching against `''`
+  // (no filter) rather than an array avoids the array/string mismatch that made every filter
+  // except rarity silently do nothing.
   const [filters, setFilters] = useState({
-    category: [],
-    type: [],
-    attribute: [],
-    rarity: [],
+    category: '',
+    type: '',
+    attribute: '',
+    rarity: '',
   });
 
   const [sortOption, setSortOption] = useState('');
@@ -39,10 +44,10 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
 
   const clearFilters = () => {
     setFilters({
-      category: [],
-      type: [],
-      attribute: [],
-      rarity: [],
+      category: '',
+      type: '',
+      attribute: '',
+      rarity: '',
     });
   };
 
@@ -61,19 +66,28 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
     setSortVisible(false);
   };
 
+  // Options are built from the cards actually on hand, not a hardcoded list — a hardcoded list
+  // is exactly what went stale here before (English keys like "fire"/"dragon" against cards
+  // that store "Fuego"/"Dragón", and no "token" category at all).
+  const availableCategories = [...new Set(cards.map((c) => c.category))].filter(Boolean);
+  const availableTypes = [...new Set(cards.map((c) => c.type))].filter(Boolean).sort();
+  const availableAttributes = [...new Set(cards.map((c) => c.attribute))].filter((a) => a && a !== 'none').sort();
+
   const filteredCards = cards
     .filter((card) => {
       return (
         card.name.toLowerCase().includes(searchTerm) &&
-        (filters.category.length === 0 || filters.category.includes(card.category)) &&
-        (filters.type.length === 0 || filters.type.includes(card.type)) &&
-        (filters.attribute.length === 0 || filters.attribute.includes(card.attribute)) &&
-        (filters.rarity.length === 0 || filters.rarity.includes(card.rarity))
+        (!filters.category || filters.category === card.category) &&
+        (!filters.type || filters.type === card.type) &&
+        (!filters.attribute || filters.attribute === card.attribute) &&
+        (!filters.rarity || filters.rarity === card.rarity)
       );
     })
     .sort((a, b) => {
       if (sortOption === 'alphabetical') return a.name.localeCompare(b.name);
-      if (sortOption === 'rarity') return b.rarity.localeCompare(a.rarity);
+      // Rarity has a real rank (common < rare < epic < legendary) — sorting the enum string
+      // alphabetically ("common","epic","legendary","rare") doesn't reflect that at all.
+      if (sortOption === 'rarity') return (RARITY_RANK[b.rarity] ?? 0) - (RARITY_RANK[a.rarity] ?? 0);
       return 0;
     });
 
@@ -95,7 +109,14 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
           </button>
           {filtersVisible && (
             <div className={styles.filterMenuWrapper} ref={filterMenuRef}>
-              <FilterMenu filters={filters} onFilterChange={handleFilterChange} onClearFilters={clearFilters} />
+              <FilterMenu
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onClearFilters={clearFilters}
+                availableCategories={availableCategories}
+                availableTypes={availableTypes}
+                availableAttributes={availableAttributes}
+              />
             </div>
           )}
         </div>
@@ -122,7 +143,12 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
         ) : (
           Object.values(groupedCards).map((card) => (
             <div key={card.name} className={styles.cardWrapper}>
-              <CardItem card={card} onAction={() => onAddCard(card)} actionLabel='+ Añadir' addCard={addCard} />
+              <CardItem
+                card={card}
+                onAction={addCard ? () => onAddCard(card) : undefined}
+                actionLabel={addCard ? '+ Añadir' : undefined}
+                addCard={addCard}
+              />
               {card.amount > 1 && (
                 <div className={styles.cardAmount}>
                   <span>x{card.amount}</span>
