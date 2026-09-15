@@ -97,11 +97,6 @@ const CardModal = ({ card, onClose }) => {
           <h2 className={styles.cardInfoName}>{name}</h2>
           <div className={styles.infoRow}>
             <p className={styles.cardInfoCategory}>{translatedCategory}</p>
-            {Icon && (
-              <span className={styles.attributeInfoIcon} style={{ backgroundColor: badgeColor, color: badgeIconColor }}>
-                <Icon />
-              </span>
-            )}
             <p className={styles.cardInfoType}>{translatedType}</p>
           </div>
           <h3>Descripción</h3>
