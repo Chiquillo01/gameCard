@@ -130,9 +130,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
   font-size: 13px;
-  border: 2px solid rgba(255, 255, 255, 0.85);
+  /* A fixed light border disappeared against the lightest attribute colors (Luz, Cristal,
+     Electricidad...) — a dark ring plus its own shadow reads against any fill instead. */
+  border: 2px solid rgba(20, 20, 20, 0.55);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   z-index: 2;
 }

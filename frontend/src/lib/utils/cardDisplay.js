@@ -17,7 +17,18 @@ import {
   FaSkullCrossbones,
 } from 'react-icons/fa';
 import { FaArrowsRotate } from 'react-icons/fa6';
-import { GiFastArrow, GiOakLeaf, GiMetalBar, GiCrystalBall, GiThirdEye } from 'react-icons/gi';
+import {
+  GiFastArrow,
+  GiOakLeaf,
+  GiMetalBar,
+  GiCrystalBall,
+  GiThirdEye,
+  GiCrystalBars,
+  GiBlackHoleBolas,
+  GiVolcano,
+  GiSoundWaves,
+  GiTornado,
+} from 'react-icons/gi';
 import { FiHexagon } from 'react-icons/fi';
 import { GoTools } from 'react-icons/go';
 
@@ -37,6 +48,35 @@ export const ATTRIBUTE_ICONS = {
   Arcano: GiCrystalBall,
   Veneno: FaSkullCrossbones,
   Hipnosis: GiThirdEye,
+  Cristal: GiCrystalBars,
+  Gravedad: GiBlackHoleBolas,
+  Lava: GiVolcano,
+  Sonido: GiSoundWaves,
+  Tormenta: GiTornado,
+};
+
+// Designer-provided color per monster attribute — used to color the attribute badge/icon so
+// each element reads at a glance instead of everything sharing the rarity color.
+export const ATTRIBUTE_COLORS = {
+  Agua: '#0C29E8',
+  Arcano: '#200733',
+  Cristal: '#B4B7D4',
+  Electricidad: '#F7F21E',
+  Fuego: '#EB0707',
+  Gravedad: '#382107',
+  Hielo: '#42E7ED',
+  Hipnosis: '#51F09B',
+  Lava: '#990F0F',
+  Luz: '#F5F7D2',
+  Metal: '#999999',
+  Natura: '#316B2F',
+  Oscuridad: '#000000',
+  Sonido: '#1A4B6B',
+  Tiempo: '#F584F0',
+  Tierra: '#A38A58',
+  Tormenta: '#F5B845',
+  Veneno: '#B745F5',
+  Viento: '#33F5DB',
 };
 
 // Apoyo (support) subtype -> icon. `type`/`subtype` store these as the internal English code.
@@ -97,4 +137,25 @@ export function getTypeLabel(card) {
 export function getTypeIcon(card) {
   if (card.category === 'support') return SUPPORT_SUBTYPE_ICONS[card.type] || null;
   return ATTRIBUTE_ICONS[card.attribute] || null;
+}
+
+// Color for the type/attribute badge: a monster/fusion/token shows its element's own color;
+// a support card has no attribute to speak of, so it falls back to whatever color the caller
+// passes in (typically the rarity color).
+export function getTypeBadgeColor(card, fallback) {
+  if (card.category === 'support') return fallback;
+  return ATTRIBUTE_COLORS[card.attribute] || fallback;
+}
+
+// The attribute palette spans pure black (Oscuridad) to near-white (Luz) — a fixed white icon
+// would disappear on the light end, so pick black or white per background using relative
+// luminance (standard WCAG-ish formula) instead of hardcoding per color.
+export function getContrastColor(hexColor) {
+  const hex = (hexColor || '').replace('#', '');
+  if (hex.length !== 6) return '#fff';
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.6 ? '#1a1a1a' : '#fff';
 }

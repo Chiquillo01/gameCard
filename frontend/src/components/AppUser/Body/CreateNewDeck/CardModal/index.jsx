@@ -1,7 +1,16 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { effectDescriptions } from '../../../../../lib/utils/effectGlossary';
-import { RARITY_COLORS, RARITY_LABELS, CATEGORY_COLORS, CATEGORY_LABELS, getTypeLabel, getTypeIcon } from '../../../../../lib/utils/cardDisplay';
+import {
+  RARITY_COLORS,
+  RARITY_LABELS,
+  CATEGORY_COLORS,
+  CATEGORY_LABELS,
+  getTypeLabel,
+  getTypeIcon,
+  getTypeBadgeColor,
+  getContrastColor,
+} from '../../../../../lib/utils/cardDisplay';
 import { LEVEL_BADGE_IMAGES } from '../../../../../lib/utils/levelBadges';
 import styles from './cardmodal.module.css';
 
@@ -24,6 +33,8 @@ const CardModal = ({ card, onClose }) => {
   const showStats = category === 'monster' || category === 'fusion';
 
   const Icon = getTypeIcon(card);
+  const badgeColor = getTypeBadgeColor(card, rarityColor);
+  const badgeIconColor = getContrastColor(badgeColor);
 
   const detectedEffects = Object.keys(effectDescriptions).filter((keyword) => (effect || '').includes(`{{${keyword}}}`));
 
@@ -56,7 +67,11 @@ const CardModal = ({ card, onClose }) => {
           <div className={styles.cardDetails}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardName}>{name}</h2>
-              {Icon && <Icon className={styles.attributeIcon} />}
+              {Icon && (
+                <span className={styles.attributeIcon} style={{ backgroundColor: badgeColor, color: badgeIconColor }}>
+                  <Icon />
+                </span>
+              )}
             </div>
 
             <p className={styles.cardType}>{translatedType}</p>
@@ -82,7 +97,11 @@ const CardModal = ({ card, onClose }) => {
           <h2 className={styles.cardInfoName}>{name}</h2>
           <div className={styles.infoRow}>
             <p className={styles.cardInfoCategory}>{translatedCategory}</p>
-            {Icon && <Icon className={styles.attributeInfoIcon} />}
+            {Icon && (
+              <span className={styles.attributeInfoIcon} style={{ backgroundColor: badgeColor, color: badgeIconColor }}>
+                <Icon />
+              </span>
+            )}
             <p className={styles.cardInfoType}>{translatedType}</p>
           </div>
           <h3>Descripción</h3>

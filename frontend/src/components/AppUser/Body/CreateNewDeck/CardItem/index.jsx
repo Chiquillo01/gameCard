@@ -1,7 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CardModal from '../CardModal';
-import { RARITY_COLORS, CATEGORY_COLORS, getTypeLabel, getTypeIcon } from '../../../../../lib/utils/cardDisplay';
+import {
+  RARITY_COLORS,
+  CATEGORY_COLORS,
+  getTypeLabel,
+  getTypeIcon,
+  getTypeBadgeColor,
+  getContrastColor,
+} from '../../../../../lib/utils/cardDisplay';
 import { LEVEL_BADGE_IMAGES } from '../../../../../lib/utils/levelBadges';
 import styles from './carditem.module.css';
 
@@ -18,6 +25,8 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
   // its subtype (Equipo/Reino/Veloz/...) for a support — so a support card isn't left with an
   // empty corner just because it has no elemental attribute.
   const TypeIcon = getTypeIcon(card);
+  const badgeColor = getTypeBadgeColor(card, rarityColor);
+  const badgeIconColor = getContrastColor(badgeColor);
   // In an inventory-style list (the collection, or the deck-builder's "add a card" browser) how
   // many copies you own is more useful here than combat stats — full stats are still one click
   // away in CardModal. Everywhere else (e.g. a deck's already-picked cards, one tile per copy)
@@ -56,7 +65,7 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
           <img src={LEVEL_BADGE_IMAGES[level - 1]} alt={`Nivel ${level}`} className={styles.levelBadge} />
         )}
         {TypeIcon && (
-          <span className={styles.attributeBadge} style={{ backgroundColor: rarityColor }} title={typeLabel}>
+          <span className={styles.attributeBadge} style={{ backgroundColor: badgeColor, color: badgeIconColor }} title={typeLabel}>
             <TypeIcon />
           </span>
         )}
