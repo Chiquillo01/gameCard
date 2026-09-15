@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CardModal from '../CardModal';
-import { ATTRIBUTE_ICONS, RARITY_COLORS, CATEGORY_COLORS, getTypeLabel, getTypeIcon } from '../../../../../lib/utils/cardDisplay';
+import { RARITY_COLORS, CATEGORY_COLORS, getTypeLabel, getTypeIcon } from '../../../../../lib/utils/cardDisplay';
 import { LEVEL_BADGE_IMAGES } from '../../../../../lib/utils/levelBadges';
 import styles from './carditem.module.css';
 
@@ -14,8 +14,10 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
   const rarityColor = RARITY_COLORS[rarity] || 'gray';
   const categoryColor = CATEGORY_COLORS[category] || '#1a1a1a';
   const typeLabel = getTypeLabel(card);
-  const Icon = getTypeIcon(card);
-  const AttributeIcon = category !== 'support' ? ATTRIBUTE_ICONS[card.attribute] : null;
+  // The corner badge shows this card's type either way — its attribute for a monster/fusion,
+  // its subtype (Equipo/Reino/Veloz/...) for a support — so a support card isn't left with an
+  // empty corner just because it has no elemental attribute.
+  const TypeIcon = getTypeIcon(card);
   // In an inventory-style list (the collection, or the deck-builder's "add a card" browser) how
   // many copies you own is more useful here than combat stats — full stats are still one click
   // away in CardModal. Everywhere else (e.g. a deck's already-picked cards, one tile per copy)
@@ -53,9 +55,9 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
         {level != null && LEVEL_BADGE_IMAGES[level - 1] && (
           <img src={LEVEL_BADGE_IMAGES[level - 1]} alt={`Nivel ${level}`} className={styles.levelBadge} />
         )}
-        {AttributeIcon && (
-          <span className={styles.attributeBadge} style={{ backgroundColor: rarityColor }}>
-            <AttributeIcon />
+        {TypeIcon && (
+          <span className={styles.attributeBadge} style={{ backgroundColor: rarityColor }} title={typeLabel}>
+            <TypeIcon />
           </span>
         )}
 
@@ -64,12 +66,8 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
         </div>
 
         <div className={styles.cardDetails}>
-          <h3 className={styles.cardName}>{name}</h3>
           <div className={styles.cardFooter}>
-            <p className={styles.cardType}>
-              {Icon && <Icon className={styles.typeIcon} />}
-              {typeLabel}
-            </p>
+            <h3 className={styles.cardName}>{name}</h3>
             {showStats && (
               <span className={styles.statBadge}>
                 {atk ?? 0}/{def ?? 0}

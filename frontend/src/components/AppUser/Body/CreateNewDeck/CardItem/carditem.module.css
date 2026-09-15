@@ -73,6 +73,8 @@
 }
 
 .cardName {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 15px;
   font-weight: bold;
   color: white;
@@ -80,8 +82,6 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
-  max-width: 100%;
-  display: block;
   font-family: 'Roboto', sans-serif;
 }
 
@@ -91,25 +91,6 @@
   align-items: center;
   gap: 6px;
   margin-top: 4px;
-}
-
-.cardType {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  color: #fff;
-  flex-shrink: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: 'Roboto', sans-serif;
-}
-
-.typeIcon {
-  flex-shrink: 0;
-  font-size: 13px;
 }
 
 .attributeIcon {
@@ -131,8 +112,8 @@
 
 .levelBadge {
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 0;
+  left: 0;
   width: 30px;
   height: 30px;
   z-index: 2;
@@ -141,8 +122,8 @@
 
 .attributeBadge {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 2px;
+  right: 2px;
   width: 24px;
   height: 24px;
   border-radius: 50%;
