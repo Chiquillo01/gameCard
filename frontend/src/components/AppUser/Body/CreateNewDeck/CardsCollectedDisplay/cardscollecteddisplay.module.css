@@ -133,19 +133,6 @@
   align-items: center;
 }
 
-.cardAmount {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: var(--color-primary);
-  color: var(--color-light);
-  font-size: 0.8rem;
-  padding: 4px 8px;
-  border-radius: 50%;
-  font-weight: bold;
-  font-family: 'Roboto', sans-serif;
-}
-
 @media (max-width: 829px) and (min-width: 769px) {
   .controls {
     display: flex;

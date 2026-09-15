@@ -5,18 +5,22 @@ import { ATTRIBUTE_ICONS, RARITY_COLORS, CATEGORY_COLORS, getTypeLabel, getTypeI
 import { LEVEL_BADGE_IMAGES } from '../../../../../lib/utils/levelBadges';
 import styles from './carditem.module.css';
 
-const CardItem = ({ card, onAction, actionLabel, addCard }) => {
+const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
-  const { name, image, category, rarity, level, atk, def } = card;
+  const { name, image, category, rarity, level, atk, def, amount } = card;
 
   const rarityColor = RARITY_COLORS[rarity] || 'gray';
   const categoryColor = CATEGORY_COLORS[category] || '#1a1a1a';
   const typeLabel = getTypeLabel(card);
   const Icon = getTypeIcon(card);
   const AttributeIcon = category !== 'support' ? ATTRIBUTE_ICONS[card.attribute] : null;
-  const showStats = category === 'monster' || category === 'fusion';
+  // In an inventory-style list (the collection, or the deck-builder's "add a card" browser) how
+  // many copies you own is more useful here than combat stats — full stats are still one click
+  // away in CardModal. Everywhere else (e.g. a deck's already-picked cards, one tile per copy)
+  // keeps showing ATK/DEF.
+  const showStats = !showAmount && (category === 'monster' || category === 'fusion');
 
   const handleCardClick = () => {
     setIsModalOpen(true);
@@ -71,6 +75,7 @@ const CardItem = ({ card, onAction, actionLabel, addCard }) => {
                 {atk ?? 0}/{def ?? 0}
               </span>
             )}
+            {showAmount && <span className={styles.statBadge}>x{amount ?? 1}</span>}
           </div>
         </div>
 

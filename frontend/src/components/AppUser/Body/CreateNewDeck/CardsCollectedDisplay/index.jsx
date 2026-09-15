@@ -148,12 +148,8 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
                 onAction={addCard ? () => onAddCard(card) : undefined}
                 actionLabel={addCard ? '+ Añadir' : undefined}
                 addCard={addCard}
+                showAmount
               />
-              {card.amount > 1 && (
-                <div className={styles.cardAmount}>
-                  <span>x{card.amount}</span>
-                </div>
-              )}
             </div>
           ))
         )}
