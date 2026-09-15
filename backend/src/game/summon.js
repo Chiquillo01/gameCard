@@ -1,5 +1,5 @@
 const { getCard } = require('./cardIndex');
-const { player, placeMonster, moveToZone, log, opponentIndex } = require('./zones');
+const { player, placeMonster, moveToZone, findInstanceLocation, log, opponentIndex } = require('./zones');
 const { payCost } = require('./effects/costs');
 const { fireTrigger, recomputeContinuous } = require('./effectEngine');
 const { matchesCardFilter } = require('./filters');
@@ -9,6 +9,10 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
   const pl = player(state, controllerIndex);
   if (pl.normalSummonUsed) return { ok: false, reason: 'normal-summon-used' };
   if (!pl.hand.includes(instanceId)) return { ok: false, reason: 'not-in-hand' };
+  if (position !== 'attack' && position !== 'defense') return { ok: false, reason: 'invalid-position' };
+  // A face-down monster is always "set" in defense — face-up attack, face-up defense, and
+  // face-down defense are the only three legal states; a face-down attack position isn't one.
+  if (faceDown && position !== 'defense') return { ok: false, reason: 'invalid-position' };
 
   const cardId = cardIdFromInstance(instanceId);
   const card = getCard(cardId);
@@ -31,6 +35,20 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
   return { ok: true };
 }
 
+// True when `loc` is a zone the controller actually owns and that satisfies `req.zone` (a
+// string or array of "hand" | "field" | "graveyard"; materials with no `zone` default to
+// "hand", matching a classic fusion that discards component monsters from your hand).
+function materialLocationSatisfies(loc, controllerIndex, req) {
+  if (!loc || loc.ownerIndex !== controllerIndex) return false;
+  const allowed = req.zone ? (Array.isArray(req.zone) ? req.zone : [req.zone]) : ['hand'];
+  return allowed.some((z) => {
+    if (z === 'hand') return loc.zone === 'hand';
+    if (z === 'graveyard') return loc.zone === 'graveyard';
+    if (z === 'field') return loc.zone === 'field:monster' || loc.zone === 'field:support' || loc.zone === 'field:territory';
+    return false;
+  });
+}
+
 // Fusion/compilado summon. `materialInstanceIds` must satisfy every requirement in
 // card.activationCost.args.materials (see backend game docs / compilate_costs.json).
 function compileSummon(state, controllerIndex, compiladoInstanceId, materialInstanceIds) {
@@ -48,6 +66,12 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
     let matched = 0;
     for (const id of pool) {
       if (usedIds.has(id)) continue;
+      // Every candidate must be owned by the summoning player and sitting in a zone this
+      // requirement actually allows — otherwise a crafted request could "borrow" a card the
+      // opponent owns (or one that's already on the field/graveyard for a hand-only recipe)
+      // and have it moved into the summoner's own graveyard.
+      const loc = findInstanceLocation(state, id);
+      if (!materialLocationSatisfies(loc, controllerIndex, req)) continue;
       const mCard = getCard(cardIdFromInstance(id));
       if (matchesCardFilter(mCard, req)) { usedIds.add(id); matched++; }
       if (matched >= req.count) break;

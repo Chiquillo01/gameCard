@@ -12,14 +12,22 @@ function makeCtx(state, controllerIndex, effect, sourceInstanceId) {
 // Rulebook: "Si está en el cementerio / Si está en el exilio" (monsters) and the second,
 // graveyard-only effect some Apoyo Normal cards have both require the card to actually be
 // sitting in that zone right now — this is the shared convention effect authoring used for
-// that ("onActivation" with args.from, or the shorthand "onGraveyard").
+// that ("onActivation" with args.from, or the shorthand "onGraveyard"). A few effects instead
+// require the source still be in hand, or already out on the field.
 function requiredZoneFor(effect) {
   if (!effect.trigger) return null;
   if (effect.trigger.fn === 'onActivation' && effect.trigger.args && effect.trigger.args.from) {
-    return effect.trigger.args.from === 'graveyard' ? 'graveyard' : effect.trigger.args.from === 'banished' ? 'banished' : null;
+    return ['graveyard', 'banished', 'hand', 'field'].includes(effect.trigger.args.from) ? effect.trigger.args.from : null;
   }
   if (effect.trigger.fn === 'onGraveyard') return 'graveyard';
   return null;
+}
+
+// True when `loc` (from findInstanceLocation) is actually in the zone `requiredZone` names.
+function locationIsInZone(loc, requiredZone) {
+  if (!loc) return false;
+  if (requiredZone === 'field') return loc.zone === 'field:monster' || loc.zone === 'field:support' || loc.zone === 'field:territory';
+  return loc.zone === requiredZone;
 }
 
 // Player-initiated activation (quick / ignition / activated). Returns {ok, reason?}.
@@ -30,8 +38,8 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
   const requiredZone = requiredZoneFor(effect);
   if (requiredZone) {
     const loc = findInstanceLocation(state, sourceInstanceId);
-    if (!loc || loc.zone !== requiredZone || loc.ownerIndex !== controllerIndex) {
-      return { ok: false, reason: requiredZone === 'graveyard' ? 'not-in-graveyard' : 'not-in-exile' };
+    if (!loc || loc.ownerIndex !== controllerIndex || !locationIsInZone(loc, requiredZone)) {
+      return { ok: false, reason: `not-in-${requiredZone === 'banished' ? 'exile' : requiredZone}` };
     }
   }
 
@@ -135,4 +143,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { activateEffect, fireTrigger, recomputeContinuous, getEffectiveStats };
+module.exports = { activateEffect, fireTrigger, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone };

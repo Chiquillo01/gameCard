@@ -8,6 +8,8 @@ import { getUserDecks } from '../../../../lib/utils/apiDeck';
 import { startPveDuel, getDuelState, sendDuelAction } from '../../../../lib/utils/apiDuel';
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 
+const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
+
 const PHASE_LABELS = {
   draw: 'Robo',
   standby: 'Espera',
@@ -16,6 +18,16 @@ const PHASE_LABELS = {
   main2: 'Principal 2',
   end: 'Final',
 };
+
+const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', extra: 'Mazo-C' };
+
+// "WASP_SWARM_GRAVE" -> "Wasp Swarm Grave" — the server only sends an effect id, no human label.
+const formatEffectId = (id) =>
+  id
+    .toLowerCase()
+    .split('_')
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(' ');
 
 const showToast = (type, message) =>
   toast[type](message, {
@@ -36,6 +48,14 @@ const DuelPage = () => {
   const [starting, setStarting] = useState(false);
   const [view, setView] = useState(null);
   const [selectedAttacker, setSelectedAttacker] = useState(null);
+  // A monster from hand is waiting on the player to pick attack/defense/set.
+  const [pendingSummon, setPendingSummon] = useState(null);
+  // A Veloz/Contraataque support from hand is waiting on activate-now-vs-set-face-down.
+  const [pendingSupportChoice, setPendingSupportChoice] = useState(null);
+  // Fusion in progress: the Compilación card plus the material instanceIds picked so far.
+  const [fusion, setFusion] = useState(null);
+  // A Cementerio/Exilio/Mazo-C pile the player clicked open: { side: 'me'|'enemy', zone }.
+  const [openPile, setOpenPile] = useState(null);
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -85,27 +105,142 @@ const DuelPage = () => {
       const result = await sendDuelAction(matchId, action);
       setView(result.state);
       if (!result.ok) showToast('error', humanizeReason(result.reason));
+      return result;
     } catch (e) {
       showToast('error', 'Error al procesar la acción.');
+      return { ok: false };
     }
+  };
+
+  const cancelPendingChoices = () => {
+    setPendingSummon(null);
+    setPendingSupportChoice(null);
+    setFusion(null);
+    setSelectedAttacker(null);
+  };
+
+  const startFusion = (card) => {
+    setFusion({ instanceId: card.instanceId, materials: new Set() });
+    setOpenPile(null);
+  };
+
+  const onHandCardClick = (card) => {
+    const isMyTurn = view.turnPlayer === view.you;
+    const isMainPhase = view.phase === 'main1' || view.phase === 'main2';
+    if (!isMyTurn || !isMainPhase) {
+      showToast('info', 'Solo puedes jugar cartas en tu fase principal.');
+      return;
+    }
+
+    if (fusion) {
+      if (card.instanceId === fusion.instanceId || card.category !== 'monster') return;
+      toggleFusionMaterial(card.instanceId);
+      return;
+    }
+
+    if (card.category === 'fusion') {
+      startFusion(card);
+      return;
+    }
+
+    if (card.category === 'support') {
+      if (card.subtype === 'instant' || card.subtype === 'counter') {
+        setPendingSupportChoice(card.instanceId);
+        return;
+      }
+      act({ type: 'ACTIVATE_SUPPORT', instanceId: card.instanceId });
+      return;
+    }
+
+    setPendingSummon(card.instanceId);
+  };
+
+  const toggleFusionMaterial = (instanceId) => {
+    setFusion((prev) => {
+      if (!prev) return prev;
+      const materials = new Set(prev.materials);
+      if (materials.has(instanceId)) materials.delete(instanceId);
+      else materials.add(instanceId);
+      return { ...prev, materials };
+    });
+  };
+
+  const confirmSummon = (position, faceDown) => {
+    if (!pendingSummon) return;
+    act({ type: 'NORMAL_SUMMON', instanceId: pendingSummon, position, faceDown });
+    setPendingSummon(null);
+  };
+
+  const confirmSupportChoice = (setFaceDown) => {
+    if (!pendingSupportChoice) return;
+    act({ type: 'ACTIVATE_SUPPORT', instanceId: pendingSupportChoice, setFaceDown });
+    setPendingSupportChoice(null);
+  };
+
+  const confirmFusion = async () => {
+    if (!fusion) return;
+    const result = await act({
+      type: 'COMPILE_SUMMON',
+      instanceId: fusion.instanceId,
+      materialInstanceIds: [...fusion.materials],
+    });
+    if (result?.ok) setFusion(null);
+  };
+
+  const onFieldMonsterClick = (monster, isOwn) => {
+    if (!monster) return;
+    if (fusion) {
+      if (isOwn) toggleFusionMaterial(monster.instanceId);
+      return;
+    }
+    if (isOwn) {
+      if (view.turnPlayer !== view.you || view.phase !== 'battle') return;
+      setSelectedAttacker(monster.instanceId === selectedAttacker ? null : monster.instanceId);
+      return;
+    }
+    if (!selectedAttacker || monster.faceDown) return;
+    act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: monster.instanceId });
+    setSelectedAttacker(null);
+  };
+
+  const onDirectAttack = () => {
+    if (!selectedAttacker) return;
+    act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: null });
+    setSelectedAttacker(null);
+  };
+
+  const activateEffect = (effectId, sourceInstanceId) => {
+    act({ type: 'ACTIVATE_EFFECT', effectId, sourceInstanceId });
+    setOpenPile(null);
   };
 
   if (!matchId) {
     return (
       <div className={styles.duelPage}>
-        <h2>Nueva Partida</h2>
-        <div className={styles.picker}>
-          <select value={selectedDeckId} onChange={(e) => setSelectedDeckId(e.target.value)}>
-            <option value=''>Elige un mazo</option>
-            {decks.map((d) => (
-              <option key={d._id} value={d._id}>
-                {d.deckTitle}
-              </option>
-            ))}
-          </select>
-          <button className={styles.startButton} disabled={!selectedDeckId || starting} onClick={handleStart}>
-            {starting ? 'Iniciando...' : 'Jugar contra la IA'}
-          </button>
+        <div className={styles.pickerWrapper}>
+          <div className={styles.titleBanner}>
+            <div className={styles.titlePlaque}>
+              <div className={styles.titleText}>Nueva Partida</div>
+            </div>
+          </div>
+
+          <div className={styles.picker}>
+            <select
+              className={styles.deckSelect}
+              value={selectedDeckId}
+              onChange={(e) => setSelectedDeckId(e.target.value)}
+            >
+              <option value=''>Elige un mazo</option>
+              {decks.map((d) => (
+                <option key={d._id} value={d._id}>
+                  {d.deckTitle}
+                </option>
+              ))}
+            </select>
+            <button className={styles.startButton} disabled={!selectedDeckId || starting} onClick={handleStart}>
+              {starting ? 'Iniciando...' : 'Jugar contra la IA'}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -119,56 +254,75 @@ const DuelPage = () => {
   const me = view.players[you];
   const enemy = view.players[opp];
 
-  const onHandCardClick = (card) => {
-    if (!isMyTurn || (view.phase !== 'main1' && view.phase !== 'main2')) {
-      showToast('info', 'Solo puedes jugar cartas en tu fase principal.');
-      return;
-    }
-    if (card.category === 'support') {
-      act({ type: 'ACTIVATE_SUPPORT', instanceId: card.instanceId });
-    } else {
-      act({ type: 'NORMAL_SUMMON', instanceId: card.instanceId, position: 'attack' });
-    }
+  // `inline` renders plain buttons in a row (for the pile modal's list); the default is a small
+  // dropdown that pops up above the card (for a slot out on the field).
+  const renderEffectButtons = (card, inline = false) => {
+    if (!card.availableEffects || !card.availableEffects.length) return null;
+    return (
+      <div className={inline ? styles.effectButtonsInline : styles.effectButtons}>
+        {card.availableEffects.map((effectId) => (
+          <button
+            key={effectId}
+            className={styles.effectButton}
+            onClick={(e) => {
+              e.stopPropagation();
+              activateEffect(effectId, card.instanceId);
+            }}
+            title={`Activar ${formatEffectId(effectId)}`}
+          >
+            {formatEffectId(effectId)}
+          </button>
+        ))}
+      </div>
+    );
   };
 
-  const onOwnMonsterClick = (monster) => {
-    if (!isMyTurn || view.phase !== 'battle' || !monster) return;
-    setSelectedAttacker(monster.instanceId === selectedAttacker ? null : monster.instanceId);
-  };
-
-  const onEnemyMonsterClick = (monster) => {
-    if (!selectedAttacker) return;
-    act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: monster.instanceId });
-    setSelectedAttacker(null);
-  };
-
-  const onDirectAttack = () => {
-    if (!selectedAttacker) return;
-    act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: null });
-    setSelectedAttacker(null);
-  };
+  const isFusionMaterialCandidate = (card) => !!fusion && card.instanceId !== fusion.instanceId && card.category === 'monster';
 
   return (
     <div className={styles.duelPage}>
       {view.status === 'finished' && (
-        <div className={styles.gameOver}>
-          {view.winnerIndex === you ? '¡Has ganado la partida!' : view.winnerIndex === opp ? 'Has perdido la partida.' : 'Partida terminada.'}
+        <div className={styles.gameOverOverlay}>
+          <div className={styles.gameOverPlaque}>
+            {view.winnerIndex === you ? '¡Victoria!' : view.winnerIndex === opp ? 'Derrota' : 'Partida terminada'}
+          </div>
         </div>
+      )}
+
+      {openPile && (
+        <PileModal
+          title={PILE_LABELS[openPile.zone]}
+          cards={openPile.side === 'me' ? me[openPile.zone] : enemy[openPile.zone]}
+          onClose={() => setOpenPile(null)}
+          renderCardExtra={(card) =>
+            openPile.side === 'me' && openPile.zone === 'extra' ? (
+              <button className={styles.effectButton} onClick={() => startFusion(card)}>
+                Fusionar
+              </button>
+            ) : (
+              renderEffectButtons(card, true)
+            )
+          }
+        />
       )}
 
       <div className={styles.topBar}>
         <span className={styles.turnInfo}>
           Turno {view.turnNumber} · {isMyTurn ? 'Tu turno' : 'Turno del rival'} · Fase: {PHASE_LABELS[view.phase] || view.phase}
         </span>
-        <div>
-          <button className={styles.actionButton} disabled={!isMyTurn || view.status !== 'active'} onClick={() => act({ type: 'ADVANCE_PHASE' })}>
+        <div className={styles.topBarActions}>
+          <button
+            className={styles.actionButton}
+            disabled={!isMyTurn || view.status !== 'active'}
+            onClick={() => act({ type: 'ADVANCE_PHASE' })}
+          >
             Avanzar fase
-          </button>{' '}
+          </button>
           {selectedAttacker && enemy.field.monsters.every((m) => !m) && (
-            <button className={styles.actionButton} onClick={onDirectAttack}>
+            <button className={styles.directAttackButton} onClick={onDirectAttack}>
               Ataque directo
             </button>
-          )}{' '}
+          )}
           <button className={styles.surrenderButton} onClick={() => act({ type: 'SURRENDER' })}>
             Rendirse
           </button>
@@ -176,81 +330,106 @@ const DuelPage = () => {
       </div>
 
       <div className={styles.board}>
-        <div className={styles.playerRow}>
-          <div className={styles.playerHeader}>
-            <span>Rival — VP: {enemy.vp}</span>
-            <span>Mano: {enemy.handCount}</span>
-          </div>
-          <div className={styles.zoneRow}>
-            {enemy.field.support.map((s, i) => (
-              <div key={`es${i}`} className={styles.slot}>
-                {s && <div className={styles.faceDown} />}
-              </div>
-            ))}
-            <div className={styles.slot} title='Territorio'>
-              {enemy.field.territory && <img src={enemy.field.territory.image} alt={enemy.field.territory.name} title={enemy.field.territory.name} />}
-            </div>
-          </div>
-          <div className={styles.zoneRow}>
-            {enemy.field.monsters.map((m, i) => (
-              <div key={`em${i}`} className={`${styles.slot} ${m?.position === 'defense' ? styles.defense : ''}`} onClick={() => m && !m.faceDown && onEnemyMonsterClick(m)}>
-                {m && !m.faceDown && (
-                  <>
-                    <img src={m.image} alt={m.name} title={m.name} />
-                    <span className={styles.statBadge}>{m.atk} / {m.def}</span>
-                  </>
-                )}
-                {m && m.faceDown && <div className={styles.faceDown} />}
-              </div>
-            ))}
-          </div>
+        <div className={styles.playerHeader}>
+          <span className={styles.vpBadge}>VP: {enemy.vp}</span>
+          <span className={styles.handCountBadge}>Mano: {enemy.handCount}</span>
         </div>
+        <PlayerField
+          player={enemy}
+          isOwner={false}
+          flipped
+          selectedAttacker={selectedAttacker}
+          fusion={fusion}
+          onMonsterClick={(m) => onFieldMonsterClick(m, false)}
+          onOpenPile={(zone) => setOpenPile({ side: 'enemy', zone })}
+          renderEffectButtons={renderEffectButtons}
+        />
 
-        <div className={styles.playerRow}>
-          <div className={styles.playerHeader}>
-            <span>Tú — VP: {me.vp}</span>
-            <span>Pixeles: {me.pixelcoins}</span>
-          </div>
-          <div className={styles.zoneRow}>
-            {me.field.monsters.map((m, i) => (
-              <div
-                key={`mm${i}`}
-                className={`${styles.slot} ${m?.position === 'defense' ? styles.defense : ''} ${m && m.instanceId === selectedAttacker ? styles.selected : ''}`}
-                onClick={() => onOwnMonsterClick(m)}
-              >
-                {m && (
-                  <>
-                    <img src={m.image} alt={m.name} title={m.name} />
-                    <span className={styles.statBadge}>{m.atk} / {m.def}</span>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className={styles.zoneRow}>
-            {me.field.support.map((s, i) => (
-              <div key={`ms${i}`} className={styles.slot}>
-                {s && <img src={s.image} alt={s.name} title={s.name} />}
-              </div>
-            ))}
-            <div className={styles.slot} title='Territorio'>
-              {me.field.territory && <img src={me.field.territory.image} alt={me.field.territory.name} title={me.field.territory.name} />}
-            </div>
-          </div>
+        <div className={styles.divider} />
+
+        <PlayerField
+          player={me}
+          isOwner
+          flipped={false}
+          selectedAttacker={selectedAttacker}
+          fusion={fusion}
+          onMonsterClick={(m) => onFieldMonsterClick(m, true)}
+          onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
+          renderEffectButtons={renderEffectButtons}
+        />
+        <div className={styles.playerHeader}>
+          <span className={styles.vpBadge}>VP: {me.vp}</span>
+          <span className={styles.pixelBadge}>
+            <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {me.pixelcoins}
+          </span>
         </div>
 
         <div className={styles.hand}>
           {me.hand.map((card) => (
-            <div key={card.instanceId} className={styles.handCard} onClick={() => onHandCardClick(card)} title={card.name}>
+            <div
+              key={card.instanceId}
+              className={`${styles.handCard} ${
+                fusion && (fusion.instanceId === card.instanceId || (isFusionMaterialCandidate(card) && fusion.materials.has(card.instanceId)))
+                  ? styles.selected
+                  : ''
+              }`}
+              onClick={() => onHandCardClick(card)}
+              title={card.name}
+            >
               <img src={card.image} alt={card.name} />
             </div>
           ))}
         </div>
+
+        {fusion && (
+          <div className={styles.choiceBar}>
+            <span>Selecciona los materiales en tu mano o campo ({fusion.materials.size} elegidos)</span>
+            <button className={styles.directAttackButton} onClick={confirmFusion}>
+              Confirmar Fusión
+            </button>
+            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {pendingSummon && (
+          <div className={styles.choiceBar}>
+            <span>¿Cómo invocas esta carta?</span>
+            <button className={styles.actionButton} onClick={() => confirmSummon('attack', false)}>
+              Ataque
+            </button>
+            <button className={styles.actionButton} onClick={() => confirmSummon('defense', false)}>
+              Defensa
+            </button>
+            <button className={styles.actionButton} onClick={() => confirmSummon('defense', true)}>
+              Boca abajo
+            </button>
+            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {pendingSupportChoice && (
+          <div className={styles.choiceBar}>
+            <span>¿Activar ahora o colocar boca abajo?</span>
+            <button className={styles.actionButton} onClick={() => confirmSupportChoice(false)}>
+              Activar
+            </button>
+            <button className={styles.actionButton} onClick={() => confirmSupportChoice(true)}>
+              Boca abajo
+            </button>
+            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
+              Cancelar
+            </button>
+          </div>
+        )}
       </div>
 
       <div className={styles.log}>
         {view.log.map((l, i) => (
-          <div key={i}>
+          <div key={i} className={styles.logLine}>
             [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
           </div>
         ))}
@@ -259,18 +438,149 @@ const DuelPage = () => {
   );
 };
 
+// Renders one player's side of the board as the rulebook's 7-column grid:
+//   row 1: 5 Monster zones, Cementerio, Exilio
+//   row 2: Territorio, 4 Apoyo zones, (—), Mazo-C
+//   row 3: (—) x6, Mazo
+// `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
+// next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
+function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMonsterClick, onOpenPile, renderEffectButtons }) {
+  const row = (r) => (flipped ? 4 - r : r);
+
+  return (
+    <div className={styles.fieldGrid}>
+      {player.field.monsters.map((m, i) => (
+        <div
+          key={`m${i}`}
+          style={{ gridRow: row(1), gridColumn: i + 1 }}
+          className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''} ${
+            m && (m.instanceId === selectedAttacker || (fusion && isOwner && fusion.materials.has(m.instanceId))) ? styles.selected : ''
+          }`}
+          onClick={() => m && onMonsterClick(m)}
+        >
+          {m && !m.faceDown && (
+            <>
+              <img src={m.image} alt={m.name} title={m.name} />
+              <span className={styles.statBadge}>
+                {m.atk} / {m.def}
+              </span>
+              {isOwner && !fusion && renderEffectButtons(m)}
+            </>
+          )}
+          {m && m.faceDown && <div className={styles.faceDown} />}
+        </div>
+      ))}
+
+      <PileSlot
+        style={{ gridRow: row(1), gridColumn: 6 }}
+        label='Cementerio'
+        count={player.graveyard.length}
+        onClick={() => onOpenPile('graveyard')}
+      />
+      <PileSlot
+        style={{ gridRow: row(1), gridColumn: 7 }}
+        label='Exilio'
+        count={player.banished.length}
+        onClick={() => onOpenPile('banished')}
+      />
+
+      <div style={{ gridRow: row(2), gridColumn: 1 }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio'>
+        {player.field.territory && (
+          <>
+            <img src={player.field.territory.image} alt={player.field.territory.name} title={player.field.territory.name} />
+            {isOwner && renderEffectButtons(player.field.territory)}
+          </>
+        )}
+      </div>
+
+      {player.field.support.map((s, i) => (
+        <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte'>
+          {s && !(s.faceDown && !isOwner) && <img src={s.image} alt={s.name} title={s.name} />}
+          {s && s.faceDown && isOwner && <div className={styles.faceDown} />}
+          {s && isOwner && renderEffectButtons(s)}
+        </div>
+      ))}
+
+      {isOwner ? (
+        <PileSlot
+          style={{ gridRow: row(2), gridColumn: 7 }}
+          label='Mazo-C'
+          count={player.extra ? player.extra.length : player.extraCount}
+          onClick={() => onOpenPile('extra')}
+        />
+      ) : (
+        <PileSlot style={{ gridRow: row(2), gridColumn: 7 }} label='Mazo-C' count={player.extraCount} />
+      )}
+
+      <PileSlot style={{ gridRow: row(3), gridColumn: 7 }} label='Mazo' count={player.deckCount} />
+    </div>
+  );
+}
+
+// A single face-down pile with a count badge — Cementerio/Exilio/Mazo-C/Mazo are always exactly
+// one board slot each, however many cards they hold (see the rulebook grid). Clickable only when
+// `onClick` is given (Cementerio/Exilio are public on both sides; Mazo-C only for its owner).
+function PileSlot({ style, label, count, onClick }) {
+  return (
+    <div
+      style={style}
+      className={`${styles.slot} ${styles.pileSlot} ${onClick ? styles.pileSlotClickable : ''}`}
+      title={label}
+      onClick={onClick}
+    >
+      <div className={styles.faceDown} />
+      <span className={styles.pileLabel}>{label}</span>
+      <span className={styles.pileCount}>{count}</span>
+    </div>
+  );
+}
+
+function PileModal({ title, cards, onClose, renderCardExtra }) {
+  return (
+    <div className={styles.pileOverlay} onClick={onClose}>
+      <div className={styles.pileModal} onClick={(e) => e.stopPropagation()}>
+        <h3 className={styles.pileModalTitle}>
+          {title} ({cards.length})
+        </h3>
+        <div className={styles.pileModalList}>
+          {cards.length === 0 && <p className={styles.pileEmpty}>Vacío.</p>}
+          {cards.map((card) => (
+            <div key={card.instanceId} className={styles.pileModalCard}>
+              <img src={card.image} alt={card.name} />
+              <span className={styles.pileModalCardName}>{card.name}</span>
+              {renderCardExtra && renderCardExtra(card)}
+            </div>
+          ))}
+        </div>
+        <button className={styles.surrenderButton} onClick={onClose}>
+          Cerrar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function humanizeReason(reason) {
   const map = {
     'normal-summon-used': 'Ya has hecho tu invocación normal este turno.',
     'cannot-pay-summon-cost': 'No puedes pagar el coste de invocación.',
     'no-field-space': 'No tienes espacio en el campo.',
     'not-in-hand': 'Esa carta no está en tu mano.',
+    'invalid-position': 'Esa combinación de posición no es válida.',
+    'not-available': 'Esa carta de fusión no está disponible.',
     'summoning-sickness': 'Ese monstruo no puede atacar el turno en que fue invocado.',
     'already-attacked': 'Ese monstruo ya atacó este turno.',
     'not-battle-phase': 'Solo puedes atacar en la fase de batalla.',
     'must-target-a-monster': 'El rival tiene monstruos: debes elegir uno como objetivo.',
     'not-your-turn': 'No es tu turno.',
+    'not-in-graveyard': 'Esa carta no está en el cementerio.',
+    'not-in-exile': 'Esa carta no está en el exilio.',
+    'cannot-pay-cost': 'No puedes pagar el coste de este efecto.',
+    'once-per-turn': 'Ese efecto ya se activó este turno.',
+    'conditions-not-met': 'No se cumplen las condiciones para ese efecto.',
+    'unknown-effect': 'Ese efecto no existe.',
   };
+  if (reason && reason.startsWith('missing-material')) return 'Los materiales elegidos no cumplen el requisito de fusión.';
   return map[reason] || 'Acción no válida.';
 }
 

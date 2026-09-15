@@ -5,7 +5,7 @@ const { Deck } = require('../../data/Schema/deck');
 const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
-const { createMatch, applyAction } = require('../../game/engine');
+const { createMatch, applyAction, viewFor } = require('../../game/engine');
 
 beforeAll(async () => {
   await connectDB();
@@ -78,8 +78,7 @@ describe('Territorio upkeep', () => {
     expect(result.ok).toBe(true);
     expect(state.players[0].field.territory).not.toBeNull();
 
-    applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main1 -> main2 (turn 1 has no battle phase)
-    applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main2 -> end, triggers upkeep check
+    applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main1 -> end (no battle/main2 on turn 1), triggers upkeep check
 
     // Only player 0 has a Territorio, so the "both players have one" upkeep never applies.
     expect(state.players[0].pixelcoins).toBe(before - 1); // -1 just for activation cost, not upkeep
@@ -147,16 +146,41 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
     expect(tooEarly.ok).toBe(false);
     expect(tooEarly.reason).toBe('not-in-graveyard');
 
+    // The view the client uses to decide which buttons to show should agree: while the card is
+    // in hand, its hand-only search effect is offered but its graveyard-only effect is not.
+    const handView = viewFor(state, 0);
+    const handCardView = handView.players[0].hand.find((c) => c.instanceId === instanceId);
+    expect(handCardView.availableEffects).toContain('WASP_SWARM_SEARCH');
+    expect(handCardView.availableEffects).not.toContain('WASP_SWARM_GRAVE');
+
     // Playing a Normal Apoyo resolves its primary effect and sends it straight to the graveyard.
     const activate = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId });
     expect(activate.ok).toBe(true);
     expect(state.players[0].graveyard).toContain(instanceId);
 
-    // Now its second, graveyard-only effect can be activated.
+    // Now its second, graveyard-only effect can be activated — and the view reflects that too.
+    const graveView = viewFor(state, 0);
+    const graveCardView = graveView.players[0].graveyard.find((c) => c.instanceId === instanceId);
+    expect(graveCardView.availableEffects).toEqual(['WASP_SWARM_GRAVE']);
+
     const fromGrave = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: instanceId });
     expect(fromGrave.ok).toBe(true);
     // WASP_SWARM_GRAVE's action is banishSelf — the card leaves the graveyard for exile.
     expect(state.players[0].graveyard).not.toContain(instanceId);
     expect(state.players[0].banished).toContain(instanceId);
+  });
+
+  it("does not fire the graveyard-only effect just from playing the card off hand", async () => {
+    const state = await makeMatchWithHands(['Enjambre de Avispas'], []);
+    const card = await Card.findOne({ name: 'Enjambre de Avispas' }).lean();
+    const instanceId = state.players[0].hand.find((id) => id.split(':')[1] === card._id.toString());
+
+    const activate = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId });
+    expect(activate.ok).toBe(true);
+
+    // WASP_SWARM_GRAVE (banishSelf) must not have fired during on-play resolution — the card
+    // should land in the graveyard, not skip straight to exile.
+    expect(state.players[0].graveyard).toContain(instanceId);
+    expect(state.players[0].banished).not.toContain(instanceId);
   });
 });

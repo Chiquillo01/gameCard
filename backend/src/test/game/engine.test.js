@@ -99,10 +99,14 @@ describe('Game engine', () => {
     expect(state.players[0].pixelcoins).toBe(12); // 6 starting + 6 income on their second turn
   });
 
-  it('does not have a Battle Phase on the very first turn of the match', async () => {
+  it('skips both Battle and Principal 2 on the very first turn of the match', async () => {
     const state = await makeTestMatch();
-    advanceUntil(state, 1, 'main2');
-    expect(state.phase).toBe('main2'); // reached main2 without ever passing through 'battle'
+    expect(state.phase).toBe('draw');
+    applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // draw -> standby
+    applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // standby -> main1
+    expect(state.phase).toBe('main1');
+    applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main1 -> end (no Battle, so no main2 either)
+    expect(state.phase).toBe('end');
   });
 
   it('lets the turn player normal-summon a free monster from hand, once per turn', async () => {
@@ -117,6 +121,27 @@ describe('Game engine', () => {
     const second = applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: secondInstanceId, position: 'attack' });
     expect(second.ok).toBe(false);
     expect(second.reason).toBe('normal-summon-used');
+  });
+
+  it('supports exactly the 3 legal positions and rejects a face-down attack', async () => {
+    // Face-up attack, face-up defense, and face-down ("set") defense are legal; a face-down
+    // monster in attack position is not a real state a card can be in.
+    const attackState = await makeTestMatch();
+    const attackResult = applyAction(attackState, 0, { type: 'NORMAL_SUMMON', instanceId: attackState.players[0].hand[0], position: 'attack' });
+    expect(attackResult.ok).toBe(true);
+
+    const defenseState = await makeTestMatch();
+    const defenseResult = applyAction(defenseState, 0, { type: 'NORMAL_SUMMON', instanceId: defenseState.players[0].hand[0], position: 'defense' });
+    expect(defenseResult.ok).toBe(true);
+
+    const setState = await makeTestMatch();
+    const setResult = applyAction(setState, 0, { type: 'NORMAL_SUMMON', instanceId: setState.players[0].hand[0], position: 'defense', faceDown: true });
+    expect(setResult.ok).toBe(true);
+
+    const illegalState = await makeTestMatch();
+    const illegalResult = applyAction(illegalState, 0, { type: 'NORMAL_SUMMON', instanceId: illegalState.players[0].hand[0], position: 'attack', faceDown: true });
+    expect(illegalResult.ok).toBe(false);
+    expect(illegalResult.reason).toBe('invalid-position');
   });
 
   it('rejects actions from the player who does not have the turn', async () => {
