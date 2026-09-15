@@ -3,7 +3,7 @@ const { player, placeSupport, placeTerritory, moveToZone, log } = require('./zon
 const { payCost } = require('./effects/costs');
 const { checkConditions } = require('./effects/conditions');
 const { runAction, checkWin } = require('./effects/actions');
-const { recomputeContinuous } = require('./effectEngine');
+const { recomputeContinuous, requiredZoneFor } = require('./effectEngine');
 const { cardIdFromInstance } = require('./deckUtils');
 
 // Per Rulebook.pdf "Tipos de efectos de Apoyos": Normal cards resolve immediately and go to the
@@ -65,10 +65,16 @@ function activateSupport(state, controllerIndex, instanceId, { targets = [], set
   return { ok: true };
 }
 
+// Resolves a support card's own on-play effect(s) — called right as the card is activated from
+// hand. A card can also grant a SEPARATE effect meant to be activated later, once it's actually
+// sitting in the graveyard/exile/back on the field (e.g. Enjambre de Avispas' graveyard ability)
+// — those are only reachable through a later, explicit ACTIVATE_EFFECT, never fired here.
 function resolveCardEffects(ctx, card, targets) {
   (card.effectCodes || []).forEach((effectId) => {
     const effect = getEffect(effectId);
     if (!effect) return;
+    const requiredZone = requiredZoneFor(effect);
+    if (requiredZone === 'graveyard' || requiredZone === 'banished' || requiredZone === 'field') return;
     if (!checkConditions(ctx, effect.conditions)) return;
     (effect.actions || []).forEach((step) => runAction(ctx, step, targets));
   });

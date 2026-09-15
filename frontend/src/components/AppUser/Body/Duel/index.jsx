@@ -19,6 +19,14 @@ const PHASE_LABELS = {
   end: 'Final',
 };
 
+// "WASP_SWARM_GRAVE" -> "Wasp Swarm Grave" — the server only sends an effect id, no human label.
+const formatEffectId = (id) =>
+  id
+    .toLowerCase()
+    .split('_')
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(' ');
+
 const showToast = (type, message) =>
   toast[type](message, {
     position: 'top-right',
@@ -38,6 +46,12 @@ const DuelPage = () => {
   const [starting, setStarting] = useState(false);
   const [view, setView] = useState(null);
   const [selectedAttacker, setSelectedAttacker] = useState(null);
+  // A monster from hand is waiting on the player to pick attack/defense/set.
+  const [pendingSummon, setPendingSummon] = useState(null);
+  // A Veloz/Contraataque support from hand is waiting on activate-now-vs-set-face-down.
+  const [pendingSupportChoice, setPendingSupportChoice] = useState(null);
+  // Fusion in progress: the Compilación card plus the material instanceIds picked so far.
+  const [fusion, setFusion] = useState(null);
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -87,9 +101,107 @@ const DuelPage = () => {
       const result = await sendDuelAction(matchId, action);
       setView(result.state);
       if (!result.ok) showToast('error', humanizeReason(result.reason));
+      return result;
     } catch (e) {
       showToast('error', 'Error al procesar la acción.');
+      return { ok: false };
     }
+  };
+
+  const cancelPendingChoices = () => {
+    setPendingSummon(null);
+    setPendingSupportChoice(null);
+    setFusion(null);
+    setSelectedAttacker(null);
+  };
+
+  const onHandCardClick = (card) => {
+    const isMyTurn = view.turnPlayer === view.you;
+    const isMainPhase = view.phase === 'main1' || view.phase === 'main2';
+    if (!isMyTurn || !isMainPhase) {
+      showToast('info', 'Solo puedes jugar cartas en tu fase principal.');
+      return;
+    }
+
+    if (fusion) {
+      if (card.instanceId === fusion.instanceId || card.category !== 'monster') return;
+      toggleFusionMaterial(card.instanceId);
+      return;
+    }
+
+    if (card.category === 'fusion') {
+      setFusion({ instanceId: card.instanceId, materials: new Set() });
+      return;
+    }
+
+    if (card.category === 'support') {
+      if (card.subtype === 'instant' || card.subtype === 'counter') {
+        setPendingSupportChoice(card.instanceId);
+        return;
+      }
+      act({ type: 'ACTIVATE_SUPPORT', instanceId: card.instanceId });
+      return;
+    }
+
+    setPendingSummon(card.instanceId);
+  };
+
+  const toggleFusionMaterial = (instanceId) => {
+    setFusion((prev) => {
+      if (!prev) return prev;
+      const materials = new Set(prev.materials);
+      if (materials.has(instanceId)) materials.delete(instanceId);
+      else materials.add(instanceId);
+      return { ...prev, materials };
+    });
+  };
+
+  const confirmSummon = (position, faceDown) => {
+    if (!pendingSummon) return;
+    act({ type: 'NORMAL_SUMMON', instanceId: pendingSummon, position, faceDown });
+    setPendingSummon(null);
+  };
+
+  const confirmSupportChoice = (setFaceDown) => {
+    if (!pendingSupportChoice) return;
+    act({ type: 'ACTIVATE_SUPPORT', instanceId: pendingSupportChoice, setFaceDown });
+    setPendingSupportChoice(null);
+  };
+
+  const confirmFusion = async () => {
+    if (!fusion) return;
+    const result = await act({
+      type: 'COMPILE_SUMMON',
+      instanceId: fusion.instanceId,
+      materialInstanceIds: [...fusion.materials],
+    });
+    if (result?.ok) setFusion(null);
+  };
+
+  const onOwnMonsterClick = (monster) => {
+    if (!monster) return;
+    if (fusion) {
+      toggleFusionMaterial(monster.instanceId);
+      return;
+    }
+    if (view.turnPlayer !== view.you || view.phase !== 'battle') return;
+    setSelectedAttacker(monster.instanceId === selectedAttacker ? null : monster.instanceId);
+  };
+
+  const onEnemyMonsterClick = (monster) => {
+    if (!selectedAttacker) return;
+    act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: monster.instanceId });
+    setSelectedAttacker(null);
+  };
+
+  const onDirectAttack = () => {
+    if (!selectedAttacker) return;
+    act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: null });
+    setSelectedAttacker(null);
+  };
+
+  const activateEffect = (effectId, sourceInstanceId) => {
+    act({ type: 'ACTIVATE_EFFECT', effectId, sourceInstanceId });
   };
 
   if (!matchId) {
@@ -132,34 +244,28 @@ const DuelPage = () => {
   const me = view.players[you];
   const enemy = view.players[opp];
 
-  const onHandCardClick = (card) => {
-    if (!isMyTurn || (view.phase !== 'main1' && view.phase !== 'main2')) {
-      showToast('info', 'Solo puedes jugar cartas en tu fase principal.');
-      return;
-    }
-    if (card.category === 'support') {
-      act({ type: 'ACTIVATE_SUPPORT', instanceId: card.instanceId });
-    } else {
-      act({ type: 'NORMAL_SUMMON', instanceId: card.instanceId, position: 'attack' });
-    }
+  const renderEffectButtons = (card) => {
+    if (!card.availableEffects || !card.availableEffects.length) return null;
+    return (
+      <div className={styles.effectButtons}>
+        {card.availableEffects.map((effectId) => (
+          <button
+            key={effectId}
+            className={styles.effectButton}
+            onClick={(e) => {
+              e.stopPropagation();
+              activateEffect(effectId, card.instanceId);
+            }}
+            title={`Activar ${formatEffectId(effectId)}`}
+          >
+            {formatEffectId(effectId)}
+          </button>
+        ))}
+      </div>
+    );
   };
 
-  const onOwnMonsterClick = (monster) => {
-    if (!isMyTurn || view.phase !== 'battle' || !monster) return;
-    setSelectedAttacker(monster.instanceId === selectedAttacker ? null : monster.instanceId);
-  };
-
-  const onEnemyMonsterClick = (monster) => {
-    if (!selectedAttacker) return;
-    act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: monster.instanceId });
-    setSelectedAttacker(null);
-  };
-
-  const onDirectAttack = () => {
-    if (!selectedAttacker) return;
-    act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: null });
-    setSelectedAttacker(null);
-  };
+  const isFusionMaterialCandidate = (card) => !!fusion && card.instanceId !== fusion.instanceId && card.category === 'monster';
 
   return (
     <div className={styles.duelPage}>
@@ -231,17 +337,22 @@ const DuelPage = () => {
               </div>
             ))}
           </div>
+          <ZoneStrip label='Cementerio' cards={enemy.graveyard} />
+          <ZoneStrip label='Exilio' cards={enemy.banished} />
         </div>
 
         <div className={styles.divider} />
 
         <div className={`${styles.playerRow} ${styles.ownRow}`}>
+          <ZoneStrip label='Exilio' cards={me.banished} onEffect={renderEffectButtons} />
+          <ZoneStrip label='Cementerio' cards={me.graveyard} onEffect={renderEffectButtons} />
+
           <div className={styles.zoneRow}>
             {me.field.monsters.map((m, i) => (
               <div
                 key={`mm${i}`}
                 className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''} ${
-                  m && m.instanceId === selectedAttacker ? styles.selected : ''
+                  m && (m.instanceId === selectedAttacker || (fusion && fusion.materials.has(m.instanceId))) ? styles.selected : ''
                 }`}
                 onClick={() => onOwnMonsterClick(m)}
               >
@@ -253,6 +364,7 @@ const DuelPage = () => {
                     </span>
                   </>
                 )}
+                {m && !fusion && renderEffectButtons(m)}
               </div>
             ))}
           </div>
@@ -260,10 +372,12 @@ const DuelPage = () => {
             {me.field.support.map((s, i) => (
               <div key={`ms${i}`} className={styles.slot} title='Soporte'>
                 {s && <img src={s.image} alt={s.name} title={s.name} />}
+                {s && renderEffectButtons(s)}
               </div>
             ))}
             <div className={`${styles.slot} ${styles.territorySlot}`} title='Territorio'>
               {me.field.territory && <img src={me.field.territory.image} alt={me.field.territory.name} title={me.field.territory.name} />}
+              {me.field.territory && renderEffectButtons(me.field.territory)}
             </div>
           </div>
           <div className={styles.playerHeader}>
@@ -274,13 +388,83 @@ const DuelPage = () => {
           </div>
         </div>
 
+        {me.extra && me.extra.length > 0 && (
+          <div className={styles.extraRow}>
+            <span className={styles.extraLabel}>Extra:</span>
+            {me.extra.map((card) => (
+              <div
+                key={card.instanceId}
+                className={`${styles.handCard} ${fusion?.instanceId === card.instanceId ? styles.selected : ''}`}
+                onClick={() => onHandCardClick(card)}
+                title={card.name}
+              >
+                <img src={card.image} alt={card.name} />
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className={styles.hand}>
           {me.hand.map((card) => (
-            <div key={card.instanceId} className={styles.handCard} onClick={() => onHandCardClick(card)} title={card.name}>
+            <div
+              key={card.instanceId}
+              className={`${styles.handCard} ${
+                fusion && (fusion.instanceId === card.instanceId || (isFusionMaterialCandidate(card) && fusion.materials.has(card.instanceId)))
+                  ? styles.selected
+                  : ''
+              }`}
+              onClick={() => onHandCardClick(card)}
+              title={card.name}
+            >
               <img src={card.image} alt={card.name} />
             </div>
           ))}
         </div>
+
+        {fusion && (
+          <div className={styles.choiceBar}>
+            <span>Selecciona los materiales en tu mano o campo ({fusion.materials.size} elegidos)</span>
+            <button className={styles.directAttackButton} onClick={confirmFusion}>
+              Confirmar Fusión
+            </button>
+            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {pendingSummon && (
+          <div className={styles.choiceBar}>
+            <span>¿Cómo invocas esta carta?</span>
+            <button className={styles.actionButton} onClick={() => confirmSummon('attack', false)}>
+              Ataque
+            </button>
+            <button className={styles.actionButton} onClick={() => confirmSummon('defense', false)}>
+              Defensa
+            </button>
+            <button className={styles.actionButton} onClick={() => confirmSummon('defense', true)}>
+              Boca abajo
+            </button>
+            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {pendingSupportChoice && (
+          <div className={styles.choiceBar}>
+            <span>¿Activar ahora o colocar boca abajo?</span>
+            <button className={styles.actionButton} onClick={() => confirmSupportChoice(false)}>
+              Activar
+            </button>
+            <button className={styles.actionButton} onClick={() => confirmSupportChoice(true)}>
+              Boca abajo
+            </button>
+            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
+              Cancelar
+            </button>
+          </div>
+        )}
       </div>
 
       <div className={styles.log}>
@@ -294,18 +478,47 @@ const DuelPage = () => {
   );
 };
 
+// A compact strip for graveyard/exile: just names in a scrollable row, since there can be many.
+// `onEffect` (own zones only) renders activation buttons for cards that offer one right now.
+function ZoneStrip({ label, cards, onEffect }) {
+  if (!cards || !cards.length) return null;
+  return (
+    <div className={styles.zoneStrip}>
+      <span className={styles.zoneStripLabel}>
+        {label} ({cards.length}):
+      </span>
+      <div className={styles.zoneStripCards}>
+        {cards.map((card) => (
+          <div key={card.instanceId} className={styles.zoneStripCard} title={card.name}>
+            <img src={card.image} alt={card.name} />
+            {onEffect && onEffect(card)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function humanizeReason(reason) {
   const map = {
     'normal-summon-used': 'Ya has hecho tu invocación normal este turno.',
     'cannot-pay-summon-cost': 'No puedes pagar el coste de invocación.',
     'no-field-space': 'No tienes espacio en el campo.',
     'not-in-hand': 'Esa carta no está en tu mano.',
+    'not-available': 'Esa carta de fusión no está disponible.',
     'summoning-sickness': 'Ese monstruo no puede atacar el turno en que fue invocado.',
     'already-attacked': 'Ese monstruo ya atacó este turno.',
     'not-battle-phase': 'Solo puedes atacar en la fase de batalla.',
     'must-target-a-monster': 'El rival tiene monstruos: debes elegir uno como objetivo.',
     'not-your-turn': 'No es tu turno.',
+    'not-in-graveyard': 'Esa carta no está en el cementerio.',
+    'not-in-exile': 'Esa carta no está en el exilio.',
+    'cannot-pay-cost': 'No puedes pagar el coste de este efecto.',
+    'once-per-turn': 'Ese efecto ya se activó este turno.',
+    'conditions-not-met': 'No se cumplen las condiciones para ese efecto.',
+    'unknown-effect': 'Ese efecto no existe.',
   };
+  if (reason && reason.startsWith('missing-material')) return 'Los materiales elegidos no cumplen el requisito de fusión.';
   return map[reason] || 'Acción no válida.';
 }
 
