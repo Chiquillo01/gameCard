@@ -132,6 +132,68 @@ describe('Store Controller TEST', () => {
     });
   });
 
+  describe('POST /store/products/:productId/buy-chest with `quantity` (bulk purchase)', () => {
+    let bulkBuyerToken;
+    let cheapChestId;
+
+    beforeAll(async () => {
+      await fakeRequest.post('/auth/register').send({
+        userName: 'Bulk Buyer',
+        email: 'bulk.buyer@gmail.com',
+        password: '123456Ab',
+      });
+      const login = await fakeRequest.post('/auth/login').send({
+        email: 'bulk.buyer@gmail.com',
+        password: '123456Ab',
+      });
+      bulkBuyerToken = login.body.token;
+
+      const cheapChest = new StoreProduct({
+        name: 'Cheap Bulk Chest',
+        description: 'A cheap chest for testing bulk buys',
+        price: { pixelcoins: 100 },
+        reward: { cards: 6 },
+        imageUrl: 'chest3.png',
+        expansion: 'ChestExpansion',
+        category: 'chest',
+      });
+      await cheapChest.save();
+      cheapChestId = cheapChest._id.toString();
+    });
+
+    it('lets a user with 5x the price buy 5 chests in one purchase', async () => {
+      // fresh user starts with 1000 pixelcoins; 5 chests at 100 each costs exactly 500
+      const response = await fakeRequest
+        .post(`/store/products/${cheapChestId}/buy-chest`)
+        .set('Authorization', `Bearer ${bulkBuyerToken}`)
+        .send({ productId: cheapChestId, paymentMethod: 'pixelcoins', quantity: 5 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.obtainedCards).toHaveLength(30); // 6 cards x 5 chests
+      expect(response.body.newBalance.pixelcoins).toBe(500); // 1000 - 500
+    });
+
+    it('rejects a bulk purchase the user cannot afford', async () => {
+      // balance is now 500; 5 more chests would cost 500, which is exactly affordable, so ask
+      // for a quantity that clearly isn't (10 chests = 1000, more than the 500 remaining)
+      const response = await fakeRequest
+        .post(`/store/products/${cheapChestId}/buy-chest`)
+        .set('Authorization', `Bearer ${bulkBuyerToken}`)
+        .send({ productId: cheapChestId, paymentMethod: 'pixelcoins', quantity: 10 });
+
+      expect(response.status).toBe(410);
+    });
+
+    it('rejects an invalid quantity', async () => {
+      const response = await fakeRequest
+        .post(`/store/products/${cheapChestId}/buy-chest`)
+        .set('Authorization', `Bearer ${bulkBuyerToken}`)
+        .send({ productId: cheapChestId, paymentMethod: 'pixelcoins', quantity: 0 });
+
+      expect(response.status).toBe(400);
+    });
+  });
+
   describe('POST /store/products/:productId/buy-structure', () => {
     it('should let a user buy a structure deck and receive exactly its fixed cards', async () => {
       const response = await fakeRequest

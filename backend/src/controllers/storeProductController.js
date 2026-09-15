@@ -6,16 +6,31 @@ const { UserCollection } = require('../data/Schema/userCollection');
 const { cardsObtainedFromChests } = require('./userCollectionController');
 
 const PAYMENT_METHODS = ['pixelcoins', 'pixelgems'];
+// Upper bound on a single bulk purchase, so a crafted request can't ask for an absurd quantity.
+const MAX_BULK_QUANTITY = 10;
 
-// charges `product.price[paymentMethod]` to `user[paymentMethod]`, mutating `user` in place.
-// returns false (nothing charged) when the method is invalid, the product doesn't offer it,
-// or the user can't afford it — callers decide the right status code for each case.
-const chargeUser = (user, product, paymentMethod) => {
+// Reads and validates `quantity` from a request body: defaults to 1, must be a positive integer
+// no greater than MAX_BULK_QUANTITY. Returns null when invalid so the caller can 400 out.
+const parseQuantity = (raw) => {
+  if (raw === undefined) return 1;
+  const quantity = Number(raw);
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_BULK_QUANTITY) return null;
+  return quantity;
+};
+
+// true when `paymentMethod` is valid, the product offers it, and `user` can afford
+// `quantity` of it — never mutates `user`, so it's safe to call before doing any real work.
+const canAfford = (user, product, paymentMethod, quantity = 1) => {
   if (!PAYMENT_METHODS.includes(paymentMethod)) return false;
-  const cost = product.price[paymentMethod];
-  if (!cost || user[paymentMethod] < cost) return false;
-  user[paymentMethod] -= cost;
-  return true;
+  const unitCost = product.price[paymentMethod];
+  if (!unitCost) return false;
+  return user[paymentMethod] >= unitCost * quantity;
+};
+
+// Charges `product.price[paymentMethod] * quantity` to `user[paymentMethod]`, mutating `user` in
+// place. Only call once `canAfford` has already confirmed the purchase is valid.
+const chargeUser = (user, product, paymentMethod, quantity = 1) => {
+  user[paymentMethod] -= product.price[paymentMethod] * quantity;
 };
 
 const getProducts = async (req, res) => {
@@ -88,6 +103,8 @@ const buyChest = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
     const { productId, paymentMethod } = req.body;
+    const quantity = parseQuantity(req.body.quantity);
+    if (quantity === null) return res.status(400).send();
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).send();
@@ -95,12 +112,22 @@ const buyChest = async (req, res) => {
     const chestData = await StoreProduct.findOne({ _id: productId });
     if (!chestData) return res.status(404).send();
 
-    const obtainedCards = await cardsObtainedFromChests(userId, chestData);
-    if (obtainedCards.length !== chestData.reward.cards) return res.status(404).send();
+    if (!canAfford(user, chestData, paymentMethod, quantity)) return res.status(410).send();
 
     const previousBalance = { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems };
-    if (!chargeUser(user, chestData, paymentMethod)) return res.status(410).send();
 
+    // Each chest is drawn and saved to the collection independently, in sequence, so a card
+    // pulled by one chest is already reflected before the next chest's own draw. The user isn't
+    // charged until every chest in the batch has drawn successfully.
+    let obtainedCards = [];
+    for (let i = 0; i < quantity; i++) {
+      // eslint-disable-next-line no-await-in-loop
+      const cardsFromOneChest = await cardsObtainedFromChests(userId, chestData);
+      if (cardsFromOneChest.length !== chestData.reward.cards) return res.status(404).send();
+      obtainedCards = obtainedCards.concat(cardsFromOneChest);
+    }
+
+    chargeUser(user, chestData, paymentMethod, quantity);
     await user.save();
 
     const newBalance = {
@@ -110,15 +137,17 @@ const buyChest = async (req, res) => {
 
     const newOrder = new Order({
       userId: user._id,
-      products: [
-        {
-          productId: chestData._id,
-          name: chestData.name,
-          price: chestData.price,
-          reward: chestData.reward,
-        },
-      ],
-      totalPrice: chestData.price,
+      products: Array(quantity).fill({
+        productId: chestData._id,
+        name: chestData.name,
+        price: chestData.price,
+        reward: chestData.reward,
+      }),
+      totalPrice: {
+        pixelcoins: (chestData.price.pixelcoins || 0) * quantity,
+        pixelgems: (chestData.price.pixelgems || 0) * quantity,
+        euros: (chestData.price.euros || 0) * quantity,
+      },
       previousBalance,
       newBalance,
       status: 'completada',
@@ -138,6 +167,8 @@ const buyStructureDeck = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
     const { productId, paymentMethod } = req.body;
+    const quantity = parseQuantity(req.body.quantity);
+    if (quantity === null) return res.status(400).send();
 
     const user = await User.findById(userId);
     if (!user) return res.status(404).send();
@@ -151,9 +182,10 @@ const buyStructureDeck = async (req, res) => {
     );
     if (cardDocsByName.size !== cardNames.length) return res.status(404).send();
 
-    const previousBalance = { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems };
-    if (!chargeUser(user, product, paymentMethod)) return res.status(410).send();
+    if (!canAfford(user, product, paymentMethod, quantity)) return res.status(410).send();
 
+    const previousBalance = { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems };
+    chargeUser(user, product, paymentMethod, quantity);
     await user.save();
 
     let userCollection = await UserCollection.findOne({ userId });
@@ -161,11 +193,12 @@ const buyStructureDeck = async (req, res) => {
       userCollection = new UserCollection({ userId, cards: [] });
     }
 
-    // Expand each { name, amount } entry into that many individual copies, so the response
-    // (and the collection update below) reflect exactly the cards the deck promises.
+    // Expand each { name, amount } entry into that many individual copies, times how many decks
+    // were bought, so the response (and the collection update below) reflect exactly the cards
+    // the purchase promises.
     const obtainedCards = product.structureCards.flatMap(({ name, amount }) => {
       const card = cardDocsByName.get(name);
-      return Array(amount).fill({ cardId: card._id, name: card.name });
+      return Array(amount * quantity).fill({ cardId: card._id, name: card.name });
     });
     obtainedCards.forEach(({ cardId }) => {
       const existingCard = userCollection.cards.find((card) => card.cardId.toString() === cardId.toString());
@@ -186,15 +219,17 @@ const buyStructureDeck = async (req, res) => {
 
     const newOrder = new Order({
       userId: user._id,
-      products: [
-        {
-          productId: product._id,
-          name: product.name,
-          price: product.price,
-          reward: product.reward,
-        },
-      ],
-      totalPrice: product.price,
+      products: Array(quantity).fill({
+        productId: product._id,
+        name: product.name,
+        price: product.price,
+        reward: product.reward,
+      }),
+      totalPrice: {
+        pixelcoins: (product.price.pixelcoins || 0) * quantity,
+        pixelgems: (product.price.pixelgems || 0) * quantity,
+        euros: (product.price.euros || 0) * quantity,
+      },
       previousBalance,
       newBalance,
       status: 'completada',
@@ -214,6 +249,8 @@ const buyCurrency = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
     const { productId } = req.params;
+    const quantity = parseQuantity(req.body.quantity);
+    if (quantity === null) return res.status(400).json({ error: 'Cantidad inválida.' });
 
     const product = await StoreProduct.findById(productId);
     if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
@@ -227,21 +264,23 @@ const buyCurrency = async (req, res) => {
 
     const previousBalance = { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems };
 
-    user.pixelgems += product.reward.pixelgems;
+    user.pixelgems += product.reward.pixelgems * quantity;
 
     await user.save();
 
     const newOrder = new Order({
       userId: user._id,
-      products: [
-        {
-          productId: product._id,
-          name: product.name,
-          price: product.price,
-          reward: product.reward,
-        },
-      ],
-      totalPrice: product.price,
+      products: Array(quantity).fill({
+        productId: product._id,
+        name: product.name,
+        price: product.price,
+        reward: product.reward,
+      }),
+      totalPrice: {
+        pixelcoins: (product.price.pixelcoins || 0) * quantity,
+        pixelgems: (product.price.pixelgems || 0) * quantity,
+        euros: (product.price.euros || 0) * quantity,
+      },
       previousBalance,
       newBalance: { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems },
       status: 'completada',

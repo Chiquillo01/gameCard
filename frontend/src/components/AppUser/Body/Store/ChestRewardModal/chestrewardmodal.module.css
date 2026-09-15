@@ -18,6 +18,9 @@
   padding: 1.5rem;
   width: 400px;
   max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
   text-align: center;
   font-family: 'VT323', monospace;
 }
@@ -27,12 +30,15 @@
   margin-bottom: 1.25rem;
   font-family: 'Press Start 2P', monospace;
   color: #4a2a10;
+  flex: 0 0 auto;
 }
 
 .cardsList {
   list-style: none;
-  padding: 0;
+  padding: 0 0.25rem 0 0;
   margin: 0 0 1.25rem 0;
+  overflow-y: auto;
+  flex: 1 1 auto;
 }
 
 .cardName {
@@ -43,9 +49,12 @@
   background: rgba(255, 255, 255, 0.35);
   border: 2px solid #b89860;
   color: #4a2a10;
+  opacity: 0;
+  animation: cardReveal 0.35s ease-out forwards;
 }
 
 .closeButton {
+  flex: 0 0 auto;
   background: linear-gradient(180deg, #e05a45 0%, #c0392b 55%, #9c2e20 100%);
   color: #fbf3de;
   padding: 0.625rem 1.25rem;
@@ -56,6 +65,69 @@
   font-family: 'Press Start 2P', monospace;
 }
 
-.closeButton:hover {
+.closeButton:hover:not(:disabled) {
   background: linear-gradient(180deg, #f06a52 0%, #d0432f 55%, #a83322 100%);
+}
+
+.closeButton:disabled {
+  background: linear-gradient(180deg, #a89a86, #7a6d5c);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.openingStage {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 140px;
+  margin-bottom: 1.25rem;
+}
+
+.chestShaking,
+.chestBurst {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.chestShaking {
+  animation: chestShake 0.12s ease-in-out infinite;
+}
+
+.chestBurst {
+  animation: chestBurst 0.35s ease-out forwards;
+}
+
+.burstFlash {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 235, 160, 0.95) 0%, rgba(255, 200, 80, 0.5) 45%, rgba(255, 200, 80, 0) 75%);
+  animation: burstFlash 0.35s ease-out forwards;
+}
+
+@keyframes chestShake {
+  0% { transform: rotate(-4deg) translateX(-2px); }
+  50% { transform: rotate(4deg) translateX(2px); }
+  100% { transform: rotate(-4deg) translateX(-2px); }
+}
+
+@keyframes chestBurst {
+  0% { transform: scale(1); opacity: 1; }
+  60% { transform: scale(1.35); opacity: 1; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+@keyframes burstFlash {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+@keyframes cardReveal {
+  from { opacity: 0; transform: translateY(10px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }

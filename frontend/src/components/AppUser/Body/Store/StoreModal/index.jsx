@@ -14,7 +14,7 @@ const PAYMENT_LABELS = {
   },
 };
 
-const StoreModal = ({ isOpen, onClose, onConfirm, product, paymentMethod }) => {
+const StoreModal = ({ isOpen, onClose, onConfirm, product, paymentMethod, quantity = 1 }) => {
   const { updateUser } = useUser();
 
   if (!product) return null;
@@ -25,7 +25,7 @@ const StoreModal = ({ isOpen, onClose, onConfirm, product, paymentMethod }) => {
     }
 
     try {
-      const response = await onConfirm(product, paymentMethod);
+      const response = await onConfirm(product, paymentMethod, quantity);
       if (response?.data?.newBalance) {
         updateUser(response.data.newBalance);
       }
@@ -33,7 +33,8 @@ const StoreModal = ({ isOpen, onClose, onConfirm, product, paymentMethod }) => {
     } catch (error) {}
   };
 
-  const amount = paymentMethod ? product.price[paymentMethod] : null;
+  const unitAmount = paymentMethod ? product.price[paymentMethod] : null;
+  const amount = unitAmount != null ? unitAmount * quantity : null;
   const payment = PAYMENT_LABELS[paymentMethod];
 
   return (
@@ -46,7 +47,8 @@ const StoreModal = ({ isOpen, onClose, onConfirm, product, paymentMethod }) => {
     >
       <h2 className={styles.title}>Confirmar compra</h2>
       <p className={styles.description}>
-        Comprar <strong>{product.name}</strong> por:
+        Comprar {quantity > 1 ? <strong>{quantity}x </strong> : null}
+        <strong>{product.name}</strong> por:
       </p>
 
       <div className={styles.priceContainer}>
@@ -59,7 +61,7 @@ const StoreModal = ({ isOpen, onClose, onConfirm, product, paymentMethod }) => {
           </div>
         ) : (
           <div className={styles.price}>
-            💵 <span>{product.price.euros} Euros</span>
+            💵 <span>{product.price.euros * quantity} Euros</span>
           </div>
         )}
       </div>
