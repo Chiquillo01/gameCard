@@ -145,8 +145,11 @@ const buyStructureDeck = async (req, res) => {
     const product = await StoreProduct.findOne({ _id: productId, category: 'structure' });
     if (!product) return res.status(404).send();
 
-    const deckCards = await Card.find({ name: { $in: product.structureCards } });
-    if (deckCards.length !== product.structureCards.length) return res.status(404).send();
+    const cardNames = product.structureCards.map((sc) => sc.name);
+    const cardDocsByName = new Map(
+      (await Card.find({ name: { $in: cardNames } })).map((c) => [c.name, c]),
+    );
+    if (cardDocsByName.size !== cardNames.length) return res.status(404).send();
 
     const previousBalance = { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems };
     if (!chargeUser(user, product, paymentMethod)) return res.status(410).send();
@@ -158,7 +161,12 @@ const buyStructureDeck = async (req, res) => {
       userCollection = new UserCollection({ userId, cards: [] });
     }
 
-    const obtainedCards = deckCards.map((card) => ({ cardId: card._id, name: card.name }));
+    // Expand each { name, amount } entry into that many individual copies, so the response
+    // (and the collection update below) reflect exactly the cards the deck promises.
+    const obtainedCards = product.structureCards.flatMap(({ name, amount }) => {
+      const card = cardDocsByName.get(name);
+      return Array(amount).fill({ cardId: card._id, name: card.name });
+    });
     obtainedCards.forEach(({ cardId }) => {
       const existingCard = userCollection.cards.find((card) => card.cardId.toString() === cardId.toString());
       if (existingCard) {

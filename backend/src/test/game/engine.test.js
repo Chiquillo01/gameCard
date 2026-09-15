@@ -11,7 +11,11 @@ const { runBotTurn } = require('../../game/botAI');
 beforeAll(async () => {
   await connectDB();
   await Promise.all(effects.map((e) => Effect.findByIdAndUpdate(e._id, e, { upsert: true })));
-  for (const c of cards) await Card.findOneAndUpdate({ number: c.number, name: c.name }, c, { upsert: true });
+  // `number` isn't in cards_final.json (the real seed script assigns it, preserving existing
+  // ones); tests just need a unique number per card within this throwaway in-memory DB.
+  for (let i = 0; i < cards.length; i++) {
+    await Card.findOneAndUpdate({ name: cards[i].name }, { ...cards[i], number: i + 1 }, { upsert: true });
+  }
 });
 
 afterAll(async () => {

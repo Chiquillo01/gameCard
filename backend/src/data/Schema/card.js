@@ -1,10 +1,17 @@
 const { Schema, model } = require('mongoose');
 
+// Single source of truth for the "state" (banlist) default, so both the schema and anything
+// that builds a Card document by hand (e.g. the seed script) agree on the rarity fallback.
+const DEFAULT_STATE_BY_RARITY = { legendary: 1, epic: 2, rare: 3, common: 4 };
+
 const cardSchema = new Schema(
   {
+    // Stable unique identifier — preserved across re-imports by the seed script (looked up by
+    // `name`), never re-derived from spreadsheet row order.
     number: {
       type: Number,
       required: true,
+      unique: true,
     },
     name: {
       type: String,
@@ -67,14 +74,27 @@ const cardSchema = new Schema(
       type: String,
       required: true,
     },
+    // Human-readable summon/activation/fusion-material text (e.g. "Compilación - 2 Monstruos
+    // Insecto"). Kept separate from `effect` and from the structured summonCost/activationCost
+    // below, which is what the engine actually reads.
+    invocationText: {
+      type: String,
+    },
     level: { type: Number },
     foil: {
       type: Boolean,
       default: false,
     },
-    estado: {
+    // Banlist value: how many copies of this card are allowed in a deck. Defaults to the
+    // standard limit for its rarity, but stays per-card so a specific card can be banned (0),
+    // limited or semi-limited (1-2) without touching deck-building code — deckController reads
+    // this field directly instead of a hardcoded rarity table.
+    state: {
       type: Number,
       required: true,
+      default: function () {
+        return DEFAULT_STATE_BY_RARITY[this.rarity] ?? 3;
+      },
     },
     // Structured rules data for the game engine (backend/src/game) — replaces free-text `effect`
     // as the thing the engine actually reads. `effect` above stays as the human-readable text.
@@ -95,4 +115,4 @@ const cardSchema = new Schema(
 );
 
 const Card = model('Card', cardSchema);
-module.exports = { Card };
+module.exports = { Card, DEFAULT_STATE_BY_RARITY };

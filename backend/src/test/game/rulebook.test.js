@@ -10,7 +10,11 @@ const { createMatch, applyAction } = require('../../game/engine');
 beforeAll(async () => {
   await connectDB();
   await Promise.all(effects.map((e) => Effect.findByIdAndUpdate(e._id, e, { upsert: true })));
-  for (const c of cards) await Card.findOneAndUpdate({ number: c.number, name: c.name }, c, { upsert: true });
+  // `number` isn't in cards_final.json (the real seed script assigns it, preserving existing
+  // ones); tests just need a unique number per card within this throwaway in-memory DB.
+  for (let i = 0; i < cards.length; i++) {
+    await Card.findOneAndUpdate({ name: cards[i].name }, { ...cards[i], number: i + 1 }, { upsert: true });
+  }
 });
 
 afterAll(async () => {
@@ -85,8 +89,8 @@ describe('Territorio upkeep', () => {
   it('charges 1 pixel to each player at end phase once both control a Territorio', async () => {
     // Player B needs to survive drawing on their own first turn (turn 2 — only the very first
     // turn of the whole match skips the draw), so their deck needs more than 6 cards deep.
-    const state = await makeMatchWithHands(['Arboleda'], ['Océano', 'Templo del Dragón'], { amountB: 4 });
-    const oceano = await Card.findOne({ name: 'Océano' }).lean();
+    const state = await makeMatchWithHands(['Arboleda'], ['Oceano', 'Templo del Dragón'], { amountB: 4 });
+    const oceano = await Card.findOne({ name: 'Oceano' }).lean();
     const instanceIdA = state.players[0].hand.find((id) => id.startsWith('0:'));
     const instanceIdB = state.players[1].hand.find((id) => id.split(':')[1] === oceano._id.toString());
 
@@ -111,12 +115,12 @@ describe('Territorio upkeep', () => {
   });
 
   it('replaces an existing Territorio (sends the old one to the graveyard) instead of blocking activation', async () => {
-    const state = await makeMatchWithHands(['Arboleda', 'Océano'], []);
+    const state = await makeMatchWithHands(['Arboleda', 'Oceano'], []);
 
     // instanceId format is `${ownerIndex}:${cardId}:${n}` — resolve each hand card by matching
     // the middle segment against the real Card document's _id.
     const arboleda = await Card.findOne({ name: 'Arboleda' }).lean();
-    const oceano = await Card.findOne({ name: 'Océano' }).lean();
+    const oceano = await Card.findOne({ name: 'Oceano' }).lean();
     const findByCardId = (cardId) => state.players[0].hand.find((instanceId) => instanceId.split(':')[1] === cardId.toString());
 
     const firstId = findByCardId(arboleda._id);

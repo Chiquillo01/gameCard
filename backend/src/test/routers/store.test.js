@@ -72,7 +72,10 @@ describe('Store Controller TEST', () => {
       reward: { cards: 2 },
       imageUrl: 'structure.png',
       category: 'structure',
-      structureCards: ['Structure Card One', 'Structure Card Two'],
+      structureCards: [
+        { name: 'Structure Card One', amount: 1 },
+        { name: 'Structure Card Two', amount: 1 },
+      ],
     });
     await structureDeck.save();
     structureDeckId = structureDeck._id.toString();
@@ -149,7 +152,7 @@ describe('Store Controller TEST', () => {
         reward: { cards: 1 },
         imageUrl: 'structure2.png',
         category: 'structure',
-        structureCards: ['Nonexistent Card'],
+        structureCards: [{ name: 'Nonexistent Card', amount: 1 }],
       });
       await brokenDeck.save();
 
@@ -159,6 +162,28 @@ describe('Store Controller TEST', () => {
         .send({ productId: brokenDeck._id.toString() });
 
       expect(response.status).toBe(404);
+    });
+
+    it('lets a structure deck include several copies of the same card via `amount`', async () => {
+      const tripleDeck = new StoreProduct({
+        name: 'Triple Structure Deck',
+        description: 'Three copies of the same card',
+        price: { pixelcoins: 10 },
+        reward: { cards: 3 },
+        imageUrl: 'structure3.png',
+        category: 'structure',
+        structureCards: [{ name: 'Structure Card One', amount: 3 }],
+      });
+      await tripleDeck.save();
+
+      const response = await fakeRequest
+        .post(`/store/products/${tripleDeck._id}/buy-structure`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ productId: tripleDeck._id.toString(), paymentMethod: 'pixelcoins' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.obtainedCards).toHaveLength(3);
+      expect(response.body.obtainedCards.every((c) => c.name === 'Structure Card One')).toBe(true);
     });
   });
 

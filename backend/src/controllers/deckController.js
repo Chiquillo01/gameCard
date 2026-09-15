@@ -5,10 +5,13 @@ const { Card } = require('../data/Schema/card');
 
 const MIN_DECK_SIZE = 40;
 const MAX_DECK_SIZE = 50;
+// Fallback only — used if a Card document somehow has no `state` (banlist value). The real,
+// authoritative limit lives on each card's own `state` field (see Schema/card.js), so a card
+// can be banned/limited without touching this code.
 const MAX_COPIES_BY_RARITY = { legendary: 1, epic: 2, rare: 3, common: 4 };
 
-// Rulebook: 40-50 cards in the main deck, and max copies per card depend on its rarity
-// (Legendaria 1 / Épica 2 / Rara 3 / Común 4) rather than one flat number for every card.
+// Rulebook: 40-50 cards in the main deck, and max copies per card come from its own banlist
+// `state` value (which itself defaults by rarity: Legendaria 1 / Épica 2 / Rara 3 / Común 4).
 function validateDeckComposition(cards, cardDocsById) {
   const totalNormalCards = cards.reduce((sum, c) => sum + (c.amount || 0), 0);
   if (totalNormalCards < MIN_DECK_SIZE || totalNormalCards > MAX_DECK_SIZE) {
@@ -16,7 +19,7 @@ function validateDeckComposition(cards, cardDocsById) {
   }
   for (const c of cards) {
     const card = cardDocsById.get(c.card.toString());
-    const max = MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
+    const max = card?.state ?? MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
     if (c.amount > max) {
       return `Solo puedes tener ${max} copias de "${card?.name || c.card}" (rareza ${card?.rarity}).`;
     }
@@ -100,7 +103,7 @@ const createDeck = async (req, res) => {
     if (mainDeckError) return res.status(400).json({ error: mainDeckError });
     for (const c of fusionCards) {
       const card = cardDocsById.get(c.card.toString());
-      const max = MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
+      const max = card?.state ?? MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
       if (c.amount > max) {
         return res.status(400).json({ error: `Solo puedes tener ${max} copias de "${card?.name || c.card}" (rareza ${card?.rarity}).` });
       }
@@ -170,7 +173,7 @@ const updateDeck = async (req, res) => {
     if (mainDeckError) return res.status(400).json({ error: mainDeckError });
     for (const c of fusionCards) {
       const card = cardDocsById.get(c.card.toString());
-      const max = MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
+      const max = card?.state ?? MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
       if (c.amount > max) {
         return res.status(400).json({ error: `Solo puedes tener ${max} copias de "${card?.name || c.card}" (rareza ${card?.rarity}).` });
       }

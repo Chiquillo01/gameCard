@@ -19,9 +19,19 @@ const StoreProductSchema = new Schema({
     required: true,
     enum: ['chest', 'structure', 'pixelgems', 'spEdition'],
   },
-  // exact card names making up a structure deck (category:'structure'); the buyer
-  // gets exactly these cards, unlike chests which draw randomly from an expansion
-  structureCards: { type: [String], default: [] },
+  // Exact cards making up a structure deck (category:'structure'); the buyer gets exactly
+  // these, unlike chests which draw randomly from an expansion. `amount` lets a deck include
+  // several copies of the same card (e.g. 3x "Arboleda") without relying on repeated names,
+  // which Mongo's `$in` would silently collapse to one match per name.
+  structureCards: {
+    type: [
+      {
+        name: { type: String, required: true },
+        amount: { type: Number, required: true, default: 1 },
+      },
+    ],
+    default: [],
+  },
 });
 
 const StoreProduct = model('StoreProduct', StoreProductSchema);
