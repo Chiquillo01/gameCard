@@ -55,10 +55,12 @@ const cardSchema = new Schema(
       required: true,
       enum: ['common', 'rare', 'epic', 'legendary'],
     },
+    // `token` cards are created by another card's effect (never drawn, bought, or placed in a
+    // deck) and don't go to the graveyard or exile when they leave the field — they just vanish.
     category: {
       type: String,
       required: true,
-      enum: ['monster', 'support', 'fusion'],
+      enum: ['monster', 'support', 'fusion', 'token'],
     },
     // Apoyo (support) card subtype: normal | instant (Veloz) | equipment | continuous | field (Reino) | counter
     subtype: {

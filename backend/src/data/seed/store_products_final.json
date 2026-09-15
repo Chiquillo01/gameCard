@@ -1,0 +1,238 @@
+[
+  {
+    "name": "Ataque de las Bestias",
+    "description": "Contiene 3 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740301510/cofreADB1tcg_tgxzvw.png",
+    "price": {
+      "pixelcoins": 100,
+      "pixelgems": 10
+    },
+    "reward": {
+      "cards": 6,
+      "pixelgems": 0
+    },
+    "category": "chest",
+    "expansion": "ADB"
+  },
+  {
+    "name": "Introducción de Leyendas",
+    "description": "Contiene 3 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302806/cofreIDL1tcg_nqnn0e.png",
+    "price": {
+      "pixelcoins": 100,
+      "pixelgems": 10
+    },
+    "reward": {
+      "cards": 6,
+      "pixelgems": 0
+    },
+    "category": "chest",
+    "expansion": "IDL"
+  },
+  {
+    "name": "Coliseo de Guerreros",
+    "description": "Contiene 3 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
+    "price": {
+      "pixelcoins": 100,
+      "pixelgems": 10
+    },
+    "reward": {
+      "cards": 6,
+      "pixelgems": 0
+    },
+    "category": "chest",
+    "expansion": "CDG"
+  },
+  {
+    "name": "Sombras del Bosque Encantado",
+    "description": "Contiene 3 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "price": {
+      "pixelcoins": 100,
+      "pixelgems": 10
+    },
+    "reward": {
+      "cards": 6,
+      "pixelgems": 0
+    },
+    "category": "chest",
+    "expansion": "SBE"
+  },
+  {
+    "name": "Perdición del Arrecife Oculto",
+    "description": "Contiene 3 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "price": {
+      "pixelcoins": 100,
+      "pixelgems": 10
+    },
+    "reward": {
+      "cards": 6,
+      "pixelgems": 0
+    },
+    "category": "chest",
+    "expansion": "PAO"
+  },
+  {
+    "name": "Nacimiento de la Magia",
+    "description": "Contiene 3 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "price": {
+      "pixelcoins": 100,
+      "pixelgems": 10
+    },
+    "reward": {
+      "cards": 6,
+      "pixelgems": 0
+    },
+    "category": "chest",
+    "expansion": "NDM"
+  },
+  {
+    "name": "Ganancia por Honor",
+    "description": "Cofre edición especia que ofrece cartas muy poderosas para ser el rey de los Choques.",
+    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "price": {
+      "pixelcoins": 150,
+      "pixelgems": 15
+    },
+    "reward": {
+      "cards": 5,
+      "pixelgems": 0
+    },
+    "category": "spEdition",
+    "expansion": "GPH"
+  },
+  {
+    "name": "Ediocion Espacial Tokens",
+    "description": "Seis tokens para disfrutar.",
+    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "price": {
+      "pixelcoins": 30,
+      "pixelgems": 3
+    },
+    "reward": {
+      "cards": 6,
+      "pixelgems": 0
+    },
+    "category": "spEdition",
+    "expansion": "EET"
+  },
+  {
+    "name": "Tiempo Primitivo",
+    "description": "Paquete de estructura que ofrece un pack economico para empezar ha jugar con la compra de una sola unidad.",
+    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "price": {
+      "pixelcoins": 400,
+      "pixelgems": 400
+    },
+    "reward": {
+      "cards": 30,
+      "pixelgems": 0
+    },
+    "category": "structure",
+    "expansion": "TP-ME",
+    "structureCards": [
+      {
+        "name": "Damarco, licántropo luchador",
+        "amount": 2
+      },
+      {
+        "name": "Licántropo Beta",
+        "amount": 2
+      },
+      {
+        "name": "Licántropo Cazador",
+        "amount": 2
+      },
+      {
+        "name": "Licántropo de Hielo",
+        "amount": 2
+      },
+      {
+        "name": "Licántropo Gigante",
+        "amount": 2
+      },
+      {
+        "name": "Licántropo Zombie",
+        "amount": 2
+      },
+      {
+        "name": "Gato del Destino",
+        "amount": 2
+      },
+      {
+        "name": "Bala de Plata",
+        "amount": 2
+      },
+      {
+        "name": "El Primer Infectado, padre de licántropos",
+        "amount": 2
+      },
+      {
+        "name": "Licántropo Rougarou",
+        "amount": 2
+      },
+      {
+        "name": "Hipertricosis",
+        "amount": 2
+      },
+      {
+        "name": "Licántropo Alfa",
+        "amount": 2
+      },
+      {
+        "name": "Licántropo Mago",
+        "amount": 2
+      },
+      {
+        "name": "Licántropo, Bestia de Gévaudan",
+        "amount": 2
+      },
+      {
+        "name": "Hermandad de Licántropos",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "name": "Pack de 10 pixelgems",
+    "description": "10 pixelgems para gastar en la tienda.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1739835342/gemastiendatcg_hq2kds.png",
+    "price": {
+      "euros": 0.99
+    },
+    "reward": {
+      "cards": 0,
+      "pixelgems": 10
+    },
+    "category": "pixelgems"
+  },
+  {
+    "name": "Pack de 55 pixelgems",
+    "description": "55 pixelgems para gastar en la tienda.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1739835627/sacogemastiendatcg_wugkkr.png",
+    "price": {
+      "euros": 4.99
+    },
+    "reward": {
+      "cards": 0,
+      "pixelgems": 55
+    },
+    "category": "pixelgems"
+  },
+  {
+    "name": "Pack de 120 pixelgems",
+    "description": "120 pixelgems para gastar en la tienda.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1739835337/cofregemastiendatcg_trepm6.png",
+    "price": {
+      "euros": 9.99
+    },
+    "reward": {
+      "cards": 0,
+      "pixelgems": 120
+    },
+    "category": "pixelgems"
+  }
+]
