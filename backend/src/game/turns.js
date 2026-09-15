@@ -13,9 +13,10 @@ function advancePhase(state) {
   }
 
   let nextPhase = PHASES[idx + 1];
-  // Rulebook: the player who goes first cannot carry out a Battle Phase on their very first turn.
+  // Rulebook: the player who goes first cannot carry out a Battle Phase on their very first
+  // turn — and with no Battle Phase, there's no Principal 2 either, so play goes straight to end.
   if (nextPhase === 'battle' && state.firstTurn && state.turnNumber === 1) {
-    nextPhase = 'main2';
+    nextPhase = 'end';
   }
 
   state.phase = nextPhase;

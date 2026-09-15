@@ -9,6 +9,10 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
   const pl = player(state, controllerIndex);
   if (pl.normalSummonUsed) return { ok: false, reason: 'normal-summon-used' };
   if (!pl.hand.includes(instanceId)) return { ok: false, reason: 'not-in-hand' };
+  if (position !== 'attack' && position !== 'defense') return { ok: false, reason: 'invalid-position' };
+  // A face-down monster is always "set" in defense — face-up attack, face-up defense, and
+  // face-down defense are the only three legal states; a face-down attack position isn't one.
+  if (faceDown && position !== 'defense') return { ok: false, reason: 'invalid-position' };
 
   const cardId = cardIdFromInstance(instanceId);
   const card = getCard(cardId);

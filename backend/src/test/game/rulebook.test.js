@@ -78,8 +78,7 @@ describe('Territorio upkeep', () => {
     expect(result.ok).toBe(true);
     expect(state.players[0].field.territory).not.toBeNull();
 
-    applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main1 -> main2 (turn 1 has no battle phase)
-    applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main2 -> end, triggers upkeep check
+    applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main1 -> end (no battle/main2 on turn 1), triggers upkeep check
 
     // Only player 0 has a Territorio, so the "both players have one" upkeep never applies.
     expect(state.players[0].pixelcoins).toBe(before - 1); // -1 just for activation cost, not upkeep
