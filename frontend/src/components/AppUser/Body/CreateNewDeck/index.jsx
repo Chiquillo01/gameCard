@@ -184,15 +184,15 @@ const CreateNewDeck = () => {
           <DeckTitle value={deckTitle} onTitleChange={handleTitleChange} />
           <TokenSelector availableTokens={ownedTokens} selectedTokens={selectedTokens} onToggleToken={handleToggleToken} />
           <div className={styles.deckContent}>
-            <div className={styles.cardsCollectedWrapper}>
-              <CardsCollectedDisplay cards={deckableCards} onAddCard={handleAddCard} addCard={true} />
-            </div>
             <div className={styles.cardsSelectedWrapper}>
               <CardsSelectedDisplay
                 normalCards={selectedCards}
                 fusionCards={selectedFusionCards}
                 onRemoveCard={handleRemoveCard}
               />
+            </div>
+            <div className={styles.cardsCollectedWrapper}>
+              <CardsCollectedDisplay cards={deckableCards} onAddCard={handleAddCard} addCard={true} />
             </div>
           </div>
           <div
