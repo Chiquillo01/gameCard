@@ -26,7 +26,7 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard }) => {
   return (
     <div className={styles.cardsSelected}>
       <div className={styles.normalCardsContainer}>
-        <h3 className={styles.sectionTitle}>Monstruos y Apoyos ({totalNormalCards}/40)</h3>
+        <h3 className={styles.sectionTitle}>Mazo Principal ({totalNormalCards}/40-50)</h3>
         <div className={styles.cardsList}>
           {expandCards(normalCards).map((card) => (
             <div key={card.keyId} className={styles.cardWrapper}>
@@ -41,7 +41,7 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard }) => {
       </div>
 
       <div className={styles.fusionCardsContainer}>
-        <h3 className={styles.sectionTitle}>Fusión ({totalFusionCards}/10)</h3>
+        <h3 className={styles.sectionTitle}>Mazo Secundario ({totalFusionCards}/10)</h3>
         <div className={styles.cardsList}>
           {expandCards(fusionCards).map((card) => (
             <div key={card.keyId} className={styles.cardWrapper}>
@@ -55,7 +55,7 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard }) => {
         </div>
       </div>
 
-      <div className={styles.cardCounter}>{totalCards}/50 Cartas Totales</div>
+      <div className={styles.cardCounter}>{totalCards} Cartas en Total</div>
 
       {selectedCard && <CardModal card={selectedCard} onClose={handleCloseModal} />}
     </div>

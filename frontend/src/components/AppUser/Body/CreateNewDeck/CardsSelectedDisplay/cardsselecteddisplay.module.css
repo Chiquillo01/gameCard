@@ -13,17 +13,19 @@
 
 .normalCardsContainer,
 .fusionCardsContainer {
-  background-color: #f0e6d2;
+  /* Same cream used for the app's other panels (filter menu, deck wrapper, collection page). */
+  background-color: #f8edd3;
   padding: 12px;
   border-radius: 6px;
-  box-shadow: 0px 2px 3cm rgba(0, 0, 0, 0.15);
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.15);
   font-family: 'Metamorphous', sans-serif;
   margin: 0 auto;
   width: 100%;
 }
 
 .fusionCardsContainer {
-  background-color: #d7c9e7;
+  /* Light tint of the "Compilación" (fusion) category color used on the card badges. */
+  background-color: #e4d9ec;
 }
 
 .sectionTitle {

@@ -29,6 +29,24 @@
   flex: 2;
 }
 
+.deckStatus {
+  text-align: center;
+  font-family: 'Metamorphous', sans-serif;
+  font-size: 0.9rem;
+  font-weight: bold;
+  padding: 0.4rem;
+  border-radius: 8px;
+  background-color: #f8edd3;
+}
+
+.deckStatusOk {
+  color: #54612b;
+}
+
+.deckStatusWarn {
+  color: #a33a2e;
+}
+
 .saveDeckButton {
   position: fixed;
   bottom: 10px;

@@ -9,10 +9,15 @@ import { fetchDeck, createDeck, updateDeck } from '../../../../lib/utils/apiDeck
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import CardsCollectedDisplay from './CardsCollectedDisplay';
 import CardsSelectedDisplay from './CardsSelectedDisplay';
+import TokenSelector from './TokenSelector';
 
-const MAX_CARDS = 40;
+// Rulebook limits (mirrored in backend/src/controllers/deckController.js, the source of truth):
+// the main deck holds 40-50 cards, the secondary/fusion deck holds up to 10, and how many
+// copies of any one card are allowed comes from that card's own `state` field (banlist value,
+// which itself defaults by rarity — Legendaria 1 / Épica 2 / Rara 3 / Común 4).
+const MIN_DECK_SIZE = 40;
+const MAX_DECK_SIZE = 50;
 const MAX_FUSION_CARDS = 10;
-const MAX_DUPLICATES = 3;
 
 const TOAST_OPTIONS = {
   position: 'top-right',
@@ -32,8 +37,16 @@ const CreateNewDeck = () => {
   const [deckTitle, setDeckTitle] = useState('');
   const [selectedCards, setSelectedCards] = useState([]);
   const [selectedFusionCards, setSelectedFusionCards] = useState([]);
+  const [selectedTokens, setSelectedTokens] = useState([]);
   const [userCards, setUserCards] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Tokens are never drawn from a deck — an effect conjures them outright — so they don't belong
+  // in the buildable card pool; they get their own selector fed only by the ones the user owns.
+  const deckableCards = userCards.filter((c) => c.category !== 'token');
+  const ownedTokens = userCards.filter((c) => c.category === 'token');
+  const totalMainCards = selectedCards.reduce((sum, c) => sum + c.amount, 0);
+  const totalFusionCards = selectedFusionCards.reduce((sum, c) => sum + c.amount, 0);
 
   useEffect(() => {
     const getUserCards = async () => {
@@ -54,6 +67,7 @@ const CreateNewDeck = () => {
           setDeckTitle(deckData.deckTitle);
           setSelectedCards(deckData.cards.map((c) => ({ id: c.card._id, ...c.card, amount: c.amount })));
           setSelectedFusionCards(deckData.fusionCards.map((c) => ({ id: c.card._id, ...c.card, amount: c.amount })));
+          setSelectedTokens((deckData.tokens || []).map((card) => ({ id: card._id, ...card })));
         }
       } catch (error) {
         showToast('error', 'Error al cargar el mazo.');
@@ -69,7 +83,6 @@ const CreateNewDeck = () => {
 
   const handleAddCard = (card) => {
     const userCard = userCards.find((c) => c.id === card.id);
-
     const userCardQuantity = userCard ? userCard.amount : 0;
 
     const isFusionCard = card.category.toLowerCase() === 'fusion';
@@ -77,15 +90,30 @@ const CreateNewDeck = () => {
     const setSelectedArray = isFusionCard ? setSelectedFusionCards : setSelectedCards;
     const cardIndex = selectedArray.findIndex((c) => c.id === card.id);
 
+    // The real per-card ceiling is the card's own banlist value (`state`), not a flat number —
+    // it defaults by rarity (Legendaria 1 / Épica 2 / Rara 3 / Común 4) but can be overridden
+    // per card, and the backend rejects anything above it.
+    const maxCopies = card.state ?? 3;
+    const maxTotal = isFusionCard ? MAX_FUSION_CARDS : MAX_DECK_SIZE;
+    const totalInArray = selectedArray.reduce((sum, c) => sum + c.amount, 0);
+    const totalLabel = isFusionCard
+      ? `${MAX_FUSION_CARDS} cartas de fusión`
+      : `${MAX_DECK_SIZE} cartas en el mazo principal`;
+
+    if (totalInArray >= maxTotal) {
+      showToast('error', `No puedes añadir más de ${totalLabel}.`);
+      return;
+    }
+
     if (cardIndex !== -1) {
       const updatedSelection = [...selectedArray];
 
-      if (updatedSelection[cardIndex].amount >= MAX_DUPLICATES) {
-        showToast('error', `No puedes agregar más de ${MAX_DUPLICATES} copias de "${card.name}".`);
+      if (updatedSelection[cardIndex].amount >= maxCopies) {
+        showToast('error', `Solo puedes tener ${maxCopies} copias de "${card.name}" (rareza ${card.rarity}).`);
         return;
       }
       if (updatedSelection[cardIndex].amount >= userCardQuantity) {
-        showToast('error', `No puedes añadir más de ${userCardQuantity} copias de "${card.name}".`);
+        showToast('error', `No puedes añadir más de ${userCardQuantity} copias de "${card.name}" — es lo que tienes.`);
         return;
       }
 
@@ -96,16 +124,18 @@ const CreateNewDeck = () => {
 
       setSelectedArray([...updatedSelection]);
     } else {
-      if (isFusionCard && selectedFusionCards.length >= MAX_FUSION_CARDS) {
-        showToast('error', `No puedes añadir más de ${MAX_FUSION_CARDS} cartas de fusión.`);
-        return;
-      }
-      if (!isFusionCard && selectedCards.length >= MAX_CARDS) {
-        showToast('error', `No puedes añadir más de ${MAX_CARDS} cartas.`);
+      if (maxCopies < 1) {
+        showToast('error', `"${card.name}" está prohibida en mazos (0 copias permitidas).`);
         return;
       }
       setSelectedArray([...selectedArray, { ...card, amount: 1 }]);
     }
+  };
+
+  const handleToggleToken = (token) => {
+    setSelectedTokens((prev) =>
+      prev.some((t) => t.id === token.id) ? prev.filter((t) => t.id !== token.id) : [...prev, token],
+    );
   };
 
   const handleRemoveCard = (card) => {
@@ -127,6 +157,7 @@ const CreateNewDeck = () => {
       deckTitle: deckTitle.trim(),
       cards: selectedCards.map(({ id, amount }) => ({ card: id, amount })),
       fusionCards: selectedFusionCards.map(({ id, amount }) => ({ card: id, amount })),
+      tokens: selectedTokens.map(({ id }) => id),
     };
 
     const token = getUserToken();
@@ -151,9 +182,10 @@ const CreateNewDeck = () => {
       ) : (
         <>
           <DeckTitle value={deckTitle} onTitleChange={handleTitleChange} />
+          <TokenSelector availableTokens={ownedTokens} selectedTokens={selectedTokens} onToggleToken={handleToggleToken} />
           <div className={styles.deckContent}>
             <div className={styles.cardsCollectedWrapper}>
-              <CardsCollectedDisplay cards={userCards} onAddCard={handleAddCard} addCard={true} />
+              <CardsCollectedDisplay cards={deckableCards} onAddCard={handleAddCard} addCard={true} />
             </div>
             <div className={styles.cardsSelectedWrapper}>
               <CardsSelectedDisplay
@@ -163,12 +195,19 @@ const CreateNewDeck = () => {
               />
             </div>
           </div>
+          <div
+            className={`${styles.deckStatus} ${totalMainCards >= MIN_DECK_SIZE && totalMainCards <= MAX_DECK_SIZE ? styles.deckStatusOk : styles.deckStatusWarn}`}
+          >
+            Mazo Principal: {totalMainCards}/{MIN_DECK_SIZE}-{MAX_DECK_SIZE} · Mazo Secundario: {totalFusionCards}/
+            {MAX_FUSION_CARDS}
+          </div>
           <button
             className={styles.saveDeckButton}
             disabled={
               deckTitle.trim() === '' ||
-              selectedCards.length > MAX_CARDS ||
-              selectedFusionCards.length > MAX_FUSION_CARDS
+              totalMainCards < MIN_DECK_SIZE ||
+              totalMainCards > MAX_DECK_SIZE ||
+              totalFusionCards > MAX_FUSION_CARDS
             }
             onClick={handleSaveDeck}
           >
