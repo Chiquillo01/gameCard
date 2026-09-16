@@ -140,10 +140,10 @@ export function getTypeIcon(card) {
 }
 
 // Color for the type/attribute badge: a monster/fusion/token shows its element's own color;
-// a support card has no attribute to speak of, so it falls back to whatever color the caller
-// passes in (typically the rarity color).
+// a support card has no attribute to speak of, so it uses the same color the "Apoyo" category
+// already has everywhere else, instead of the rarity color.
 export function getTypeBadgeColor(card, fallback) {
-  if (card.category === 'support') return fallback;
+  if (card.category === 'support') return CATEGORY_COLORS.support;
   return ATTRIBUTE_COLORS[card.attribute] || fallback;
 }
 
