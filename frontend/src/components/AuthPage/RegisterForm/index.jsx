@@ -1,7 +1,7 @@
 import styles from './registerform.module.css';
 import SendButton from '../SendButton';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'react-query';
+import { useMutation, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { registerUser } from '../../../lib/utils/apiUser';
 import { setUserSession } from '../../../lib/utils/userSession';
@@ -9,10 +9,14 @@ import { errorToast } from '../../../lib/toastify/toast';
 
 const RegisterForm = ({ onSwitchMode }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const registerMutation = useMutation(['registerUser'], registerUser, {
     onSuccess: (data) => {
       setUserSession(data);
+      // Same reasoning as login: without this, a stale cache from whoever used this browser tab
+      // before (if they never explicitly logged out) keeps showing through the new account.
+      queryClient.clear();
       navigate('/');
     },
     onError: (e) => {

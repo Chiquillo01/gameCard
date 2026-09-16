@@ -1,7 +1,7 @@
 import styles from './loginform.module.css';
 import SendButton from '../SendButton';
 import { useForm } from 'react-hook-form';
-import { useMutation } from 'react-query';
+import { useMutation, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../../../lib/utils/apiUser';
 import { setUserSession } from '../../../lib/utils/userSession';
@@ -9,10 +9,15 @@ import { errorToast } from '../../../lib/toastify/toast';
 
 const LoginForm = ({ onSwitchMode }) => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const loginMutation = useMutation(['loginUser'], loginUser, {
     onSuccess: (data) => {
       setUserSession(data);
+      // A stale 'user' (or any other per-account) query from whoever was logged in before —
+      // e.g. logging in as someone else without ever hitting "cerrar sesión" first — otherwise
+      // keeps showing their cached data (balance included) until a hard page reload.
+      queryClient.clear();
       navigate('/');
     },
     onError: (e) => {
