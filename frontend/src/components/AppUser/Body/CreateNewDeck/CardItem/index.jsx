@@ -12,7 +12,7 @@ import {
 import { LEVEL_BADGE_IMAGES } from '../../../../../lib/utils/levelBadges';
 import styles from './carditem.module.css';
 
-const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
+const CardItem = ({ card, onAction, actionLabel, addCard, showAmount, compact }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
@@ -56,7 +56,7 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
   return (
     <>
       <motion.div
-        className={styles.card}
+        className={`${styles.card} ${compact ? styles.cardCompact : ''}`}
         style={{ borderColor: rarityColor, backgroundColor: categoryColor }}
         whileHover={{ scale: 1.05 }}
         onClick={handleCardClick}

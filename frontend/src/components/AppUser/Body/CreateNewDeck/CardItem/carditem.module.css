@@ -138,6 +138,46 @@
   z-index: 2;
 }
 
+/* Compact size for dense lists (e.g. the deck-builder's already-picked cards) — same card,
+   scaled down with its own fixed sizes instead of a CSS transform, which would fight
+   framer-motion's own inline transform on hover. */
+.cardCompact {
+  width: 90px;
+  height: 130px;
+  margin: 4px;
+}
+
+.cardCompact .levelBadge {
+  width: 20px;
+  height: 20px;
+}
+
+.cardCompact .attributeBadge {
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+}
+
+.cardCompact .cardDetails {
+  padding: 4px;
+}
+
+.cardCompact .cardName {
+  font-size: 10px;
+}
+
+.cardCompact .statBadge {
+  font-size: 8px;
+  padding: 1px 4px;
+}
+
+.cardCompact .addButton {
+  padding: 3px 5px;
+  font-size: 9px;
+  bottom: 4px;
+  right: 4px;
+}
+
 @media (max-width: 820px) {
   .addButton {
     font-size: 16px;

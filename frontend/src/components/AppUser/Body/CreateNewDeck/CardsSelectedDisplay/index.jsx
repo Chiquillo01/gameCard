@@ -12,7 +12,6 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard }) => {
 
   const totalNormalCards = normalCards.reduce((total, card) => total + (card.amount || 1), 0);
   const totalFusionCards = fusionCards.reduce((total, card) => total + (card.amount || 1), 0);
-  const totalCards = totalNormalCards + totalFusionCards;
 
   const expandCards = (cards) => {
     return cards.flatMap((card) =>
@@ -34,6 +33,7 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard }) => {
                 card={card}
                 onAction={() => onRemoveCard(card)}
                 actionLabel={<FaTrashAlt className={styles.trashIcon} />}
+                compact
               />
             </div>
           ))}
@@ -49,13 +49,12 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard }) => {
                 card={card}
                 onAction={() => onRemoveCard(card)}
                 actionLabel={<FaTrashAlt className={styles.trashIcon} />}
+                compact
               />
             </div>
           ))}
         </div>
       </div>
-
-      <div className={styles.cardCounter}>{totalCards} Cartas en Total</div>
 
       {selectedCard && <CardModal card={selectedCard} onClose={handleCloseModal} />}
     </div>
