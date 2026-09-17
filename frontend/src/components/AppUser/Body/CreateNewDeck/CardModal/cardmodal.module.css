@@ -144,8 +144,8 @@
   top: -5px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 6px 12px;
-  font-size: 14px;
+  padding: 4px 10px;
+  font-size: 10px;
   color: white;
   background: rgba(0, 0, 0, 0.7);
   border-radius: 12px;
@@ -159,7 +159,7 @@
 
 .cardImageContainer {
   width: 100%;
-  height: 260px;
+  height: 290px;
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 16px;
@@ -246,8 +246,10 @@
   font-family: 'Roboto', sans-serif;
   font-size: 1rem;
   line-height: 1.6;
-  height: 210px;
+  height: 180px;
   flex: none;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #54612b rgba(255, 255, 255, 0.1);
@@ -260,7 +262,10 @@
   border-top: 1px dashed rgba(255, 255, 255, 0.3);
   border-radius: 0 0 6px 6px;
   padding: 8px 12px;
+  /* Pinned to the bottom of .cardText (a flex column) regardless of how short the effect text
+     above it is, instead of just trailing right after it with empty space below. */
   margin: 8px -12px -12px;
+  margin-top: auto;
   color: #eee;
   font-family: 'Roboto', sans-serif;
   font-size: 0.85rem;
@@ -297,7 +302,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 28px;
+  gap: 12px;
   font-size: 1rem;
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
@@ -311,6 +316,12 @@
   font-size: 1.1rem;
   color: #fff;
   font-family: 'Roboto Mono', monospace;
+  font-weight: bold;
+}
+
+.statSeparator {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.5);
   font-weight: bold;
 }
 
@@ -357,8 +368,8 @@
   }
 
   .rarityBadge {
-    font-size: 10px;
-    padding: 9px 8px;
+    font-size: 8px;
+    padding: 3px 8px;
   }
 
   .cardName {

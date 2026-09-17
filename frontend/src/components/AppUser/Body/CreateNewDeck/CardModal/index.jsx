@@ -105,6 +105,7 @@ const CardModal = ({ card, onClose }) => {
                   <GiBroadsword className={styles.atkIcon} />
                   {atk || '0'}
                 </span>
+                <span className={styles.statSeparator}>/</span>
                 <span className={styles.statItem}>
                   <FaHeart className={styles.lifeIcon} />
                   {def || '0'}
