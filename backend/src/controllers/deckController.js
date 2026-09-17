@@ -94,15 +94,10 @@ const createDeck = async (req, res) => {
       return res.status(400).json({ error: 'El título del mazo es obligatorio' });
     }
 
-    const userDecks = await Deck.countDocuments({ owner: userId });
     const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-
-    if (!user.admin && userDecks >= 6) {
-      return res.status(400).json({ error: 'Límite de mazos alcanzado (6).' });
     }
 
     const totalFusionCards = fusionCards.reduce((sum, card) => sum + (card.amount || 0), 0);

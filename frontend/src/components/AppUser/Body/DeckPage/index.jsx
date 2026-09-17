@@ -48,19 +48,6 @@ const DeckPage = () => {
   }, [data]);
 
   const handleCreateDeck = () => {
-    if (decks.length >= 6) {
-      toast.error('No puedes crear más de 6 mazos.', {
-        position: 'top-right',
-        autoClose: 3000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: 'dark',
-      });
-      return;
-    }
     navigate('/controldeck');
   };
 
