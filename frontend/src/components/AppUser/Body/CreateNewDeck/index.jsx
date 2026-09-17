@@ -175,12 +175,14 @@ const CreateNewDeck = () => {
       ) : (
         <>
           <DeckTitle value={deckTitle} onTitleChange={handleTitleChange} />
-          <TokenSelector availableTokens={ownedTokens} selectedTokens={selectedTokens} onToggleToken={handleToggleToken} />
-          <div
-            className={`${styles.deckStatus} ${totalMainCards >= MIN_DECK_SIZE && totalMainCards <= MAX_DECK_SIZE ? styles.deckStatusOk : styles.deckStatusWarn}`}
-          >
-            Mazo Principal: {totalMainCards}/{MIN_DECK_SIZE}-{MAX_DECK_SIZE} · Mazo Secundario: {totalFusionCards}/
-            {MAX_FUSION_CARDS}
+          <div className={styles.statusRow}>
+            <TokenSelector availableTokens={ownedTokens} selectedTokens={selectedTokens} onToggleToken={handleToggleToken} />
+            <div
+              className={`${styles.deckStatus} ${totalMainCards >= MIN_DECK_SIZE && totalMainCards <= MAX_DECK_SIZE ? styles.deckStatusOk : styles.deckStatusWarn}`}
+            >
+              Mazo Principal: {totalMainCards}/{MIN_DECK_SIZE}-{MAX_DECK_SIZE} · Mazo Secundario: {totalFusionCards}/
+              {MAX_FUSION_CARDS}
+            </div>
           </div>
           <div className={styles.deckContent}>
             <div className={styles.cardsSelectedWrapper}>
