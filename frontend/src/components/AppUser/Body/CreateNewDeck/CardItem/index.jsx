@@ -16,7 +16,7 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount, compact })
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
-  const { name, image, category, rarity, level, atk, def, amount } = card;
+  const { name, image, category, rarity, level, atk, def, amount, family } = card;
 
   const rarityColor = RARITY_COLORS[rarity] || 'gray';
   const categoryColor = CATEGORY_COLORS[category] || '#1a1a1a';
@@ -95,6 +95,7 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount, compact })
             )}
             {showAmount && <span className={styles.statBadge}>x{amount ?? 1}</span>}
           </div>
+          {family && <p className={styles.cardFamily}>{family}</p>}
         </div>
 
         {actionLabel && onAction && (

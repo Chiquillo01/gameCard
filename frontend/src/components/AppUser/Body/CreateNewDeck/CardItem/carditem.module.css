@@ -103,6 +103,17 @@
   margin-top: 4px;
 }
 
+.cardFamily {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-family: 'Roboto', sans-serif;
+}
+
 .attributeIcon {
   font-size: 16px;
   color: white;
@@ -179,6 +190,10 @@
 .cardCompact .statBadge {
   font-size: 8px;
   padding: 1px 4px;
+}
+
+.cardCompact .cardFamily {
+  font-size: 8px;
 }
 
 .cardCompact .addButton {
