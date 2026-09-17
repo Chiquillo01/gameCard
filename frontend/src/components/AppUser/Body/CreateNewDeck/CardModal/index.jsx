@@ -23,7 +23,7 @@ const EffectDisplay = ({ effect }) => {
 };
 
 const CardModal = ({ card, onClose }) => {
-  const { name, image, rarity, description, category, expansion, atk, def, effect, level } = card;
+  const { name, image, rarity, description, category, expansion, atk, def, effect, level, family, invocationText } = card;
 
   const rarityColor = RARITY_COLORS[rarity] || 'gray';
   const categoryColor = CATEGORY_COLORS[category] || '#1a1a1a';
@@ -31,6 +31,10 @@ const CardModal = ({ card, onClose }) => {
   const translatedCategory = CATEGORY_LABELS[category] || category;
   const translatedType = getTypeLabel(card);
   const showStats = category === 'monster' || category === 'fusion';
+  // A monster/fusion card's breed is already in `translatedType` (e.g. "Dragón") — pairing it
+  // with the broader `family` group (e.g. "Marino") gives "Marino · Dragón". A support card has
+  // no family, so this just falls back to its subtype (e.g. "Reino").
+  const familyClassLabel = [family, translatedType].filter(Boolean).join(' · ');
 
   const Icon = getTypeIcon(card);
   const badgeColor = getTypeBadgeColor(card, rarityColor);
@@ -49,46 +53,57 @@ const CardModal = ({ card, onClose }) => {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Nivel */}
-          {level != null && LEVEL_BADGE_IMAGES[level - 1] && (
-            <div className={styles.levelBadge}>
-              <img src={LEVEL_BADGE_IMAGES[level - 1]} alt={`Nivel ${level}`} />
-            </div>
-          )}
           {/* Rareza */}
           <div className={styles.rarityBadge} style={{ backgroundColor: rarityColor }}>
             {translatedRarity}
           </div>
-          {/* Imagen */}
-          <div className={styles.cardImageContainer}>
-            <img src={image} alt={name} className={styles.modalImage} />
-          </div>
-          {/* Detalles */}
-          <div className={styles.cardDetails}>
-            <div className={styles.cardHeader}>
-              <h2 className={styles.cardName}>{name}</h2>
+
+          {/* Nivel | Nombre | Atributo */}
+          <div className={styles.cardTopRow}>
+            <div className={styles.levelBadge}>
+              {level != null && LEVEL_BADGE_IMAGES[level - 1] && (
+                <img src={LEVEL_BADGE_IMAGES[level - 1]} alt={`Nivel ${level}`} />
+              )}
+            </div>
+            <h2 className={styles.cardName}>{name}</h2>
+            <div className={styles.attributeSlot}>
               {Icon && (
                 <span className={styles.attributeIcon} style={{ backgroundColor: badgeColor, color: badgeIconColor }}>
                   <Icon />
                 </span>
               )}
             </div>
+          </div>
 
-            <p className={styles.cardType}>{translatedType}</p>
+          {/* Imagen */}
+          <div className={styles.cardImageContainer}>
+            <img src={image} alt={name} className={styles.modalImage} />
+          </div>
 
-            {/* Efecto */}
+          {/* Detalles */}
+          <div className={styles.cardDetails}>
+            {/* Familia y Clase | Colección */}
+            <div className={styles.metaRow}>
+              <span className={styles.cardFamily}>{familyClassLabel}</span>
+              <span className={styles.cardExpansion}>{expansion}</span>
+            </div>
+
+            {/* Texto del efecto */}
             <div className={styles.cardText}>
               {effect ? <EffectDisplay effect={effect} /> : <p>Esta carta no tiene efecto.</p>}
             </div>
 
-            <div className={styles.cardFooter}>
-              <p className={styles.expansion}>{expansion}</p>
-              {(atk || def) && (
+            {/* Texto del método de invocación */}
+            {invocationText && <p className={styles.invocationText}>{invocationText}</p>}
+
+            {/* Atk y Vida */}
+            {showStats && (
+              <div className={styles.cardFooter}>
                 <p className={styles.atkDef}>
                   {atk || '0'} / {def || '0'}
                 </p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
