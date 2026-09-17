@@ -180,7 +180,8 @@
 .cardDetails {
   text-align: left;
   margin-top: 0;
-  flex: none;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -255,7 +256,7 @@
   flex-direction: column;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #54612b rgba(255, 255, 255, 0.1);
+  scrollbar-color: #fff rgba(255, 255, 255, 0.1);
 }
 
 /* Same box as the effect text (no gap between them) but its own tint + a dashed divider, so it
@@ -292,13 +293,13 @@
 }
 
 .cardText::-webkit-scrollbar-thumb {
-  background: #54612b;
+  background: #fff;
   border-radius: 8px;
   border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .cardText::-webkit-scrollbar-thumb:hover {
-  background: #373f1c;
+  background: #ddd;
 }
 
 .cardFooter {
@@ -310,6 +311,9 @@
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   padding: 6px;
+  flex-shrink: 0;
+  /* Always pinned to the bottom of the card, whether the effect text above is one line or five. */
+  margin-top: auto;
 }
 
 .statItem {
