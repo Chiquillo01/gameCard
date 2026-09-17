@@ -65,6 +65,13 @@
   font-size: 1.125rem;
 }
 
+.deckWarning {
+  color: #9c2e20;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
+  margin: 0;
+}
+
 .startButton {
   background: linear-gradient(180deg, #e05a45 0%, #c0392b 55%, #9c2e20 100%);
   color: #fbf3de;

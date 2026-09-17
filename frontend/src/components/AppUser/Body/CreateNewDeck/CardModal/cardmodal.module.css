@@ -96,8 +96,9 @@
 }
 
 .modalContent {
+  position: relative;
   border-radius: 16px;
-  padding: 16px;
+  padding: 16px 10px;
   width: 480px;
   height: 700px;
   text-align: center;
@@ -105,24 +106,40 @@
   border: 8px solid;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  /* flex-start, not space-between — with the current sizes (bigger image, tighter text) the
+     leftover vertical space was landing between the name and the image instead of at the
+     bottom, showing up as an oversized gap that had nothing to do with any actual margin. */
+  justify-content: flex-start;
   box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #54612b rgba(255, 255, 255, 0.1);
 }
 
+/* Nombre — centered; Nivel/Atributo are pinned to the card's own corners below, closer to the
+   border than a normal-flow layout would allow, instead of sitting inset with the rest of the
+   padded content. */
+.cardTopRow {
+  padding: 0 44px;
+  margin: 4px 0 12px;
+}
+
 .levelBadge {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 60px;
-  height: 60px;
+  top: 6px;
+  left: 6px;
+  width: 44px;
+  height: 44px;
   color: white;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 50;
+  z-index: 2;
+}
+
+.levelBadge img {
+  width: 100%;
+  height: 100%;
 }
 
 .rarityBadge {
@@ -130,8 +147,8 @@
   top: -5px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 6px 12px;
-  font-size: 14px;
+  padding: 4px 10px;
+  font-size: 10px;
   color: white;
   background: rgba(0, 0, 0, 0.7);
   border-radius: 12px;
@@ -145,10 +162,10 @@
 
 .cardImageContainer {
   width: 100%;
-  height: 300px;
+  height: 320px;
   border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -161,33 +178,33 @@
 }
 
 .cardDetails {
-  text-align: justify;
-  margin-top: 16px;
-  flex: none;
-  height: 350px;
+  text-align: left;
+  margin-top: 0;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  gap: 8px;
   font-family: 'Roboto', sans-serif;
 }
 
-.cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .cardName {
+  text-align: center;
   font-size: 1.5rem;
   font-weight: bold;
   font-family: 'Metamorphous', sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .attributeIcon {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -195,15 +212,34 @@
   font-size: 18px;
   border: 2px solid rgba(20, 20, 20, 0.55);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  z-index: 2;
 }
 
-.cardType {
+/* Familia y Clase | Colección */
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.cardFamily {
   font-size: 1.1rem;
   color: #ccc;
   font-family: 'Roboto Condensed', sans-serif;
   font-weight: 600;
   text-transform: capitalize;
-  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cardExpansion {
+  flex-shrink: 0;
+  font-family: 'Georgia', serif;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: #ddd;
 }
 
 .cardText {
@@ -214,12 +250,31 @@
   font-family: 'Roboto', sans-serif;
   font-size: 1rem;
   line-height: 1.6;
-  height: 250px;
-  margin: 8px 0;
-  flex: none;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #54612b rgba(255, 255, 255, 0.1);
+  scrollbar-color: #fff rgba(255, 255, 255, 0.1);
+}
+
+/* Same box as the effect text (no gap between them) but its own tint + a dashed divider, so it
+   still reads as "a different kind of text" rather than more effect text. */
+.invocationText {
+  background-color: rgba(0, 0, 0, 0.25);
+  border-top: 1px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 0 0 6px 6px;
+  padding: 8px 12px;
+  /* Pinned to the bottom of .cardText (a flex column) regardless of how short the effect text
+     above it is, instead of just trailing right after it with empty space below. */
+  margin: 8px -12px -12px;
+  margin-top: auto;
+  color: #eee;
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  line-height: 1.4;
 }
 
 .cardText p,
@@ -238,33 +293,51 @@
 }
 
 .cardText::-webkit-scrollbar-thumb {
-  background: #54612b;
+  background: #fff;
   border-radius: 8px;
   border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .cardText::-webkit-scrollbar-thumb:hover {
-  background: #373f1c;
+  background: #ddd;
 }
 
 .cardFooter {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 12px;
   font-size: 1rem;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  padding: 6px;
+  flex-shrink: 0;
+  /* Always pinned to the bottom of the card, whether the effect text above is one line or five. */
+  margin-top: auto;
 }
 
-.expansion {
-  font-family: 'Georgia', serif;
-  font-style: italic;
-  font-size: 1rem;
-}
-
-.atkDef {
-  font-size: 1rem;
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1.1rem;
   color: #fff;
   font-family: 'Roboto Mono', monospace;
   font-weight: bold;
+}
+
+.statSeparator {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: bold;
+}
+
+.atkIcon {
+  color: #e05a45;
+}
+
+.lifeIcon {
+  color: #ff6b7a;
 }
 
 @media (max-width: 375px) {
@@ -302,8 +375,8 @@
   }
 
   .rarityBadge {
-    font-size: 10px;
-    padding: 9px 8px;
+    font-size: 8px;
+    padding: 3px 8px;
   }
 
   .cardName {
@@ -314,8 +387,12 @@
     font-size: 18px;
   }
 
-  .cardType {
+  .cardFamily {
     font-size: 0.9rem;
+  }
+
+  .cardExpansion {
+    font-size: 0.75rem;
   }
 
   .cardText p,
@@ -326,13 +403,10 @@
 
   .cardFooter {
     font-size: 0.8rem;
+    gap: 16px;
   }
 
-  .expansion {
-    font-size: 0.75rem;
-  }
-
-  .atkDef {
+  .statItem {
     font-size: 0.8rem;
   }
 }

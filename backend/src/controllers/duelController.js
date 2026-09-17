@@ -3,7 +3,10 @@ const { Deck } = require('../data/Schema/deck');
 const { Card } = require('../data/Schema/card');
 const { User } = require('../data/Schema/user');
 const { createMatch, applyAction, viewFor, runBotTurn, matchStore } = require('../game');
+const { isDeckPlayable } = require('../game/deckRules');
 const { getIo } = require('../socket/socketServer');
+
+const UNPLAYABLE_DECK_ERROR = 'Este mazo no cumple el tamaño mínimo (40-50 cartas, máx. 10 de fusión) para poder jugar.';
 
 async function buildBotDeck() {
   const monsters = await Card.find({ category: 'monster' }).limit(20).lean();
@@ -38,6 +41,7 @@ const startPve = async (req, res) => {
     const { deckId } = req.body;
     const deck = await Deck.findOne({ _id: deckId, owner: userId }).populate('cards.card').populate('fusionCards.card');
     if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
+    if (!isDeckPlayable(deck)) return res.status(400).json({ error: UNPLAYABLE_DECK_ERROR });
 
     const botDeck = await buildBotDeck();
     const matchId = randomUUID();
@@ -62,6 +66,7 @@ const challenge = async (req, res) => {
     const { friendUserId, deckId } = req.body;
     const deck = await Deck.findOne({ _id: deckId, owner: userId });
     if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
+    if (!isDeckPlayable(deck)) return res.status(400).json({ error: UNPLAYABLE_DECK_ERROR });
     const friend = await User.findById(friendUserId);
     if (!friend) return res.status(404).json({ error: 'Usuario no encontrado' });
 
@@ -97,6 +102,9 @@ const acceptChallenge = async (req, res) => {
       Deck.findOne({ _id: deckId, owner: userId }).populate('cards.card').populate('fusionCards.card'),
     ]);
     if (!challengerDeck || !opponentDeck) return res.status(404).json({ error: 'Mazo no encontrado' });
+    if (!isDeckPlayable(challengerDeck) || !isDeckPlayable(opponentDeck)) {
+      return res.status(400).json({ error: UNPLAYABLE_DECK_ERROR });
+    }
 
     const state = await createMatch({
       matchId,

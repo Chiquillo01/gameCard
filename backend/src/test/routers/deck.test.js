@@ -67,11 +67,24 @@ describe('Deck Controller TEST', () => {
       expect(response.status).toBe(401);
     });
 
-    it('should reject a deck with fewer than 40 cards', async () => {
+    it('should allow saving an incomplete deck with fewer than 40 cards', async () => {
+      // A deck under construction can be saved — the 40-card minimum is only enforced when
+      // starting a duel with it (see duelController's isDeckPlayable check).
       const response = await fakeRequest
         .post('/deck')
         .set('Authorization', `Bearer ${ownerToken}`)
         .send({ deckTitle: 'Too Small', cards: [{ card: cardId, amount: 2 }] });
+
+      expect(response.status).toBe(201);
+    });
+
+    it('should reject a deck with more than 50 cards', async () => {
+      // The total-size check runs before the per-card copy check, so a single oversized entry
+      // is enough to prove the >50 ceiling without needing 11+ distinct legal cards.
+      const response = await fakeRequest
+        .post('/deck')
+        .set('Authorization', `Bearer ${ownerToken}`)
+        .send({ deckTitle: 'Too Big', cards: [{ card: cardId, amount: 51 }] });
 
       expect(response.status).toBe(400);
     });

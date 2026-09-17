@@ -44,6 +44,15 @@ const deckSchema = new Schema(
         },
       },
     ],
+    // Which owned token cards (category "token") this deck brings to a duel — a plain
+    // presence list, not amount-based, since a duel can conjure as many copies of a token as an
+    // effect calls for regardless of how many the player "owns".
+    tokens: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Card',
+      },
+    ],
     public: {
       type: Boolean,
       default: false,

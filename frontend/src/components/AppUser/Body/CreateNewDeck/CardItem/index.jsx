@@ -12,11 +12,11 @@ import {
 import { LEVEL_BADGE_IMAGES } from '../../../../../lib/utils/levelBadges';
 import styles from './carditem.module.css';
 
-const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
+const CardItem = ({ card, onAction, actionLabel, addCard, showAmount, compact }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSmallScreen, setIsSmallScreen] = useState(false);
 
-  const { name, image, category, rarity, level, atk, def, amount } = card;
+  const { name, image, category, rarity, level, atk, def, amount, family } = card;
 
   const rarityColor = RARITY_COLORS[rarity] || 'gray';
   const categoryColor = CATEGORY_COLORS[category] || '#1a1a1a';
@@ -41,6 +41,13 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
     setIsModalOpen(false);
   };
 
+  // Only the "add a card to the deck" context (the collection browser) is draggable — dragging a
+  // card already in the deck, or a read-only collection view, wouldn't have a meaningful target.
+  const handleDragStart = (event) => {
+    event.dataTransfer.setData('application/json', JSON.stringify(card));
+    event.dataTransfer.effectAllowed = 'copy';
+  };
+
   useEffect(() => {
     const handleResize = () => {
       setIsSmallScreen(window.innerWidth <= 820);
@@ -55,10 +62,14 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
 
   return (
     <>
-      <motion.div
-        className={styles.card}
-        style={{ borderColor: rarityColor, backgroundColor: categoryColor }}
-        whileHover={{ scale: 1.05 }}
+      {/* A plain div, not motion.div — framer-motion redefines onDragStart/onDragEnd for its own
+          pan-based drag gesture (which only activates with a `drag` prop), so it would swallow
+          the native HTML5 drag-and-drop events this needs instead of forwarding them. */}
+      <div
+        className={`${styles.card} ${compact ? styles.cardCompact : ''}`}
+        style={{ borderColor: rarityColor, backgroundColor: categoryColor, cursor: addCard ? 'grab' : 'pointer' }}
+        draggable={addCard}
+        onDragStart={addCard ? handleDragStart : undefined}
         onClick={handleCardClick}
       >
         {level != null && LEVEL_BADGE_IMAGES[level - 1] && (
@@ -84,6 +95,7 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
             )}
             {showAmount && <span className={styles.statBadge}>x{amount ?? 1}</span>}
           </div>
+          {family && <p className={styles.cardFamily}>{family}</p>}
         </div>
 
         {actionLabel && onAction && (
@@ -98,7 +110,7 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount }) => {
             {addCard && isSmallScreen ? '+' : actionLabel}
           </motion.button>
         )}
-      </motion.div>
+      </div>
 
       <AnimatePresence>{isModalOpen && <CardModal card={card} onClose={handleCloseModal} />}</AnimatePresence>
     </>

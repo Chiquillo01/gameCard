@@ -1,7 +1,7 @@
 .card {
   position: relative;
-  width: 140px;
-  height: 200px;
+  width: 135px;
+  height: 195px;
   background-color: #1a1a1a;
   border-radius: 8px;
   overflow: hidden;
@@ -9,6 +9,16 @@
   border: 4px solid;
   transition: transform 0.3s ease;
   margin: 8px;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+/* The browser hides the dragged element's own node while it's being dragged and shows the
+   drag-image ghost instead — this only affects the element left behind once dragging ends. */
+.card:active {
+  cursor: grabbing;
 }
 
 .rarity {
@@ -93,6 +103,17 @@
   margin-top: 4px;
 }
 
+.cardFamily {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-family: 'Roboto', sans-serif;
+}
+
 .attributeIcon {
   font-size: 16px;
   color: white;
@@ -136,6 +157,50 @@
   border: 2px solid rgba(20, 20, 20, 0.55);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   z-index: 2;
+}
+
+/* Compact size for dense lists (e.g. the deck-builder's already-picked cards) — same card,
+   scaled down with its own fixed sizes instead of a CSS transform, which would fight
+   framer-motion's own inline transform on hover. */
+.cardCompact {
+  width: 90px;
+  height: 130px;
+  margin: 4px;
+}
+
+.cardCompact .levelBadge {
+  width: 20px;
+  height: 20px;
+}
+
+.cardCompact .attributeBadge {
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+}
+
+.cardCompact .cardDetails {
+  padding: 4px;
+}
+
+.cardCompact .cardName {
+  font-size: 10px;
+}
+
+.cardCompact .statBadge {
+  font-size: 8px;
+  padding: 1px 4px;
+}
+
+.cardCompact .cardFamily {
+  font-size: 8px;
+}
+
+.cardCompact .addButton {
+  padding: 3px 5px;
+  font-size: 9px;
+  bottom: 4px;
+  right: 4px;
 }
 
 @media (max-width: 820px) {

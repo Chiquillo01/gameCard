@@ -2,20 +2,22 @@ const mongoose = require('mongoose');
 const { Deck } = require('../data/Schema/deck');
 const { User } = require('../data/Schema/user');
 const { Card } = require('../data/Schema/card');
+const { MAX_DECK_SIZE, MAX_FUSION_CARDS } = require('../game/deckRules');
 
-const MIN_DECK_SIZE = 40;
-const MAX_DECK_SIZE = 50;
 // Fallback only — used if a Card document somehow has no `state` (banlist value). The real,
 // authoritative limit lives on each card's own `state` field (see Schema/card.js), so a card
 // can be banned/limited without touching this code.
 const MAX_COPIES_BY_RARITY = { legendary: 1, epic: 2, rare: 3, common: 4 };
 
-// Rulebook: 40-50 cards in the main deck, and max copies per card come from its own banlist
-// `state` value (which itself defaults by rarity: Legendaria 1 / Épica 2 / Rara 3 / Común 4).
+// A deck can be saved while still under construction — the 40-card *minimum* is only enforced
+// at duel-start time (see game/deckRules.js's isDeckPlayable, used by duelController) — but it
+// can never be saved over the 50-card max, since that's a hard limit either way. Max copies per
+// card come from its own banlist `state` value (defaults by rarity: Legendaria 1 / Épica 2 /
+// Rara 3 / Común 4).
 function validateDeckComposition(cards, cardDocsById) {
   const totalNormalCards = cards.reduce((sum, c) => sum + (c.amount || 0), 0);
-  if (totalNormalCards < MIN_DECK_SIZE || totalNormalCards > MAX_DECK_SIZE) {
-    return `El mazo principal debe tener entre ${MIN_DECK_SIZE} y ${MAX_DECK_SIZE} cartas (tiene ${totalNormalCards}).`;
+  if (totalNormalCards > MAX_DECK_SIZE) {
+    return `El mazo principal no puede tener más de ${MAX_DECK_SIZE} cartas (tiene ${totalNormalCards}).`;
   }
   for (const c of cards) {
     const card = cardDocsById.get(c.card.toString());
@@ -27,13 +29,27 @@ function validateDeckComposition(cards, cardDocsById) {
   return null;
 }
 
+// Tokens aren't drawn from a deck — an effect conjures them outright — so they only need to be
+// real token cards, with no size or per-copy limit (a duel can need more instances of a token
+// than the player "owns").
+function validateTokenSelection(tokenIds, cardDocsById) {
+  for (const id of tokenIds) {
+    const card = cardDocsById.get(id.toString());
+    if (!card || card.category !== 'token') {
+      return `"${card?.name || id}" no es una carta de token válida.`;
+    }
+  }
+  return null;
+}
+
 const getDecksUser = async (req, res) => {
   const userId = req.jwtPayload.id;
   try {
     const decks = await Deck.find({ owner: userId })
       .populate('owner')
       .populate('cards.card')
-      .populate('fusionCards.card');
+      .populate('fusionCards.card')
+      .populate('tokens');
 
     res.status(200).json(decks);
   } catch (error) {
@@ -48,7 +64,11 @@ const getDeckById = async (req, res) => {
       return res.status(400).json({ error: 'ID del mazo no proporcionado' });
     }
 
-    const deck = await Deck.findById(id).populate('owner').populate('cards.card').populate('fusionCards.card');
+    const deck = await Deck.findById(id)
+      .populate('owner')
+      .populate('cards.card')
+      .populate('fusionCards.card')
+      .populate('tokens');
 
     if (!deck) {
       return res.status(404).json({ error: 'No se ha podido encontrar el mazo' });
@@ -68,33 +88,28 @@ const createDeck = async (req, res) => {
       return res.status(401).json({ error: 'Usuario no autenticado o token inválido' });
     }
 
-    const { deckTitle, cards = [], fusionCards = [] } = req.body;
+    const { deckTitle, cards = [], fusionCards = [], tokens = [] } = req.body;
 
     if (!deckTitle || deckTitle.trim() === '') {
       return res.status(400).json({ error: 'El título del mazo es obligatorio' });
     }
 
-    const userDecks = await Deck.countDocuments({ owner: userId });
     const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    if (!user.admin && userDecks >= 6) {
-      return res.status(400).json({ error: 'Límite de mazos alcanzado (6).' });
-    }
-
     const totalFusionCards = fusionCards.reduce((sum, card) => sum + (card.amount || 0), 0);
 
-    if (totalFusionCards > 10) {
-      return res.status(400).json({ error: 'No puedes añadir más de 10 cartas de fusión al mazo.' });
+    if (totalFusionCards > MAX_FUSION_CARDS) {
+      return res.status(400).json({ error: `No puedes añadir más de ${MAX_FUSION_CARDS} cartas de fusión al mazo.` });
     }
 
-    const allCardIds = [...cards.map((c) => c.card), ...fusionCards.map((c) => c.card)];
+    const allCardIds = [...cards.map((c) => c.card), ...fusionCards.map((c) => c.card), ...tokens];
     const existingCards = await Card.find({ _id: { $in: allCardIds } });
 
-    if (existingCards.length !== allCardIds.length) {
+    if (existingCards.length !== new Set(allCardIds.map(String)).size) {
       return res.status(400).json({ error: 'Algunas cartas no existen en la base de datos.' });
     }
 
@@ -108,6 +123,8 @@ const createDeck = async (req, res) => {
         return res.status(400).json({ error: `Solo puedes tener ${max} copias de "${card?.name || c.card}" (rareza ${card?.rarity}).` });
       }
     }
+    const tokenError = validateTokenSelection(tokens, cardDocsById);
+    if (tokenError) return res.status(400).json({ error: tokenError });
 
     const formattedCards = cards.map((c) => ({
       card: new mongoose.Types.ObjectId(c.card),
@@ -124,6 +141,7 @@ const createDeck = async (req, res) => {
       owner: userId,
       cards: formattedCards,
       fusionCards: formattedFusionCards,
+      tokens: tokens.map((id) => new mongoose.Types.ObjectId(id)),
     });
 
     await newDeck.save();
@@ -131,7 +149,8 @@ const createDeck = async (req, res) => {
     const deckToReturn = await Deck.findById(newDeck._id)
       .populate('owner')
       .populate('cards.card')
-      .populate('fusionCards.card');
+      .populate('fusionCards.card')
+      .populate('tokens');
 
     res.status(201).json(deckToReturn);
   } catch (error) {
@@ -144,7 +163,7 @@ const updateDeck = async (req, res) => {
     const { id } = req.params;
     const userId = req.jwtPayload?.id;
 
-    const { deckTitle, cards = [], fusionCards = [] } = req.body;
+    const { deckTitle, cards = [], fusionCards = [], tokens = [] } = req.body;
 
     if (!deckTitle || deckTitle.trim() === '') {
       return res.status(400).json({ error: 'El título del mazo es obligatorio' });
@@ -162,11 +181,11 @@ const updateDeck = async (req, res) => {
 
     const totalFusionCards = fusionCards.reduce((sum, card) => sum + (card.amount || 0), 0);
 
-    if (totalFusionCards > 10) {
-      return res.status(400).json({ error: 'No puedes añadir más de 10 cartas de fusión al mazo' });
+    if (totalFusionCards > MAX_FUSION_CARDS) {
+      return res.status(400).json({ error: `No puedes añadir más de ${MAX_FUSION_CARDS} cartas de fusión al mazo` });
     }
 
-    const allCardIds = [...cards.map((c) => c.card), ...fusionCards.map((c) => c.card)];
+    const allCardIds = [...cards.map((c) => c.card), ...fusionCards.map((c) => c.card), ...tokens];
     const existingCards = await Card.find({ _id: { $in: allCardIds } });
     const cardDocsById = new Map(existingCards.map((c) => [c._id.toString(), c]));
     const mainDeckError = validateDeckComposition(cards, cardDocsById);
@@ -178,15 +197,18 @@ const updateDeck = async (req, res) => {
         return res.status(400).json({ error: `Solo puedes tener ${max} copias de "${card?.name || c.card}" (rareza ${card?.rarity}).` });
       }
     }
+    const tokenError = validateTokenSelection(tokens, cardDocsById);
+    if (tokenError) return res.status(400).json({ error: tokenError });
 
     const updatedDeck = await Deck.findByIdAndUpdate(
       id,
-      { deckTitle: deckTitle.trim(), cards, fusionCards },
+      { deckTitle: deckTitle.trim(), cards, fusionCards, tokens },
       { new: true, runValidators: true },
     )
       .populate('owner')
       .populate('cards.card')
-      .populate('fusionCards.card');
+      .populate('fusionCards.card')
+      .populate('tokens');
 
     res.status(200).json(updatedDeck);
   } catch (error) {
