@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import { FaHeart } from 'react-icons/fa';
 import { GiBroadsword } from 'react-icons/gi';
@@ -44,7 +45,11 @@ const CardModal = ({ card, onClose }) => {
 
   const detectedEffects = Object.keys(effectDescriptions).filter((keyword) => (effect || '').includes(`{{${keyword}}}`));
 
-  return (
+  // Rendered on document.body instead of in place: CardItem sits inside elements that get a CSS
+  // transform on hover/drag (.cardWrapper, the drag-and-drop card itself), and a transformed
+  // ancestor becomes the containing block for `position: fixed` descendants — which trapped this
+  // full-screen overlay inside the tiny card tile instead of covering the viewport.
+  return createPortal(
     <div className={styles.modalBackground} onClick={onClose}>
       <div className={styles.modalWrapper}>
         <div
@@ -151,7 +156,8 @@ const CardModal = ({ card, onClose }) => {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
