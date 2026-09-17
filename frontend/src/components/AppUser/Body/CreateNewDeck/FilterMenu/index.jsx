@@ -1,45 +1,21 @@
 import React from 'react';
 import { FaTrashAlt } from 'react-icons/fa';
+import { CATEGORY_LABELS, RARITY_LABELS, SUPPORT_SUBTYPE_LABELS } from '../../../../../lib/utils/cardDisplay';
 import styles from './filtermenu.module.css';
 
-const FilterMenu = ({ filters, onFilterChange, onClearFilters }) => {
-  const categories = [
-    { key: 'monster', value: 'Monstruo' },
-    { key: 'support', value: 'Apoyo' },
-    { key: 'fusion', value: 'Fusión' },
-  ];
-  const types = [
-    { key: 'beast', value: 'Bestia' },
-    { key: 'warrior', value: 'Guerrero' },
-    { key: 'demon', value: 'Demonio' },
-    { key: 'fairy', value: 'Hada' },
-    { key: 'zombie', value: 'Zombie' },
-    { key: 'plant', value: 'Planta' },
-    { key: 'machine', value: 'Máquina' },
-    { key: 'insect', value: 'Insecto' },
-    { key: 'dragon', value: 'Dragón' },
-    { key: 'fish', value: 'Pez' },
-    { key: 'rock', value: 'Roca' },
-    { key: 'normal', value: 'Normal' },
-    { key: 'instant', value: 'Rápida' },
-    { key: 'equipment', value: 'Equipo' },
-    { key: 'continuous', value: 'Continua' },
-    { key: 'counter', value: 'Contraefecto' },
-  ];
-  const attributes = [
-    { key: 'water', value: 'Agua' },
-    { key: 'fire', value: 'Fuego' },
-    { key: 'darkness', value: 'Oscuridad' },
-    { key: 'light', value: 'Luz' },
-    { key: 'earth', value: 'Tierra' },
-    { key: 'wind', value: 'Viento' },
-  ];
-  const rarities = [
-    { key: 'common', value: 'Común' },
-    { key: 'rare', value: 'Rara' },
-    { key: 'epic', value: 'Épica' },
-    { key: 'legendary', value: 'Legendaria' },
-  ];
+const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary'];
+
+// Category and rarity have a small, fixed, known set of values, so they're listed directly —
+// but a "type" (a card's breed, e.g. "Dragón") has dozens of possible values and grows as new
+// cards are added, so its options come from `availableTypes` (whatever's actually in the
+// player's collection right now) instead of a list that would just go stale again.
+const FilterMenu = ({ filters, onFilterChange, onClearFilters, availableCategories = [], availableTypes = [], availableAttributes = [] }) => {
+  const categoryOptions = availableCategories.length
+    ? availableCategories
+    : Object.keys(CATEGORY_LABELS);
+  const rarityOptions = RARITY_ORDER;
+
+  const typeLabel = (type) => SUPPORT_SUBTYPE_LABELS[type] || type;
 
   return (
     <div className={styles.filterMenu}>
@@ -51,9 +27,9 @@ const FilterMenu = ({ filters, onFilterChange, onClearFilters }) => {
           className={styles.select}
         >
           <option value=''>Todas</option>
-          {categories.map(({ key, value }) => (
+          {categoryOptions.map((key) => (
             <option key={key} value={key}>
-              {value}
+              {CATEGORY_LABELS[key] || key}
             </option>
           ))}
         </select>
@@ -63,9 +39,9 @@ const FilterMenu = ({ filters, onFilterChange, onClearFilters }) => {
         <h5>Tipo</h5>
         <select value={filters.type} onChange={(e) => onFilterChange('type', e.target.value)} className={styles.select}>
           <option value=''>Todos</option>
-          {types.map(({ key, value }) => (
-            <option key={key} value={key}>
-              {value}
+          {availableTypes.map((type) => (
+            <option key={type} value={type}>
+              {typeLabel(type)}
             </option>
           ))}
         </select>
@@ -79,9 +55,9 @@ const FilterMenu = ({ filters, onFilterChange, onClearFilters }) => {
           className={styles.select}
         >
           <option value=''>Todos</option>
-          {attributes.map(({ key, value }) => (
-            <option key={key} value={key}>
-              {value}
+          {availableAttributes.map((attribute) => (
+            <option key={attribute} value={attribute}>
+              {attribute}
             </option>
           ))}
         </select>
@@ -94,9 +70,9 @@ const FilterMenu = ({ filters, onFilterChange, onClearFilters }) => {
           className={styles.select}
         >
           <option value=''>Todas</option>
-          {rarities.map(({ key, value }) => (
+          {rarityOptions.map((key) => (
             <option key={key} value={key}>
-              {value}
+              {RARITY_LABELS[key]}
             </option>
           ))}
         </select>

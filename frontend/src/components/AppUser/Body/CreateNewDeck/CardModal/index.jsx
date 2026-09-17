@@ -1,84 +1,18 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import { FaFireAlt, FaWater, FaMoon, FaMountain, FaSun, FaWind, FaInfinity } from 'react-icons/fa';
-import { FaArrowsRotate } from 'react-icons/fa6';
-import { GiFastArrow } from 'react-icons/gi';
-import { FiHexagon } from 'react-icons/fi';
-import { GoTools } from 'react-icons/go';
 import { effectDescriptions } from '../../../../../lib/utils/effectGlossary';
+import {
+  RARITY_COLORS,
+  RARITY_LABELS,
+  CATEGORY_COLORS,
+  CATEGORY_LABELS,
+  getTypeLabel,
+  getTypeIcon,
+  getTypeBadgeColor,
+  getContrastColor,
+} from '../../../../../lib/utils/cardDisplay';
+import { LEVEL_BADGE_IMAGES } from '../../../../../lib/utils/levelBadges';
 import styles from './cardmodal.module.css';
-import level1 from '/assets/CardImg/1.png';
-import level2 from '/assets/CardImg/2.png';
-import level3 from '/assets/CardImg/3.png';
-import level4 from '/assets/CardImg/4.png';
-import level5 from '/assets/CardImg/5.png';
-import level6 from '/assets/CardImg/6.png';
-import level7 from '/assets/CardImg/7.png';
-import level8 from '/assets/CardImg/8.png';
-
-const levelImages = [level1, level2, level3, level4, level5, level6, level7, level8];
-
-const attributeIcons = {
-  fire: FaFireAlt,
-  water: FaWater,
-  earth: FaMountain,
-  darkness: FaMoon,
-  light: FaSun,
-  wind: FaWind,
-};
-
-const supportTypeIcons = {
-  normal: FiHexagon,
-  continuous: FaInfinity,
-  instant: GiFastArrow,
-  equipment: GoTools,
-  counter: FaArrowsRotate,
-};
-
-const rarityColors = {
-  legendary: '#ae8d0b',
-  epic: 'purple',
-  rare: '#B0B0B0',
-  common: 'black',
-};
-
-const categoryColors = {
-  monster: '#5c330a',
-  support: '#8892c6',
-  fusion: '#543c5a',
-};
-
-const rarityTranslations = {
-  legendary: 'Legendaria',
-  epic: 'Épica',
-  rare: 'Rara',
-  common: 'Común',
-};
-
-const categoryTranslations = {
-  monster: 'Monstruo',
-  support: 'Apoyo',
-  fusion: 'Fusión',
-};
-
-const typeTranslations = {
-  warrior: 'Guerrero',
-  zombie: 'Zombie',
-  demon: 'Demonio',
-  insect: 'Insecto',
-  fairy: 'Hada',
-  dragon: 'Dragón',
-  beast: 'Bestia',
-  fish: 'Pez',
-  plant: 'Planta',
-  machine: 'Máquina',
-  rock: 'Roca',
-  normal: 'Normal',
-  continuous: 'Continua',
-  instant: 'Rápida',
-  equipment: 'Equipo',
-  counter: 'Contrafecto',
-};
 
 const EffectDisplay = ({ effect }) => {
   const formattedEffect = effect
@@ -89,20 +23,20 @@ const EffectDisplay = ({ effect }) => {
 };
 
 const CardModal = ({ card, onClose }) => {
-  const { name, image, type, rarity, attribute, description, category, expansion, atk, def, effect, level } = card;
+  const { name, image, rarity, description, category, expansion, atk, def, effect, level } = card;
 
-  const rarityColor = rarityColors[rarity] || 'gray';
-  const categoryColor = categoryColors[category] || '#1a1a1a';
-  const translatedRarity = rarityTranslations[rarity] || rarity;
-  const translatedCategory = categoryTranslations[category] || category;
-  const translatedType = typeTranslations[type] || type;
+  const rarityColor = RARITY_COLORS[rarity] || 'gray';
+  const categoryColor = CATEGORY_COLORS[category] || '#1a1a1a';
+  const translatedRarity = RARITY_LABELS[rarity] || rarity;
+  const translatedCategory = CATEGORY_LABELS[category] || category;
+  const translatedType = getTypeLabel(card);
+  const showStats = category === 'monster' || category === 'fusion';
 
-  const Icon =
-    category === 'support'
-      ? supportTypeIcons[type?.toLowerCase()] || null
-      : attributeIcons[attribute?.toLowerCase()] || null;
+  const Icon = getTypeIcon(card);
+  const badgeColor = getTypeBadgeColor(card, rarityColor);
+  const badgeIconColor = getContrastColor(badgeColor);
 
-  const detectedEffects = Object.keys(effectDescriptions).filter((keyword) => effect.includes(`{{${keyword}}}`));
+  const detectedEffects = Object.keys(effectDescriptions).filter((keyword) => (effect || '').includes(`{{${keyword}}}`));
 
   return (
     <div className={styles.modalBackground} onClick={onClose}>
@@ -116,9 +50,9 @@ const CardModal = ({ card, onClose }) => {
           onClick={(e) => e.stopPropagation()}
         >
           {/* Nivel */}
-          {level && (
+          {level != null && LEVEL_BADGE_IMAGES[level - 1] && (
             <div className={styles.levelBadge}>
-              <img src={levelImages[level - 1]} alt={`Nivel ${level}`} />
+              <img src={LEVEL_BADGE_IMAGES[level - 1]} alt={`Nivel ${level}`} />
             </div>
           )}
           {/* Rareza */}
@@ -133,7 +67,11 @@ const CardModal = ({ card, onClose }) => {
           <div className={styles.cardDetails}>
             <div className={styles.cardHeader}>
               <h2 className={styles.cardName}>{name}</h2>
-              {Icon && <Icon className={styles.attributeIcon} />}
+              {Icon && (
+                <span className={styles.attributeIcon} style={{ backgroundColor: badgeColor, color: badgeIconColor }}>
+                  <Icon />
+                </span>
+              )}
             </div>
 
             <p className={styles.cardType}>{translatedType}</p>
@@ -159,7 +97,6 @@ const CardModal = ({ card, onClose }) => {
           <h2 className={styles.cardInfoName}>{name}</h2>
           <div className={styles.infoRow}>
             <p className={styles.cardInfoCategory}>{translatedCategory}</p>
-            {Icon && <Icon className={styles.attributeInfoIcon} />}
             <p className={styles.cardInfoType}>{translatedType}</p>
           </div>
           <h3>Descripción</h3>
