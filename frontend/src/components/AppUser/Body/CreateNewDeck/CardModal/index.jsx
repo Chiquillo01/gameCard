@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import { FaHeart } from 'react-icons/fa';
+import { GiBroadsword } from 'react-icons/gi';
 import { effectDescriptions } from '../../../../../lib/utils/effectGlossary';
 import {
   RARITY_COLORS,
@@ -58,21 +60,23 @@ const CardModal = ({ card, onClose }) => {
             {translatedRarity}
           </div>
 
-          {/* Nivel | Nombre | Atributo */}
-          <div className={styles.cardTopRow}>
+          {/* Nivel (esquina izquierda) */}
+          {level != null && LEVEL_BADGE_IMAGES[level - 1] && (
             <div className={styles.levelBadge}>
-              {level != null && LEVEL_BADGE_IMAGES[level - 1] && (
-                <img src={LEVEL_BADGE_IMAGES[level - 1]} alt={`Nivel ${level}`} />
-              )}
+              <img src={LEVEL_BADGE_IMAGES[level - 1]} alt={`Nivel ${level}`} />
             </div>
+          )}
+
+          {/* Atributo (esquina derecha) */}
+          {Icon && (
+            <span className={styles.attributeIcon} style={{ backgroundColor: badgeColor, color: badgeIconColor }}>
+              <Icon />
+            </span>
+          )}
+
+          {/* Nombre */}
+          <div className={styles.cardTopRow}>
             <h2 className={styles.cardName}>{name}</h2>
-            <div className={styles.attributeSlot}>
-              {Icon && (
-                <span className={styles.attributeIcon} style={{ backgroundColor: badgeColor, color: badgeIconColor }}>
-                  <Icon />
-                </span>
-              )}
-            </div>
           </div>
 
           {/* Imagen */}
@@ -88,20 +92,23 @@ const CardModal = ({ card, onClose }) => {
               <span className={styles.cardExpansion}>{expansion}</span>
             </div>
 
-            {/* Texto del efecto */}
+            {/* Texto del efecto + método de invocación, mismo bloque pero con su propio color */}
             <div className={styles.cardText}>
               {effect ? <EffectDisplay effect={effect} /> : <p>Esta carta no tiene efecto.</p>}
+              {invocationText && <p className={styles.invocationText}>{invocationText}</p>}
             </div>
-
-            {/* Texto del método de invocación */}
-            {invocationText && <p className={styles.invocationText}>{invocationText}</p>}
 
             {/* Atk y Vida */}
             {showStats && (
               <div className={styles.cardFooter}>
-                <p className={styles.atkDef}>
-                  {atk || '0'} / {def || '0'}
-                </p>
+                <span className={styles.statItem}>
+                  <GiBroadsword className={styles.atkIcon} />
+                  {atk || '0'}
+                </span>
+                <span className={styles.statItem}>
+                  <FaHeart className={styles.lifeIcon} />
+                  {def || '0'}
+                </span>
               </div>
             )}
           </div>

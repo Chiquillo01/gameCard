@@ -96,6 +96,7 @@
 }
 
 .modalContent {
+  position: relative;
   border-radius: 16px;
   padding: 16px;
   width: 480px;
@@ -112,33 +113,30 @@
   scrollbar-color: #54612b rgba(255, 255, 255, 0.1);
 }
 
-/* Nivel | Nombre | Atributo — a fixed-width slot on each side keeps the name centered whether
-   or not this card actually has a level or an attribute icon to show. */
+/* Nombre — centered; Nivel/Atributo are pinned to the card's own corners below, closer to the
+   border than a normal-flow layout would allow, instead of sitting inset with the rest of the
+   padded content. */
 .cardTopRow {
-  display: grid;
-  grid-template-columns: 48px 1fr 48px;
-  align-items: center;
-  gap: 8px;
+  padding: 0 44px;
   margin: 4px 0 12px;
 }
 
 .levelBadge {
-  width: 48px;
-  height: 48px;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 44px;
+  height: 44px;
   color: white;
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 2;
 }
 
 .levelBadge img {
   width: 100%;
   height: 100%;
-}
-
-.attributeSlot {
-  display: flex;
-  justify-content: flex-end;
 }
 
 .rarityBadge {
@@ -198,9 +196,11 @@
 }
 
 .attributeIcon {
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -208,6 +208,7 @@
   font-size: 18px;
   border: 2px solid rgba(20, 20, 20, 0.55);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  z-index: 2;
 }
 
 /* Familia y Clase | Colección */
@@ -237,18 +238,6 @@
   color: #ddd;
 }
 
-.invocationText {
-  background-color: rgba(0, 0, 0, 0.2);
-  border-radius: 8px;
-  padding: 8px 12px;
-  margin: 0;
-  color: #eee;
-  font-family: 'Roboto', sans-serif;
-  font-size: 0.85rem;
-  font-style: italic;
-  line-height: 1.4;
-}
-
 .cardText {
   background-color: rgba(255, 255, 255, 0.1);
   padding: 12px;
@@ -257,11 +246,26 @@
   font-family: 'Roboto', sans-serif;
   font-size: 1rem;
   line-height: 1.6;
-  height: 170px;
+  height: 210px;
   flex: none;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #54612b rgba(255, 255, 255, 0.1);
+}
+
+/* Same box as the effect text (no gap between them) but its own tint + a dashed divider, so it
+   still reads as "a different kind of text" rather than more effect text. */
+.invocationText {
+  background-color: rgba(0, 0, 0, 0.25);
+  border-top: 1px dashed rgba(255, 255, 255, 0.3);
+  border-radius: 0 0 6px 6px;
+  padding: 8px 12px;
+  margin: 8px -12px -12px;
+  color: #eee;
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  line-height: 1.4;
 }
 
 .cardText p,
@@ -293,17 +297,29 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  gap: 28px;
   font-size: 1rem;
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   padding: 6px;
 }
 
-.atkDef {
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 1.1rem;
   color: #fff;
   font-family: 'Roboto Mono', monospace;
   font-weight: bold;
+}
+
+.atkIcon {
+  color: #e05a45;
+}
+
+.lifeIcon {
+  color: #ff6b7a;
 }
 
 @media (max-width: 375px) {
@@ -369,9 +385,10 @@
 
   .cardFooter {
     font-size: 0.8rem;
+    gap: 16px;
   }
 
-  .atkDef {
+  .statItem {
     font-size: 0.8rem;
   }
 }
