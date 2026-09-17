@@ -11,9 +11,6 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard, onAddCar
   const handleCardClick = (card) => setSelectedCard(card);
   const handleCloseModal = () => setSelectedCard(null);
 
-  const totalNormalCards = normalCards.reduce((total, card) => total + (card.amount || 1), 0);
-  const totalFusionCards = fusionCards.reduce((total, card) => total + (card.amount || 1), 0);
-
   const expandCards = (cards) => {
     return cards.flatMap((card) =>
       Array.from({ length: card.amount || 1 }).map((_, i) => ({
@@ -53,7 +50,6 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard, onAddCar
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <h3 className={styles.sectionTitle}>Mazo Principal ({totalNormalCards}/40-50)</h3>
         <div className={styles.cardsList}>
           {expandCards(normalCards).map((card) => (
             <div key={card.keyId} className={styles.cardWrapper}>
@@ -74,7 +70,6 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard, onAddCar
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <h3 className={styles.sectionTitle}>Mazo Secundario ({totalFusionCards}/10)</h3>
         <div className={styles.cardsList}>
           {expandCards(fusionCards).map((card) => (
             <div key={card.keyId} className={styles.cardWrapper}>
