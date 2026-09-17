@@ -11,6 +11,16 @@
   margin: 8px;
 }
 
+.card:hover {
+  transform: scale(1.05);
+}
+
+/* The browser hides the dragged element's own node while it's being dragged and shows the
+   drag-image ghost instead — this only affects the element left behind once dragging ends. */
+.card:active {
+  cursor: grabbing;
+}
+
 .rarity {
   position: absolute;
   top: 2px;

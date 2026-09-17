@@ -195,6 +195,7 @@ const CreateNewDeck = () => {
                 normalCards={selectedCards}
                 fusionCards={selectedFusionCards}
                 onRemoveCard={handleRemoveCard}
+                onAddCard={handleAddCard}
               />
             </div>
             <div className={styles.cardsCollectedWrapper}>

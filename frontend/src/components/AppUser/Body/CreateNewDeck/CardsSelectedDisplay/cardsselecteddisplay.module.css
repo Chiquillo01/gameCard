@@ -23,6 +23,13 @@
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
+  border: 2px dashed transparent;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.dragOver {
+  border-color: #54612b;
+  background-color: #eee3c8;
 }
 
 /* The two boxes split the panel's height 85/15 instead of just hugging their own content,

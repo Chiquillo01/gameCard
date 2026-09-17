@@ -41,6 +41,13 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount, compact })
     setIsModalOpen(false);
   };
 
+  // Only the "add a card to the deck" context (the collection browser) is draggable — dragging a
+  // card already in the deck, or a read-only collection view, wouldn't have a meaningful target.
+  const handleDragStart = (event) => {
+    event.dataTransfer.setData('application/json', JSON.stringify(card));
+    event.dataTransfer.effectAllowed = 'copy';
+  };
+
   useEffect(() => {
     const handleResize = () => {
       setIsSmallScreen(window.innerWidth <= 820);
@@ -55,10 +62,14 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount, compact })
 
   return (
     <>
-      <motion.div
+      {/* A plain div, not motion.div — framer-motion redefines onDragStart/onDragEnd for its own
+          pan-based drag gesture (which only activates with a `drag` prop), so it would swallow
+          the native HTML5 drag-and-drop events this needs instead of forwarding them. */}
+      <div
         className={`${styles.card} ${compact ? styles.cardCompact : ''}`}
-        style={{ borderColor: rarityColor, backgroundColor: categoryColor }}
-        whileHover={{ scale: 1.05 }}
+        style={{ borderColor: rarityColor, backgroundColor: categoryColor, cursor: addCard ? 'grab' : 'pointer' }}
+        draggable={addCard}
+        onDragStart={addCard ? handleDragStart : undefined}
         onClick={handleCardClick}
       >
         {level != null && LEVEL_BADGE_IMAGES[level - 1] && (
@@ -98,7 +109,7 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount, compact })
             {addCard && isSmallScreen ? '+' : actionLabel}
           </motion.button>
         )}
-      </motion.div>
+      </div>
 
       <AnimatePresence>{isModalOpen && <CardModal card={card} onClose={handleCloseModal} />}</AnimatePresence>
     </>

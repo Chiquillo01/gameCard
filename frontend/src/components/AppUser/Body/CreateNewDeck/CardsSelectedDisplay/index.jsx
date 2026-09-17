@@ -4,8 +4,9 @@ import CardItem from '../CardItem';
 import CardModal from '../CardModal';
 import styles from './cardsselecteddisplay.module.css';
 
-const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard }) => {
+const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard, onAddCard }) => {
   const [selectedCard, setSelectedCard] = useState(null);
+  const [dragOverZone, setDragOverZone] = useState(null);
 
   const handleCardClick = (card) => setSelectedCard(card);
   const handleCloseModal = () => setSelectedCard(null);
@@ -22,9 +23,36 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard }) => {
     );
   };
 
+  // A card's own category decides which deck it joins (handled by onAddCard) regardless of which
+  // of the two boxes it's dropped on, so both zones just need to accept the drop and hand it off.
+  const handleDragOver = (zone) => (event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'copy';
+    setDragOverZone(zone);
+  };
+
+  const handleDragLeave = () => setDragOverZone(null);
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setDragOverZone(null);
+    const data = event.dataTransfer.getData('application/json');
+    if (!data || !onAddCard) return;
+    try {
+      onAddCard(JSON.parse(data));
+    } catch {
+      // Not a card drag (e.g. dragged text/an image) — ignore it.
+    }
+  };
+
   return (
     <div className={styles.cardsSelected}>
-      <div className={styles.normalCardsContainer}>
+      <div
+        className={`${styles.normalCardsContainer} ${dragOverZone === 'main' ? styles.dragOver : ''}`}
+        onDragOver={handleDragOver('main')}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <h3 className={styles.sectionTitle}>Mazo Principal ({totalNormalCards}/40-50)</h3>
         <div className={styles.cardsList}>
           {expandCards(normalCards).map((card) => (
@@ -40,7 +68,12 @@ const CardsSelectedDisplay = ({ normalCards, fusionCards, onRemoveCard }) => {
         </div>
       </div>
 
-      <div className={styles.fusionCardsContainer}>
+      <div
+        className={`${styles.fusionCardsContainer} ${dragOverZone === 'fusion' ? styles.dragOver : ''}`}
+        onDragOver={handleDragOver('fusion')}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <h3 className={styles.sectionTitle}>Mazo Secundario ({totalFusionCards}/10)</h3>
         <div className={styles.cardsList}>
           {expandCards(fusionCards).map((card) => (
