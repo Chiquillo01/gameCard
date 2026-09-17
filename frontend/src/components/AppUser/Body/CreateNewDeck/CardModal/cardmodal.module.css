@@ -250,8 +250,8 @@
   font-family: 'Roboto', sans-serif;
   font-size: 1rem;
   line-height: 1.6;
-  height: 150px;
-  flex: none;
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
