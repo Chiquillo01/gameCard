@@ -2,20 +2,22 @@ const mongoose = require('mongoose');
 const { Deck } = require('../data/Schema/deck');
 const { User } = require('../data/Schema/user');
 const { Card } = require('../data/Schema/card');
+const { MAX_DECK_SIZE, MAX_FUSION_CARDS } = require('../game/deckRules');
 
-const MIN_DECK_SIZE = 40;
-const MAX_DECK_SIZE = 50;
 // Fallback only — used if a Card document somehow has no `state` (banlist value). The real,
 // authoritative limit lives on each card's own `state` field (see Schema/card.js), so a card
 // can be banned/limited without touching this code.
 const MAX_COPIES_BY_RARITY = { legendary: 1, epic: 2, rare: 3, common: 4 };
 
-// Rulebook: 40-50 cards in the main deck, and max copies per card come from its own banlist
-// `state` value (which itself defaults by rarity: Legendaria 1 / Épica 2 / Rara 3 / Común 4).
+// A deck can be saved while still under construction — the 40-card *minimum* is only enforced
+// at duel-start time (see game/deckRules.js's isDeckPlayable, used by duelController) — but it
+// can never be saved over the 50-card max, since that's a hard limit either way. Max copies per
+// card come from its own banlist `state` value (defaults by rarity: Legendaria 1 / Épica 2 /
+// Rara 3 / Común 4).
 function validateDeckComposition(cards, cardDocsById) {
   const totalNormalCards = cards.reduce((sum, c) => sum + (c.amount || 0), 0);
-  if (totalNormalCards < MIN_DECK_SIZE || totalNormalCards > MAX_DECK_SIZE) {
-    return `El mazo principal debe tener entre ${MIN_DECK_SIZE} y ${MAX_DECK_SIZE} cartas (tiene ${totalNormalCards}).`;
+  if (totalNormalCards > MAX_DECK_SIZE) {
+    return `El mazo principal no puede tener más de ${MAX_DECK_SIZE} cartas (tiene ${totalNormalCards}).`;
   }
   for (const c of cards) {
     const card = cardDocsById.get(c.card.toString());
@@ -105,8 +107,8 @@ const createDeck = async (req, res) => {
 
     const totalFusionCards = fusionCards.reduce((sum, card) => sum + (card.amount || 0), 0);
 
-    if (totalFusionCards > 10) {
-      return res.status(400).json({ error: 'No puedes añadir más de 10 cartas de fusión al mazo.' });
+    if (totalFusionCards > MAX_FUSION_CARDS) {
+      return res.status(400).json({ error: `No puedes añadir más de ${MAX_FUSION_CARDS} cartas de fusión al mazo.` });
     }
 
     const allCardIds = [...cards.map((c) => c.card), ...fusionCards.map((c) => c.card), ...tokens];
@@ -184,8 +186,8 @@ const updateDeck = async (req, res) => {
 
     const totalFusionCards = fusionCards.reduce((sum, card) => sum + (card.amount || 0), 0);
 
-    if (totalFusionCards > 10) {
-      return res.status(400).json({ error: 'No puedes añadir más de 10 cartas de fusión al mazo' });
+    if (totalFusionCards > MAX_FUSION_CARDS) {
+      return res.status(400).json({ error: `No puedes añadir más de ${MAX_FUSION_CARDS} cartas de fusión al mazo` });
     }
 
     const allCardIds = [...cards.map((c) => c.card), ...fusionCards.map((c) => c.card), ...tokens];

@@ -7,6 +7,7 @@ import styles from './duel.module.css';
 import { getUserDecks } from '../../../../lib/utils/apiDeck';
 import { startPveDuel, getDuelState, sendDuelAction } from '../../../../lib/utils/apiDuel';
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
+import { isDeckPlayable } from '../../../../lib/utils/deckRules';
 
 const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
 
@@ -232,12 +233,22 @@ const DuelPage = () => {
             >
               <option value=''>Elige un mazo</option>
               {decks.map((d) => (
-                <option key={d._id} value={d._id}>
+                <option key={d._id} value={d._id} disabled={!isDeckPlayable(d)}>
                   {d.deckTitle}
+                  {isDeckPlayable(d) ? '' : ' (incompleto)'}
                 </option>
               ))}
             </select>
-            <button className={styles.startButton} disabled={!selectedDeckId || starting} onClick={handleStart}>
+            {selectedDeckId && !isDeckPlayable(decks.find((d) => d._id === selectedDeckId) || {}) && (
+              <p className={styles.deckWarning}>
+                Este mazo no tiene entre 40 y 50 cartas (o supera las 10 de fusión) — termínalo antes de jugar.
+              </p>
+            )}
+            <button
+              className={styles.startButton}
+              disabled={!selectedDeckId || starting || !isDeckPlayable(decks.find((d) => d._id === selectedDeckId) || {})}
+              onClick={handleStart}
+            >
               {starting ? 'Iniciando...' : 'Jugar contra la IA'}
             </button>
           </div>

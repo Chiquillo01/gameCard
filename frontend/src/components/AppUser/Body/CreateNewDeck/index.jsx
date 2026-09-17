@@ -10,14 +10,7 @@ import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import CardsCollectedDisplay from './CardsCollectedDisplay';
 import CardsSelectedDisplay from './CardsSelectedDisplay';
 import TokenSelector from './TokenSelector';
-
-// Rulebook limits (mirrored in backend/src/controllers/deckController.js, the source of truth):
-// the main deck holds 40-50 cards, the secondary/fusion deck holds up to 10, and how many
-// copies of any one card are allowed comes from that card's own `state` field (banlist value,
-// which itself defaults by rarity — Legendaria 1 / Épica 2 / Rara 3 / Común 4).
-const MIN_DECK_SIZE = 40;
-const MAX_DECK_SIZE = 50;
-const MAX_FUSION_CARDS = 10;
+import { MIN_DECK_SIZE, MAX_DECK_SIZE, MAX_FUSION_CARDS } from '../../../../lib/utils/deckRules';
 
 const TOAST_OPTIONS = {
   position: 'top-right',
@@ -202,14 +195,12 @@ const CreateNewDeck = () => {
               <CardsCollectedDisplay cards={deckableCards} onAddCard={handleAddCard} addCard={true} />
             </div>
           </div>
+          {/* A deck under 40 cards can still be saved to keep building later — it just won't be
+              usable in a duel yet (see the status bar above and Duel's deck picker). Only the
+              hard ceilings (max deck size, max fusion cards) block saving outright. */}
           <button
             className={styles.saveDeckButton}
-            disabled={
-              deckTitle.trim() === '' ||
-              totalMainCards < MIN_DECK_SIZE ||
-              totalMainCards > MAX_DECK_SIZE ||
-              totalFusionCards > MAX_FUSION_CARDS
-            }
+            disabled={deckTitle.trim() === '' || totalMainCards > MAX_DECK_SIZE || totalFusionCards > MAX_FUSION_CARDS}
             onClick={handleSaveDeck}
           >
             {deckId ? 'Actualizar Mazo' : 'Guardar Mazo'}
