@@ -241,7 +241,7 @@ const DuelPage = () => {
             </select>
             {selectedDeckId && !isDeckPlayable(decks.find((d) => d._id === selectedDeckId) || {}) && (
               <p className={styles.deckWarning}>
-                Este mazo no tiene entre 40 y 50 cartas (o supera las 10 de fusión) — termínalo antes de jugar.
+                Este mazo no tiene entre 40 y 50 cartas (o supera las 10 de Compilación) — termínalo antes de jugar.
               </p>
             )}
             <button
