@@ -106,7 +106,10 @@
   border: 8px solid;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  /* flex-start, not space-between — with the current sizes (bigger image, tighter text) the
+     leftover vertical space was landing between the name and the image instead of at the
+     bottom, showing up as an oversized gap that had nothing to do with any actual margin. */
+  justify-content: flex-start;
   box-sizing: border-box;
   overflow-y: auto;
   scrollbar-width: thin;
