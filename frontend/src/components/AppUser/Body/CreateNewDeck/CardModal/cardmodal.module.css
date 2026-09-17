@@ -98,7 +98,7 @@
 .modalContent {
   position: relative;
   border-radius: 16px;
-  padding: 16px;
+  padding: 16px 10px;
   width: 480px;
   height: 700px;
   text-align: center;
@@ -162,7 +162,7 @@
   height: 320px;
   border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -176,7 +176,7 @@
 
 .cardDetails {
   text-align: left;
-  margin-top: 8px;
+  margin-top: 0;
   flex: none;
   overflow-y: auto;
   display: flex;
