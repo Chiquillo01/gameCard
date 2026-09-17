@@ -175,7 +175,7 @@
 }
 
 .cardDetails {
-  text-align: justify;
+  text-align: left;
   margin-top: 8px;
   flex: none;
   overflow-y: auto;
