@@ -28,6 +28,7 @@ import {
   GiVolcano,
   GiSoundWaves,
   GiTornado,
+  GiCastle,
 } from 'react-icons/gi';
 import { FiHexagon } from 'react-icons/fi';
 import { GoTools } from 'react-icons/go';
@@ -86,7 +87,7 @@ export const SUPPORT_SUBTYPE_ICONS = {
   instant: GiFastArrow,
   equipment: GoTools,
   counter: FaArrowsRotate,
-  field: FaMountain,
+  field: GiCastle,
 };
 
 export const SUPPORT_SUBTYPE_LABELS = {
