@@ -4,6 +4,7 @@ import CardModal from '../CardModal';
 import {
   RARITY_COLORS,
   CATEGORY_COLORS,
+  CATEGORY_LABELS,
   getTypeLabel,
   getTypeIcon,
   getTypeBadgeColor,
@@ -95,7 +96,9 @@ const CardItem = ({ card, onAction, actionLabel, addCard, showAmount, compact })
             )}
             {showAmount && <span className={styles.statBadge}>x{amount ?? 1}</span>}
           </div>
-          {family && <p className={styles.cardFamily}>{family}</p>}
+          {(family || category === 'support') && (
+            <p className={styles.cardFamily}>{category === 'support' ? CATEGORY_LABELS.support : family}</p>
+          )}
         </div>
 
         {actionLabel && onAction && (
