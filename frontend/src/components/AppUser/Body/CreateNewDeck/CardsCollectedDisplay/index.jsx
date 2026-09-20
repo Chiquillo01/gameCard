@@ -18,6 +18,7 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
     category: '',
     type: '',
     attribute: '',
+    family: '',
     rarity: '',
   });
 
@@ -47,6 +48,7 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
       category: '',
       type: '',
       attribute: '',
+      family: '',
       rarity: '',
     });
   };
@@ -72,6 +74,7 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
   const availableCategories = [...new Set(cards.map((c) => c.category))].filter(Boolean);
   const availableTypes = [...new Set(cards.map((c) => c.type))].filter(Boolean).sort();
   const availableAttributes = [...new Set(cards.map((c) => c.attribute))].filter((a) => a && a !== 'none').sort();
+  const availableFamilies = [...new Set(cards.map((c) => c.family))].filter(Boolean).sort();
 
   const filteredCards = cards
     .filter((card) => {
@@ -80,6 +83,7 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
         (!filters.category || filters.category === card.category) &&
         (!filters.type || filters.type === card.type) &&
         (!filters.attribute || filters.attribute === card.attribute) &&
+        (!filters.family || filters.family === card.family) &&
         (!filters.rarity || filters.rarity === card.rarity)
       );
     })
@@ -116,6 +120,7 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
                 availableCategories={availableCategories}
                 availableTypes={availableTypes}
                 availableAttributes={availableAttributes}
+                availableFamilies={availableFamilies}
               />
             </div>
           )}
