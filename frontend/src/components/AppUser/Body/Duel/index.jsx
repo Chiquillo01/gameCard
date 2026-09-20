@@ -53,6 +53,8 @@ const DuelPage = () => {
   const [pendingSummon, setPendingSummon] = useState(null);
   // A Veloz/Contraataque support from hand is waiting on activate-now-vs-set-face-down.
   const [pendingSupportChoice, setPendingSupportChoice] = useState(null);
+  // One of your own monsters was clicked in a main phase: pick the position to switch it to.
+  const [pendingPosition, setPendingPosition] = useState(null);
   // Fusion in progress: the Compilación card plus the material instanceIds picked so far.
   const [fusion, setFusion] = useState(null);
   // A Cementerio/Exilio/Mazo-C pile the player clicked open: { side: 'me'|'enemy', zone }.
@@ -116,8 +118,15 @@ const DuelPage = () => {
   const cancelPendingChoices = () => {
     setPendingSummon(null);
     setPendingSupportChoice(null);
+    setPendingPosition(null);
     setFusion(null);
     setSelectedAttacker(null);
+  };
+
+  const confirmPositionChange = (position) => {
+    if (!pendingPosition) return;
+    act({ type: 'CHANGE_POSITION', instanceId: pendingPosition.instanceId, position });
+    setPendingPosition(null);
   };
 
   const startFusion = (card) => {
@@ -195,11 +204,16 @@ const DuelPage = () => {
       return;
     }
     if (isOwn) {
-      if (view.turnPlayer !== view.you || view.phase !== 'battle') return;
+      if (view.turnPlayer !== view.you) return;
+      if (view.phase === 'main1' || view.phase === 'main2') {
+        setPendingPosition({ instanceId: monster.instanceId, faceDown: monster.faceDown, position: monster.position });
+        return;
+      }
+      if (view.phase !== 'battle') return;
       setSelectedAttacker(monster.instanceId === selectedAttacker ? null : monster.instanceId);
       return;
     }
-    if (!selectedAttacker || monster.faceDown) return;
+    if (!selectedAttacker) return;
     act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: monster.instanceId });
     setSelectedAttacker(null);
   };
@@ -422,6 +436,25 @@ const DuelPage = () => {
           </div>
         )}
 
+        {pendingPosition && (
+          <div className={styles.choiceBar}>
+            <span>{pendingPosition.faceDown ? 'Voltear boca arriba en:' : 'Cambiar posición a:'}</span>
+            {(pendingPosition.faceDown || pendingPosition.position !== 'attack') && (
+              <button className={styles.actionButton} onClick={() => confirmPositionChange('attack')}>
+                Ataque
+              </button>
+            )}
+            {(pendingPosition.faceDown || pendingPosition.position !== 'defense') && (
+              <button className={styles.actionButton} onClick={() => confirmPositionChange('defense')}>
+                Defensa
+              </button>
+            )}
+            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
+              Cancelar
+            </button>
+          </div>
+        )}
+
         {pendingSupportChoice && (
           <div className={styles.choiceBar}>
             <span>¿Activar ahora o colocar boca abajo?</span>
@@ -581,6 +614,11 @@ function humanizeReason(reason) {
     'not-available': 'Esa carta de fusión no está disponible.',
     'summoning-sickness': 'Ese monstruo no puede atacar el turno en que fue invocado.',
     'already-attacked': 'Ese monstruo ya atacó este turno.',
+    'not-main-phase': 'Solo puedes hacer eso en tu Fase Principal.',
+    'summoned-this-turn': 'Ese monstruo no puede cambiar de posición el turno en que fue invocado.',
+    'already-changed-position': 'Ese monstruo ya cambió de posición este turno.',
+    'same-position': 'Ese monstruo ya está en esa posición.',
+    'monster-not-found': 'No se encontró ese monstruo.',
     'not-battle-phase': 'Solo puedes atacar en la fase de batalla.',
     'must-target-a-monster': 'El rival tiene monstruos: debes elegir uno como objetivo.',
     'not-your-turn': 'No es tu turno.',

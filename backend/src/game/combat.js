@@ -37,8 +37,13 @@ function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanc
 
   const defender = oppPl.field.monsters.find((m) => m && m.instanceId === targetInstanceId);
   if (!defender) return { ok: false, reason: 'defender-not-found' };
-  const defenderStats = getEffectiveStats(defender);
   attacker.hasAttacked = true;
+
+  // Rulebook: a face-down defender is turned face-up during the damage step so its Vida can be
+  // read; its Rotación effects trigger after damage, if it's still on the field.
+  const wasFaceDown = defender.faceDown;
+  if (wasFaceDown) defender.faceDown = false;
+  const defenderStats = getEffectiveStats(defender);
 
   let destroyedAttacker = false;
   let destroyedDefender = false;
@@ -50,12 +55,18 @@ function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanc
     if (destroyedDefender && !destroyedAttacker) oppPl.vp = Math.max(0, oppPl.vp - (attackerStats.atk - defenderStats.atk));
     if (destroyedAttacker && !destroyedDefender) attackerPl.vp = Math.max(0, attackerPl.vp - (defenderStats.atk - attackerStats.atk));
   } else {
-    // defending in defense position: only destroyed if atk > def, no VP loss to defender's owner
+    // Defending in defense position (rulebook): ATK > Vida destroys the defender with no VP loss;
+    // ATK = Vida destroys nothing; ATK < Vida leaves both alive and the attacker's owner loses
+    // the difference (Vida - ATK) in VP.
     if (attackerStats.atk > defenderStats.def || hasKeyword(attacker, 'TOQUE_DE_MUERTE')) destroyedDefender = true;
+    else if (attackerStats.atk < defenderStats.def) {
+      attackerPl.vp = Math.max(0, attackerPl.vp - (defenderStats.def - attackerStats.atk));
+    }
   }
 
   if (destroyedDefender) removeAndGraveyard(state, oppIdx, defender.instanceId);
   if (destroyedAttacker) removeAndGraveyard(state, controllerIndex, attacker.instanceId);
+  if (wasFaceDown && !destroyedDefender) fireTrigger(state, 'flipped', { instanceId: defender.instanceId });
 
   log(state, `${attackerPl.userId} ataca con ${getCard(attacker.cardId || '').name || 'token'}.`);
   fireTrigger(state, 'onBattlePhase', {});

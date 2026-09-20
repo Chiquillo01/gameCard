@@ -91,6 +91,8 @@ function fireTrigger(state, eventName, eventArgs = {}) {
     const pl = player(state, controllerIndex);
     pl.field.monsters.filter(Boolean).forEach((m) => {
       if (m.faceDown || m.negated || m.isToken) return;
+      // A flip effect belongs to the monster that was turned face-up, not to every monster on the field.
+      if (eventName === 'flipped' && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
       const card = getCard(m.cardId);
       (card.effectCodes || []).forEach((effectId) => {
         const effect = getEffect(effectId);

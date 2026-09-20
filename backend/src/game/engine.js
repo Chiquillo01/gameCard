@@ -3,6 +3,7 @@ const { advancePhase, runPhaseEntry } = require('./turns');
 const { normalSummon, compileSummon } = require('./summon');
 const { activateSupport } = require('./support');
 const { declareAttack } = require('./combat');
+const { changePosition } = require('./position');
 const { activateEffect, requiredZoneFor, locationIsInZone } = require('./effectEngine');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
@@ -64,6 +65,9 @@ function applyAction(state, playerIndex, action) {
 
     case 'DECLARE_ATTACK':
       return declareAttack(state, playerIndex, action.attackerInstanceId, action.targetInstanceId || null);
+
+    case 'CHANGE_POSITION':
+      return changePosition(state, playerIndex, action.instanceId, action.position);
 
     case 'ACTIVATE_EFFECT':
       return activateEffect(state, playerIndex, action.effectId, action.sourceInstanceId, action.targets || []);
