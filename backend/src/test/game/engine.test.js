@@ -92,11 +92,18 @@ describe('Game engine', () => {
     expect(state.phase).toBe('draw');
   });
 
-  it('gives no pixels on turn 1 (a player\'s own first turn) but 6 on their next turn, capped at 18', async () => {
+  it('gives no pixels on turn 1 (a player\'s own first turn) but 6 on their next turn', async () => {
     const state = await makeTestMatch();
     expect(state.players[0].pixelcoins).toBe(6); // starting pixels only, no turn-1 income
     advanceUntil(state, 3, 'draw'); // turn 1 (P0) -> turn 2 (P1) -> turn 3 (P0), draw phase already processed
     expect(state.players[0].pixelcoins).toBe(12); // 6 starting + 6 income on their second turn
+  });
+
+  it('caps pixels at 12 — income never pushes a player past it', async () => {
+    const state = await makeTestMatch();
+    state.players[0].pixelcoins = 10;
+    advanceUntil(state, 3, 'draw'); // P0's second turn: 10 + 6 would be 16, must stop at 12
+    expect(state.players[0].pixelcoins).toBe(12);
   });
 
   it('skips both Battle and Principal 2 on the very first turn of the match', async () => {
