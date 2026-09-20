@@ -1,5 +1,6 @@
 // Loads the card database + effect rules into MongoDB. Safe to re-run: cards are upserted by
-// `name` (unique per card). Effects are upserted by `_id`.
+// `number` (the stable id from the spreadsheet), so renaming a card in the sheet updates it in
+// place instead of creating a duplicate. Effects are upserted by `_id`.
 //
 // `number` (stable unique id) and `state` (banlist value) both come straight from
 // cards_final.json now — the source spreadsheet is the human-curated authority for both, so the
@@ -35,7 +36,7 @@ async function seed() {
   console.log(`Seeding ${cards.length} cards...`);
   for (const card of cards) {
     // eslint-disable-next-line no-await-in-loop
-    await Card.findOneAndUpdate({ name: card.name }, card, {
+    await Card.findOneAndUpdate({ number: card.number }, card, {
       upsert: true,
       setDefaultsOnInsert: true,
     });
