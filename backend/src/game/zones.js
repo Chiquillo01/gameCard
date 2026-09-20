@@ -1,4 +1,5 @@
 const { getCard } = require('./cardIndex');
+const { clearStatus, BURN } = require('./statuses');
 
 function player(state, idx) {
   return state.players[idx];
@@ -49,8 +50,23 @@ function removeFromZone(state, instanceId, loc) {
   else if (loc.zone === 'field:territory') pl.field.territory = null;
 }
 
-function findEmptySlot(arr) {
-  return arr.findIndex((s) => s === null);
+// Rulebook, Corrosión: a zone marked as corrosive can't hold cards. `blocked` is the set of slot
+// indexes that are currently corroded for this kind of zone.
+function findEmptySlot(arr, blocked = []) {
+  return arr.findIndex((s, i) => s === null && !blocked.includes(i));
+}
+
+function corrodedSlots(pl, zone) {
+  return (pl.corrosion || []).filter((c) => c.zone === zone).map((c) => c.slot);
+}
+
+// Cards "under" a compiled monster (its materials) leave with it, to the same place — except that
+// a compiled monster sent back to the Mazo-C sends its materials to the Mazo.
+function releaseMaterials(state, entry, ownerIndex, toZone) {
+  if (!entry || !entry.materials || !entry.materials.length) return;
+  const dest = toZone === 'extra' ? 'deck' : toZone;
+  entry.materials.forEach((id) => moveToZone(state, id, dest, ownerIndex));
+  entry.materials = [];
 }
 
 function log(state, message) {
@@ -63,13 +79,20 @@ function moveToZone(state, instanceId, toZone, ownerIndexOverride) {
   const loc = findInstanceLocation(state, instanceId);
   const ownerIndex = ownerIndexOverride ?? (loc ? loc.ownerIndex : null);
   if (ownerIndex === null) return false;
+  const leaving = loc && loc.zone === 'field:monster' ? state.players[loc.ownerIndex].field.monsters[loc.slot] : null;
   if (loc) removeFromZone(state, instanceId, loc);
   const pl = state.players[ownerIndex];
   if (toZone === 'hand') pl.hand.push(instanceId);
+  else if (toZone === 'extra') pl.extra.push(instanceId);
   else if (toZone === 'deck') pl.deck.unshift(instanceId);
   else if (toZone === 'graveyard') pl.graveyard.push(instanceId);
   else if (toZone === 'banished') pl.banished.push(instanceId);
   else return false;
+  if (leaving) {
+    // A burning monster that is destroyed stops burning; other statuses stay with the card.
+    clearStatus(state, instanceId, BURN);
+    releaseMaterials(state, leaving, ownerIndex, toZone);
+  }
   return true;
 }
 
@@ -78,7 +101,7 @@ function placeMonster(state, instanceId, ownerIndex, { position = 'attack', face
   const loc = findInstanceLocation(state, instanceId);
   if (loc) removeFromZone(state, instanceId, loc);
   const pl = state.players[ownerIndex];
-  const slot = findEmptySlot(pl.field.monsters);
+  const slot = findEmptySlot(pl.field.monsters, corrodedSlots(pl, 'monsters'));
   if (slot === -1) return false;
   const card = getCard(require('./deckUtils').cardIdFromInstance(instanceId));
   pl.field.monsters[slot] = {
@@ -101,7 +124,7 @@ function placeSupport(state, instanceId, ownerIndex, { faceDown = false } = {}) 
   const loc = findInstanceLocation(state, instanceId);
   if (loc) removeFromZone(state, instanceId, loc);
   const pl = state.players[ownerIndex];
-  const slot = findEmptySlot(pl.field.support);
+  const slot = findEmptySlot(pl.field.support, corrodedSlots(pl, 'support'));
   if (slot === -1) return false;
   const card = getCard(require('./deckUtils').cardIdFromInstance(instanceId));
   pl.field.support[slot] = {
@@ -137,6 +160,9 @@ module.exports = {
   getFieldSupport,
   removeFromZone,
   moveToZone,
+  releaseMaterials,
+  findEmptySlot,
+  corrodedSlots,
   placeMonster,
   placeSupport,
   placeTerritory,

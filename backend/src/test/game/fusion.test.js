@@ -77,8 +77,9 @@ describe('Compilación (fusion) summon', () => {
     expect(state.players[0].field.monsters.some((m) => m && m.instanceId === fusionId)).toBe(true);
     expect(state.players[0].hand).not.toContain(mat1);
     expect(state.players[0].hand).not.toContain(mat2);
-    expect(state.players[0].graveyard).toContain(mat1);
-    expect(state.players[0].graveyard).toContain(mat2);
+    // Rulebook: the materials are stacked under the compiled monster, not sent to the graveyard.
+    expect(state.players[0].graveyard).not.toContain(mat1);
+    expect(state.players[0].field.monsters.find((m) => m && m.instanceId === fusionId).materials).toEqual([mat1, mat2]);
   });
 
   it('rejects the summon when materials do not satisfy the requirement', async () => {

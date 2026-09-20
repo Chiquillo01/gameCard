@@ -4,6 +4,7 @@ const { payCost } = require('./effects/costs');
 const { runAction, checkWin } = require('./effects/actions');
 const { player, log, findInstanceLocation } = require('./zones');
 const { cardIdFromInstance } = require('./deckUtils');
+const { hasStatus, poisonDebuff, FREEZE } = require('./statuses');
 
 function makeCtx(state, controllerIndex, effect, sourceInstanceId) {
   return { state, controllerIndex, sourceInstanceId, effect };
@@ -34,6 +35,8 @@ function locationIsInZone(loc, requiredZone) {
 function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targets = []) {
   const effect = getEffect(effectId);
   if (!effect) return { ok: false, reason: 'unknown-effect' };
+  // Rulebook, Congelado: a frozen card can't activate its effects (even from the graveyard).
+  if (hasStatus(state, sourceInstanceId, FREEZE)) return { ok: false, reason: 'frozen' };
 
   const requiredZone = requiredZoneFor(effect);
   if (requiredZone) {
@@ -90,7 +93,7 @@ function fireTrigger(state, eventName, eventArgs = {}) {
   order.forEach((controllerIndex) => {
     const pl = player(state, controllerIndex);
     pl.field.monsters.filter(Boolean).forEach((m) => {
-      if (m.faceDown || m.negated || m.isToken) return;
+      if (m.faceDown || m.negated || m.isToken || hasStatus(state, m.instanceId, FREEZE)) return;
       // A flip effect belongs to the monster that was turned face-up, not to every monster on the field.
       if (eventName === 'flipped' && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
       const card = getCard(m.cardId);
@@ -99,7 +102,7 @@ function fireTrigger(state, eventName, eventArgs = {}) {
         if (!effect || (effect.type !== 'triggered' && effect.type !== 'trigger')) return;
         if (!effect.trigger || effect.trigger.fn !== eventName) return;
         if (eventArgs.breed && effect.trigger.args && effect.trigger.args.monsterFamily && effect.trigger.args.monsterFamily !== eventArgs.breed) return;
-        const ctx = makeCtx(state, controllerIndex, effect, m.instanceId);
+        const ctx = { ...makeCtx(state, controllerIndex, effect, m.instanceId), event: eventArgs };
         if (!checkConditions(ctx, effect.conditions)) return;
         if (effect.oncePerTurn) {
           state.turnLimits = state.turnLimits || {};
@@ -119,12 +122,13 @@ function fireTrigger(state, eventName, eventArgs = {}) {
 // Continuous effects aren't stored as applied deltas — every mutation we recompute them fresh
 // from current field state, which avoids "forgot to remove the buff" bugs entirely.
 function recomputeContinuous(state) {
+  releaseCorrosion(state);
   state.players.forEach((pl) => {
-    pl.field.monsters.filter(Boolean).forEach((m) => { m.tempBuff = { atk: 0, def: 0 }; });
+    pl.field.monsters.filter(Boolean).forEach((m) => { m.tempBuff = poisonDebuff(state, m.instanceId); });
   });
   state.players.forEach((pl, controllerIndex) => {
     [...pl.field.monsters, ...pl.field.support].filter(Boolean).forEach((entry) => {
-      if (entry.faceDown || entry.isToken) return;
+      if (entry.faceDown || entry.isToken || hasStatus(state, entry.instanceId, FREEZE)) return;
       const card = getCard(entry.cardId);
       (card.effectCodes || []).forEach((effectId) => {
         const effect = getEffect(effectId);
@@ -137,6 +141,41 @@ function recomputeContinuous(state) {
   });
 }
 
+// Rulebook, Corrosión: zones stop being corroded once the monster that corroded them leaves the
+// field or is no longer face-up.
+function releaseCorrosion(state) {
+  state.players.forEach((pl) => {
+    if (!pl.corrosion || !pl.corrosion.length) return;
+    pl.corrosion = pl.corrosion.filter((c) => {
+      const src = state.players.flatMap((p) => p.field.monsters).find((m) => m && m.instanceId === c.sourceInstanceId);
+      return src && !src.faceDown;
+    });
+  });
+}
+
+const MATERIAL_TRIGGERS = ['usedAsMaterial', 'usedAsCompileMaterial', 'usedAsFusionMaterial'];
+
+// "Ser usado como material de un monstruo compilado": each material card's own trigger effect
+// fires when it is used for a compilation. The status/effects it applies come from a compiled
+// monster, so they get the compiled-monster duration.
+function fireMaterialTriggers(state, controllerIndex, materialIds, compiledInstanceId) {
+  materialIds.forEach((id) => {
+    if (id.startsWith('token:')) return;
+    const card = getCard(cardIdFromInstance(id));
+    (card.effectCodes || []).forEach((effectId) => {
+      const effect = getEffect(effectId);
+      if (!effect || (effect.type !== 'triggered' && effect.type !== 'trigger')) return;
+      if (!effect.trigger || !MATERIAL_TRIGGERS.includes(effect.trigger.fn)) return;
+      const ctx = { ...makeCtx(state, controllerIndex, effect, id), fromCompiled: true, event: { compiledInstanceId } };
+      if (!checkConditions(ctx, effect.conditions)) return;
+      resolveActions(ctx, effect, []);
+      log(state, `Efecto de material: ${effectId} (${card.name}).`);
+    });
+  });
+  recomputeContinuous(state);
+  checkWin(state);
+}
+
 function getEffectiveStats(monsterEntry) {
   const buff = monsterEntry.tempBuff || { atk: 0, def: 0 };
   return {
@@ -145,4 +184,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { activateEffect, fireTrigger, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone };
+module.exports = { activateEffect, fireTrigger, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone };

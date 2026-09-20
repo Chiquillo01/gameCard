@@ -1,6 +1,7 @@
 const { createMatchState } = require('./state');
 const { advancePhase, runPhaseEntry } = require('./turns');
-const { normalSummon, compileSummon } = require('./summon');
+const { normalSummon, compileSummon, decompile } = require('./summon');
+const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport } = require('./support');
 const { declareAttack } = require('./combat');
 const { changePosition } = require('./position');
@@ -19,6 +20,7 @@ function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
   const card = getCard(cardId);
   const loc = findInstanceLocation(state, instanceId);
   if (!loc || loc.ownerIndex !== ownerIndex) return [];
+  if (hasStatus(state, instanceId, FREEZE)) return [];
   return (card.effectCodes || []).filter((effectId) => {
     const effect = getEffect(effectId);
     if (!effect || !PLAYER_ACTIVATABLE_TYPES.includes(effect.type)) return false;
@@ -65,6 +67,9 @@ function applyAction(state, playerIndex, action) {
 
     case 'DECLARE_ATTACK':
       return declareAttack(state, playerIndex, action.attackerInstanceId, action.targetInstanceId || null);
+
+    case 'DECOMPILE':
+      return decompile(state, playerIndex, action.instanceId);
 
     case 'CHANGE_POSITION':
       return changePosition(state, playerIndex, action.instanceId, action.position);
@@ -136,6 +141,11 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
     faceDown: m.faceDown,
     hasAttacked: m.hasAttacked,
     counters: m.counters,
+    statuses: statusesOf(state, m.instanceId),
+    materialCount: (m.materials || []).length,
+    // Only a compiled monster from an earlier turn can be decompiled from the UI (Pez dorado's
+    // same-turn exception is left to the server to accept or reject).
+    canDecompile: (m.materials || []).length > 0,
   };
   if (m.isToken) return { ...base, isToken: true, name: m.tokenDef.name, atk: m.baseAtk, def: m.baseDef };
   if (m.faceDown) return isViewerOwner ? { ...base, availableEffects: [] } : base;

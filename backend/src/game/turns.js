@@ -2,6 +2,7 @@ const { PHASES, MAX_HAND_SIZE, PIXEL_INCOME_PER_TURN, PIXEL_CAP } = require('./c
 const { player, opponentIndex, moveToZone, log } = require('./zones');
 const { fireTrigger, recomputeContinuous } = require('./effectEngine');
 const { checkWin } = require('./effects/actions');
+const { burningMonsters, expireStatuses, BURN_END_OF_TURN_DAMAGE } = require('./statuses');
 
 function advancePhase(state) {
   if (state.status !== 'active') return { ok: false, reason: 'match-finished' };
@@ -40,7 +41,7 @@ function runPhaseEntry(state) {
       log(state, `${pl.userId} roba una carta.`);
     }
 
-    // Rulebook: 6 pixels/turn automatically, capped at 18 — except a player's own first turn.
+    // Rulebook: 6 pixels/turn automatically, capped at PIXEL_CAP — except a player's own first turn.
     const isPlayersFirstTurn = pl.turnsPlayed === 0;
     if (!isPlayersFirstTurn) {
       const before = pl.pixelcoins;
@@ -61,6 +62,7 @@ function runPhaseEntry(state) {
   if (state.phase === 'end') {
     fireTrigger(state, 'phase', { timing: 'endPhase' });
     payTerritoryUpkeep(state);
+    applyBurnDamage(state);
     // Book contradicts itself on the exact number and destination (7-to-exile vs 8-to-graveyard
     // in different sections) — using the more detailed rule: discard to MAX_HAND_SIZE, to the
     // graveyard. Flagged for the designer to confirm which is correct.
@@ -87,7 +89,18 @@ function payTerritoryUpkeep(state) {
   });
 }
 
+// Rulebook, Quemadura: at the end of every turn each player loses 5 VP per burning monster they control.
+function applyBurnDamage(state) {
+  state.players.forEach((p, i) => {
+    const burning = burningMonsters(state, i).length;
+    if (!burning) return;
+    p.vp = Math.max(0, p.vp - burning * BURN_END_OF_TURN_DAMAGE);
+    log(state, `${p.userId} recibe ${burning * BURN_END_OF_TURN_DAMAGE} de daño por quemadura (VP: ${p.vp}).`);
+  });
+}
+
 function endTurn(state) {
+  expireStatuses(state);
   state.turnPlayer = opponentIndex(state.turnPlayer);
   state.turnNumber += 1;
   state.firstTurn = false;

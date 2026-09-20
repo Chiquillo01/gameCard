@@ -1,7 +1,9 @@
 const { getCard } = require('./cardIndex');
-const { player, placeMonster, moveToZone, findInstanceLocation, log, opponentIndex } = require('./zones');
+const { player, placeMonster, moveToZone, removeFromZone, releaseMaterials, corrodedSlots, findInstanceLocation, log } = require('./zones');
 const { payCost } = require('./effects/costs');
-const { fireTrigger, recomputeContinuous } = require('./effectEngine');
+const { fireTrigger, fireMaterialTriggers, recomputeContinuous } = require('./effectEngine');
+const { getEffect } = require('./cardIndex');
+const { clearStatus, BURN } = require('./statuses');
 const { matchesCardFilter } = require('./filters');
 const { cardIdFromInstance } = require('./deckUtils');
 
@@ -79,14 +81,74 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
     if (matched < req.count) return { ok: false, reason: `missing-material:${JSON.stringify(req)}` };
   }
 
-  usedIds.forEach((id) => moveToZone(state, id, 'graveyard', controllerIndex));
-  const placed = placeMonster(state, compiladoInstanceId, controllerIndex, { position: 'attack' });
-  if (!placed) return { ok: false, reason: 'no-field-space' };
+  // Check there will be a free zone before touching anything: materials on the field free theirs.
+  const blocked = corrodedSlots(pl, 'monsters');
+  const hasRoom = pl.field.monsters.some((m, i) => !blocked.includes(i) && (m === null || usedIds.has(m.instanceId)));
+  if (!hasRoom) return { ok: false, reason: 'no-field-space' };
+
+  // Rulebook: the materials are stacked under the compiled monster (not sent to the graveyard) and
+  // follow it wherever it goes; they can be summoned back by decompiling it.
+  const used = [...usedIds];
+  used.forEach((id) => {
+    const loc = findInstanceLocation(state, id);
+    if (loc.zone === 'field:monster') {
+      // A compiled monster used as material sends the materials under it to the graveyard.
+      releaseMaterials(state, pl.field.monsters[loc.slot], controllerIndex, 'graveyard');
+      clearStatus(state, id, BURN);
+    }
+    removeFromZone(state, id, loc);
+  });
+  placeMonster(state, compiladoInstanceId, controllerIndex, { position: 'attack' });
+  const entry = pl.field.monsters.find((m) => m && m.instanceId === compiladoInstanceId);
+  entry.materials = used;
 
   log(state, `${pl.userId} compila a ${card.name}.`);
+  fireMaterialTriggers(state, controllerIndex, used, compiladoInstanceId);
   fireTrigger(state, 'onSummon', { breed: card.breed });
   recomputeContinuous(state);
   return { ok: true };
 }
 
-module.exports = { normalSummon, compileSummon };
+// A card can lift the same-turn restriction for itself with a "rule" effect whose action is
+// allowDecompileSameTurn (Pez dorado).
+function allowsSameTurnDecompile(card) {
+  return (card.effectCodes || []).some((id) => {
+    const effect = getEffect(id);
+    return effect && (effect.actions || []).some((a) => a.fn === 'allowDecompileSameTurn');
+  });
+}
+
+// Rulebook: a compiled monster can be decompiled at the end of its controller's Battle Phase, but
+// not the turn it was compiled. It goes back to the Mazo-C and its materials are summoned back.
+// `force` is for card effects (Descompilación), which ignore the phase and same-turn limits.
+function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
+  const pl = player(state, controllerIndex);
+  const entry = pl.field.monsters.find((m) => m && m.instanceId === instanceId);
+  if (!entry) return { ok: false, reason: 'not-found' };
+  if (!entry.materials || !entry.materials.length) return { ok: false, reason: 'not-compiled' };
+  const card = getCard(entry.cardId);
+  if (!force) {
+    if (state.phase !== 'battle') return { ok: false, reason: 'not-battle-phase' };
+    if (entry.summonedTurn === state.turnNumber && !allowsSameTurnDecompile(card)) return { ok: false, reason: 'compiled-this-turn' };
+  }
+
+  // The compiled monster's own zone is freed, so the materials need (count - 1) more free zones.
+  const blocked = corrodedSlots(pl, 'monsters');
+  const free = pl.field.monsters.filter((m, i) => !blocked.includes(i) && (m === null || m.instanceId === instanceId)).length;
+  if (free < entry.materials.length) return { ok: false, reason: 'no-field-space' };
+
+  const materials = entry.materials;
+  entry.materials = []; // keep them out of the release-to-Mazo path in moveToZone
+  moveToZone(state, instanceId, 'extra', controllerIndex);
+  materials.forEach((id) => {
+    placeMonster(state, id, controllerIndex, { position: 'attack' });
+    const back = pl.field.monsters.find((m) => m && m.instanceId === id);
+    if (back) back.hasAttacked = true; // decompiling happens as the Battle Phase ends
+  });
+  log(state, `${pl.userId} descompila a ${card.name}.`);
+  materials.forEach((id) => fireTrigger(state, 'onSummon', { breed: getCard(cardIdFromInstance(id)).breed }));
+  recomputeContinuous(state);
+  return { ok: true };
+}
+
+module.exports = { normalSummon, compileSummon, decompile };

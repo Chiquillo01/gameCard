@@ -98,25 +98,40 @@
 .topBar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
   background: linear-gradient(180deg, #4a2a10 0%, #3a2010 100%);
   border: 3px solid #241305;
   box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.35);
-  padding: 0.75rem 1.25rem;
-  /* Clears the Layout's fixed "Volver a la taberna" pill (top-left, ~3rem tall) instead of
-     letting the turn/phase text render underneath it. */
-  margin-top: 3rem;
+  padding: 0.5rem 1rem;
+}
+
+.backLink {
+  font-family: 'VT323', monospace;
+  font-size: 1.0625rem;
+  color: #e8d3a0;
+  background: linear-gradient(180deg, #4a2a10 0%, #3a2010 100%);
+  border: 2px solid #241305;
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.35);
+  padding: 0.375rem 0.75rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.backLink:hover {
+  color: #ffd76a;
 }
 
 .turnInfo {
   font-size: 1.1875rem;
   color: #ffd76a;
+  flex: 1;
+  min-width: 0;
 }
 
 .topBarActions {
   display: flex;
+  margin-left: auto;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
@@ -541,4 +556,33 @@
     width: 60px;
     height: 84px;
   }
+}
+
+.statusBadges {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  gap: 1px;
+  z-index: 3;
+}
+
+.statusBadge {
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 1px 2px;
+  background: rgba(18, 9, 2, 0.85);
+  border: 1px solid #6b3d16;
+}
+
+.statusCongelado {
+  border-color: #6ec6ff;
+}
+
+.statusQuemadura {
+  border-color: #ff8a3d;
+}
+
+.statusVeneno {
+  border-color: #8bd450;
 }

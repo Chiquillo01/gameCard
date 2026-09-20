@@ -1,5 +1,6 @@
 const { getCard } = require('../cardIndex');
-const { player, opponentIndex, moveToZone, placeMonster, log, findInstanceLocation, removeFromZone } = require('../zones');
+const { player, opponentIndex, moveToZone, placeMonster, log, findInstanceLocation, removeFromZone, findEmptySlot, corrodedSlots } = require('../zones');
+const { addStatus, setStatusDebuff, FREEZE, BURN, POISON } = require('../statuses');
 const { matchesFilter, matchesCardFilter } = require('../filters');
 const { cardIdFromInstance } = require('../deckUtils');
 
@@ -110,12 +111,65 @@ function changePosition(ctx, args, targets) {
   });
 }
 
+// Who a status effect lands on: the targets the player picked, else the effect's own rule
+// ("attacker" = the monster that attacked; "enemyMonster"/"selected" with nothing picked = the
+// opponent's first monster(s)).
+function resolveStatusTargets(ctx, args, targets) {
+  if (Array.isArray(targets) && targets.length) return targets;
+  if (args.target === 'attacker') return ctx.event && ctx.event.attackerInstanceId ? [ctx.event.attackerInstanceId] : [];
+  if (args.target === 'enemyMonster' || args.target === 'selected') {
+    const enemy = player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean);
+    return enemy.slice(0, args.count || 1).map((m) => m.instanceId);
+  }
+  return [];
+}
+
+function sourceIsCompiled(ctx) {
+  if (ctx.fromCompiled) return true;
+  if (!ctx.sourceInstanceId || ctx.sourceInstanceId.startsWith('token:')) return false;
+  try { return getCard(cardIdFromInstance(ctx.sourceInstanceId)).category === 'fusion'; } catch (e) { return false; }
+}
+
+// Rulebook "Estados": Congelado / Quemadura / Envenenado(Veneno). Lasts until the end of the
+// turn, or 2 turns when it comes from a compiled monster (see statuses.js).
 function applyStatus(ctx, args, targets) {
-  (targets || []).forEach((instanceId) => {
+  if (![FREEZE, BURN, POISON].includes(args.status)) {
+    log(ctx.state, `[motor] estado "${args.status}" desconocido — se ignora.`);
+    return;
+  }
+  resolveStatusTargets(ctx, args, targets).forEach((instanceId) => {
     const m = ctx.state.players.flatMap((p) => p.field.monsters).find((x) => x && x.instanceId === instanceId);
     if (!m) return;
-    m.status = args.status;
+    addStatus(ctx.state, instanceId, args.status, {
+      sourceInstanceId: ctx.sourceInstanceId,
+      fromCompiled: sourceIsCompiled(ctx),
+      debuff: args.debuff || null,
+    });
+    log(ctx.state, `Un monstruo queda en estado ${args.status}.`);
   });
+  if (args.burnOpponent) damageOpponent(ctx, { amount: args.burnOpponent });
+}
+
+// Rulebook, Corrosión: marks an opponent's zone so nothing can be placed in it while the monster
+// that corroded it stays face-up on the field (released in effectEngine.releaseCorrosion).
+function corrodeZone(ctx, args, targets) {
+  const oppIdx = opponentIndex(ctx.controllerIndex);
+  const pl = player(ctx.state, oppIdx);
+  pl.corrosion = pl.corrosion || [];
+  const zone = args.zone === 'support' ? 'support' : 'monsters';
+  let slot = -1;
+  if (zone === 'monsters' && Array.isArray(targets) && targets.length) {
+    slot = pl.field.monsters.findIndex((m) => m && targets.includes(m.instanceId));
+  }
+  if (slot === -1) slot = pl.field[zone].findIndex((_, i) => !corrodedSlots(pl, zone).includes(i));
+  if (slot === -1) return;
+  pl.corrosion.push({ zone, slot, sourceInstanceId: ctx.sourceInstanceId });
+  log(ctx.state, 'Una zona del rival queda corroída.');
+}
+
+function decompileMonster(ctx, args, targets) {
+  const { decompile } = require('../summon');
+  (Array.isArray(targets) ? targets : []).forEach((id) => decompile(ctx.state, ctx.controllerIndex, id, { force: true }));
 }
 
 function negateEffect(ctx, args, targets) {
@@ -146,6 +200,11 @@ function negateAndSendToGraveyard(ctx) {
 
 function grantBuff(ctx, args, targets) {
   const buff = args.buff || { atk: args.atk, def: args.def };
+  // "whileStatus": the penalty lives on the status itself, so it ends when the status does.
+  if (args.duration === 'whileStatus' && args.status) {
+    resolveStatusTargets(ctx, args, targets).forEach((id) => setStatusDebuff(ctx.state, id, args.status, buff));
+    return;
+  }
   const filter = { attribute: args.attribute || args.atribute, breed: args.breed, family: args.family, name: args.name };
   const list = targets && targets.length ? targets.map((id) => ({ instanceId: id })) : allOwnedMonsters(ctx.state, ctx.controllerIndex);
   list.forEach(({ instanceId }) => {
@@ -164,7 +223,7 @@ function allOwnedMonsters(state, controllerIndex) {
 
 function summonTokenEntry(ctx, tokenDef) {
   const pl = player(ctx.state, ctx.controllerIndex);
-  const slot = pl.field.monsters.findIndex((s) => s === null);
+  const slot = findEmptySlot(pl.field.monsters, corrodedSlots(pl, 'monsters'));
   if (slot === -1) return;
   const instanceId = `token:${tokenDef.name}:${Date.now()}:${Math.random().toString(36).slice(2, 6)}`;
   pl.field.monsters[slot] = {
@@ -517,6 +576,9 @@ const registry = {
   exileTarget,
   changePosition,
   applyStatus,
+  corrodeZone,
+  poisonZone: corrodeZone,
+  decompileMonster,
   negateEffect,
   negateActivation,
   negateAttack,

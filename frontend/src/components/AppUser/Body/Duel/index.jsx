@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import io from 'socket.io-client';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -332,6 +332,9 @@ const DuelPage = () => {
       )}
 
       <div className={styles.topBar}>
+        <Link to='/' className={styles.backLink}>
+          ← Volver a la taberna
+        </Link>
         <span className={styles.turnInfo}>
           Turno {view.turnNumber} · {isMyTurn ? 'Tu turno' : 'Turno del rival'} · Fase: {PHASE_LABELS[view.phase] || view.phase}
         </span>
@@ -378,6 +381,8 @@ const DuelPage = () => {
           flipped={false}
           selectedAttacker={selectedAttacker}
           fusion={fusion}
+          canDecompile={isMyTurn && view.phase === 'battle'}
+          onDecompile={(instanceId) => act({ type: 'DECOMPILE', instanceId })}
           onMonsterClick={(m) => onFieldMonsterClick(m, true)}
           onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
           renderEffectButtons={renderEffectButtons}
@@ -488,7 +493,7 @@ const DuelPage = () => {
 //   row 3: (—) x6, Mazo
 // `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
 // next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
-function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMonsterClick, onOpenPile, renderEffectButtons }) {
+function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons }) {
   const row = (r) => (flipped ? 4 - r : r);
 
   return (
@@ -508,7 +513,30 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMon
               <span className={styles.statBadge}>
                 {m.atk} / {m.def}
               </span>
+              {m.statuses && m.statuses.length > 0 && (
+                <span className={styles.statusBadges}>
+                  {m.statuses.map((st) => (
+                    <span key={st} className={`${styles.statusBadge} ${styles['status' + st]}`} title={st}>
+                      {STATUS_ICONS[st] || st}
+                    </span>
+                  ))}
+                </span>
+              )}
               {isOwner && !fusion && renderEffectButtons(m)}
+              {isOwner && !fusion && canDecompile && m.canDecompile && (
+                <div className={styles.effectButtons}>
+                  <button
+                    className={styles.effectButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDecompile(m.instanceId);
+                    }}
+                    title='Devolver este monstruo al Mazo-C e invocar sus materiales'
+                  >
+                    Descompilar
+                  </button>
+                </div>
+              )}
             </>
           )}
           {m && m.faceDown && <div className={styles.faceDown} />}
@@ -604,6 +632,8 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
   );
 }
 
+const STATUS_ICONS = { Congelado: '❄', Quemadura: '🔥', Veneno: '☠' };
+
 function humanizeReason(reason) {
   const map = {
     'normal-summon-used': 'Ya has hecho tu invocación normal este turno.',
@@ -627,6 +657,9 @@ function humanizeReason(reason) {
     'once-per-turn': 'Ese efecto ya se activó este turno.',
     'conditions-not-met': 'No se cumplen las condiciones para ese efecto.',
     'unknown-effect': 'Ese efecto no existe.',
+    frozen: 'Ese monstruo está congelado y no puede activar efectos.',
+    'not-compiled': 'Ese monstruo no es un monstruo compilado.',
+    'compiled-this-turn': 'No puedes descompilar un monstruo el turno en que fue compilado.',
   };
   if (reason && reason.startsWith('missing-material')) return 'Los materiales elegidos no cumplen el requisito de fusión.';
   return map[reason] || 'Acción no válida.';
