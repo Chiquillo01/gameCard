@@ -35,7 +35,7 @@ function runBotTurn(state, botIndex) {
 
     if (state.phase === 'battle') {
       const eligibleAttackers = pl.field.monsters.filter(
-        (m) => m && !m.hasAttacked && m.position === 'attack' && m.summonedTurn !== state.turnNumber,
+        (m) => m && !m.hasAttacked && m.position === 'attack',
       );
       if (eligibleAttackers.length) {
         const attacker = eligibleAttackers[0];

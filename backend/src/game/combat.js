@@ -18,7 +18,6 @@ function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanc
   if (!attacker) return { ok: false, reason: 'attacker-not-found' };
   if (attacker.hasAttacked) return { ok: false, reason: 'already-attacked' };
   if (attacker.position !== 'attack') return { ok: false, reason: 'not-in-attack-position' };
-  if (attacker.summonedTurn === state.turnNumber && !state.firstTurnSummonCanAttack) return { ok: false, reason: 'summoning-sickness' };
 
   const oppIdx = opponentIndex(controllerIndex);
   const oppPl = player(state, oppIdx);

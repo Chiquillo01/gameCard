@@ -152,15 +152,15 @@ describe('Game engine', () => {
     expect(result.reason).toBe('not-your-turn');
   });
 
-  it('blocks an attack the same turn a monster was summoned (summoning sickness)', async () => {
+  it('lets a monster attack the turn it is summoned (no summoning sickness in the rulebook)', async () => {
     const state = await makeTestMatch();
     advanceUntil(state, 3, 'main1'); // turn 1 has no battle phase at all, so summon on turn 3 instead
     const instanceId = state.players[0].hand[0];
     applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId, position: 'attack' });
     applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main1 -> battle
     const result = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: instanceId, targetInstanceId: null });
-    expect(result.ok).toBe(false);
-    expect(result.reason).toBe('summoning-sickness');
+    expect(result.ok).toBe(true);
+    expect(result.direct).toBe(true);
   });
 
   it('deals direct damage on an unblocked attack the turn after summoning', async () => {

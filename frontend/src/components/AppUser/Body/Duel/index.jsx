@@ -612,7 +612,6 @@ function humanizeReason(reason) {
     'not-in-hand': 'Esa carta no está en tu mano.',
     'invalid-position': 'Esa combinación de posición no es válida.',
     'not-available': 'Esa carta de fusión no está disponible.',
-    'summoning-sickness': 'Ese monstruo no puede atacar el turno en que fue invocado.',
     'already-attacked': 'Ese monstruo ya atacó este turno.',
     'not-main-phase': 'Solo puedes hacer eso en tu Fase Principal.',
     'summoned-this-turn': 'Ese monstruo no puede cambiar de posición el turno en que fue invocado.',
