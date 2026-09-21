@@ -148,7 +148,8 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
     canDecompile: (m.materials || []).length > 0,
   };
   if (m.isToken) return { ...base, isToken: true, name: m.tokenDef.name, atk: m.baseAtk, def: m.baseDef };
-  if (m.faceDown) return isViewerOwner ? { ...base, availableEffects: [] } : base;
+  // The owner knows which card their face-down monster is (for the hover preview); the rival doesn't.
+  if (m.faceDown) return isViewerOwner ? { ...base, cardId: m.cardId, availableEffects: [] } : base;
   const card = getCard(m.cardId);
   const buff = m.tempBuff || { atk: 0, def: 0 };
   const described = { ...base, cardId: m.cardId, name: card.name, image: card.image, atk: card.atk + buff.atk, def: card.def + buff.def };

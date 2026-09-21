@@ -6,6 +6,8 @@ import 'react-toastify/dist/ReactToastify.css';
 import styles from './duel.module.css';
 import { getUserDecks } from '../../../../lib/utils/apiDeck';
 import { startPveDuel, getDuelState, sendDuelAction } from '../../../../lib/utils/apiDuel';
+import { fetchCards } from '../../../../lib/utils/apiCard';
+import CardFace from '../CreateNewDeck/CardModal/CardFace';
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import { isDeckPlayable } from '../../../../lib/utils/deckRules';
 
@@ -60,6 +62,16 @@ const DuelPage = () => {
   // A Cementerio/Exilio/Mazo-C pile the player clicked open: { side: 'me'|'enemy', zone }.
   const [openPile, setOpenPile] = useState(null);
   const socketRef = useRef(null);
+  // Every card's full data (art, effect text, ...) by id, fetched once for the hover preview, and
+  // the card the cursor last rested on.
+  const [cardsById, setCardsById] = useState({});
+  const [hovered, setHovered] = useState(null);
+
+  useEffect(() => {
+    fetchCards()
+      .then((res) => setCardsById(Object.fromEntries(res.data.map((c) => [c._id, c]))))
+      .catch(() => {});
+  }, []);
   const logRef = useRef(null);
   const logLength = view ? view.log.length : 0;
 
@@ -203,6 +215,16 @@ const DuelPage = () => {
     });
     if (result?.ok) setFusion(null);
   };
+
+  // What the preview panel shows: the hovered card's full data, with the on-board Atk/Vida when it
+  // is a monster that has been buffed or debuffed. Tokens have no card data, so they get a stub.
+  const previewCard = (() => {
+    if (!hovered) return null;
+    if (hovered.isToken) return { name: hovered.name, category: 'monster', atk: hovered.atk, def: hovered.def, effect: 'Ficha de monstruo.' };
+    const card = cardsById[hovered.cardId];
+    if (!card) return null;
+    return hovered.atk != null ? { ...card, atk: hovered.atk, def: hovered.def } : card;
+  })();
 
   const onFieldMonsterClick = (monster, isOwn) => {
     if (!monster) return;
@@ -370,6 +392,7 @@ const DuelPage = () => {
           <span className={styles.handCountBadge}>Mano: {enemy.handCount}</span>
         </div>
         <div className={styles.fieldsRow}>
+        <CardPreview card={previewCard} />
         <PlayerField
           player={enemy}
           isOwner={false}
@@ -379,6 +402,7 @@ const DuelPage = () => {
           onMonsterClick={(m) => onFieldMonsterClick(m, false)}
           onOpenPile={(zone) => setOpenPile({ side: 'enemy', zone })}
           renderEffectButtons={renderEffectButtons}
+          onHover={setHovered}
         />
 
         <div className={styles.divider} />
@@ -394,6 +418,7 @@ const DuelPage = () => {
           onMonsterClick={(m) => onFieldMonsterClick(m, true)}
           onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
           renderEffectButtons={renderEffectButtons}
+          onHover={setHovered}
         />
 
         <div className={styles.log}>
@@ -424,6 +449,7 @@ const DuelPage = () => {
                   : ''
               }`}
               onClick={() => onHandCardClick(card)}
+              onMouseEnter={() => setHovered({ cardId: card.cardId })}
               title={card.name}
             >
               <img src={card.image} alt={card.name} />
@@ -506,7 +532,7 @@ const DuelPage = () => {
 //   row 3: (—) x6, Mazo
 // `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
 // next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
-function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons }) {
+function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover }) {
   const row = (r) => (flipped ? 4 - r : r);
 
   return (
@@ -519,6 +545,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
             m && (m.instanceId === selectedAttacker || (fusion && isOwner && fusion.materials.has(m.instanceId))) ? styles.selected : ''
           }`}
           onClick={() => m && onMonsterClick(m)}
+          onMouseEnter={() => m && (m.isToken ? onHover({ isToken: true, name: m.name, atk: m.atk, def: m.def }) : m.cardId && onHover({ cardId: m.cardId, atk: m.faceDown ? null : m.atk, def: m.faceDown ? null : m.def }))}
         >
           {m && !m.faceDown && (
             <>
@@ -569,7 +596,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
         onClick={() => onOpenPile('banished')}
       />
 
-      <div style={{ gridRow: row(2), gridColumn: 1 }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio'>
+      <div style={{ gridRow: row(2), gridColumn: 1 }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio' onMouseEnter={() => player.field.territory && onHover({ cardId: player.field.territory.cardId })}>
         {player.field.territory && (
           <>
             <img src={player.field.territory.image} alt={player.field.territory.name} title={player.field.territory.name} />
@@ -579,7 +606,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       </div>
 
       {player.field.support.map((s, i) => (
-        <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte'>
+        <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte' onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}>
           {s && !(s.faceDown && !isOwner) && <img src={s.image} alt={s.name} title={s.name} />}
           {s && s.faceDown && isOwner && <div className={styles.faceDown} />}
           {s && isOwner && renderEffectButtons(s)}
@@ -641,6 +668,43 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
           Cerrar
         </button>
       </div>
+    </div>
+  );
+}
+
+// The card face is drawn at its natural 480x700 and scaled down (never up) to whatever room the
+// viewport leaves to the left of the board — the board is at most 900px wide and centered.
+const FACE_WIDTH = 480;
+const FACE_HEIGHT = 700;
+const BOARD_WIDTH = 900;
+
+function usePreviewScale() {
+  const compute = () => {
+    const room = (window.innerWidth - BOARD_WIDTH) / 2 - 20 - 16; // page padding + gap to the board
+    return Math.max(0, Math.min(1, room / FACE_WIDTH, (window.innerHeight - 150) / FACE_HEIGHT));
+  };
+  const [scale, setScale] = useState(compute);
+  useEffect(() => {
+    const onResize = () => setScale(compute());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return scale;
+}
+
+// Enlarged card shown to the left of the board for whatever the cursor last rested on.
+function CardPreview({ card }) {
+  const scale = usePreviewScale();
+  if (scale < 0.45) return null; // not enough room at this window size
+  return (
+    <div className={styles.cardPreview} style={{ width: FACE_WIDTH * scale, height: FACE_HEIGHT * scale }}>
+      {card ? (
+        <div style={{ width: FACE_WIDTH, height: FACE_HEIGHT, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+          <CardFace card={card} />
+        </div>
+      ) : (
+        <div className={styles.cardPreviewEmpty}>Pasa el cursor sobre una carta para verla en grande.</div>
+      )}
     </div>
   );
 }
