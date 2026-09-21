@@ -1452,9 +1452,7 @@
     "invocationText": "Si controlas un \"Héroe\", puede ser invocada de forma especial.",
     "state": 4,
     "number": 57,
-    "effectCodes": [
-      "INVISIBILIDAD"
-    ]
+    "effectCodes": []
   },
   {
     "name": "Héroe Montado",
@@ -2908,7 +2906,6 @@
     "state": 2,
     "number": 121,
     "effectCodes": [
-      "VOLAR",
       "DEVA_RESURRECT"
     ]
   },
@@ -3135,7 +3132,6 @@
     "state": 3,
     "number": 131,
     "effectCodes": [
-      "INVISIBILIDAD",
       "ACECHADOR_INVISIBLE_DIRECT_ATTACK",
       "ACECHADOR_INVISIBLE_ATK_BOOST"
     ]

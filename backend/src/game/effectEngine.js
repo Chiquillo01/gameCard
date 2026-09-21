@@ -107,6 +107,8 @@ function fireTrigger(state, eventName, eventArgs = {}) {
         if (!effect || (effect.type !== 'triggered' && effect.type !== 'trigger')) return;
         if (!effect.trigger || effect.trigger.fn !== eventName) return;
         if (eventArgs.breed && effect.trigger.args && effect.trigger.args.monsterFamily && effect.trigger.args.monsterFamily !== eventArgs.breed) return;
+        // A 'phase' trigger names which phase it wants (standbyPhase, mainPhase, endPhase, ...).
+        if (eventName === 'phase' && effect.trigger.args && effect.trigger.args.timing && effect.trigger.args.timing !== eventArgs.timing) return;
         if (eventName === 'allySummoned' && eventArgs.cardId && !matchesCardFilter(getCard(eventArgs.cardId), (effect.trigger.args && effect.trigger.args.filter) || {})) return;
         const ctx = { ...makeCtx(state, controllerIndex, effect, m.instanceId), event: eventArgs };
         if (!checkConditions(ctx, effect.conditions)) return;

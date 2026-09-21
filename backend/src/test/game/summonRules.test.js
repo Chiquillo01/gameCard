@@ -205,3 +205,14 @@ describe('Effect values follow the card text', () => {
     expect(monsterOf(state, 0, fusion).tempBuff.atk).toBe(1);
   });
 });
+
+describe('Phase-timed effects', () => {
+  it('Bálor hits the rival for 3 only in the standby phase, once per turn', async () => {
+    const { state, inHand } = await makeMatch(['Bálor', 'Kraken']);
+    const { placeMonster } = require('../../game/zones');
+    placeMonster(state, inHand('Bálor'), 0, { position: 'attack' });
+    while (state.turnNumber === 1 && state.phase !== 'end') applyAction(state, 0, { type: 'ADVANCE_PHASE' });
+    expect(state.players[1].vp).toBe(77);
+  });
+
+});

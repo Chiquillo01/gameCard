@@ -243,7 +243,7 @@
   },
   {
     "_id": "DEVA_RESURRECT",
-    "type": "trigger",
+    "type": "triggered",
     "oncePerTurn": false,
     "conditions": [],
     "actions": [
@@ -257,7 +257,10 @@
         }
       }
     ],
-    "source": "Efecto(monster)"
+    "source": "Efecto(monster)",
+    "trigger": {
+      "fn": "onSummon"
+    }
   },
   {
     "_id": "FAIRY_LEAVE_DRAW_PIXELS",
@@ -1389,10 +1392,13 @@
   },
   {
     "_id": "PASTO_RESURRECCION",
-    "type": "continuous",
+    "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileOnField"
+      "fn": "phase",
+      "args": {
+        "timing": "standbyPhase"
+      }
     },
     "conditions": [],
     "actions": [
@@ -1402,18 +1408,11 @@
           "count": 1,
           "filter": {
             "breed": "Zombi",
-            "level": 3,
+            "maxLevel": 3,
             "zone": [
               "graveyard",
               "banished"
             ]
-          },
-          "phase": "espera",
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
           }
         }
       }
@@ -4593,11 +4592,7 @@
         "from": "hand"
       }
     },
-    "conditions": [
-      {
-        "fn": "noMonstersControlled"
-      }
-    ],
+    "conditions": [],
     "requiresTarget": false,
     "actions": [
       {
