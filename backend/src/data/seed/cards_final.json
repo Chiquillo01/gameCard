@@ -2258,7 +2258,7 @@
     "def": 4,
     "level": 7,
     "effect": "Una vez por turno como efecto rápido: \n• Destruye 1 monstruo Demonio en el Campo, y si lo haces, esta carta gana +2 Atk y Vida.\nEste monstruo no puede ser destruido por efectos de cartas de tu oponente.,",
-    "invocationText": "No puede ser invocado.",
+    "invocationText": "Puede ser invocado de forma especial si controlas un Demonio.",
     "state": 2,
     "number": 96
   },
