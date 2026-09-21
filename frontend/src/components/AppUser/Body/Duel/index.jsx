@@ -348,6 +348,55 @@ const DuelPage = () => {
     );
   };
 
+  // One panel for every pending decision (summon, position change, support, compilation): the card
+  // it is about plus the options that make sense for it right now.
+  const cardInPlay = (instanceId) => me.hand.find((c) => c.instanceId === instanceId) || me.field.monsters.find((m) => m && m.instanceId === instanceId);
+  const choicePanel = (() => {
+    const cancel = { label: 'Cancelar', variant: 'cancel', onClick: cancelPendingChoices };
+    if (fusion) {
+      return {
+        card: cardInPlay(fusion.instanceId),
+        prompt: 'Compilar',
+        hint: `Selecciona los materiales en tu mano o campo (${fusion.materials.size} elegidos)`,
+        options: [{ label: 'Confirmar compilación', variant: 'confirm', onClick: confirmFusion }, cancel],
+      };
+    }
+    if (pendingSummon) {
+      return {
+        card: cardInPlay(pendingSummon),
+        prompt: '¿Cómo invocas esta carta?',
+        options: [
+          { label: 'Ataque', onClick: () => confirmSummon('attack', false) },
+          { label: 'Defensa', onClick: () => confirmSummon('defense', false) },
+          { label: 'Boca abajo', onClick: () => confirmSummon('defense', true) },
+          cancel,
+        ],
+      };
+    }
+    if (pendingPosition) {
+      const options = [];
+      if (pendingPosition.faceDown || pendingPosition.position !== 'attack') options.push({ label: 'Ataque', onClick: () => confirmPositionChange('attack') });
+      if (pendingPosition.faceDown || pendingPosition.position !== 'defense') options.push({ label: 'Defensa', onClick: () => confirmPositionChange('defense') });
+      return {
+        card: pendingPosition.faceDown ? null : cardInPlay(pendingPosition.instanceId),
+        prompt: pendingPosition.faceDown ? 'Voltear boca arriba en:' : 'Cambiar posición a:',
+        options: [...options, cancel],
+      };
+    }
+    if (pendingSupportChoice) {
+      return {
+        card: cardInPlay(pendingSupportChoice),
+        prompt: '¿Activar ahora o colocar boca abajo?',
+        options: [
+          { label: 'Activar', onClick: () => confirmSupportChoice(false) },
+          { label: 'Boca abajo', onClick: () => confirmSupportChoice(true) },
+          cancel,
+        ],
+      };
+    }
+    return null;
+  })();
+
   const isFusionMaterialCandidate = (card) => !!fusion && card.instanceId !== fusion.instanceId && card.category === 'monster';
 
   return (
@@ -457,6 +506,8 @@ const DuelPage = () => {
           </span>
         </div>
 
+        {choicePanel && <ChoicePanel panel={choicePanel} />}
+
         <div className={styles.hand}>
           {me.hand.map((card) => (
             <div
@@ -475,69 +526,6 @@ const DuelPage = () => {
           ))}
         </div>
 
-        {fusion && (
-          <div className={styles.choiceBar}>
-            <span>Selecciona los materiales en tu mano o campo ({fusion.materials.size} elegidos)</span>
-            <button className={styles.directAttackButton} onClick={confirmFusion}>
-              Confirmar Fusión
-            </button>
-            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
-              Cancelar
-            </button>
-          </div>
-        )}
-
-        {pendingSummon && (
-          <div className={styles.choiceBar}>
-            <span>¿Cómo invocas esta carta?</span>
-            <button className={styles.actionButton} onClick={() => confirmSummon('attack', false)}>
-              Ataque
-            </button>
-            <button className={styles.actionButton} onClick={() => confirmSummon('defense', false)}>
-              Defensa
-            </button>
-            <button className={styles.actionButton} onClick={() => confirmSummon('defense', true)}>
-              Boca abajo
-            </button>
-            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
-              Cancelar
-            </button>
-          </div>
-        )}
-
-        {pendingPosition && (
-          <div className={styles.choiceBar}>
-            <span>{pendingPosition.faceDown ? 'Voltear boca arriba en:' : 'Cambiar posición a:'}</span>
-            {(pendingPosition.faceDown || pendingPosition.position !== 'attack') && (
-              <button className={styles.actionButton} onClick={() => confirmPositionChange('attack')}>
-                Ataque
-              </button>
-            )}
-            {(pendingPosition.faceDown || pendingPosition.position !== 'defense') && (
-              <button className={styles.actionButton} onClick={() => confirmPositionChange('defense')}>
-                Defensa
-              </button>
-            )}
-            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
-              Cancelar
-            </button>
-          </div>
-        )}
-
-        {pendingSupportChoice && (
-          <div className={styles.choiceBar}>
-            <span>¿Activar ahora o colocar boca abajo?</span>
-            <button className={styles.actionButton} onClick={() => confirmSupportChoice(false)}>
-              Activar
-            </button>
-            <button className={styles.actionButton} onClick={() => confirmSupportChoice(true)}>
-              Boca abajo
-            </button>
-            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
-              Cancelar
-            </button>
-          </div>
-        )}
       </div>
 
     </div>
@@ -650,6 +638,31 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
 // A single face-down pile with a count badge — Cementerio/Exilio/Mazo-C/Mazo are always exactly
 // one board slot each, however many cards they hold (see the rulebook grid). Clickable only when
 // `onClick` is given (Cementerio/Exilio are public on both sides; Mazo-C only for its owner).
+// The single decision panel: a thumbnail of the card in question, what is being asked, and one button
+// per option. It wraps on narrow screens (thumbnail + text on top, buttons below).
+function ChoicePanel({ panel }) {
+  const variants = { confirm: 'directAttackButton', cancel: 'surrenderButton' };
+  return (
+    <div className={styles.choiceBar}>
+      <div className={styles.choiceInfo}>
+        {panel.card && panel.card.image && <img className={styles.choiceThumb} src={panel.card.image} alt={panel.card.name} />}
+        <div className={styles.choiceText}>
+          {panel.card && panel.card.name && <span className={styles.choiceCardName}>{panel.card.name}</span>}
+          <span>{panel.prompt}</span>
+          {panel.hint && <span className={styles.choiceHint}>{panel.hint}</span>}
+        </div>
+      </div>
+      <div className={styles.choiceOptions}>
+        {panel.options.map((o) => (
+          <button key={o.label} className={styles[variants[o.variant] || 'actionButton']} onClick={o.onClick}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PileSlot({ style, label, count, onClick }) {
   return (
     <div
@@ -694,7 +707,7 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
 // viewport leaves to the left of the board — the board is at most 900px wide and centered.
 const FACE_WIDTH = 480;
 const FACE_HEIGHT = 700;
-const BOARD_WIDTH = 760;
+const BOARD_WIDTH = 700;
 
 function usePreviewScale() {
   const compute = () => {
