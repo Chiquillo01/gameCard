@@ -27,7 +27,16 @@ export const getDuelState = async (matchId) => {
   return response.data;
 };
 
+// The server answers a rule-rejected action with HTTP 400 and { ok: false, reason, state } — a
+// normal outcome the UI turns into a specific message, not a failed request — so that body is
+// returned instead of thrown. Anything else (auth, network, 5xx) still throws.
 export const sendDuelAction = async (matchId, action) => {
-  const response = await API.post(`/${matchId}/action`, { action }, authHeaders());
-  return response.data;
+  try {
+    const response = await API.post(`/${matchId}/action`, { action }, authHeaders());
+    return response.data;
+  } catch (error) {
+    const data = error.response && error.response.data;
+    if (data && data.ok === false && data.state) return data;
+    throw error;
+  }
 };

@@ -1,5 +1,6 @@
 const { getCard } = require('./cardIndex');
-const { player, opponentIndex, log } = require('./zones');
+const { player, opponentIndex, moveToZone, log } = require('./zones');
+const { hasStatus, FREEZE, BURN } = require('./statuses');
 const { getEffectiveStats, fireTrigger, recomputeContinuous } = require('./effectEngine');
 const { checkWin } = require('./effects/actions');
 
@@ -7,6 +8,10 @@ function hasKeyword(monsterEntry, keywordEffectId) {
   if (monsterEntry.isToken) return false;
   const card = getCard(monsterEntry.cardId);
   return (card.effectCodes || []).includes(keywordEffectId);
+}
+
+function isWater(entry) {
+  return !entry.isToken && !entry.faceDown && getCard(entry.cardId).attribute === 'Agua';
 }
 
 function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanceId /* null = direct */) {
@@ -18,7 +23,6 @@ function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanc
   if (!attacker) return { ok: false, reason: 'attacker-not-found' };
   if (attacker.hasAttacked) return { ok: false, reason: 'already-attacked' };
   if (attacker.position !== 'attack') return { ok: false, reason: 'not-in-attack-position' };
-  if (attacker.summonedTurn === state.turnNumber && !state.firstTurnSummonCanAttack) return { ok: false, reason: 'summoning-sickness' };
 
   const oppIdx = opponentIndex(controllerIndex);
   const oppPl = player(state, oppIdx);
@@ -37,8 +41,31 @@ function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanc
 
   const defender = oppPl.field.monsters.find((m) => m && m.instanceId === targetInstanceId);
   if (!defender) return { ok: false, reason: 'defender-not-found' };
-  const defenderStats = getEffectiveStats(defender);
   attacker.hasAttacked = true;
+
+  // Rulebook: a face-down defender is turned face-up during the damage step so its Vida can be
+  // read; its Rotación effects trigger after damage, if it's still on the field.
+  const wasFaceDown = defender.faceDown;
+  if (wasFaceDown) defender.faceDown = false;
+  const defenderStats = getEffectiveStats(defender);
+
+  // Rulebook, Congelado: a frozen monster fighting a water monster (either way round) is destroyed
+  // before the damage step, so no damage is dealt.
+  const attackerFrozen = hasStatus(state, attacker.instanceId, FREEZE);
+  const defenderFrozen = hasStatus(state, defender.instanceId, FREEZE);
+  if ((attackerFrozen && isWater(defender)) || (defenderFrozen && isWater(attacker))) {
+    if (attackerFrozen && isWater(defender)) removeAndGraveyard(state, controllerIndex, attacker.instanceId);
+    else removeAndGraveyard(state, oppIdx, defender.instanceId);
+    log(state, 'Un monstruo congelado es destruido por el agua.');
+    if (wasFaceDown && defenderFrozen === false) fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
+    recomputeContinuous(state);
+    checkWin(state);
+    return { ok: true, destroyedAttacker: attackerFrozen && isWater(defender), destroyedDefender: defenderFrozen && isWater(attacker) };
+  }
+
+  // Rulebook, Quemadura: a burning monster takes double damage from attacks it is part of.
+  const burnMultiplier = (m) => (hasStatus(state, m.instanceId, BURN) ? 2 : 1);
+  const loseVp = (pl, amount, involved) => { pl.vp = Math.max(0, pl.vp - amount * burnMultiplier(involved)); };
 
   let destroyedAttacker = false;
   let destroyedDefender = false;
@@ -47,15 +74,21 @@ function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanc
     if (attackerStats.atk > defenderStats.atk || hasKeyword(attacker, 'TOQUE_DE_MUERTE')) destroyedDefender = true;
     if (defenderStats.atk > attackerStats.atk) destroyedAttacker = true;
     if (attackerStats.atk === defenderStats.atk && attackerStats.atk > 0) { destroyedAttacker = true; destroyedDefender = true; }
-    if (destroyedDefender && !destroyedAttacker) oppPl.vp = Math.max(0, oppPl.vp - (attackerStats.atk - defenderStats.atk));
-    if (destroyedAttacker && !destroyedDefender) attackerPl.vp = Math.max(0, attackerPl.vp - (defenderStats.atk - attackerStats.atk));
+    if (destroyedDefender && !destroyedAttacker) loseVp(oppPl, attackerStats.atk - defenderStats.atk, defender);
+    if (destroyedAttacker && !destroyedDefender) loseVp(attackerPl, defenderStats.atk - attackerStats.atk, attacker);
   } else {
-    // defending in defense position: only destroyed if atk > def, no VP loss to defender's owner
+    // Defending in defense position (rulebook): ATK > Vida destroys the defender with no VP loss;
+    // ATK = Vida destroys nothing; ATK < Vida leaves both alive and the attacker's owner loses
+    // the difference (Vida - ATK) in VP.
     if (attackerStats.atk > defenderStats.def || hasKeyword(attacker, 'TOQUE_DE_MUERTE')) destroyedDefender = true;
+    else if (attackerStats.atk < defenderStats.def) {
+      loseVp(attackerPl, defenderStats.def - attackerStats.atk, attacker);
+    }
   }
 
   if (destroyedDefender) removeAndGraveyard(state, oppIdx, defender.instanceId);
   if (destroyedAttacker) removeAndGraveyard(state, controllerIndex, attacker.instanceId);
+  if (wasFaceDown && !destroyedDefender) fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
 
   log(state, `${attackerPl.userId} ataca con ${getCard(attacker.cardId || '').name || 'token'}.`);
   fireTrigger(state, 'onBattlePhase', {});
@@ -68,8 +101,9 @@ function removeAndGraveyard(state, ownerIndex, instanceId) {
   const pl = player(state, ownerIndex);
   const idx = pl.field.monsters.findIndex((m) => m && m.instanceId === instanceId);
   if (idx === -1) return;
-  const [entry] = pl.field.monsters.splice(idx, 1, null);
-  if (!entry.isToken) pl.graveyard.push(instanceId);
+  // moveToZone also releases the materials under a compiled monster and ends its burning.
+  if (pl.field.monsters[idx].isToken) pl.field.monsters[idx] = null;
+  else moveToZone(state, instanceId, 'graveyard', ownerIndex);
   fireTrigger(state, 'sentToGraveyard', { instanceId });
 }
 

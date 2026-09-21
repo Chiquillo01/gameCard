@@ -2618,7 +2618,7 @@
     "def": 1,
     "level": 2,
     "effect": "Al ser volteada:\n• Roba 1 carta.",
-    "invocationText": "En la inmensidad de una tundra helada, un imponente licántropo de pelaje blanco y azul se alza desafiante. Su aliento se convierte en niebla en el gélido aire, y estalactitas de hielo cuelgan de sus garras afiladas. Sus ojos azules resplandecen con un brillo sobrenatural mientras la ventisca lo rodea. No hay compasión en esta criatura, solo el instinto salvaje de la caza y la supervivencia en un mundo de frío eterno. Su rugido es un eco en la tormenta, anunciando su dominio sobre la nieve y el hielo.",
+    "invocationText": "",
     "state": 4,
     "number": 111,
     "effectCodes": [

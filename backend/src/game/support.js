@@ -6,6 +6,9 @@ const { runAction, checkWin } = require('./effects/actions');
 const { recomputeContinuous, requiredZoneFor } = require('./effectEngine');
 const { cardIdFromInstance } = require('./deckUtils');
 
+// Rulebook: any Apoyo card can be placed in the support zone face-down or face-up, except the
+// Territorio (its own zone). A card set face-down is activated later with activateSetSupport.
+//
 // Per Rulebook.pdf "Tipos de efectos de Apoyos": Normal cards resolve immediately and go to the
 // graveyard right after — they are never "set" face-down. Only Veloz (quick-play) and
 // Contraataque (counter) cards can be placed face-down in advance and activated later,
@@ -20,15 +23,33 @@ function activateSupport(state, controllerIndex, instanceId, { targets = [], set
   const card = getCard(cardId);
   if (card.category !== 'support') return { ok: false, reason: 'not-support' };
 
-  const ctx = { state, controllerIndex, sourceInstanceId: instanceId };
-
-  if ((card.subtype === 'instant' || card.subtype === 'counter') && setFaceDown) {
+  if (setFaceDown) {
+    if (card.subtype === 'field') return { ok: false, reason: 'cannot-set-territory' };
     const placed = placeSupport(state, instanceId, controllerIndex, { faceDown: true });
     if (!placed) return { ok: false, reason: 'no-field-space' };
     log(state, `${pl.userId} coloca boca abajo un apoyo.`);
     return { ok: true };
   }
 
+  return resolveActivation(state, controllerIndex, instanceId, card, targets);
+}
+
+// Activates a support that was set face-down in the support zone: turn it face-up, pay its
+// activation cost and resolve it like any other activation. Veloz/Contraataque cards are activated
+// through their own effects (ACTIVATE_EFFECT) so they are left to that path.
+function activateSetSupport(state, controllerIndex, instanceId, { targets = [] } = {}) {
+  if (state.phase !== 'main1' && state.phase !== 'main2') return { ok: false, reason: 'not-main-phase' };
+  const pl = player(state, controllerIndex);
+  const entry = pl.field.support.find((s) => s && s.instanceId === instanceId);
+  if (!entry || !entry.faceDown) return { ok: false, reason: 'not-set-support' };
+  const card = getCard(entry.cardId);
+  if (card.subtype === 'instant' || card.subtype === 'counter') return { ok: false, reason: 'use-its-effect' };
+  return resolveActivation(state, controllerIndex, instanceId, card, targets, entry);
+}
+
+function resolveActivation(state, controllerIndex, instanceId, card, targets, setEntry = null) {
+  const pl = player(state, controllerIndex);
+  const ctx = { state, controllerIndex, sourceInstanceId: instanceId };
   const cost = card.activationCost;
   if (cost && cost.fn) {
     const paid = payCost(ctx, cost, targets);
@@ -45,8 +66,12 @@ function activateSupport(state, controllerIndex, instanceId, { targets = [], set
   }
 
   if (card.subtype === 'continuous' || card.subtype === 'equipment') {
-    const placed = placeSupport(state, instanceId, controllerIndex, { faceDown: false });
-    if (!placed) return { ok: false, reason: 'no-field-space' };
+    if (setEntry) {
+      setEntry.faceDown = false; // already in its zone: just turn it over
+    } else {
+      const placed = placeSupport(state, instanceId, controllerIndex, { faceDown: false });
+      if (!placed) return { ok: false, reason: 'no-field-space' };
+    }
     log(state, `${pl.userId} activa ${card.name}.`);
     resolveCardEffects(ctx, card, targets);
     recomputeContinuous(state);
@@ -80,4 +105,4 @@ function resolveCardEffects(ctx, card, targets) {
   });
 }
 
-module.exports = { activateSupport };
+module.exports = { activateSupport, activateSetSupport };

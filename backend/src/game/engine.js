@@ -1,8 +1,11 @@
 const { createMatchState } = require('./state');
 const { advancePhase, runPhaseEntry } = require('./turns');
-const { normalSummon, compileSummon } = require('./summon');
-const { activateSupport } = require('./support');
+const { normalSummon, compileSummon, decompile } = require('./summon');
+const { canBeNormalSummoned, cannotBeSummoned } = require('./summonRules');
+const { hasStatus, statusesOf, FREEZE } = require('./statuses');
+const { activateSupport, activateSetSupport } = require('./support');
 const { declareAttack } = require('./combat');
+const { changePosition } = require('./position');
 const { activateEffect, requiredZoneFor, locationIsInZone } = require('./effectEngine');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
@@ -18,6 +21,13 @@ function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
   const card = getCard(cardId);
   const loc = findInstanceLocation(state, instanceId);
   if (!loc || loc.ownerIndex !== ownerIndex) return [];
+  if (hasStatus(state, instanceId, FREEZE)) return [];
+  // A face-down Normal/Continuo/Equipo support is activated by turning it over (ACTIVATE_SET_SUPPORT),
+  // which pays its cost; only Veloz/Contraataque cards act through their own effects while set.
+  if (loc.zone === 'field:support') {
+    const entry = state.players[loc.ownerIndex].field.support[loc.slot];
+    if (entry && entry.faceDown && card.subtype !== 'instant' && card.subtype !== 'counter') return [];
+  }
   return (card.effectCodes || []).filter((effectId) => {
     const effect = getEffect(effectId);
     if (!effect || !PLAYER_ACTIVATABLE_TYPES.includes(effect.type)) return false;
@@ -59,11 +69,20 @@ function applyAction(state, playerIndex, action) {
         setFaceDown: !!action.setFaceDown,
       });
 
+    case 'ACTIVATE_SET_SUPPORT':
+      return activateSetSupport(state, playerIndex, action.instanceId, { targets: action.targets || [] });
+
     case 'COMPILE_SUMMON':
       return compileSummon(state, playerIndex, action.instanceId, action.materialInstanceIds || []);
 
     case 'DECLARE_ATTACK':
       return declareAttack(state, playerIndex, action.attackerInstanceId, action.targetInstanceId || null);
+
+    case 'DECOMPILE':
+      return decompile(state, playerIndex, action.instanceId);
+
+    case 'CHANGE_POSITION':
+      return changePosition(state, playerIndex, action.instanceId, action.position);
 
     case 'ACTIVATE_EFFECT':
       return activateEffect(state, playerIndex, action.effectId, action.sourceInstanceId, action.targets || []);
@@ -121,6 +140,10 @@ function describeInstance(state, instanceId, ownerIndex, isViewerOwner) {
   const cardId = instanceId.split(':')[1];
   const card = getCard(cardId);
   const base = { instanceId, cardId, name: card.name, image: card.image, category: card.category, subtype: card.subtype };
+  if (card.category === 'monster') {
+    base.normalSummonable = canBeNormalSummoned(card);
+    base.cannotBeSummoned = cannotBeSummoned(card);
+  }
   if (!isViewerOwner) return base;
   return { ...base, availableEffects: computeAvailableEffects(state, ownerIndex, instanceId, cardId) };
 }
@@ -132,9 +155,15 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
     faceDown: m.faceDown,
     hasAttacked: m.hasAttacked,
     counters: m.counters,
+    statuses: statusesOf(state, m.instanceId),
+    materialCount: (m.materials || []).length,
+    // Only a compiled monster from an earlier turn can be decompiled from the UI (Pez dorado's
+    // same-turn exception is left to the server to accept or reject).
+    canDecompile: (m.materials || []).length > 0,
   };
   if (m.isToken) return { ...base, isToken: true, name: m.tokenDef.name, atk: m.baseAtk, def: m.baseDef };
-  if (m.faceDown) return isViewerOwner ? { ...base, availableEffects: [] } : base;
+  // The owner knows which card their face-down monster is (for the hover preview); the rival doesn't.
+  if (m.faceDown) return isViewerOwner ? { ...base, cardId: m.cardId, availableEffects: [] } : base;
   const card = getCard(m.cardId);
   const buff = m.tempBuff || { atk: 0, def: 0 };
   const described = { ...base, cardId: m.cardId, name: card.name, image: card.image, atk: card.atk + buff.atk, def: card.def + buff.def };
@@ -145,7 +174,7 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
 function describeFieldSupport(state, s, ownerIndex, isViewerOwner) {
   if (s.faceDown && !isViewerOwner) return { instanceId: s.instanceId, faceDown: true };
   const card = getCard(s.cardId);
-  const described = { instanceId: s.instanceId, faceDown: s.faceDown, cardId: s.cardId, name: card.name, image: card.image };
+  const described = { instanceId: s.instanceId, faceDown: s.faceDown, cardId: s.cardId, name: card.name, image: card.image, subtype: card.subtype };
   if (!isViewerOwner) return described;
   return { ...described, availableEffects: computeAvailableEffects(state, ownerIndex, s.instanceId, s.cardId) };
 }

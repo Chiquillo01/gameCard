@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import io from 'socket.io-client';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from './duel.module.css';
 import { getUserDecks } from '../../../../lib/utils/apiDeck';
 import { startPveDuel, getDuelState, sendDuelAction } from '../../../../lib/utils/apiDuel';
+import { fetchCards } from '../../../../lib/utils/apiCard';
+import CardFace from '../CreateNewDeck/CardModal/CardFace';
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import { isDeckPlayable } from '../../../../lib/utils/deckRules';
 
@@ -53,11 +55,30 @@ const DuelPage = () => {
   const [pendingSummon, setPendingSummon] = useState(null);
   // A Veloz/Contraataque support from hand is waiting on activate-now-vs-set-face-down.
   const [pendingSupportChoice, setPendingSupportChoice] = useState(null);
+  // One of your own monsters was clicked in a main phase: pick the position to switch it to.
+  const [pendingPosition, setPendingPosition] = useState(null);
   // Fusion in progress: the Compilación card plus the material instanceIds picked so far.
   const [fusion, setFusion] = useState(null);
   // A Cementerio/Exilio/Mazo-C pile the player clicked open: { side: 'me'|'enemy', zone }.
   const [openPile, setOpenPile] = useState(null);
   const socketRef = useRef(null);
+  // Every card's full data (art, effect text, ...) by id, fetched once for the hover preview, and
+  // the card the cursor last rested on.
+  const [cardsById, setCardsById] = useState({});
+  const [hovered, setHovered] = useState(null);
+
+  useEffect(() => {
+    fetchCards()
+      .then((res) => setCardsById(Object.fromEntries(res.data.map((c) => [c._id, c]))))
+      .catch(() => {});
+  }, []);
+  const logRef = useRef(null);
+  const logLength = view ? view.log.length : 0;
+
+  // Keep the newest log line in sight.
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [logLength]);
 
   useEffect(() => {
     if (matchId) return;
@@ -116,11 +137,28 @@ const DuelPage = () => {
   const cancelPendingChoices = () => {
     setPendingSummon(null);
     setPendingSupportChoice(null);
+    setPendingPosition(null);
     setFusion(null);
     setSelectedAttacker(null);
   };
 
+  // Only one decision can be open at a time: opening a new one replaces whatever was pending, so the
+  // single panel always shows the card that was just picked.
+  const closeChoices = () => {
+    setPendingSummon(null);
+    setPendingSupportChoice(null);
+    setPendingPosition(null);
+    setFusion(null);
+  };
+
+  const confirmPositionChange = (position) => {
+    if (!pendingPosition) return;
+    act({ type: 'CHANGE_POSITION', instanceId: pendingPosition.instanceId, position });
+    setPendingPosition(null);
+  };
+
   const startFusion = (card) => {
+    closeChoices();
     setFusion({ instanceId: card.instanceId, materials: new Set() });
     setOpenPile(null);
   };
@@ -144,12 +182,22 @@ const DuelPage = () => {
       return;
     }
 
+    closeChoices();
+
     if (card.category === 'support') {
-      if (card.subtype === 'instant' || card.subtype === 'counter') {
+      // The Territorio has its own zone and can't be set; every other support can be activated
+      // now or set in the support zone.
+      if (card.subtype !== 'field') {
         setPendingSupportChoice(card.instanceId);
         return;
       }
       act({ type: 'ACTIVATE_SUPPORT', instanceId: card.instanceId });
+      return;
+    }
+
+    // Rulebook: a monster whose invocation method says anything can't be Normal Summoned.
+    if (card.normalSummonable === false) {
+      showToast('error', humanizeReason(card.cannotBeSummoned ? 'cannot-be-summoned' : 'special-summon-only'));
       return;
     }
 
@@ -188,6 +236,25 @@ const DuelPage = () => {
     if (result?.ok) setFusion(null);
   };
 
+  // What the preview panel shows: the hovered card's full data, with the on-board Atk/Vida when it
+  // is a monster that has been buffed or debuffed. Tokens have no card data, so they get a stub.
+  const previewCard = (() => {
+    if (!hovered) return null;
+    if (hovered.isToken) return { name: hovered.name, category: 'monster', atk: hovered.atk, def: hovered.def, effect: 'Ficha de monstruo.' };
+    const card = cardsById[hovered.cardId];
+    if (!card) return null;
+    return hovered.atk != null ? { ...card, atk: hovered.atk, def: hovered.def } : card;
+  })();
+
+  // Clicking one of your own face-down supports in a main phase activates it (Veloz/Contraataque
+  // cards have their own effect buttons instead).
+  const onFieldSupportClick = (support) => {
+    if (!support.faceDown || support.subtype === 'instant' || support.subtype === 'counter') return;
+    if (view.turnPlayer !== view.you) return;
+    if (view.phase !== 'main1' && view.phase !== 'main2') return;
+    act({ type: 'ACTIVATE_SET_SUPPORT', instanceId: support.instanceId });
+  };
+
   const onFieldMonsterClick = (monster, isOwn) => {
     if (!monster) return;
     if (fusion) {
@@ -195,11 +262,17 @@ const DuelPage = () => {
       return;
     }
     if (isOwn) {
-      if (view.turnPlayer !== view.you || view.phase !== 'battle') return;
+      if (view.turnPlayer !== view.you) return;
+      if (view.phase === 'main1' || view.phase === 'main2') {
+        closeChoices();
+        setPendingPosition({ instanceId: monster.instanceId, faceDown: monster.faceDown, position: monster.position });
+        return;
+      }
+      if (view.phase !== 'battle') return;
       setSelectedAttacker(monster.instanceId === selectedAttacker ? null : monster.instanceId);
       return;
     }
-    if (!selectedAttacker || monster.faceDown) return;
+    if (!selectedAttacker) return;
     act({ type: 'DECLARE_ATTACK', attackerInstanceId: selectedAttacker, targetInstanceId: monster.instanceId });
     setSelectedAttacker(null);
   };
@@ -288,6 +361,55 @@ const DuelPage = () => {
     );
   };
 
+  // One panel for every pending decision (summon, position change, support, compilation): the card
+  // it is about plus the options that make sense for it right now.
+  const cardInPlay = (instanceId) => me.hand.find((c) => c.instanceId === instanceId) || me.field.monsters.find((m) => m && m.instanceId === instanceId);
+  const choicePanel = (() => {
+    const cancel = { label: 'Cancelar', variant: 'cancel', onClick: cancelPendingChoices };
+    if (fusion) {
+      return {
+        card: cardInPlay(fusion.instanceId),
+        prompt: 'Compilar',
+        hint: `Selecciona los materiales en tu mano o campo (${fusion.materials.size} elegidos)`,
+        options: [{ label: 'Confirmar compilación', variant: 'confirm', onClick: confirmFusion }, cancel],
+      };
+    }
+    if (pendingSummon) {
+      return {
+        card: cardInPlay(pendingSummon),
+        prompt: '¿Cómo invocas esta carta?',
+        options: [
+          { label: 'Ataque', onClick: () => confirmSummon('attack', false) },
+          { label: 'Defensa', onClick: () => confirmSummon('defense', false) },
+          { label: 'Boca abajo', onClick: () => confirmSummon('defense', true) },
+          cancel,
+        ],
+      };
+    }
+    if (pendingPosition) {
+      const options = [];
+      if (pendingPosition.faceDown || pendingPosition.position !== 'attack') options.push({ label: 'Ataque', onClick: () => confirmPositionChange('attack') });
+      if (pendingPosition.faceDown || pendingPosition.position !== 'defense') options.push({ label: 'Defensa', onClick: () => confirmPositionChange('defense') });
+      return {
+        card: pendingPosition.faceDown ? null : cardInPlay(pendingPosition.instanceId),
+        prompt: pendingPosition.faceDown ? 'Voltear boca arriba en:' : 'Cambiar posición a:',
+        options: [...options, cancel],
+      };
+    }
+    if (pendingSupportChoice) {
+      return {
+        card: cardInPlay(pendingSupportChoice),
+        prompt: '¿Activar ahora o colocar boca abajo?',
+        options: [
+          { label: 'Activar', onClick: () => confirmSupportChoice(false) },
+          { label: 'Boca abajo', onClick: () => confirmSupportChoice(true) },
+          cancel,
+        ],
+      };
+    }
+    return null;
+  })();
+
   const isFusionMaterialCandidate = (card) => !!fusion && card.instanceId !== fusion.instanceId && card.category === 'monster';
 
   return (
@@ -318,6 +440,9 @@ const DuelPage = () => {
       )}
 
       <div className={styles.topBar}>
+        <Link to='/' className={styles.backLink}>
+          ← Volver a la taberna
+        </Link>
         <span className={styles.turnInfo}>
           Turno {view.turnNumber} · {isMyTurn ? 'Tu turno' : 'Turno del rival'} · Fase: {PHASE_LABELS[view.phase] || view.phase}
         </span>
@@ -345,6 +470,8 @@ const DuelPage = () => {
           <span className={styles.vpBadge}>VP: {enemy.vp}</span>
           <span className={styles.handCountBadge}>Mano: {enemy.handCount}</span>
         </div>
+        <div className={styles.fieldsRow}>
+        <CardPreview card={previewCard} />
         <PlayerField
           player={enemy}
           isOwner={false}
@@ -354,6 +481,7 @@ const DuelPage = () => {
           onMonsterClick={(m) => onFieldMonsterClick(m, false)}
           onOpenPile={(zone) => setOpenPile({ side: 'enemy', zone })}
           renderEffectButtons={renderEffectButtons}
+          onHover={setHovered}
         />
 
         <div className={styles.divider} />
@@ -364,10 +492,26 @@ const DuelPage = () => {
           flipped={false}
           selectedAttacker={selectedAttacker}
           fusion={fusion}
+          canDecompile={isMyTurn && view.phase === 'battle'}
+          onDecompile={(instanceId) => act({ type: 'DECOMPILE', instanceId })}
           onMonsterClick={(m) => onFieldMonsterClick(m, true)}
+          onSupportClick={onFieldSupportClick}
           onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
           renderEffectButtons={renderEffectButtons}
+          onHover={setHovered}
         />
+
+        <div className={styles.log}>
+          <div className={styles.logScroll} ref={logRef}>
+            {view.log.map((l, i) => (
+              <div key={i} className={styles.logLine}>
+                [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
+              </div>
+            ))}
+          </div>
+        </div>
+        </div>
+
         <div className={styles.playerHeader}>
           <span className={styles.vpBadge}>VP: {me.vp}</span>
           <span className={styles.pixelBadge}>
@@ -385,6 +529,7 @@ const DuelPage = () => {
                   : ''
               }`}
               onClick={() => onHandCardClick(card)}
+              onMouseEnter={() => setHovered({ cardId: card.cardId })}
               title={card.name}
             >
               <img src={card.image} alt={card.name} />
@@ -392,59 +537,9 @@ const DuelPage = () => {
           ))}
         </div>
 
-        {fusion && (
-          <div className={styles.choiceBar}>
-            <span>Selecciona los materiales en tu mano o campo ({fusion.materials.size} elegidos)</span>
-            <button className={styles.directAttackButton} onClick={confirmFusion}>
-              Confirmar Fusión
-            </button>
-            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
-              Cancelar
-            </button>
-          </div>
-        )}
-
-        {pendingSummon && (
-          <div className={styles.choiceBar}>
-            <span>¿Cómo invocas esta carta?</span>
-            <button className={styles.actionButton} onClick={() => confirmSummon('attack', false)}>
-              Ataque
-            </button>
-            <button className={styles.actionButton} onClick={() => confirmSummon('defense', false)}>
-              Defensa
-            </button>
-            <button className={styles.actionButton} onClick={() => confirmSummon('defense', true)}>
-              Boca abajo
-            </button>
-            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
-              Cancelar
-            </button>
-          </div>
-        )}
-
-        {pendingSupportChoice && (
-          <div className={styles.choiceBar}>
-            <span>¿Activar ahora o colocar boca abajo?</span>
-            <button className={styles.actionButton} onClick={() => confirmSupportChoice(false)}>
-              Activar
-            </button>
-            <button className={styles.actionButton} onClick={() => confirmSupportChoice(true)}>
-              Boca abajo
-            </button>
-            <button className={styles.surrenderButton} onClick={cancelPendingChoices}>
-              Cancelar
-            </button>
-          </div>
-        )}
+        {choicePanel && <ChoicePanel panel={choicePanel} />}
       </div>
 
-      <div className={styles.log}>
-        {view.log.map((l, i) => (
-          <div key={i} className={styles.logLine}>
-            [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
@@ -455,8 +550,8 @@ const DuelPage = () => {
 //   row 3: (—) x6, Mazo
 // `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
 // next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
-function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMonsterClick, onOpenPile, renderEffectButtons }) {
-  const row = (r) => (flipped ? 4 - r : r);
+function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick }) {
+  const row = (r) => (flipped ? 3 - r : r);
 
   return (
     <div className={styles.fieldGrid}>
@@ -468,6 +563,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMon
             m && (m.instanceId === selectedAttacker || (fusion && isOwner && fusion.materials.has(m.instanceId))) ? styles.selected : ''
           }`}
           onClick={() => m && onMonsterClick(m)}
+          onMouseEnter={() => m && (m.isToken ? onHover({ isToken: true, name: m.name, atk: m.atk, def: m.def }) : m.cardId && onHover({ cardId: m.cardId, atk: m.faceDown ? null : m.atk, def: m.faceDown ? null : m.def }))}
         >
           {m && !m.faceDown && (
             <>
@@ -475,7 +571,30 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMon
               <span className={styles.statBadge}>
                 {m.atk} / {m.def}
               </span>
+              {m.statuses && m.statuses.length > 0 && (
+                <span className={styles.statusBadges}>
+                  {m.statuses.map((st) => (
+                    <span key={st} className={`${styles.statusBadge} ${styles['status' + st]}`} title={st}>
+                      {STATUS_ICONS[st] || st}
+                    </span>
+                  ))}
+                </span>
+              )}
               {isOwner && !fusion && renderEffectButtons(m)}
+              {isOwner && !fusion && canDecompile && m.canDecompile && (
+                <div className={styles.effectButtons}>
+                  <button
+                    className={styles.effectButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDecompile(m.instanceId);
+                    }}
+                    title='Devolver este monstruo al Mazo-C e invocar sus materiales'
+                  >
+                    Descompilar
+                  </button>
+                </div>
+              )}
             </>
           )}
           {m && m.faceDown && <div className={styles.faceDown} />}
@@ -495,7 +614,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMon
         onClick={() => onOpenPile('banished')}
       />
 
-      <div style={{ gridRow: row(2), gridColumn: 1 }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio'>
+      <div style={{ gridRow: row(2), gridColumn: 1 }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio' onMouseEnter={() => player.field.territory && onHover({ cardId: player.field.territory.cardId })}>
         {player.field.territory && (
           <>
             <img src={player.field.territory.image} alt={player.field.territory.name} title={player.field.territory.name} />
@@ -505,9 +624,9 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMon
       </div>
 
       {player.field.support.map((s, i) => (
-        <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte'>
-          {s && !(s.faceDown && !isOwner) && <img src={s.image} alt={s.name} title={s.name} />}
-          {s && s.faceDown && isOwner && <div className={styles.faceDown} />}
+        <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte' onClick={() => s && isOwner && onSupportClick && onSupportClick(s)} onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}>
+          {s && !s.faceDown && <img src={s.image} alt={s.name} title={s.name} />}
+          {s && s.faceDown && <div className={styles.faceDown} />}
           {s && isOwner && renderEffectButtons(s)}
         </div>
       ))}
@@ -523,7 +642,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMon
         <PileSlot style={{ gridRow: row(2), gridColumn: 7 }} label='Mazo-C' count={player.extraCount} />
       )}
 
-      <PileSlot style={{ gridRow: row(3), gridColumn: 7 }} label='Mazo' count={player.deckCount} />
+      <PileSlot style={{ gridRow: row(2), gridColumn: 6 }} label='Mazo' count={player.deckCount} />
     </div>
   );
 }
@@ -531,6 +650,31 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, onMon
 // A single face-down pile with a count badge — Cementerio/Exilio/Mazo-C/Mazo are always exactly
 // one board slot each, however many cards they hold (see the rulebook grid). Clickable only when
 // `onClick` is given (Cementerio/Exilio are public on both sides; Mazo-C only for its owner).
+// The single decision panel: a thumbnail of the card in question, what is being asked, and one button
+// per option. It wraps on narrow screens (thumbnail + text on top, buttons below).
+function ChoicePanel({ panel }) {
+  const variants = { confirm: 'directAttackButton', cancel: 'surrenderButton' };
+  return (
+    <div className={styles.choiceBar}>
+      <div className={styles.choiceInfo}>
+        {panel.card && panel.card.image && <img className={styles.choiceThumb} src={panel.card.image} alt={panel.card.name} />}
+        <div className={styles.choiceText}>
+          {panel.card && panel.card.name && <span className={styles.choiceCardName}>{panel.card.name}</span>}
+          <span>{panel.prompt}</span>
+          {panel.hint && <span className={styles.choiceHint}>{panel.hint}</span>}
+        </div>
+      </div>
+      <div className={styles.choiceOptions}>
+        {panel.options.map((o) => (
+          <button key={o.label} className={styles[variants[o.variant] || 'actionButton']} onClick={o.onClick}>
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function PileSlot({ style, label, count, onClick }) {
   return (
     <div
@@ -571,6 +715,45 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
   );
 }
 
+// The card face is drawn at its natural 480x700 and scaled down (never up) to whatever room the
+// viewport leaves to the left of the board — the board is at most 900px wide and centered.
+const FACE_WIDTH = 480;
+const FACE_HEIGHT = 700;
+const BOARD_WIDTH = 700;
+
+function usePreviewScale() {
+  const compute = () => {
+    const room = (window.innerWidth - BOARD_WIDTH) / 2 - 20 - 16; // page padding + gap to the board
+    return Math.max(0, Math.min(1, room / FACE_WIDTH, (window.innerHeight - 150) / FACE_HEIGHT));
+  };
+  const [scale, setScale] = useState(compute);
+  useEffect(() => {
+    const onResize = () => setScale(compute());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return scale;
+}
+
+// Enlarged card shown to the left of the board for whatever the cursor last rested on.
+function CardPreview({ card }) {
+  const scale = usePreviewScale();
+  if (scale < 0.45) return null; // not enough room at this window size
+  return (
+    <div className={styles.cardPreview} style={{ width: FACE_WIDTH * scale, height: FACE_HEIGHT * scale }}>
+      {card ? (
+        <div style={{ width: FACE_WIDTH, height: FACE_HEIGHT, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+          <CardFace card={card} />
+        </div>
+      ) : (
+        <div className={styles.cardPreviewEmpty}>Pasa el cursor sobre una carta para verla en grande.</div>
+      )}
+    </div>
+  );
+}
+
+const STATUS_ICONS = { Congelado: '❄', Quemadura: '🔥', Veneno: '☠' };
+
 function humanizeReason(reason) {
   const map = {
     'normal-summon-used': 'Ya has hecho tu invocación normal este turno.',
@@ -579,8 +762,12 @@ function humanizeReason(reason) {
     'not-in-hand': 'Esa carta no está en tu mano.',
     'invalid-position': 'Esa combinación de posición no es válida.',
     'not-available': 'Esa carta de fusión no está disponible.',
-    'summoning-sickness': 'Ese monstruo no puede atacar el turno en que fue invocado.',
     'already-attacked': 'Ese monstruo ya atacó este turno.',
+    'not-main-phase': 'Solo puedes hacer eso en tu Fase Principal.',
+    'summoned-this-turn': 'Ese monstruo no puede cambiar de posición el turno en que fue invocado.',
+    'already-changed-position': 'Ese monstruo ya cambió de posición este turno.',
+    'same-position': 'Ese monstruo ya está en esa posición.',
+    'monster-not-found': 'No se encontró ese monstruo.',
     'not-battle-phase': 'Solo puedes atacar en la fase de batalla.',
     'must-target-a-monster': 'El rival tiene monstruos: debes elegir uno como objetivo.',
     'not-your-turn': 'No es tu turno.',
@@ -590,6 +777,14 @@ function humanizeReason(reason) {
     'once-per-turn': 'Ese efecto ya se activó este turno.',
     'conditions-not-met': 'No se cumplen las condiciones para ese efecto.',
     'unknown-effect': 'Ese efecto no existe.',
+    'cannot-be-summoned': 'Esa carta no puede ser invocada.',
+    'special-summon-only': 'Esa carta solo puede invocarse de forma especial: cumple el requisito de su método de invocación.',
+    'cannot-set-territory': 'Un Territorio no se puede colocar boca abajo.',
+    'not-set-support': 'Ese apoyo no está colocado boca abajo.',
+    'use-its-effect': 'Ese apoyo se activa con su efecto.',
+    frozen: 'Ese monstruo está congelado y no puede activar efectos.',
+    'not-compiled': 'Ese monstruo no es un monstruo compilado.',
+    'compiled-this-turn': 'No puedes descompilar un monstruo el turno en que fue compilado.',
   };
   if (reason && reason.startsWith('missing-material')) return 'Los materiales elegidos no cumplen el requisito de fusión.';
   return map[reason] || 'Acción no válida.';

@@ -6,7 +6,7 @@
     repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 40px);
   font-family: 'VT323', monospace;
   color: #e8d3a0;
-  padding: 1rem 1.25rem 2.5rem;
+  padding: 0.75rem 1.25rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -98,25 +98,40 @@
 .topBar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
   background: linear-gradient(180deg, #4a2a10 0%, #3a2010 100%);
   border: 3px solid #241305;
   box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.35);
-  padding: 0.75rem 1.25rem;
-  /* Clears the Layout's fixed "Volver a la taberna" pill (top-left, ~3rem tall) instead of
-     letting the turn/phase text render underneath it. */
-  margin-top: 3rem;
+  padding: 0.5rem 1rem;
+}
+
+.backLink {
+  font-family: 'VT323', monospace;
+  font-size: 1.0625rem;
+  color: #e8d3a0;
+  background: linear-gradient(180deg, #4a2a10 0%, #3a2010 100%);
+  border: 2px solid #241305;
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.35);
+  padding: 0.375rem 0.75rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.backLink:hover {
+  color: #ffd76a;
 }
 
 .turnInfo {
   font-size: 1.1875rem;
   color: #ffd76a;
+  flex: 1;
+  min-width: 0;
 }
 
 .topBarActions {
   display: flex;
+  margin-left: auto;
   gap: 0.5rem;
   flex-wrap: wrap;
 }
@@ -176,7 +191,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-width: 900px;
+  max-width: 700px;
   width: 100%;
   margin: 0 auto;
 }
@@ -188,7 +203,7 @@
   padding: 0.625rem;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-auto-rows: minmax(72px, auto);
+  grid-auto-rows: auto;
   gap: 0.4rem;
 }
 
@@ -227,9 +242,10 @@
 
 .slot {
   width: 100%;
-  height: 100%;
+  /* Portrait, like a real card (480x700), so the board reads vertical instead of as a wide strip. */
+  aspect-ratio: 5 / 7;
   min-width: 0;
-  min-height: 72px;
+  box-sizing: border-box;
   border: 3px solid #6b3d16;
   background: linear-gradient(155deg, rgba(241, 221, 171, 0.15) 0%, rgba(221, 196, 140, 0.08) 100%);
   display: flex;
@@ -256,7 +272,7 @@
 }
 
 .slot.defense img {
-  transform: rotate(90deg) scale(0.8);
+  transform: rotate(90deg) scale(0.7);
 }
 
 .slot.selected {
@@ -440,15 +456,59 @@
 .choiceBar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.625rem;
+  gap: 0.625rem 1rem;
   background: linear-gradient(180deg, #4a2a10 0%, #3a2010 100%);
   border: 3px solid #241305;
   box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.35);
-  padding: 0.75rem 1rem;
+  padding: 0.5rem 0.875rem;
   color: #ffd76a;
   font-size: 1.0625rem;
+}
+
+.choiceInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.choiceThumb {
+  width: 42px;
+  aspect-ratio: 5 / 7;
+  object-fit: cover;
+  border: 2px solid #241305;
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.choiceText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.choiceCardName {
+  font-size: 0.875rem;
+  color: #e8d3a0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.choiceHint {
+  font-size: 0.875rem;
+  color: #e8d3a0;
+}
+
+.choiceOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex: 0 1 auto;
 }
 
 .hand {
@@ -484,17 +544,65 @@
 
 /* --- Log --- */
 
-.log {
-  max-width: 900px;
+/* The log hangs off the right side of the two fields and is exactly as tall as them. */
+.fieldsRow {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cardPreview {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  margin-right: 1rem;
+  z-index: 2;
+}
+
+.cardPreviewEmpty {
+  box-sizing: border-box;
   width: 100%;
-  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 1.25rem;
+  color: rgba(232, 211, 160, 0.6);
+  border: 3px dashed rgba(232, 211, 160, 0.3);
+}
+
+.log {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  margin-left: 1rem;
+  width: 300px;
   background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
   border: 3px solid #4a2a10;
   box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.35);
-  padding: 0.625rem 0.875rem;
-  max-height: 150px;
-  overflow-y: auto;
   color: #4a2a10;
+}
+
+.logScroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 0.625rem 0.875rem;
+}
+
+@media (max-width: 1420px) {
+  /* Not enough room beside the board: the log drops under the fields. */
+  .log {
+    position: relative;
+    left: auto;
+    margin: 0.5rem 0 0;
+    width: auto;
+    height: 150px;
+  }
 }
 
 .logLine {
@@ -532,13 +640,37 @@
 }
 
 @media (max-width: 768px) {
-  .slot {
-    width: 60px;
-    height: 78px;
-  }
-
   .handCard {
     width: 60px;
     height: 84px;
   }
+}
+
+.statusBadges {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  display: flex;
+  gap: 1px;
+  z-index: 3;
+}
+
+.statusBadge {
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 1px 2px;
+  background: rgba(18, 9, 2, 0.85);
+  border: 1px solid #6b3d16;
+}
+
+.statusCongelado {
+  border-color: #6ec6ff;
+}
+
+.statusQuemadura {
+  border-color: #ff8a3d;
+}
+
+.statusVeneno {
+  border-color: #8bd450;
 }
