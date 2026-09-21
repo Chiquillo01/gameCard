@@ -56,10 +56,18 @@ describe('Normal Summon and the invocation method', () => {
   });
 
   it('refuses a monster that needs a special summon requirement', async () => {
-    const { state, inHand } = await makeMatch(['Pegaso', 'Kraken']);
+    const { state, inHand } = await makeMatch(['Inferno, el Dragón de Fuego', 'Kraken']);
     toMain1(state);
-    const res = applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Pegaso'), position: 'attack' });
+    const res = applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Inferno, el Dragón de Fuego'), position: 'attack' });
     expect(res).toMatchObject({ ok: false, reason: 'special-summon-only' });
+  });
+
+  it('lets a card whose method says "puedes / se puede" be Normal Summoned too (optional special summon)', async () => {
+    const { state, inHand } = await makeMatch(['Avispa gigante', 'Pegaso', 'Kraken']);
+    toMain1(state);
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Avispa gigante'), position: 'attack' }).ok).toBe(true);
+    state.players[0].normalSummonUsed = false;
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Pegaso'), position: 'attack' }).ok).toBe(true);
   });
 
   it('lets a monster with no invocation method be Normal Summoned', async () => {
