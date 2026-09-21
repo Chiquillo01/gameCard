@@ -1048,7 +1048,7 @@
   {
     "_id": "RELICARIO_EFFECT_NEGATE",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -1085,7 +1085,7 @@
   {
     "_id": "RELICARIO_EFFECT_BUFF_DEF",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -1127,7 +1127,7 @@
   {
     "_id": "RELICARIO_EFFECT_DEF_ATTACK",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -1863,7 +1863,7 @@
       {
         "fn": "applyStatus",
         "args": {
-          "target": "attacker",
+          "target": "selected",
           "status": "Veneno",
           "count": 1
         }
@@ -1871,7 +1871,7 @@
       {
         "fn": "grantBuff",
         "args": {
-          "target": "attacker",
+          "target": "selected",
           "buff": {
             "atk": -2
           },
@@ -2406,8 +2406,15 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "breed": "Roca",
-          "count": 1
+          "count": 1,
+          "scope": [
+            "deck",
+            "graveyard"
+          ],
+          "filter": {
+            "breed": "Roca",
+            "category": "monster"
+          }
         }
       }
     ]
@@ -3341,9 +3348,13 @@
   },
   {
     "_id": "HEROE_ESPERANZA_PROTECTION",
-    "type": "rule",
+    "type": "continuous",
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
     "requiresTarget": false,
     "actions": [
       {
@@ -3414,29 +3425,27 @@
     "type": "ignition",
     "oncePerTurn": true,
     "conditions": [],
-    "requiresTarget": true,
+    "requiresTarget": false,
     "actions": [
       {
-        "fn": "chooseEffect",
+        "fn": "burnOpponent",
         "args": {
-          "options": [
-            {
-              "fn": "burnOpponent",
-              "args": {
-                "amount": 1
-              }
-            },
-            {
-              "fn": "damageMonster",
-              "args": {
-                "amount": 3,
-                "target": "selected"
-              }
-            }
-          ]
+          "amount": 1
+        }
+      },
+      {
+        "fn": "destroy",
+        "args": {
+          "side": "any",
+          "zone": "monster",
+          "faceUp": true,
+          "maxDef": 3,
+          "pick": "random",
+          "count": 1
         }
       }
-    ]
+    ],
+    "choice": true
   },
   {
     "_id": "ORCO_GIGANTE_EXILE",
@@ -3595,7 +3604,10 @@
           "amount": 3
         }
       }
-    ]
+    ],
+    "cost": {
+      "fn": "destroyOwnMonster"
+    }
   },
   {
     "_id": "MONEDA_FORTUNA_COINFLIP",
@@ -4659,23 +4671,20 @@
       }
     },
     "conditions": [],
-    "requiresTarget": true,
+    "requiresTarget": false,
     "actions": [
       {
-        "fn": "exileTarget",
+        "fn": "destroy",
         "args": {
-          "target": "opponentMonster",
-          "duration": "endOfTurn",
-          "player": "opponent"
-        }
-      },
-      {
-        "fn": "gainVP",
-        "args": {
-          "source": "exiledMonsterAtk"
+          "side": "opponent",
+          "zone": "monster",
+          "count": 1
         }
       }
-    ]
+    ],
+    "cost": {
+      "fn": "destroyOwnMonster"
+    }
   },
   {
     "_id": "OLLA_USURA_DRAW",
@@ -5710,6 +5719,273 @@
             "faceDown": true
           }
         }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "INTERCAMBIO_GY_SUMMON",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "banishSelf",
+        "args": {
+          "from": "graveyard"
+        }
+      },
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "player": "self",
+          "levelOrLower": 1,
+          "scope": "ownGY"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "PRIMER_GINETE_GY_RECOVER",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard"
+    },
+    "actions": [
+      {
+        "fn": "recoverCardsToHand",
+        "args": {
+          "count": 2,
+          "scope": [
+            "graveyard",
+            "banished"
+          ],
+          "filter": {
+            "breed": "Dragón"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "PRIMER_GINETE_DRAGON_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "filter": {
+            "breed": "Dragón"
+          },
+          "atk": 1,
+          "scope": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "ANCIANO_DRAGON_ONSUMMON_SEARCH",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Templo del Dragón"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "requiresTarget": true,
+    "source": "authored",
+    "_id": "CAPITAN_BANDIDO_STEAL",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "takeControl",
+        "args": {
+          "changeBreed": "Ladrón",
+          "destroyOthers": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "CAPITAN_BANDIDO_BATTLE_IMMUNE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "CAPITAN_BANDIDO_MATON_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "name": "Matón"
+          },
+          "buff": {
+            "atk": 4,
+            "def": 4
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Enano Constructor"
+        }
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "GOLPEADOR_ONSUMMON_GEARS",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCounter",
+        "args": {
+          "counter": "gear",
+          "amount": 3
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Enano Constructor"
+        }
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "MACHACADOR_ONSUMMON_DESTROY",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "side": "opponent",
+          "zone": "any",
+          "count": 1
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "REY_DEMONIO_DESTROY_DEMON",
+    "type": "quick",
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "side": "any",
+          "zone": "monster",
+          "filter": {
+            "breed": "Demonio"
+          },
+          "count": 1
+        }
+      },
+      {
+        "fn": "growSelf",
+        "args": {
+          "atk": 2,
+          "def": 2,
+          "ifPreviousSucceeded": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "REY_DEMONIO_PROTECTION",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "cannotBeDestroyedByOpponentEffects",
+        "args": {}
       }
     ]
   }

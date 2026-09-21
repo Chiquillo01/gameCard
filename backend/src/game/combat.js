@@ -1,6 +1,7 @@
 const { getCard } = require('./cardIndex');
 const { player, opponentIndex, moveToZone, log } = require('./zones');
 const { hasStatus, FREEZE, BURN } = require('./statuses');
+const { cardIdFromInstance } = require('./deckUtils');
 const { getEffectiveStats, fireTrigger, recomputeContinuous } = require('./effectEngine');
 const { checkWin } = require('./effects/actions');
 
@@ -86,6 +87,8 @@ function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanc
     }
   }
 
+  if (defender.cannotBeDestroyedByBattle) destroyedDefender = false;
+  if (attacker.cannotBeDestroyedByBattle) destroyedAttacker = false;
   if (destroyedDefender) removeAndGraveyard(state, oppIdx, defender.instanceId);
   if (destroyedAttacker) removeAndGraveyard(state, controllerIndex, attacker.instanceId);
   if (wasFaceDown && !destroyedDefender) fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
@@ -102,9 +105,12 @@ function removeAndGraveyard(state, ownerIndex, instanceId) {
   const idx = pl.field.monsters.findIndex((m) => m && m.instanceId === instanceId);
   if (idx === -1) return;
   // moveToZone also releases the materials under a compiled monster and ends its burning.
-  if (pl.field.monsters[idx].isToken) pl.field.monsters[idx] = null;
-  else moveToZone(state, instanceId, 'graveyard', ownerIndex);
-  fireTrigger(state, 'sentToGraveyard', { instanceId });
+  if (pl.field.monsters[idx].isToken) {
+    pl.field.monsters[idx] = null;
+    return;
+  }
+  moveToZone(state, instanceId, 'graveyard', ownerIndex);
+  fireTrigger(state, 'sentToGraveyard', { instanceId, cardId: cardIdFromInstance(instanceId), ownerIndex });
 }
 
 module.exports = { declareAttack };

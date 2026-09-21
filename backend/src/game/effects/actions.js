@@ -214,7 +214,12 @@ function grantBuff(ctx, args, targets) {
   }
   if (!buffPhaseActive(ctx.state, args.phase)) return;
   const filter = args.filter || { attribute: args.attribute || args.atribute, breed: args.breed, family: args.family, name: args.name };
-  buffTargets(ctx, args, targets).filter((m) => monsterMatches(m, filter)).forEach((m) => {
+  const matched = buffTargets(ctx, args, targets).filter((m) => monsterMatches(m, filter));
+  if (args.duration === 'endOfTurn' || args.duration === 'thisTurn') {
+    // Recorded on the state so the buff survives the board recomputes until the turn ends.
+    require('./fieldActions').grantTimedBuff(ctx, matched.map((m) => m.instanceId), buff, ctx.state.turnNumber);
+  }
+  matched.forEach((m) => {
     m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
     m.tempBuff.atk += buff.atk || 0;
     m.tempBuff.def += buff.def || 0;
@@ -676,6 +681,8 @@ const registry = {
   chooseEffect,
   opponentChoosesEffect,
 };
+
+Object.assign(registry, require('./fieldActions'));
 
 function runAction(ctx, step, targets) {
   const impl = registry[step.fn];

@@ -23,12 +23,15 @@ afterAll(async () => {
 });
 
 // Free-to-summon AND effect-free monsters, so combat math in these tests is just raw ATK vs
-// raw ATK/Vida — no continuous buff on the drawn card can shift the numbers depending on which
-// one the (randomly shuffled) deck happens to put in hand.
+// raw ATK/Vida. The real card set has almost no vanilla monsters left (nearly every card has an
+// effect now), so the tests mint a dozen copies of a vanilla one under their own names.
 async function getVanillaFreeMonsters(limit = 20) {
-  return Card.find({ category: 'monster', 'summonCost.fn': { $exists: false }, effectCodes: { $size: 0 }, invocationText: { $in: ['', null] } })
-    .limit(limit)
-    .lean();
+  const base = await Card.findOne({ name: 'Esqueleto' }).lean();
+  const { _id, createdAt, updatedAt, __v, ...rest } = base;
+  for (let i = 1; i <= 12; i++) {
+    await Card.findOneAndUpdate({ name: `Vanilla ${i}` }, { ...rest, name: `Vanilla ${i}`, number: 1000 + i, effectCodes: [] }, { upsert: true });
+  }
+  return Card.find({ name: /^Vanilla / }).limit(limit).lean();
 }
 
 async function makeTestMatch({ vsBot = false } = {}) {

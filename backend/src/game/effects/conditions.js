@@ -64,6 +64,12 @@ function markCardEffectUsed(ctx) {
   entry.usedEffects = { ...(entry.usedEffects || {}), [ctx.effect._id]: true };
 }
 
+// "Si controlas a X": a face-up monster or Apoyo of yours with that name.
+function controlsCard(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  return [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name);
+}
+
 function isEquippedToRace(ctx, args) {
   const support = ctx.state.players.flatMap((p) => p.field.support).find((s) => s && s.instanceId === ctx.sourceInstanceId);
   return !!(support && support.equippedTo);
@@ -86,6 +92,7 @@ const registry = {
   canBeSummonedFrom,
   firstTimeSummon,
   oncePerCardOnField,
+  controlsCard,
   isEquippedToRace,
   effectIncludes,
   canActivateOnOpponentTurn,

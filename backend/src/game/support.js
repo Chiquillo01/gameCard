@@ -50,10 +50,18 @@ function activateSetSupport(state, controllerIndex, instanceId, { targets = [] }
 function resolveActivation(state, controllerIndex, instanceId, card, targets, setEntry = null) {
   const pl = player(state, controllerIndex);
   const ctx = { state, controllerIndex, sourceInstanceId: instanceId };
+  const before = { pixelcoins: pl.pixelcoins, vp: pl.vp };
   const cost = card.activationCost;
   if (cost && cost.fn) {
     const paid = payCost(ctx, cost, targets);
     if (!paid) return { ok: false, reason: 'cannot-pay-cost' };
+  }
+  // Some cards add a cost inside their effect ("destruye un monstruo en tu Campo:"): pay it now, and
+  // hand back the activation cost if it can't be paid.
+  if (!payEffectCosts(ctx, card, targets)) {
+    pl.pixelcoins = before.pixelcoins;
+    pl.vp = before.vp;
+    return { ok: false, reason: 'cannot-pay-cost' };
   }
 
   if (card.subtype === 'field') {
@@ -97,6 +105,18 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
 // Only these effect types resolve at the moment a support is played; a "triggered" one (Nido de
 // Avispas) waits for its event and a "continuous" one is recomputed from the board.
 const ON_PLAY_EFFECT_TYPES = ['activated', 'quick', 'ignition'];
+
+// The effect-level costs of the effects that resolve as the card is played.
+function payEffectCosts(ctx, card, targets) {
+  return (card.effectCodes || []).every((effectId) => {
+    const effect = getEffect(effectId);
+    if (!effect || !effect.cost || !ON_PLAY_EFFECT_TYPES.includes(effect.type)) return true;
+    const requiredZone = requiredZoneFor(effect);
+    if (requiredZone === 'graveyard' || requiredZone === 'banished' || requiredZone === 'field') return true;
+    if (!checkConditions({ ...ctx, effect }, effect.conditions)) return true;
+    return payCost({ ...ctx, effect }, effect.cost, targets);
+  });
+}
 
 function resolveCardEffects(ctx, card, targets) {
   (card.effectCodes || []).forEach((effectId) => {

@@ -50,7 +50,19 @@ function destroyMonster(ctx, args, targets) {
   return sacrificeControlled(ctx, { amount: 1 }, targets);
 }
 
-const registry = { payPixels, payVP, discardSelf, discart, sacrificeControlled, spendCounter, destroyMonster };
+// "Destruye un monstruo en tu Campo:" — the picked one, else your weakest (never the card paying).
+function destroyOwnMonster(ctx, args, targets) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const mine = pl.field.monsters.filter((m) => m && m.instanceId !== ctx.sourceInstanceId);
+  const picked = (targets || []).length ? mine.find((m) => targets.includes(m.instanceId)) : null;
+  const weakest = [...mine].sort((a, b) => (a.baseAtk || 0) - (b.baseAtk || 0))[0];
+  const chosen = picked || weakest;
+  if (!chosen) return false;
+  moveToZone(ctx.state, chosen.instanceId, 'graveyard', ctx.controllerIndex);
+  return true;
+}
+
+const registry = { payPixels, payVP, discardSelf, discart, sacrificeControlled, spendCounter, destroyMonster, destroyOwnMonster };
 
 // Returns true if the cost could be (and was) paid; false means activation fails and nothing
 // should be mutated beyond what already ran (costs run first, before the effect's actions).

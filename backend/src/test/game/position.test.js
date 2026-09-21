@@ -19,10 +19,20 @@ afterAll(async () => {
   await disconnectDB();
 });
 
+// Free-to-summon AND effect-free monsters, so combat math in these tests is just raw ATK vs
+// raw ATK/Vida. The real card set has almost no vanilla monsters left (nearly every card has an
+// effect now), so the tests mint a dozen copies of a vanilla one under their own names.
+async function getVanillaFreeMonsters(limit = 20) {
+  const base = await Card.findOne({ name: 'Esqueleto' }).lean();
+  const { _id, createdAt, updatedAt, __v, ...rest } = base;
+  for (let i = 1; i <= 12; i++) {
+    await Card.findOneAndUpdate({ name: `Vanilla ${i}` }, { ...rest, name: `Vanilla ${i}`, number: 1000 + i, effectCodes: [] }, { upsert: true });
+  }
+  return Card.find({ name: /^Vanilla / }).limit(limit).lean();
+}
+
 async function makeMatch() {
-  const free = await Card.find({ category: 'monster', 'summonCost.fn': { $exists: false }, effectCodes: { $size: 0 }, invocationText: { $in: ['', null] } })
-    .limit(20)
-    .lean();
+  const free = await getVanillaFreeMonsters();
   const mk = async (tag) => {
     const user = await User.create({ userName: `Pos${tag}${Date.now()}`, email: `pos${tag}${Date.now()}@example.com`, password: 'x' });
     const deck = await Deck.create({ deckTitle: tag, owner: user._id, cards: free.map((c) => ({ card: c._id, amount: 2 })), fusionCards: [] });

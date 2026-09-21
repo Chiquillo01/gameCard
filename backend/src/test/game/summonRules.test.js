@@ -216,3 +216,88 @@ describe('Phase-timed effects', () => {
   });
 
 });
+
+describe('Effects rewritten to match the new descriptions', () => {
+  const { placeMonster } = require('../../game/zones');
+  const onField = (state, p, id) => state.players[p].field.monsters.find((m) => m && m.instanceId === id);
+  const idOf = (state, p, name) => [...state.players[p].hand, ...state.players[p].deck].find((id) => getCard(id.split(':')[1]).name === name);
+
+  it('Sacrificio memorable destroys one of your monsters as the cost and one of the rival\'s', async () => {
+    const { state, inHand } = await makeMatch(['Sacrificio memorable', 'Slime', 'Kraken'], ['Esqueleto', 'Slime', 'Carnivora Come Hombres', 'Kraken', 'Arboleda', 'Nido de Avispas']);
+    toMain1(state);
+    state.players[0].pixelcoins = 6;
+    const mine = inHand('Slime');
+    placeMonster(state, mine, 0, { position: 'attack' });
+    const theirs = state.players[1].hand[0];
+    placeMonster(state, theirs, 1, { position: 'attack' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') }).ok).toBe(true);
+    expect(onField(state, 0, mine)).toBeUndefined();
+    expect(onField(state, 1, theirs)).toBeUndefined();
+    expect(state.players[0].graveyard).toContain(mine);
+  });
+
+  it('Sacrificio memorable cannot be played with no monster of yours to destroy', async () => {
+    const { state, inHand } = await makeMatch(['Sacrificio memorable', 'Kraken']);
+    toMain1(state);
+    state.players[0].pixelcoins = 6;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') })).toMatchObject({ ok: false, reason: 'cannot-pay-cost' });
+  });
+
+  it('El Primer Ginete brings back 2 Dragones when it is destroyed', async () => {
+    const { state, inHand } = await makeMatch(['El Primer Ginete', 'Dragón de Oscuridad Bebe', 'Dragón de Tierra Bebe', 'Kraken']);
+    toMain1(state);
+    const ginete = inHand('El Primer Ginete');
+    placeMonster(state, ginete, 0, { position: 'attack' });
+    ['Dragón de Oscuridad Bebe', 'Dragón de Tierra Bebe'].forEach((n) => {
+      const id = inHand(n);
+      state.players[0].hand = state.players[0].hand.filter((i) => i !== id);
+      state.players[0].graveyard.push(id);
+    });
+    const { registry } = require('../../game/effects/actions');
+    registry.destroy({ state, controllerIndex: 1, sourceInstanceId: 'x', effect: {} }, { side: 'opponent', zone: 'monster', count: 1 }, []);
+    expect(state.players[0].graveyard).toContain(ginete);
+    expect(state.players[0].hand.filter((id) => /Bebe/.test(getCard(id.split(':')[1]).name)).length).toBe(2);
+  });
+
+  it('Rey Demonio destroys a Demonio and grows +2/+2, and ignores the rival\'s destroy effects', async () => {
+    const { state, inHand } = await makeMatch(['Rey Demonio', 'Slime', 'Kraken']);
+    toMain1(state);
+    const rey = inHand('Rey Demonio');
+    placeMonster(state, rey, 0, { position: 'attack' });
+    const slime = inHand('Slime'); // Demonio
+    placeMonster(state, slime, 1, { position: 'attack' });
+    const before = onField(state, 0, rey).baseAtk;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REY_DEMONIO_DESTROY_DEMON', sourceInstanceId: rey }).ok).toBe(true);
+    expect(onField(state, 1, slime)).toBeUndefined();
+    expect(onField(state, 0, rey).baseAtk).toBe(before + 2);
+
+    // The rival's destroy effect can't touch it.
+    const { registry } = require('../../game/effects/actions');
+    registry.destroy({ state, controllerIndex: 1, sourceInstanceId: 'x', effect: {} }, { side: 'opponent', zone: 'monster', count: 1 }, []);
+    expect(onField(state, 0, rey)).toBeDefined();
+  });
+
+  it('Capitán Bandido takes a monster, turns it into a Ladrón and destroys the rest of that side', async () => {
+    const { state, inHand } = await makeMatch(['Capitán Bandido', 'Kraken']);
+    toMain1(state);
+    const cap = inHand('Capitán Bandido');
+    placeMonster(state, cap, 0, { position: 'attack' });
+    const [a, b] = state.players[1].hand;
+    placeMonster(state, a, 1, { position: 'attack' });
+    placeMonster(state, b, 1, { position: 'attack' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: cap }).ok).toBe(true);
+    expect(state.players[1].field.monsters.some(Boolean)).toBe(false);
+    const stolen = [a, b].map((id) => onField(state, 0, id)).find(Boolean);
+    expect(stolen.breedOverride).toBe('Ladrón');
+  });
+
+  it('Xorn can search the graveyard as well as the deck', async () => {
+    const { state, inHand } = await makeMatch(['Xorn', 'Kraken']);
+    const { registry } = require('../../game/effects/actions');
+    const cardDoc = await Card.findOne({ breed: 'Roca', category: 'monster' }).lean();
+    const id = `0:${cardDoc._id}:gy`;
+    state.players[0].graveyard.push(id);
+    registry.addCardToHandFromDeck({ state, controllerIndex: 0, sourceInstanceId: inHand('Xorn') }, { count: 1, scope: ['deck', 'graveyard'], filter: { breed: 'Roca', category: 'monster' } });
+    expect(state.players[0].hand).toContain(id);
+  });
+});

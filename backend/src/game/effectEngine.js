@@ -97,9 +97,15 @@ function fireTrigger(state, eventName, eventArgs = {}) {
   const order = [state.turnPlayer, state.turnPlayer === 0 ? 1 : 0];
   order.forEach((controllerIndex) => {
     const pl = player(state, controllerIndex);
-    [...pl.field.monsters, ...pl.field.support, pl.field.territory].filter(Boolean).forEach((m) => {
+    const sources = [...pl.field.monsters, ...pl.field.support, pl.field.territory].filter(Boolean);
+    // A card that was just sent to the graveyard from the field is no longer on the field, but its
+    // own "cuando es enviada al cementerio" effect still fires for it.
+    if (eventName === 'sentToGraveyard' && eventArgs.ownerIndex === controllerIndex && eventArgs.cardId) {
+      sources.push({ instanceId: eventArgs.instanceId, cardId: eventArgs.cardId });
+    }
+    sources.forEach((m) => {
       if (m.faceDown || m.negated || m.isToken || hasStatus(state, m.instanceId, FREEZE)) return;
-      if ((eventName === 'flipped' || eventName === 'onSummon') && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
+      if ((eventName === 'flipped' || eventName === 'onSummon' || eventName === 'sentToGraveyard') && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
       if (eventName === 'allySummoned' && (eventArgs.faceDown || eventArgs.controllerIndex !== controllerIndex || m.instanceId === eventArgs.instanceId)) return;
       const card = getCard(m.cardId);
       (card.effectCodes || []).forEach((effectId) => {
@@ -133,8 +139,13 @@ function fireTrigger(state, eventName, eventArgs = {}) {
 function recomputeContinuous(state) {
   releaseCorrosion(state);
   state.players.forEach((pl) => {
-    pl.field.monsters.filter(Boolean).forEach((m) => { m.tempBuff = poisonDebuff(state, m.instanceId); });
+    pl.field.monsters.filter(Boolean).forEach((m) => {
+      m.tempBuff = poisonDebuff(state, m.instanceId);
+      m.cannotBeDestroyedByBattle = false;
+      m.immuneToOpponentEffects = false;
+    });
   });
+  applyTimedBuffs(state);
   state.players.forEach((pl, controllerIndex) => {
     [...pl.field.monsters, ...pl.field.support, pl.field.territory].filter(Boolean).forEach((entry) => {
       if (entry.faceDown || entry.isToken || hasStatus(state, entry.instanceId, FREEZE)) return;
@@ -152,6 +163,21 @@ function recomputeContinuous(state) {
 
 // Rulebook, Corrosión: zones stop being corroded once the monster that corroded them leaves the
 // field or is no longer face-up.
+// "Hasta el final del turno" buffs, kept on the state and dropped when that turn is over.
+function applyTimedBuffs(state) {
+  (state.timedBuffs || []).forEach(({ ids, buff }) => {
+    state.players.flatMap((p) => p.field.monsters).filter((m) => m && ids.includes(m.instanceId)).forEach((m) => {
+      m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
+      m.tempBuff.atk += buff.atk || 0;
+      m.tempBuff.def += buff.def || 0;
+    });
+  });
+}
+
+function expireTimedBuffs(state) {
+  state.timedBuffs = (state.timedBuffs || []).filter((b) => b.expiresTurn > state.turnNumber);
+}
+
 function releaseCorrosion(state) {
   state.players.forEach((pl) => {
     if (!pl.corrosion || !pl.corrosion.length) return;
@@ -209,4 +235,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { activateEffect, fireTrigger, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone };
+module.exports = { activateEffect, fireTrigger, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone };

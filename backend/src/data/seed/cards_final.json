@@ -359,9 +359,7 @@
     "invocationText": "Compilación - 2 Monstuos Dragón",
     "state": 4,
     "number": 15,
-    "effectCodes": [
-      "LENGUAINFAME_ONSUMMON_SEARCH"
-    ],
+    "effectCodes": [],
     "activationCost": {
       "fn": "compileFrom",
       "args": {
@@ -619,7 +617,11 @@
     "level": 5,
     "effect": "Cuando esta carta es enviada del Campo al Cementerio:\n• Añade a tu Mano 2 monstruos Dragón del Cementerio y/o Exilio.\nMientras esta carta esté boca arriba en el Campo los monstruos Dragón ganan +1 de Atk por cada Dragón en el Campo.",
     "state": 2,
-    "number": 25
+    "number": 25,
+    "effectCodes": [
+      "PRIMER_GINETE_GY_RECOVER",
+      "PRIMER_GINETE_DRAGON_BUFF"
+    ]
   },
   {
     "name": "Loto de Obsidiana",
@@ -963,7 +965,10 @@
           }
         ]
       }
-    }
+    },
+    "effectCodes": [
+      "ANCIANO_DRAGON_ONSUMMON_SEARCH"
+    ]
   },
   {
     "name": "Carnívora Bestia-Moss",
@@ -1080,7 +1085,12 @@
     "effect": "Una vez por turno, selecciona un monstruo en el Campo de tu oponente:\n• Toma el control de ese monstruo, y si lo haces, pasa a ser un Ladrón y destruye los otros monstruos que controle.\nEsta carta no puede ser destruida en batalla.\nLos monstruos \"Matón\" ganan +4 Atk/Vida.",
     "invocationText": "Solo puede se invocado de forma especial si controlas 3 \"Matón\" en Campo.",
     "state": 1,
-    "number": 44
+    "number": 44,
+    "effectCodes": [
+      "CAPITAN_BANDIDO_STEAL",
+      "CAPITAN_BANDIDO_BATTLE_IMMUNE",
+      "CAPITAN_BANDIDO_MATON_BUFF"
+    ]
   },
   {
     "name": "Héroe de la Esperanza",
@@ -1625,7 +1635,10 @@
     "effect": "En invocación, si controlas a \"Enano Constructor\":\n• Genera 3 Engranages en esta carta.\nSi se usa como material para un monstruo Maquina Compilación:\n• El monstruo gana los Engranages que tenia esta carta.",
     "invocationText": "Si esta \"Enano Constructor\" en Campo, se permite invocar de forma especial, pero solo una vez por turno",
     "state": 3,
-    "number": 65
+    "number": 65,
+    "effectCodes": [
+      "GOLPEADOR_ONSUMMON_GEARS"
+    ]
   },
   {
     "name": "Machacador de Engranaje",
@@ -1644,7 +1657,10 @@
     "effect": "En invocación, si controlas a \"Enano Constructor\":\n• Destruye una carta en el Campo del oponente.\nSi se usa como material para un monstruo Maquina Compilación:\n• El monstruo gana los Engranages que tenia esta carta.",
     "invocationText": "Si esta \"Enano Constructor\" en Campo, se permite invocar de forma especial, pero solo una vez por turno",
     "state": 3,
-    "number": 66
+    "number": 66,
+    "effectCodes": [
+      "MACHACADOR_ONSUMMON_DESTROY"
+    ]
   },
   {
     "name": "Duende astuto",
@@ -2298,7 +2314,11 @@
     "effect": "Una vez por turno como efecto rápido: \n• Destruye 1 monstruo Demonio en el Campo, y si lo haces, esta carta gana +2 Atk y Vida.\nEste monstruo no puede ser destruido por efectos de cartas de tu oponente.,",
     "invocationText": "Puede ser invocado de forma especial si controlas un Demonio.",
     "state": 2,
-    "number": 96
+    "number": 96,
+    "effectCodes": [
+      "REY_DEMONIO_DESTROY_DEMON",
+      "REY_DEMONIO_PROTECTION"
+    ]
   },
   {
     "name": "Rakshasa",
@@ -3041,7 +3061,8 @@
     "state": 2,
     "number": 127,
     "effectCodes": [
-      "INVOCAR_NIVEL_1_DESDE_MAZO"
+      "INVOCAR_NIVEL_1_DESDE_MAZO",
+      "INTERCAMBIO_GY_SUMMON"
     ]
   },
   {

@@ -1,6 +1,6 @@
 const { PHASES, MAX_HAND_SIZE, PIXEL_INCOME_PER_TURN, PIXEL_CAP } = require('./constants');
 const { player, opponentIndex, moveToZone, log } = require('./zones');
-const { fireTrigger, recomputeContinuous } = require('./effectEngine');
+const { fireTrigger, recomputeContinuous, expireTimedBuffs } = require('./effectEngine');
 const { checkWin } = require('./effects/actions');
 const { burningMonsters, expireStatuses, BURN_END_OF_TURN_DAMAGE } = require('./statuses');
 
@@ -101,6 +101,7 @@ function applyBurnDamage(state) {
 
 function endTurn(state) {
   expireStatuses(state);
+  expireTimedBuffs(state);
   state.turnPlayer = opponentIndex(state.turnPlayer);
   state.turnNumber += 1;
   state.firstTurn = false;

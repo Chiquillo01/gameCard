@@ -16,7 +16,8 @@ const categoryMatches = (cardCategory, wanted) => normalize(cardCategory) === (C
 // effects, targeting, etc. All keys are optional and AND together.
 function matchesFilter(monsterEntry, filter = {}) {
   if (!monsterEntry) return false;
-  const card = getCard(monsterEntry.cardId);
+  // A monster that was turned into another breed (Capitán Bandido's captures) matches as that breed.
+  const card = monsterEntry.breedOverride ? { ...getCard(monsterEntry.cardId), breed: monsterEntry.breedOverride } : getCard(monsterEntry.cardId);
   if (filter.name && !sameText(card.name, filter.name)) return false;
   if (filter.nameContains && !normalize(card.name).includes(normalize(filter.nameContains))) return false;
   if (filter.breed && !sameText(card.breed, filter.breed)) return false;
