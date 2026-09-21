@@ -6,6 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
+const { getCard } = require('../../game/cardIndex');
 
 beforeAll(async () => {
   await connectDB();
@@ -121,5 +122,53 @@ describe('Setting support cards face-down', () => {
     state.players[0].hand.push(id);
     toMain1(state);
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: id, setFaceDown: true })).toMatchObject({ ok: false, reason: 'cannot-set-territory' });
+  });
+});
+
+describe('Nido de Avispas (first "Avispa" summoned while it is on the field)', () => {
+  async function nidoMatch() {
+    const ctx = await makeMatch(['Nido de Avispas', 'Avispa gigante', 'Avispa Mutante', 'Avispa de Obsidiana', 'Kraken']);
+    const { state, inHand } = ctx;
+    // Two Avispas go back to the deck so there is something to search for.
+    ['Avispa Mutante', 'Avispa de Obsidiana'].forEach((name) => {
+      const id = inHand(name);
+      state.players[0].hand = state.players[0].hand.filter((i) => i !== id);
+      state.players[0].deck.push(id);
+    });
+    toMain1(state);
+    state.players[0].pixelcoins = 6;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Nido de Avispas') }).ok).toBe(true);
+    return ctx;
+  }
+
+  it('adds an Avispa from the deck to the hand the first time one is summoned, and only that once', async () => {
+    const { state, inHand } = await nidoMatch();
+    const handBefore = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Avispa gigante'), position: 'defense' }).ok).toBe(true);
+    // -1 summoned, +1 searched: one of the two Avispas left the deck.
+    expect(state.players[0].hand.length).toBe(handBefore);
+    expect(state.players[0].deck.length).toBe(1);
+    const nidoFires = () => state.log.filter((l) => l.message.includes('NIDO_AVISPAS_FIRST_SUMMON')).length;
+    expect(nidoFires()).toBe(1);
+
+    // A second Avispa summoned later does not fire the Nido again.
+    const obsidiana = state.players[0].deck.find((id) => getCard(id.split(':')[1]).name === 'Avispa de Obsidiana');
+    state.players[0].deck = state.players[0].deck.filter((id) => id !== obsidiana);
+    state.players[0].hand.push(obsidiana);
+    state.players[0].normalSummonUsed = false;
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: obsidiana, position: 'attack' }).ok).toBe(true);
+    expect(nidoFires()).toBe(1);
+  });
+
+  it('does not fire when the Nido is not on the field', async () => {
+    const ctx = await makeMatch(['Nido de Avispas', 'Avispa gigante', 'Avispa Mutante', 'Kraken']);
+    const { state, inHand } = ctx;
+    const id = inHand('Avispa Mutante');
+    state.players[0].hand = state.players[0].hand.filter((i) => i !== id);
+    state.players[0].deck.push(id);
+    toMain1(state);
+    const handBefore = state.players[0].hand.length;
+    applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Avispa gigante'), position: 'attack' });
+    expect(state.players[0].hand.length).toBe(handBefore - 1);
   });
 });

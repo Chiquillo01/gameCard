@@ -35,9 +35,17 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
 
   pl.normalSummonUsed = true;
   log(state, `${pl.userId} invoca a ${card.name}.`);
-  fireTrigger(state, 'onSummon', { breed: card.breed });
+  announceSummon(state, controllerIndex, instanceId, card, faceDown);
   recomputeContinuous(state);
   return { ok: true };
+}
+
+// Tells the board a monster was summoned: its own 'onSummon' effects fire, then the controller's
+// other cards get 'allySummoned' (a face-down Set isn't a summon).
+function announceSummon(state, controllerIndex, instanceId, card, faceDown = false) {
+  const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown };
+  if (!faceDown) fireTrigger(state, 'onSummon', event);
+  fireTrigger(state, 'allySummoned', event);
 }
 
 // True when `loc` is a zone the controller actually owns and that satisfies `req.zone` (a
@@ -107,7 +115,7 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
 
   log(state, `${pl.userId} compila a ${card.name}.`);
   fireMaterialTriggers(state, controllerIndex, used, compiladoInstanceId);
-  fireTrigger(state, 'onSummon', { breed: card.breed });
+  announceSummon(state, controllerIndex, compiladoInstanceId, card);
   recomputeContinuous(state);
   return { ok: true };
 }
@@ -149,7 +157,7 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
     if (back) back.hasAttacked = true; // decompiling happens as the Battle Phase ends
   });
   log(state, `${pl.userId} descompila a ${card.name}.`);
-  materials.forEach((id) => fireTrigger(state, 'onSummon', { breed: getCard(cardIdFromInstance(id)).breed }));
+  materials.forEach((id) => announceSummon(state, controllerIndex, id, getCard(cardIdFromInstance(id))));
   recomputeContinuous(state);
   return { ok: true };
 }

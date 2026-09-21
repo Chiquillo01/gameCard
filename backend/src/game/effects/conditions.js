@@ -44,6 +44,26 @@ function firstTimeSummon(ctx, args) {
   return !already;
 }
 
+// Where a card's own once-per-copy bookkeeping lives: on its field entry, so it starts fresh every
+// time the card is put onto the field again.
+function findFieldEntry(state, instanceId) {
+  return state.players
+    .flatMap((p) => [...p.field.monsters, ...p.field.support, p.field.territory])
+    .find((e) => e && e.instanceId === instanceId);
+}
+
+// "La primera vez que...": the effect works once for as long as this copy stays on the field.
+function oncePerCardOnField(ctx) {
+  const entry = findFieldEntry(ctx.state, ctx.sourceInstanceId);
+  return !!entry && !(entry.usedEffects && entry.usedEffects[ctx.effect._id]);
+}
+
+function markCardEffectUsed(ctx) {
+  const entry = findFieldEntry(ctx.state, ctx.sourceInstanceId);
+  if (!entry) return;
+  entry.usedEffects = { ...(entry.usedEffects || {}), [ctx.effect._id]: true };
+}
+
 function isEquippedToRace(ctx, args) {
   const support = ctx.state.players.flatMap((p) => p.field.support).find((s) => s && s.instanceId === ctx.sourceInstanceId);
   return !!(support && support.equippedTo);
@@ -65,6 +85,7 @@ const registry = {
   limitPerTurn,
   canBeSummonedFrom,
   firstTimeSummon,
+  oncePerCardOnField,
   isEquippedToRace,
   effectIncludes,
   canActivateOnOpponentTurn,
@@ -84,4 +105,4 @@ function markLimitUsed(state, name) {
   state.turnLimits[key] = (state.turnLimits[key] || 0) + 1;
 }
 
-module.exports = { checkConditions, markLimitUsed, registry };
+module.exports = { checkConditions, markLimitUsed, markCardEffectUsed, registry };

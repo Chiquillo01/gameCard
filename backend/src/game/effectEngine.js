@@ -1,5 +1,6 @@
 const { getEffect, getCard } = require('./cardIndex');
-const { checkConditions, markLimitUsed } = require('./effects/conditions');
+const { checkConditions, markLimitUsed, markCardEffectUsed } = require('./effects/conditions');
+const { matchesCardFilter } = require('./filters');
 const { payCost } = require('./effects/costs');
 const { runAction, checkWin } = require('./effects/actions');
 const { player, log, findInstanceLocation } = require('./zones');
@@ -86,22 +87,27 @@ function resolveActions(ctx, effect, targets) {
   actions.forEach((step) => runAction(ctx, step, targets));
 }
 
-// Fires every triggered/trigger effect on the board that matches `eventName`, in field order.
+// Fires every triggered/trigger effect on the board that matches , in field order.
 // Simplified compared to a real chain: resolves immediately, turn-player's triggers first.
+// The sources are the face-up monsters and the face-up Apoyo/Territorio cards on the field.
+//   - 'onSummon' / 'flipped' belong to the card the event is about (eventArgs.instanceId).
+//   - 'allySummoned' fires for the controller's OTHER cards when a face-up monster matching the
+//     effect's own filter was summoned on their side.
 function fireTrigger(state, eventName, eventArgs = {}) {
   const order = [state.turnPlayer, state.turnPlayer === 0 ? 1 : 0];
   order.forEach((controllerIndex) => {
     const pl = player(state, controllerIndex);
-    pl.field.monsters.filter(Boolean).forEach((m) => {
+    [...pl.field.monsters, ...pl.field.support, pl.field.territory].filter(Boolean).forEach((m) => {
       if (m.faceDown || m.negated || m.isToken || hasStatus(state, m.instanceId, FREEZE)) return;
-      // A flip effect belongs to the monster that was turned face-up, not to every monster on the field.
-      if (eventName === 'flipped' && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
+      if ((eventName === 'flipped' || eventName === 'onSummon') && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
+      if (eventName === 'allySummoned' && (eventArgs.faceDown || eventArgs.controllerIndex !== controllerIndex || m.instanceId === eventArgs.instanceId)) return;
       const card = getCard(m.cardId);
       (card.effectCodes || []).forEach((effectId) => {
         const effect = getEffect(effectId);
         if (!effect || (effect.type !== 'triggered' && effect.type !== 'trigger')) return;
         if (!effect.trigger || effect.trigger.fn !== eventName) return;
         if (eventArgs.breed && effect.trigger.args && effect.trigger.args.monsterFamily && effect.trigger.args.monsterFamily !== eventArgs.breed) return;
+        if (eventName === 'allySummoned' && eventArgs.cardId && !matchesCardFilter(getCard(eventArgs.cardId), (effect.trigger.args && effect.trigger.args.filter) || {})) return;
         const ctx = { ...makeCtx(state, controllerIndex, effect, m.instanceId), event: eventArgs };
         if (!checkConditions(ctx, effect.conditions)) return;
         if (effect.oncePerTurn) {
@@ -110,6 +116,7 @@ function fireTrigger(state, eventName, eventArgs = {}) {
           if (state.turnLimits[key]) return;
           state.turnLimits[key] = true;
         }
+        if ((effect.conditions || []).some((cnd) => cnd.fn === 'oncePerCardOnField')) markCardEffectUsed(ctx);
         resolveActions(ctx, effect, []);
         log(state, `Efecto disparado: ${effectId} (${card.name}).`);
       });

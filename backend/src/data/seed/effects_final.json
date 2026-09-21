@@ -5666,5 +5666,38 @@
         }
       }
     ]
+  },
+  {
+    "_id": "NIDO_AVISPAS_FIRST_SUMMON",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "allySummoned",
+      "args": {
+        "filter": {
+          "nameContains": "Avispa",
+          "category": "monster"
+        }
+      }
+    },
+    "conditions": [
+      {
+        "fn": "oncePerCardOnField"
+      }
+    ],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Avispa",
+            "category": "monster"
+          }
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

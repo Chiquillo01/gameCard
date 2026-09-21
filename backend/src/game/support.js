@@ -94,10 +94,14 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
 // hand. A card can also grant a SEPARATE effect meant to be activated later, once it's actually
 // sitting in the graveyard/exile/back on the field (e.g. Enjambre de Avispas' graveyard ability)
 // — those are only reachable through a later, explicit ACTIVATE_EFFECT, never fired here.
+// Only these effect types resolve at the moment a support is played; a "triggered" one (Nido de
+// Avispas) waits for its event and a "continuous" one is recomputed from the board.
+const ON_PLAY_EFFECT_TYPES = ['activated', 'quick', 'ignition'];
+
 function resolveCardEffects(ctx, card, targets) {
   (card.effectCodes || []).forEach((effectId) => {
     const effect = getEffect(effectId);
-    if (!effect) return;
+    if (!effect || !ON_PLAY_EFFECT_TYPES.includes(effect.type)) return; // triggered/continuous ones act on their own
     const requiredZone = requiredZoneFor(effect);
     if (requiredZone === 'graveyard' || requiredZone === 'banished' || requiredZone === 'field') return;
     if (!checkConditions(ctx, effect.conditions)) return;
