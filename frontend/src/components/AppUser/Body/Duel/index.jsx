@@ -60,6 +60,13 @@ const DuelPage = () => {
   // A Cementerio/Exilio/Mazo-C pile the player clicked open: { side: 'me'|'enemy', zone }.
   const [openPile, setOpenPile] = useState(null);
   const socketRef = useRef(null);
+  const logRef = useRef(null);
+  const logLength = view ? view.log.length : 0;
+
+  // Keep the newest log line in sight.
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [logLength]);
 
   useEffect(() => {
     if (matchId) return;
@@ -362,6 +369,7 @@ const DuelPage = () => {
           <span className={styles.vpBadge}>VP: {enemy.vp}</span>
           <span className={styles.handCountBadge}>Mano: {enemy.handCount}</span>
         </div>
+        <div className={styles.fieldsRow}>
         <PlayerField
           player={enemy}
           isOwner={false}
@@ -387,6 +395,18 @@ const DuelPage = () => {
           onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
           renderEffectButtons={renderEffectButtons}
         />
+
+        <div className={styles.log}>
+          <div className={styles.logScroll} ref={logRef}>
+            {view.log.map((l, i) => (
+              <div key={i} className={styles.logLine}>
+                [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
+              </div>
+            ))}
+          </div>
+        </div>
+        </div>
+
         <div className={styles.playerHeader}>
           <span className={styles.vpBadge}>VP: {me.vp}</span>
           <span className={styles.pixelBadge}>
@@ -476,13 +496,6 @@ const DuelPage = () => {
         )}
       </div>
 
-      <div className={styles.log}>
-        {view.log.map((l, i) => (
-          <div key={i} className={styles.logLine}>
-            [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
