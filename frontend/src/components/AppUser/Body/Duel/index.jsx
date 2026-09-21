@@ -551,7 +551,7 @@ const DuelPage = () => {
 // `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
 // next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
 function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick }) {
-  const row = (r) => (flipped ? 4 - r : r);
+  const row = (r) => (flipped ? 3 - r : r);
 
   return (
     <div className={styles.fieldGrid}>
@@ -625,8 +625,8 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
 
       {player.field.support.map((s, i) => (
         <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte' onClick={() => s && isOwner && onSupportClick && onSupportClick(s)} onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}>
-          {s && !(s.faceDown && !isOwner) && <img src={s.image} alt={s.name} title={s.name} />}
-          {s && s.faceDown && isOwner && <div className={styles.faceDown} />}
+          {s && !s.faceDown && <img src={s.image} alt={s.name} title={s.name} />}
+          {s && s.faceDown && <div className={styles.faceDown} />}
           {s && isOwner && renderEffectButtons(s)}
         </div>
       ))}
@@ -642,7 +642,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
         <PileSlot style={{ gridRow: row(2), gridColumn: 7 }} label='Mazo-C' count={player.extraCount} />
       )}
 
-      <PileSlot style={{ gridRow: row(3), gridColumn: 7 }} label='Mazo' count={player.deckCount} />
+      <PileSlot style={{ gridRow: row(2), gridColumn: 6 }} label='Mazo' count={player.deckCount} />
     </div>
   );
 }
@@ -694,7 +694,7 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
 // viewport leaves to the left of the board — the board is at most 900px wide and centered.
 const FACE_WIDTH = 480;
 const FACE_HEIGHT = 700;
-const BOARD_WIDTH = 900;
+const BOARD_WIDTH = 760;
 
 function usePreviewScale() {
   const compute = () => {

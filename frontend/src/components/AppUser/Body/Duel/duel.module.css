@@ -191,7 +191,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-width: 900px;
+  max-width: 760px;
   width: 100%;
   margin: 0 auto;
 }
@@ -203,7 +203,7 @@
   padding: 0.625rem;
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-auto-rows: minmax(72px, auto);
+  grid-auto-rows: auto;
   gap: 0.4rem;
 }
 
@@ -242,9 +242,10 @@
 
 .slot {
   width: 100%;
-  height: 100%;
+  /* Portrait, like a real card (480x700), so the board reads vertical instead of as a wide strip. */
+  aspect-ratio: 5 / 7;
   min-width: 0;
-  min-height: 72px;
+  box-sizing: border-box;
   border: 3px solid #6b3d16;
   background: linear-gradient(155deg, rgba(241, 221, 171, 0.15) 0%, rgba(221, 196, 140, 0.08) 100%);
   display: flex;
@@ -271,7 +272,7 @@
 }
 
 .slot.defense img {
-  transform: rotate(90deg) scale(0.8);
+  transform: rotate(90deg) scale(0.7);
 }
 
 .slot.selected {
@@ -549,7 +550,7 @@
   padding: 0.625rem 0.875rem;
 }
 
-@media (max-width: 1250px) {
+@media (max-width: 1420px) {
   /* Not enough room beside the board: the log drops under the fields. */
   .log {
     position: relative;
@@ -595,11 +596,6 @@
 }
 
 @media (max-width: 768px) {
-  .slot {
-    width: 60px;
-    height: 78px;
-  }
-
   .handCard {
     width: 60px;
     height: 84px;
