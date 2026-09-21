@@ -142,6 +142,15 @@ const DuelPage = () => {
     setSelectedAttacker(null);
   };
 
+  // Only one decision can be open at a time: opening a new one replaces whatever was pending, so the
+  // single panel always shows the card that was just picked.
+  const closeChoices = () => {
+    setPendingSummon(null);
+    setPendingSupportChoice(null);
+    setPendingPosition(null);
+    setFusion(null);
+  };
+
   const confirmPositionChange = (position) => {
     if (!pendingPosition) return;
     act({ type: 'CHANGE_POSITION', instanceId: pendingPosition.instanceId, position });
@@ -149,6 +158,7 @@ const DuelPage = () => {
   };
 
   const startFusion = (card) => {
+    closeChoices();
     setFusion({ instanceId: card.instanceId, materials: new Set() });
     setOpenPile(null);
   };
@@ -171,6 +181,8 @@ const DuelPage = () => {
       startFusion(card);
       return;
     }
+
+    closeChoices();
 
     if (card.category === 'support') {
       // The Territorio has its own zone and can't be set; every other support can be activated
@@ -252,6 +264,7 @@ const DuelPage = () => {
     if (isOwn) {
       if (view.turnPlayer !== view.you) return;
       if (view.phase === 'main1' || view.phase === 'main2') {
+        closeChoices();
         setPendingPosition({ instanceId: monster.instanceId, faceDown: monster.faceDown, position: monster.position });
         return;
       }
@@ -506,8 +519,6 @@ const DuelPage = () => {
           </span>
         </div>
 
-        {choicePanel && <ChoicePanel panel={choicePanel} />}
-
         <div className={styles.hand}>
           {me.hand.map((card) => (
             <div
@@ -526,6 +537,7 @@ const DuelPage = () => {
           ))}
         </div>
 
+        {choicePanel && <ChoicePanel panel={choicePanel} />}
       </div>
 
     </div>
