@@ -20,7 +20,7 @@ afterAll(async () => {
 });
 
 async function makeMatch() {
-  const free = await Card.find({ category: 'monster', 'summonCost.fn': { $exists: false }, effectCodes: { $size: 0 } })
+  const free = await Card.find({ category: 'monster', 'summonCost.fn': { $exists: false }, effectCodes: { $size: 0 }, invocationText: { $in: ['', null] } })
     .limit(20)
     .lean();
   const mk = async (tag) => {

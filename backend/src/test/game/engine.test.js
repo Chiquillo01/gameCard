@@ -26,7 +26,7 @@ afterAll(async () => {
 // raw ATK/Vida — no continuous buff on the drawn card can shift the numbers depending on which
 // one the (randomly shuffled) deck happens to put in hand.
 async function getVanillaFreeMonsters(limit = 20) {
-  return Card.find({ category: 'monster', 'summonCost.fn': { $exists: false }, effectCodes: { $size: 0 } })
+  return Card.find({ category: 'monster', 'summonCost.fn': { $exists: false }, effectCodes: { $size: 0 }, invocationText: { $in: ['', null] } })
     .limit(limit)
     .lean();
 }

@@ -1,6 +1,7 @@
 const { applyAction } = require('./engine');
 const { getCard } = require('./cardIndex');
 const { cardIdFromInstance } = require('./deckUtils');
+const { canBeNormalSummoned } = require('./summonRules');
 
 // A simple, deterministic-ish heuristic opponent for PvE. It plays through its own turn via the
 // exact same `applyAction` calls a human client would send — the bot is not a separate rules
@@ -65,7 +66,7 @@ function canAffordSummon(pl, card) {
 function pickBestMonsterToSummon(pl) {
   const monsters = pl.hand
     .map((id) => ({ id, card: getCard(cardIdFromInstance(id)) }))
-    .filter(({ card }) => card.category === 'monster' && canAffordSummon(pl, card));
+    .filter(({ card }) => canBeNormalSummoned(card) && canAffordSummon(pl, card));
   if (!monsters.length) return null;
   monsters.sort((a, b) => (b.card.atk || 0) - (a.card.atk || 0));
   return monsters[0].id;

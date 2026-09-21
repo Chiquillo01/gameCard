@@ -6,6 +6,7 @@ const { getEffect } = require('./cardIndex');
 const { clearStatus, BURN } = require('./statuses');
 const { matchesCardFilter } = require('./filters');
 const { cardIdFromInstance } = require('./deckUtils');
+const { cannotBeSummoned, canBeNormalSummoned } = require('./summonRules');
 
 function normalSummon(state, controllerIndex, instanceId, { position = 'attack', faceDown = false } = {}) {
   const pl = player(state, controllerIndex);
@@ -19,6 +20,8 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
   const cardId = cardIdFromInstance(instanceId);
   const card = getCard(cardId);
   if (card.category !== 'monster') return { ok: false, reason: 'not-a-monster' };
+  if (cannotBeSummoned(card)) return { ok: false, reason: 'cannot-be-summoned' };
+  if (!canBeNormalSummoned(card)) return { ok: false, reason: 'special-summon-only' };
 
   const cost = card.summonCost;
   const ctx = { state, controllerIndex, sourceInstanceId: instanceId };

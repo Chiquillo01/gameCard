@@ -173,11 +173,19 @@ const DuelPage = () => {
     }
 
     if (card.category === 'support') {
-      if (card.subtype === 'instant' || card.subtype === 'counter') {
+      // The Territorio has its own zone and can't be set; every other support can be activated
+      // now or set in the support zone.
+      if (card.subtype !== 'field') {
         setPendingSupportChoice(card.instanceId);
         return;
       }
       act({ type: 'ACTIVATE_SUPPORT', instanceId: card.instanceId });
+      return;
+    }
+
+    // Rulebook: a monster whose invocation method says anything can't be Normal Summoned.
+    if (card.normalSummonable === false) {
+      showToast('error', humanizeReason(card.cannotBeSummoned ? 'cannot-be-summoned' : 'special-summon-only'));
       return;
     }
 
@@ -225,6 +233,15 @@ const DuelPage = () => {
     if (!card) return null;
     return hovered.atk != null ? { ...card, atk: hovered.atk, def: hovered.def } : card;
   })();
+
+  // Clicking one of your own face-down supports in a main phase activates it (Veloz/Contraataque
+  // cards have their own effect buttons instead).
+  const onFieldSupportClick = (support) => {
+    if (!support.faceDown || support.subtype === 'instant' || support.subtype === 'counter') return;
+    if (view.turnPlayer !== view.you) return;
+    if (view.phase !== 'main1' && view.phase !== 'main2') return;
+    act({ type: 'ACTIVATE_SET_SUPPORT', instanceId: support.instanceId });
+  };
 
   const onFieldMonsterClick = (monster, isOwn) => {
     if (!monster) return;
@@ -416,6 +433,7 @@ const DuelPage = () => {
           canDecompile={isMyTurn && view.phase === 'battle'}
           onDecompile={(instanceId) => act({ type: 'DECOMPILE', instanceId })}
           onMonsterClick={(m) => onFieldMonsterClick(m, true)}
+          onSupportClick={onFieldSupportClick}
           onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
           renderEffectButtons={renderEffectButtons}
           onHover={setHovered}
@@ -532,7 +550,7 @@ const DuelPage = () => {
 //   row 3: (—) x6, Mazo
 // `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
 // next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
-function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover }) {
+function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick }) {
   const row = (r) => (flipped ? 4 - r : r);
 
   return (
@@ -606,7 +624,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       </div>
 
       {player.field.support.map((s, i) => (
-        <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte' onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}>
+        <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte' onClick={() => s && isOwner && onSupportClick && onSupportClick(s)} onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}>
           {s && !(s.faceDown && !isOwner) && <img src={s.image} alt={s.name} title={s.name} />}
           {s && s.faceDown && isOwner && <div className={styles.faceDown} />}
           {s && isOwner && renderEffectButtons(s)}
@@ -734,6 +752,11 @@ function humanizeReason(reason) {
     'once-per-turn': 'Ese efecto ya se activó este turno.',
     'conditions-not-met': 'No se cumplen las condiciones para ese efecto.',
     'unknown-effect': 'Ese efecto no existe.',
+    'cannot-be-summoned': 'Esa carta no puede ser invocada.',
+    'special-summon-only': 'Esa carta solo puede invocarse de forma especial: cumple el requisito de su método de invocación.',
+    'cannot-set-territory': 'Un Territorio no se puede colocar boca abajo.',
+    'not-set-support': 'Ese apoyo no está colocado boca abajo.',
+    'use-its-effect': 'Ese apoyo se activa con su efecto.',
     frozen: 'Ese monstruo está congelado y no puede activar efectos.',
     'not-compiled': 'Ese monstruo no es un monstruo compilado.',
     'compiled-this-turn': 'No puedes descompilar un monstruo el turno en que fue compilado.',
