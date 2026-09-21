@@ -10,7 +10,7 @@ const MAX_HAND_SIZE = 8; // book contradicts itself (7 to exile vs 8 to graveyar
 
 const STARTING_PIXELS = 6;
 const PIXEL_INCOME_PER_TURN = 6;
-const PIXEL_CAP = 18;
+const PIXEL_CAP = 12;
 
 const PHASES = ['draw', 'standby', 'main1', 'battle', 'main2', 'end'];
 

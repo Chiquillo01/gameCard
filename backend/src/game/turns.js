@@ -40,7 +40,7 @@ function runPhaseEntry(state) {
       log(state, `${pl.userId} roba una carta.`);
     }
 
-    // Rulebook: 6 pixels/turn automatically, capped at 18 — except a player's own first turn.
+    // Rulebook: 6 pixels/turn automatically, capped at 12 — except a player's own first turn.
     const isPlayersFirstTurn = pl.turnsPlayed === 0;
     if (!isPlayersFirstTurn) {
       const before = pl.pixelcoins;
