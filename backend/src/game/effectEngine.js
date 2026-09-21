@@ -134,7 +134,7 @@ function recomputeContinuous(state) {
     pl.field.monsters.filter(Boolean).forEach((m) => { m.tempBuff = poisonDebuff(state, m.instanceId); });
   });
   state.players.forEach((pl, controllerIndex) => {
-    [...pl.field.monsters, ...pl.field.support].filter(Boolean).forEach((entry) => {
+    [...pl.field.monsters, ...pl.field.support, pl.field.territory].filter(Boolean).forEach((entry) => {
       if (entry.faceDown || entry.isToken || hasStatus(state, entry.instanceId, FREEZE)) return;
       const card = getCard(entry.cardId);
       (card.effectCodes || []).forEach((effectId) => {
@@ -160,6 +160,21 @@ function releaseCorrosion(state) {
   });
 }
 
+// "Si se usa como material para una Compilación Insecto/Agua/Hada": the trigger's args narrow which
+// compiled monsters count (by family, breed or attribute; the old key `compiledType` means family).
+function compiledMatches(compiledCard, args = {}) {
+  const same = (a, b) => (a || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase() === (b || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const family = args.family || args.compiledType;
+  if (family && !same(compiledCard.family, family)) return false;
+  if (args.breed && !same(compiledCard.breed, args.breed)) return false;
+  if (args.attribute && !same(compiledCard.attribute, args.attribute)) return false;
+  return true;
+}
+
+function getCompiledCardId(state, instanceId) {
+  return cardIdFromInstance(instanceId);
+}
+
 const MATERIAL_TRIGGERS = ['usedAsMaterial', 'usedAsCompileMaterial', 'usedAsFusionMaterial'];
 
 // "Ser usado como material de un monstruo compilado": each material card's own trigger effect
@@ -173,6 +188,7 @@ function fireMaterialTriggers(state, controllerIndex, materialIds, compiledInsta
       const effect = getEffect(effectId);
       if (!effect || (effect.type !== 'triggered' && effect.type !== 'trigger')) return;
       if (!effect.trigger || !MATERIAL_TRIGGERS.includes(effect.trigger.fn)) return;
+      if (!compiledMatches(getCard(getCompiledCardId(state, compiledInstanceId)), effect.trigger.args)) return;
       const ctx = { ...makeCtx(state, controllerIndex, effect, id), fromCompiled: true, event: { compiledInstanceId } };
       if (!checkConditions(ctx, effect.conditions)) return;
       resolveActions(ctx, effect, []);

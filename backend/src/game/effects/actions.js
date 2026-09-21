@@ -34,6 +34,13 @@ function burnOpponent(ctx, args) {
   damageOpponent(ctx, args);
 }
 
+function damageSelf(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  pl.vp = Math.max(0, pl.vp - (args.amount || 0));
+  log(ctx.state, `${pl.userId} pierde ${args.amount} VP (VP: ${pl.vp}).`);
+  checkWin(ctx.state);
+}
+
 function gainVP(ctx, args) {
   const idx = resolvePlayerIndex(ctx, args.player);
   const pl = player(ctx.state, idx);
@@ -205,16 +212,44 @@ function grantBuff(ctx, args, targets) {
     resolveStatusTargets(ctx, args, targets).forEach((id) => setStatusDebuff(ctx.state, id, args.status, buff));
     return;
   }
-  const filter = { attribute: args.attribute || args.atribute, breed: args.breed, family: args.family, name: args.name };
-  const list = targets && targets.length ? targets.map((id) => ({ instanceId: id })) : allOwnedMonsters(ctx.state, ctx.controllerIndex);
-  list.forEach(({ instanceId }) => {
-    const m = ctx.state.players.flatMap((p) => p.field.monsters).find((x) => x && x.instanceId === instanceId);
-    if (!m) return;
-    if (!matchesFilter(m, filter)) return;
+  if (!buffPhaseActive(ctx.state, args.phase)) return;
+  const filter = args.filter || { attribute: args.attribute || args.atribute, breed: args.breed, family: args.family, name: args.name };
+  buffTargets(ctx, args, targets).filter((m) => monsterMatches(m, filter)).forEach((m) => {
     m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
     m.tempBuff.atk += buff.atk || 0;
     m.tempBuff.def += buff.def || 0;
   });
+}
+
+// "en la fase de batalla" buffs only count during that phase.
+function buffPhaseActive(state, phase) {
+  if (!phase) return true;
+  return phase === 'batalla' || phase === 'battle' ? state.phase === 'battle' : true;
+}
+
+// A token has no card data, so it can only satisfy an empty filter.
+function monsterMatches(entry, filter) {
+  const hasFilter = Object.values(filter || {}).some((v) => v !== undefined && v !== null && v !== '');
+  if (entry.isToken) return !hasFilter;
+  return matchesFilter(entry, filter);
+}
+
+function allFieldMonsters(state) {
+  return state.players.flatMap((p) => p.field.monsters).filter(Boolean);
+}
+
+// Which field monsters a buff lands on, before the card filter narrows it:
+//   picked targets > "self" (the card with the effect) > the rival's monsters > every monster on
+//   the field (scope "field": "en el Campo") > only the controller's monsters (the default).
+function buffTargets(ctx, args, targets) {
+  const all = allFieldMonsters(ctx.state);
+  if (targets && targets.length) return all.filter((m) => targets.includes(m.instanceId));
+  if (args.target === 'self') return all.filter((m) => m.instanceId === ctx.sourceInstanceId);
+  const enemies = player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean);
+  if (args.target === 'enemyMonster') return enemies.slice(0, args.count || 1);
+  if (args.target === 'allEnemyMonsters' || args.target === 'opponentMonsters' || args.scope === 'opponentField') return enemies;
+  if (args.scope === 'field') return all;
+  return allOwnedMonsters(ctx.state, ctx.controllerIndex);
 }
 
 function allOwnedMonsters(state, controllerIndex) {
@@ -332,16 +367,22 @@ function cannotBeNegated() {
 // --- generic filtered-buff family: buffAllies / buffAtkPerMonster / buffPerCount /
 // modifyStatPerCreature / modifyStatsPerMonsterOnField all boil down to "add atk/def to some
 // filtered set of your monsters", optionally scaled by how many matches there are on the field.
+//   scope "field"         : count the matches on the whole field (else only the controller's);
+//   scope "opponentField" : count and buff the rival's monsters;
+//   target "self"         : the buff lands on the card that has the effect;
+//   excludeSelf           : that card doesn't count itself ("excepto el mismo").
 function applyScaledBuff(ctx, args) {
-  const filter = { name: args.name, breed: args.breed || args.family, attribute: args.attribute };
+  const filter = args.filter || { name: args.name, nameContains: args.nameContains, breed: args.breed, family: args.family, attribute: args.attribute };
+  const hasFilter = Object.values(filter).some((v) => v !== undefined && v !== null && v !== '');
   const controllerMonsters = allOwnedMonsters(ctx.state, ctx.controllerIndex);
+  const enemyMonsters = player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean);
   const perUnit = { atk: args.atk || 0, def: args.def || 0 };
-  const scaleBy = args.scope === 'field'
-    ? ctx.state.players.flatMap((p) => p.field.monsters).filter(Boolean).filter((m) => matchesFilter(m, filter)).length
-    : controllerMonsters.filter((m) => matchesFilter(m, filter)).length || 1;
-  const targetSet = filter.name || filter.breed || filter.attribute
-    ? controllerMonsters.filter((m) => matchesFilter(m, filter))
-    : controllerMonsters;
+  const pool = args.scope === 'field' ? allFieldMonsters(ctx.state) : args.scope === 'opponentField' ? enemyMonsters : controllerMonsters;
+  const counted = pool.filter((m) => monsterMatches(m, filter) && !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId));
+  const scaleBy = args.scope === 'field' || args.scope === 'opponentField' ? counted.length : counted.length || 1;
+  let targetSet = hasFilter ? controllerMonsters.filter((m) => monsterMatches(m, filter)) : controllerMonsters;
+  if (args.target === 'self') targetSet = controllerMonsters.filter((m) => m.instanceId === ctx.sourceInstanceId);
+  else if (args.scope === 'opponentField') targetSet = enemyMonsters;
   targetSet.forEach((m) => {
     m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
     m.tempBuff.atk += perUnit.atk * scaleBy;
@@ -565,6 +606,7 @@ const registry = {
   drawCards,
   damageOpponent,
   burnOpponent,
+  damageSelf,
   gainVP,
   generatePixels,
   generatePixelsPerCreature,

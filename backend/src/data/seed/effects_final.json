@@ -77,8 +77,9 @@
         "fn": "modifyStatPerCreature",
         "args": {
           "player": "self",
-          "atk": 10,
-          "breed": "Hada"
+          "atk": 1,
+          "breed": "Hada",
+          "target": "self"
         }
       }
     ],
@@ -200,7 +201,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 50
+          "amount": 3
         }
       }
     ],
@@ -551,8 +552,11 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "family": "Aqua",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "attribute": "Agua",
+            "category": "monster"
+          }
         }
       }
     ],
@@ -625,7 +629,8 @@
         "fn": "addCardToHandFromDeck",
         "args": {
           "filter": {
-            "name": "Avispa"
+            "nameContains": "Avispa",
+            "category": "monster"
           },
           "count": 1
         }
@@ -1105,11 +1110,12 @@
       {
         "fn": "grantBuff",
         "args": {
-          "atribute": "Metal",
+          "attribute": "Metal",
           "buff": {
-            "def": 30
+            "atk": 2
           },
-          "duration": "endOfTurn"
+          "duration": "endOfTurn",
+          "scope": "field"
         }
       }
     ],
@@ -1201,13 +1207,7 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 30
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "atk": 2
           }
         }
       }
@@ -1284,15 +1284,8 @@
       {
         "fn": "modifyStatsPerMonsterOnField",
         "args": {
-          "buff": {
-            "atk": 10
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "atk": 1,
+          "scope": "field"
         }
       }
     ],
@@ -1315,13 +1308,7 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "def": 20
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "def": 1
           }
         }
       }
@@ -1345,13 +1332,7 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 20
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "atk": 1
           }
         }
       }
@@ -1375,13 +1356,7 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "def": 30
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "def": 3
           }
         }
       }
@@ -1405,13 +1380,7 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 30
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "atk": 3
           }
         }
       }
@@ -1468,15 +1437,10 @@
             "breed": "Demonio"
           },
           "buff": {
-            "atk": 35,
-            "def": 35
+            "atk": 5,
+            "def": 5
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1495,18 +1459,13 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "breed": "Heroe"
+            "breed": "Héroe"
           },
           "buff": {
-            "atk": 30
+            "atk": 3
           },
           "phase": "batalla",
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1525,19 +1484,13 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "breed": "Dragon"
+            "breed": "Dragón"
           },
           "buff": {
-            "atk": 20,
-            "abilities": "VOLAR"
+            "atk": 1,
+            "def": 1
           },
-          "phase": "batalla",
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1559,15 +1512,10 @@
             "attribute": "Agua"
           },
           "buff": {
-            "atk": 20,
-            "def": 20
+            "atk": 1,
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1586,18 +1534,13 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "attribute": "Planta"
+            "family": "Planta"
           },
           "buff": {
-            "atk": 20,
-            "def": 20
+            "atk": 1,
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1668,15 +1611,10 @@
             "breed": "Hada"
           },
           "buff": {
-            "atk": 20,
-            "def": 20
+            "atk": 1,
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1721,14 +1659,9 @@
             "attribute": "Tierra"
           },
           "buff": {
-            "def": 20
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1820,8 +1753,11 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "breed": "Himenóptero",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "nameContains": "Avispa",
+            "category": "monster"
+          }
         }
       }
     ]
@@ -1833,7 +1769,7 @@
     "trigger": {
       "fn": "usedAsCompileMaterial",
       "args": {
-        "family": "Insectoide"
+        "family": "Insecto"
       }
     },
     "conditions": [],
@@ -1887,9 +1823,9 @@
         "fn": "summonFromDeck",
         "args": {
           "filter": {
-            "name": "Dragón de Tierra"
+            "nameContains": "Dragón de Tierra",
+            "minLevel": 3
           },
-          "exclude": "self",
           "destination": "field",
           "sendCard": false
         }
@@ -1938,7 +1874,7 @@
         "args": {
           "target": "attacker",
           "buff": {
-            "atk": -40
+            "atk": -2
           },
           "duration": "whileStatus",
           "status": "Veneno"
@@ -1947,7 +1883,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 30
+          "amount": 2
         }
       }
     ]
@@ -1968,14 +1904,9 @@
             "attribute": "Tierra"
           },
           "buff": {
-            "def": 10
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ]
@@ -2086,11 +2017,12 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 60
+            "atk": 2
           },
           "condition": {
             "costCardBreed": "Orco"
-          }
+          },
+          "target": "self"
         }
       }
     ]
@@ -2154,7 +2086,7 @@
         "args": {
           "target": "self",
           "buff": {
-            "atk": 20
+            "atk": 2
           }
         }
       }
@@ -2497,7 +2429,7 @@
       {
         "fn": "damageOpponent",
         "args": {
-          "amount": 40
+          "amount": 2
         }
       }
     ]
@@ -2681,7 +2613,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 150
+          "amount": 10
         }
       }
     ]
@@ -2735,7 +2667,7 @@
         "fn": "damageOpponent",
         "args": {
           "basis": "targetAtk",
-          "multiplier": 0.5
+          "multiplier": 1
         }
       }
     ]
@@ -2771,7 +2703,7 @@
         "fn": "buffPerEquip",
         "args": {
           "target": "self",
-          "atk": 20
+          "atk": 1
         }
       },
       {
@@ -2822,9 +2754,9 @@
         "fn": "specialSummonFromDeck",
         "args": {
           "filter": {
-            "name": "Dragón de Viento"
-          },
-          "exclude": "Dragón de Viento Bebé"
+            "nameContains": "Dragón de Viento",
+            "minLevel": 3
+          }
         }
       }
     ]
@@ -3062,7 +2994,7 @@
             "breed": "Orco"
           },
           "buff": {
-            "atk": 30
+            "atk": 2
           },
           "target": "selected"
         }
@@ -3098,8 +3030,8 @@
       {
         "fn": "debuffColumn",
         "args": {
-          "atk": -50,
-          "def": -50
+          "atk": -2,
+          "def": -2
         }
       }
     ]
@@ -3131,10 +3063,9 @@
       {
         "fn": "buffAtkPerMonster",
         "args": {
-          "atk": 10,
-          "filter": {
-            "name": "Arpía"
-          }
+          "nameContains": "Arpía",
+          "atk": 1,
+          "target": "self"
         }
       }
     ]
@@ -3493,13 +3424,13 @@
             {
               "fn": "burnOpponent",
               "args": {
-                "amount": 20
+                "amount": 1
               }
             },
             {
               "fn": "damageMonster",
               "args": {
-                "amount": 50,
+                "amount": 3,
                 "target": "selected"
               }
             }
@@ -3538,17 +3469,12 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "nameIncludes": "Arpía"
+            "nameContains": "Arpía"
           },
           "buff": {
-            "atk": 20
+            "atk": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ]
@@ -3589,10 +3515,12 @@
       {
         "fn": "buffPerCount",
         "args": {
-          "family": "Insectoide",
-          "atk": 20,
-          "def": 20,
-          "scope": "field"
+          "family": "Insecto",
+          "atk": 1,
+          "def": 1,
+          "scope": "field",
+          "target": "self",
+          "excludeSelf": true
         }
       }
     ]
@@ -3665,7 +3593,7 @@
       {
         "fn": "generatePixels",
         "args": {
-          "amount": 2
+          "amount": 3
         }
       }
     ]
@@ -3686,13 +3614,13 @@
           "heads": {
             "fn": "gainVP",
             "args": {
-              "amount": 100
+              "amount": 3
             }
           },
           "tails": {
             "fn": "damageSelf",
             "args": {
-              "amount": 50
+              "amount": 3
             }
           }
         }
@@ -3901,10 +3829,9 @@
         "fn": "summonFromDeck",
         "args": {
           "filter": {
-            "breed": "Dragón",
-            "attribute": "Oscuridad"
+            "nameContains": "Dragón de Oscuridad",
+            "minLevel": 3
           },
-          "exclude": "Dragón Oscuro Bebé",
           "destination": "field",
           "sendCard": false
         }
@@ -3943,7 +3870,7 @@
     "trigger": {
       "fn": "usedAsMaterial",
       "args": {
-        "compiledType": "Insectoide"
+        "family": "Insecto"
       }
     },
     "conditions": [],
@@ -4098,7 +4025,7 @@
         "args": {
           "target": "self",
           "buff": {
-            "atk": 20
+            "atk": 2
           }
         }
       }
@@ -4139,9 +4066,9 @@
           "target": "selected",
           "status": "Veneno",
           "debuff": {
-            "atk": -30
+            "atk": -2
           },
-          "burnOpponent": 20
+          "burnOpponent": 1
         }
       }
     ]
@@ -4178,8 +4105,8 @@
           "scope": "column",
           "relativeTo": "self",
           "buff": {
-            "atk": -40,
-            "def": -40
+            "atk": -2,
+            "def": -2
           }
         }
       }
@@ -4216,10 +4143,9 @@
       {
         "fn": "buffPerCount",
         "args": {
-          "atk": -20,
-          "def": -20,
-          "scope": "opponentField",
-          "countScope": "opponentField"
+          "atk": -1,
+          "def": -1,
+          "scope": "opponentField"
         }
       }
     ]
@@ -4234,7 +4160,7 @@
       {
         "fn": "gainVP",
         "args": {
-          "amount": 20,
+          "amount": 1,
           "perCount": {
             "breed": "Hada",
             "scope": "self"
@@ -4467,10 +4393,12 @@
       {
         "fn": "buffPerCount",
         "args": {
-          "family": "Insectoide",
-          "atk": 20,
-          "def": 20,
-          "scope": "field"
+          "family": "Insecto",
+          "atk": 1,
+          "def": 0,
+          "scope": "field",
+          "target": "self",
+          "excludeSelf": true
         }
       }
     ]
@@ -4493,7 +4421,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 50
+          "amount": 3
         }
       }
     ]
@@ -4517,7 +4445,7 @@
         "fn": "damageMonster",
         "args": {
           "target": "selected",
-          "amount": 100
+          "amount": 8
         }
       }
     ]
@@ -4625,18 +4553,13 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "family": "Aqua"
+            "family": "Marino"
           },
           "buff": {
-            "atk": 30,
-            "def": 30
+            "atk": 3,
+            "def": 3
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ]
@@ -4705,7 +4628,7 @@
       {
         "fn": "ownVPBelowOrEqual",
         "args": {
-          "amount": 400
+          "amount": 40
         }
       }
     ],
@@ -4878,9 +4801,9 @@
         "fn": "summonFromDeck",
         "args": {
           "filter": {
-            "name": "Dragón de Fuego"
+            "nameContains": "Dragón de Fuego",
+            "minLevel": 3
           },
-          "exclude": "Dragón de Fuego Bebe",
           "sendCard": false,
           "destination": "field"
         }
@@ -5046,8 +4969,8 @@
           "player": "self",
           "target": "self",
           "breed": "Héroe",
-          "atk": -20,
-          "def": -20
+          "atk": -1,
+          "def": -1
         }
       },
       {
@@ -5118,7 +5041,7 @@
         "args": {
           "target": "opponent",
           "cost": {
-            "vp": 80
+            "vp": 5
           },
           "scope": "cardEffects"
         }
@@ -5134,8 +5057,11 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "breed": "Planta",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "family": "Planta",
+            "category": "monster"
+          }
         }
       }
     ]
@@ -5159,7 +5085,7 @@
           "target": "enemyMonster",
           "count": 1,
           "buff": {
-            "atk": -60
+            "atk": -3
           }
         }
       }
@@ -5182,7 +5108,7 @@
         "args": {
           "target": "allEnemyMonsters",
           "buff": {
-            "atk": -40
+            "atk": -2
           }
         }
       }
@@ -5259,7 +5185,7 @@
         "fn": "setAtk",
         "args": {
           "target": "self",
-          "value": 100,
+          "value": 10,
           "duration": "endOfTurn"
         }
       }
@@ -5433,7 +5359,7 @@
     "cost": {
       "fn": "payVP",
       "args": {
-        "amount": 40
+        "amount": 10
       }
     },
     "choice": true,
@@ -5496,7 +5422,7 @@
         "fn": "buffPerCount",
         "args": {
           "scope": "equippedToSelf",
-          "atk": 40
+          "atk": 4
         }
       },
       {
@@ -5699,5 +5625,97 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "source": "authored",
+    "_id": "HIPOCAMPO_MATERIAL_DRAW",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "usedAsCompileMaterial",
+      "args": {
+        "attribute": "Agua"
+      }
+    },
+    "conditions": [],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1
+        }
+      }
+    ]
+  },
+  {
+    "source": "authored",
+    "_id": "PEGASO_MATERIAL_DRAW",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "usedAsCompileMaterial",
+      "args": {
+        "breed": "Hada"
+      }
+    },
+    "conditions": [],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1
+        }
+      }
+    ]
+  },
+  {
+    "source": "authored",
+    "_id": "MOTOR_ENGRANAJES_SUMMON_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Engranaje",
+            "category": "support"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "source": "authored",
+    "_id": "OSCURO_DRAGON_DESTROY_FACEDOWN",
+    "type": "triggered",
+    "oncePerTurn": true,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "zone": "field",
+          "filter": {
+            "faceDown": true
+          }
+        }
+      }
+    ]
   }
 ]

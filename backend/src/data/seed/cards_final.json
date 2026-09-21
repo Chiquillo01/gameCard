@@ -162,7 +162,6 @@
     "state": 4,
     "number": 7,
     "effectCodes": [
-      "AVISPA_GIGANTE_BUFF",
       "AVISPA_GIGANTE_MATERIAL_PIXEL"
     ]
   },
@@ -227,7 +226,11 @@
     "level": 5,
     "effect": "Una vez por turno, selecciona un monstruo en el Campo que esté en Posición de Ataque:\n• Equipa el monstruo seleccionado a esta carta como un Equipo.\nPor cada carta equipada, gana +1 de Atk.",
     "state": 4,
-    "number": 10
+    "number": 10,
+    "effectCodes": [
+      "CARNIVORA_EQUIP_BUFF",
+      "CARNIVORA_STEAL_EQUIP"
+    ]
   },
   {
     "name": "Espora Venenosa",
@@ -459,7 +462,8 @@
     "state": 2,
     "number": 19,
     "effectCodes": [
-      "HIPOCAMPO_SEARCH"
+      "HIPOCAMPO_SEARCH",
+      "HIPOCAMPO_MATERIAL_DRAW"
     ]
   },
   {
@@ -524,7 +528,8 @@
     "state": 2,
     "number": 22,
     "effectCodes": [
-      "PEGASO"
+      "PEGASO",
+      "PEGASO_MATERIAL_DRAW"
     ]
   },
   {
@@ -753,7 +758,10 @@
     "level": 2,
     "effect": "Una vez por turno, descarta esta carta y otro monstruo Dragón:\n• Invoca del Mazo un \"Dragón de Oscuridad\", excepto \"Dragón de Oscuridad Bebe\".",
     "state": 3,
-    "number": 31
+    "number": 31,
+    "effectCodes": [
+      "DRAGON_OSCURO_BEBE_SUMMON"
+    ]
   },
   {
     "name": "Dragón de Tierra Bebe",
@@ -814,7 +822,10 @@
     "effect": "Cuando esta carta es invocada especial:\n• Destruye una carta boca arriba en el Campo.",
     "invocationText": "Descarta 2 Dragones de tu Mano para invocarlo especial, desde la Mano o Cementerio.",
     "state": 3,
-    "number": 34
+    "number": 34,
+    "effectCodes": [
+      "INFERNO_DRAGON_DESTROY_ON_SUMMON"
+    ]
   },
   {
     "name": "Oscuro, el Dragón de Oscuridad",
@@ -833,7 +844,10 @@
     "effect": "Cuando esta carta es invocada especial:\n• Destruye una carta boca abajo en el Campo.",
     "invocationText": "Descarta 2 Dragones de tu Mano para invocarlo especial, desde la Mano o Cementerio.",
     "state": 3,
-    "number": 35
+    "number": 35,
+    "effectCodes": [
+      "OSCURO_DRAGON_DESTROY_FACEDOWN"
+    ]
   },
   {
     "name": "Pez Leviatán",
@@ -873,7 +887,10 @@
     "effect": "Cuando esta carta es invocada especial:\n• Añade a tu Mano un Dragón de tu Cementerio o Exilio.",
     "invocationText": "Descarta 2 Dragones de tu Mano para invocarlo especial, desde la Mano o Cementerio.",
     "state": 3,
-    "number": 37
+    "number": 37,
+    "effectCodes": [
+      "ROCO_DRAGON_SEARCH_ON_SUMMON"
+    ]
   },
   {
     "name": "Serpiente de Muelle",
@@ -913,7 +930,10 @@
     "effect": "Cuando esta carta es invocada especial:\n• Añada a tu Mano un Dragon de tu Mazo.",
     "invocationText": "Descarta 2 Dragones de tu Mano para invocarlo especial, desde la Mano o Cementerio.",
     "state": 3,
-    "number": 39
+    "number": 39,
+    "effectCodes": [
+      "SKY_DRAGON_VIENTO_ONSUMMON_SEARCH"
+    ]
   },
   {
     "name": "Anciano Dragon",
@@ -1517,7 +1537,12 @@
     "level": 1,
     "effect": "En invocación:\n• Añade a tu Mano 1 carta de Apoyo \"Engranage\" del Mazo.\nCada vez que un monstruo Máquina sea Invocado a tu lado del Campo, aplica ambos efectos en secuencia:\n• Esta carta gana 1 Engranage.\n• Genera 1 Píxel.\nSi esta carta tiene al menos 1 Engranage, no puede ser objetivo de ataques ni efectos de cartas.",
     "state": 1,
-    "number": 61
+    "number": 61,
+    "effectCodes": [
+      "MOTOR_ENGRANAJES_SUMMON_SEARCH",
+      "MOTOR_ENGRANAJES_GEAR_GAIN",
+      "MOTOR_ENGRANAJES_GEAR_PROTECTION"
+    ]
   },
   {
     "name": "Enano Constructor",
@@ -1640,7 +1665,10 @@
     "effect": "Una vez por turno sacrifica esta carta: \n• Invoca al Campo un Grokkar del Cementerio o la Mano.",
     "invocationText": "Si controlas 2 Goblin se puede invocar especial.",
     "state": 3,
-    "number": 67
+    "number": 67,
+    "effectCodes": [
+      "TRASGO_ASTUTO_SACRIFICE_SUMMON"
+    ]
   },
   {
     "name": "Contrataque de Batalla",
@@ -1661,7 +1689,10 @@
       "args": {
         "amount": 2
       }
-    }
+    },
+    "effectCodes": [
+      "FIGHTCONTRAATAQUE_NEGATE"
+    ]
   },
   {
     "name": "Espíritu de batalla",
@@ -1875,7 +1906,13 @@
       "args": {
         "amount": 2
       }
-    }
+    },
+    "effectCodes": [
+      "RELICARIO_EFFECT_DEF_ATTACK",
+      "RELICARIO_EFFECT_BUFF_DEF",
+      "RELICARIO_EFFECT_NEGATE",
+      "RELICARIO_GAIN_GEAR"
+    ]
   },
   {
     "name": "Llamada al Héroe",
@@ -2604,7 +2641,10 @@
     "level": 2,
     "effect": "Cuando esta carta es enviada al Cementerio por batalla: \n• Todos los monstruos de tu oponentes pierden -2 Atk.",
     "state": 4,
-    "number": 110
+    "number": 110,
+    "effectCodes": [
+      "TRASGO_REPTANTE_DEBUFF"
+    ]
   },
   {
     "name": "Slime",
@@ -3047,7 +3087,10 @@
     "effect": "Tu oponente Pierde 5 VP cada vez que activa un efecto.",
     "invocationText": "Solo puede ser invocado especial Exiliando 5 NoMuertos del Campo y/o Cementerio.",
     "state": 1,
-    "number": 129
+    "number": 129,
+    "effectCodes": [
+      "LICHE_TAX"
+    ]
   },
   {
     "name": "Guarida del Oscuro",

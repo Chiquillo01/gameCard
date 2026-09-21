@@ -172,3 +172,36 @@ describe('Nido de Avispas (first "Avispa" summoned while it is on the field)', (
     expect(state.players[0].hand.length).toBe(handBefore - 1);
   });
 });
+
+describe('Effect values follow the card text', () => {
+  const monsterOf = (state, playerIndex, instanceId) => state.players[playerIndex].field.monsters.find((m) => m && m.instanceId === instanceId);
+
+  it('Arboleda gives every Planta on the field (both sides) +1 Atk/Vida and nothing else', async () => {
+    const { state, inHand } = await makeMatch(['Arboleda', 'Carnivora Come Hombres', 'Slime', 'Kraken']);
+    toMain1(state);
+    state.players[0].pixelcoins = 6;
+    const planta = inHand('Carnivora Come Hombres');
+    const slime = inHand('Slime');
+    applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: planta, position: 'attack' });
+    state.players[0].normalSummonUsed = false;
+    applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: slime, position: 'attack' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Arboleda') }).ok).toBe(true);
+
+    expect(monsterOf(state, 0, planta).tempBuff).toEqual({ atk: 1, def: 1 });
+    expect(monsterOf(state, 0, slime).tempBuff).toEqual({ atk: 0, def: 0 });
+  });
+
+  it('Ciempiés Gigante gets +1 Atk for each other Insecto on the field, and Avispa gigante pays 1 pixel as its material', async () => {
+    const { state, inHand } = await makeMatch(['Ciempiés Gigante', 'Avispa gigante', 'Avispa Mutante', 'Avispa de Obsidiana', 'Kraken']);
+    toMain1(state);
+    state.players[0].pixelcoins = 0;
+    const fusion = inHand('Ciempiés Gigante');
+    const obsidiana = inHand('Avispa de Obsidiana');
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: fusion, materialInstanceIds: [inHand('Avispa gigante'), inHand('Avispa Mutante')] }).ok).toBe(true);
+    expect(state.players[0].pixelcoins).toBe(1);
+    expect(monsterOf(state, 0, fusion).tempBuff.atk).toBe(0);
+
+    applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: obsidiana, position: 'attack' });
+    expect(monsterOf(state, 0, fusion).tempBuff.atk).toBe(1);
+  });
+});
