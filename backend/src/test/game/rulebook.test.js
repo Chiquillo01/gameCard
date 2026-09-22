@@ -6,6 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
+const { passChain } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -153,9 +154,11 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
     expect(handCardView.availableEffects).toContain('WASP_SWARM_SEARCH');
     expect(handCardView.availableEffects).not.toContain('WASP_SWARM_GRAVE');
 
-    // Playing a Normal Apoyo resolves its primary effect and sends it straight to the graveyard.
+    // Playing a Normal Apoyo places it on the Campo and opens the response window; once both
+    // sides pass, its primary effect resolves and it lands in the graveyard.
     const activate = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId });
     expect(activate.ok).toBe(true);
+    passChain(state);
     expect(state.players[0].graveyard).toContain(instanceId);
 
     // Now its second, graveyard-only effect can be activated — and the view reflects that too.
@@ -165,6 +168,7 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
 
     const fromGrave = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: instanceId });
     expect(fromGrave.ok).toBe(true);
+    passChain(state);
     // WASP_SWARM_GRAVE's action is banishSelf — the card leaves the graveyard for exile.
     expect(state.players[0].graveyard).not.toContain(instanceId);
     expect(state.players[0].banished).toContain(instanceId);
@@ -177,6 +181,7 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
 
     const activate = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId });
     expect(activate.ok).toBe(true);
+    passChain(state);
 
     // WASP_SWARM_GRAVE (banishSelf) must not have fired during on-play resolution — the card
     // should land in the graveyard, not skip straight to exile.

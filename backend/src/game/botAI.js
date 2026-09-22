@@ -8,8 +8,19 @@ const { canBeNormalSummoned } = require('./summonRules');
 // path, it's just another caller of the public engine API.
 function runBotTurn(state, botIndex) {
   let guard = 0;
-  while (state.status === 'active' && state.turnPlayer === botIndex && guard < 50) {
+  while (state.status === 'active' && guard < 50) {
     guard++;
+
+    // Rulebook, "Apilar": while a Pila is open, only the player holding priority can act. The bot
+    // has no chain strategy yet (v1) — it always passes, which either hands priority back to the
+    // human or, if they'd already passed, resolves the chain and lets the loop carry on below.
+    if (state.chain.length) {
+      if (state.priorityPlayer !== botIndex) break; // waiting on the human to respond or pass
+      applyAction(state, botIndex, { type: 'PASS_CHAIN' });
+      continue;
+    }
+
+    if (state.turnPlayer !== botIndex) break;
     const pl = state.players[botIndex];
 
     if (state.phase === 'main1' || state.phase === 'main2') {

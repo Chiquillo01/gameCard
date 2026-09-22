@@ -6,6 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
+const { passChain } = require('./chainHelpers');
 const { getCard } = require('../../game/cardIndex');
 
 beforeAll(async () => {
@@ -108,6 +109,7 @@ describe('Setting support cards face-down', () => {
 
     const res = applyAction(state, 0, { type: 'ACTIVATE_SET_SUPPORT', instanceId: id });
     expect(res.ok).toBe(true);
+    passChain(state);
     expect(state.players[0].field.support.some((s) => s && s.instanceId === id)).toBe(false);
     expect(state.players[0].graveyard).toContain(id);
   });
@@ -242,6 +244,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     const theirs = state.players[1].hand[0];
     placeMonster(state, theirs, 1, { position: 'attack' });
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') }).ok).toBe(true);
+    passChain(state);
     expect(onField(state, 0, mine)).toBeUndefined();
     expect(onField(state, 1, theirs)).toBeUndefined();
     expect(state.players[0].graveyard).toContain(mine);
@@ -279,6 +282,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     placeMonster(state, slime, 1, { position: 'attack' });
     const before = onField(state, 0, rey).baseAtk;
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REY_DEMONIO_DESTROY_DEMON', sourceInstanceId: rey }).ok).toBe(true);
+    passChain(state);
     expect(onField(state, 1, slime)).toBeUndefined();
     expect(onField(state, 0, rey).baseAtk).toBe(before + 2);
 
@@ -297,6 +301,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     placeMonster(state, a, 1, { position: 'attack' });
     placeMonster(state, b, 1, { position: 'attack' });
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: cap }).ok).toBe(true);
+    passChain(state);
     expect(state.players[1].field.monsters.some(Boolean)).toBe(false);
     const stolen = [a, b].map((id) => onField(state, 0, id)).find(Boolean);
     expect(stolen.breedOverride).toBe('Ladrón');

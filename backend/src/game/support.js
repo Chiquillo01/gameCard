@@ -2,9 +2,10 @@ const { getCard, getEffect } = require('./cardIndex');
 const { player, opponentIndex, placeSupport, placeTerritory, moveToZone, log } = require('./zones');
 const { payCost } = require('./effects/costs');
 const { checkConditions } = require('./effects/conditions');
-const { runAction, checkWin } = require('./effects/actions');
+const { checkWin } = require('./effects/actions');
 const { pendingSearchChoice } = require('./effects/fieldActions');
 const { matchesFilter } = require('./filters');
+const { speedOf, canAddLink, addLink } = require('./chain');
 const { recomputeContinuous, requiredZoneFor } = require('./effectEngine');
 const { cardIdFromInstance } = require('./deckUtils');
 
@@ -64,6 +65,12 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
     if (!candidates.some((m) => m.instanceId === targets[0])) return { ok: false, reason: 'invalid-equip-target' };
   }
 
+  // Rulebook, Velocidades/Apilar: this activation has to be legal speed-wise before it can even
+  // be placed on the Pila — Normal/Continuo/Equipo/Tierra (Speed 1) can never respond to
+  // something already on it.
+  const speed = speedOf(card);
+  if (!canAddLink(state, controllerIndex, speed)) return { ok: false, reason: 'too-slow' };
+
   // Effects that will actually run right now (their zone/conditions already satisfied) — used
   // for both the search-choice check below and, once the player has chosen, to pay their costs
   // and resolve their actions, so all three agree on exactly the same set.
@@ -89,17 +96,13 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
     return { ok: false, reason: 'cannot-pay-cost' };
   }
 
+  // Rulebook: activating ANY Apoyo card places it on the Campo right away — that's the cost of
+  // activating it, not the effect — Normal/Veloz/Contraataque included, which is what actually
+  // opens the response window for them instead of resolving straight to the Cementerio.
+  let entry = setEntry;
   if (card.subtype === 'field') {
     placeTerritory(state, instanceId, controllerIndex);
-    log(state, `${pl.userId} activa el Territorio ${card.name}.`);
-    resolveCardEffects(ctx, runningEffects, targets);
-    recomputeContinuous(state);
-    checkWin(state);
-    return { ok: true };
-  }
-
-  if (card.subtype === 'continuous' || card.subtype === 'equipment') {
-    let entry = setEntry;
+  } else {
     if (entry) {
       entry.faceDown = false; // already in its zone: just turn it over
     } else {
@@ -107,21 +110,20 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
       if (!entry) return { ok: false, reason: 'no-field-space' };
     }
     if (card.subtype === 'equipment') entry.equippedTo = targets[0];
-    log(state, `${pl.userId} activa ${card.name}.`);
-    resolveCardEffects(ctx, runningEffects, targets);
+  }
+  const removedFromHand = pl.hand.includes(instanceId);
+  if (removedFromHand) pl.hand = pl.hand.filter((id) => id !== instanceId);
+  log(state, `${pl.userId} coloca ${card.name} en el Campo.`);
+
+  if (!runningEffects.length) {
+    // Nothing to resolve (a pure Continuo buff, say) — nothing goes on the Pila.
     recomputeContinuous(state);
     checkWin(state);
     return { ok: true };
   }
 
-  // Normal, Veloz (activated directly instead of set), Contraataque: resolve now, then graveyard.
-  const removedFromHand = pl.hand.includes(instanceId);
-  if (removedFromHand) pl.hand = pl.hand.filter((id) => id !== instanceId);
-  resolveCardEffects(ctx, runningEffects, targets);
-  moveToZone(state, instanceId, 'graveyard', controllerIndex);
-  log(state, `${pl.userId} activa ${card.name} y se envía al cementerio.`);
-  recomputeContinuous(state);
-  checkWin(state);
+  const oneShot = card.subtype === 'normal' || card.subtype === 'instant' || card.subtype === 'counter';
+  addLink(state, { controllerIndex, sourceInstanceId: instanceId, cardName: card.name, effects: runningEffects, targets, speed, afterResolve: oneShot ? 'graveyard' : null });
   return { ok: true };
 }
 
@@ -162,10 +164,6 @@ function effectsToResolve(ctx, card) {
 // The effect-level costs of the effects that resolve as the card is played.
 function payEffectCosts(ctx, effects, targets) {
   return effects.every((effect) => !effect.cost || payCost({ ...ctx, effect }, effect.cost, targets));
-}
-
-function resolveCardEffects(ctx, effects, targets) {
-  effects.forEach((effect) => (effect.actions || []).forEach((step) => runAction({ ...ctx, effect }, step, targets)));
 }
 
 module.exports = { activateSupport, activateSetSupport };

@@ -490,7 +490,7 @@ const DuelPage = () => {
         <div className={styles.topBarActions}>
           <button
             className={styles.actionButton}
-            disabled={!isMyTurn || view.status !== 'active'}
+            disabled={!isMyTurn || view.status !== 'active' || !!view.chain}
             onClick={() => act({ type: 'ADVANCE_PHASE' })}
           >
             Avanzar fase
@@ -505,6 +505,20 @@ const DuelPage = () => {
           </button>
         </div>
       </div>
+
+      {view.chain && (
+        <div className={styles.chainBar}>
+          <span className={styles.chainLinks}>
+            🔗 {view.chain.links.map((l) => l.cardName).join(' → ')}
+          </span>
+          <span>{view.chain.priorityPlayer === you ? 'Responde o pasa' : 'Esperando al rival...'}</span>
+          {view.chain.priorityPlayer === you && (
+            <button className={styles.actionButton} onClick={() => act({ type: 'PASS_CHAIN' })}>
+              Pasar
+            </button>
+          )}
+        </div>
+      )}
 
       <div className={styles.board}>
         <div className={styles.playerHeader}>
@@ -824,6 +838,10 @@ function humanizeReason(reason) {
     'not-set-support': 'Ese apoyo no está colocado boca abajo.',
     'use-its-effect': 'Ese apoyo se activa con su efecto.',
     'no-legal-equip-target': 'No tienes ningún monstruo válido para equipar esta carta.',
+    'too-slow': 'Esa carta no es lo bastante rápida para responder ahora mismo.',
+    'chain-open': 'Hay una cadena abierta: primero hay que resolverla.',
+    'not-your-priority': 'Ahora mismo le toca responder al rival.',
+    'no-chain': 'No hay ninguna cadena que pasar.',
     'invalid-equip-target': 'Ese monstruo no puede llevar este equipo.',
     frozen: 'Ese monstruo está congelado y no puede activar efectos.',
     'not-compiled': 'Ese monstruo no es un monstruo compilado.',

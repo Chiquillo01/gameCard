@@ -191,9 +191,14 @@ function negateEffect(ctx, args, targets) {
   log(ctx.state, 'Un efecto es negado.');
 }
 
+// Rulebook, "Apilar": negates the Pila link directly below this one — the effect it's responding
+// to — so it never resolves at all (Kraken/Rakshasa's "descarta esta carta y niega dicho efecto",
+// Djinni's counter). `state.chain` still holds it at this point: this action's own link was
+// already popped by chain.resolveChain before its actions ran.
 function negateActivation(ctx) {
-  ctx.state.chain.pop();
-  log(ctx.state, 'Se niega la activación de un efecto en la cadena.');
+  const negated = ctx.state.chain.pop();
+  if (negated) log(ctx.state, `Se niega la activación de ${negated.cardName}.`);
+  return negated;
 }
 
 function negateAttack(ctx) {
@@ -201,12 +206,10 @@ function negateAttack(ctx) {
   log(ctx.state, 'Se niega un ataque.');
 }
 
-function negateAndSendToGraveyard(ctx) {
-  const top = ctx.state.chain.pop();
-  if (top) {
-    negateActivation(ctx);
-    if (args?.sendCard) moveToZone(ctx.state, top.sourceInstanceId, 'graveyard');
-  }
+// Djinni: negates the responded-to link AND sends its card to the graveyard.
+function negateAndSendToGraveyard(ctx, args) {
+  const negated = negateActivation(ctx);
+  if (negated && args && args.sendCard) moveToZone(ctx.state, negated.sourceInstanceId, 'graveyard', negated.controllerIndex);
 }
 
 function grantBuff(ctx, args, targets) {

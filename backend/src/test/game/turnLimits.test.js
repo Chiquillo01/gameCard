@@ -10,6 +10,7 @@ const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction } = require('../../game/engine');
 const { placeMonster } = require('../../game/zones');
+const { passChain } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -61,7 +62,11 @@ describe('"Una vez por turno" is tracked per card copy, not per card name', () =
 
     const before = state.players[0].pixelcoins;
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'VAMPIRO_GENERATE_PIXEL', sourceInstanceId: v1 })).toMatchObject({ ok: true });
+    // Rulebook, "Apilar": the opponent gets first crack at responding; only once they pass does
+    // priority come back to player 0, who can then chain the second Vampiro onto the same Pila.
+    expect(applyAction(state, 1, { type: 'PASS_CHAIN' })).toMatchObject({ ok: true });
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'VAMPIRO_GENERATE_PIXEL', sourceInstanceId: v2 })).toMatchObject({ ok: true });
+    passChain(state);
     expect(state.players[0].pixelcoins).toBe(before + 2);
 
     // But the SAME copy can't use it twice.
@@ -74,7 +79,11 @@ describe('"Una vez por turno" is tracked per card copy, not per card name', () =
     state.players[0].pixelcoins = 6;
     const [first, second] = state.players[0].hand.filter((id) => id.split(':')[1] === inHand('Enjambre de Avispas').split(':')[1]);
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: first })).toMatchObject({ ok: true });
+    // Speed 1 can't chain onto itself (Enjambre is a Apoyo Normal) — the first has to fully
+    // resolve before the second can be activated as a fresh Pila.
+    passChain(state);
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: second })).toMatchObject({ ok: true });
+    passChain(state);
     expect(state.players[0].pixelcoins).toBe(6 - 4);
   });
 });

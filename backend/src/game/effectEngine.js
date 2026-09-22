@@ -7,6 +7,7 @@ const { player, log, findInstanceLocation, getFieldMonster } = require('./zones'
 const { cardIdFromInstance } = require('./deckUtils');
 const { hasStatus, poisonDebuff, FREEZE } = require('./statuses');
 const { pendingSearchChoice } = require('./effects/fieldActions');
+const { speedOf, canAddLink, addLink } = require('./chain');
 
 function makeCtx(state, controllerIndex, effect, sourceInstanceId) {
   return { state, controllerIndex, sourceInstanceId, effect };
@@ -50,6 +51,12 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
 
   const ctx = makeCtx(state, controllerIndex, effect, sourceInstanceId);
 
+  // Rulebook, Velocidades/Apilar: this activation has to be legal speed-wise before it can even
+  // be placed on the Pila — most effects (Speed 1) can never respond to something already on it.
+  const card = getCard(cardIdFromInstance(sourceInstanceId));
+  const speed = speedOf(card, effect);
+  if (!canAddLink(state, controllerIndex, speed)) return { ok: false, reason: 'too-slow' };
+
   // "Una vez por turno" limits THIS card's own use of its effect — two copies of the same card
   // each get their own turn, so the key includes the source instance, not just the effect id.
   if (effect.oncePerTurn) {
@@ -71,8 +78,8 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
     if (!paid) return { ok: false, reason: 'cannot-pay-cost' };
   }
 
-  resolveActions(ctx, effect, targets);
-
+  // The ACTIVATION is what "una vez por turno" limits, not whether it goes on to resolve — a
+  // negated effect still used up the turn's activation, same as a real TCG.
   if (effect.oncePerTurn) {
     const key = `${state.turnNumber}:${effectId}:${sourceInstanceId}`;
     state.turnLimits[key] = true;
@@ -80,7 +87,7 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
   const cond = (effect.conditions || []).find((c) => c.fn === 'limitPerTurn');
   if (cond) markLimitUsed(state, cond.args.name, sourceInstanceId);
 
-  recomputeContinuous(state);
+  addLink(state, { controllerIndex, sourceInstanceId, cardName: card.name, effects: [effect], targets, speed });
   checkWin(state);
   return { ok: true };
 }
@@ -248,4 +255,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { activateEffect, fireTrigger, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone };
+module.exports = { activateEffect, resolveActions, fireTrigger, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone };

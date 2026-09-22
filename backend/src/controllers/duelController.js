@@ -31,7 +31,11 @@ function broadcastState(matchId) {
 function maybeRunBot(state) {
   if (!state.vsBot || state.status !== 'active') return;
   const botIndex = state.players.findIndex((p) => p.userId === 'BOT');
-  if (botIndex === -1 || state.turnPlayer !== botIndex) return;
+  if (botIndex === -1) return;
+  // Either it's genuinely the bot's turn, or the human just activated something during their own
+  // turn and opened a Pila the bot now has to respond to (or pass) before anything can continue.
+  const botHasChainPriority = state.chain.length > 0 && state.priorityPlayer === botIndex;
+  if (state.turnPlayer !== botIndex && !botHasChainPriority) return;
   runBotTurn(state, botIndex);
 }
 

@@ -10,6 +10,7 @@ const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction } = require('../../game/engine');
 const { placeMonster } = require('../../game/zones');
+const { passChain } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -149,6 +150,7 @@ describe('Search effects offer real choices instead of grabbing whichever card i
     const chosen = res.options[1].instanceId;
     const res2 = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Enjambre de Avispas'), targets: [chosen] });
     expect(res2.ok).toBe(true);
+    passChain(state);
     expect(state.players[0].hand).toContain(chosen);
     expect(state.players[0].deck).not.toContain(chosen);
     expect(state.players[0].pixelcoins).toBe(4);
@@ -162,6 +164,7 @@ describe('Search effects offer real choices instead of grabbing whichever card i
     state.players[0].pixelcoins = 6;
     const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Enjambre de Avispas') });
     expect(res.ok).toBe(true);
+    passChain(state);
     expect(state.players[0].hand.some((id) => id.startsWith('0:' + only))).toBe(true);
   });
 });

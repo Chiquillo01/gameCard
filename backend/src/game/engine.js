@@ -7,6 +7,7 @@ const { activateSupport, activateSetSupport } = require('./support');
 const { declareAttack } = require('./combat');
 const { changePosition } = require('./position');
 const { activateEffect, requiredZoneFor, locationIsInZone } = require('./effectEngine');
+const { passPriority } = require('./chain');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
 
@@ -47,9 +48,19 @@ async function createMatch(opts) {
 
 // Single entry point for every player-initiated change. `action.type` selects the handler;
 // returns { ok, reason?, state } — callers (socket/REST layer) broadcast `state` on success.
+// Rulebook, "Apilar": while anything is on the Pila, the only legal move is whatever the current
+// priority holder does about it — add a faster response (ACTIVATE_SUPPORT/ACTIVATE_EFFECT) or
+// PASS_CHAIN — nobody, including the turn player, can advance the phase or take any other action
+// until it clears.
+const CHAIN_RESPONSE_TYPES = ['ACTIVATE_SUPPORT', 'ACTIVATE_EFFECT', 'PASS_CHAIN'];
+
 function applyAction(state, playerIndex, action) {
   if (state.status !== 'active') return { ok: false, reason: 'match-finished' };
-  if (action.type !== 'SURRENDER' && playerIndex !== state.turnPlayer && !['ACTIVATE_EFFECT'].includes(action.type)) {
+
+  if (action.type !== 'SURRENDER' && state.chain.length > 0) {
+    if (!CHAIN_RESPONSE_TYPES.includes(action.type)) return { ok: false, reason: 'chain-open' };
+    if (playerIndex !== state.priorityPlayer) return { ok: false, reason: 'not-your-priority' };
+  } else if (action.type !== 'SURRENDER' && playerIndex !== state.turnPlayer && !['ACTIVATE_EFFECT'].includes(action.type)) {
     return { ok: false, reason: 'not-your-turn' };
   }
 
@@ -86,6 +97,9 @@ function applyAction(state, playerIndex, action) {
 
     case 'ACTIVATE_EFFECT':
       return activateEffect(state, playerIndex, action.effectId, action.sourceInstanceId, action.targets || []);
+
+    case 'PASS_CHAIN':
+      return passPriority(state, playerIndex);
 
     case 'SURRENDER': {
       state.winnerIndex = opponentIndex(playerIndex);
@@ -133,6 +147,14 @@ function viewFor(state, viewerIndex) {
     you: viewerIndex,
     players: state.players.map(redactPlayer),
     log: state.log.slice(-30),
+    // Rulebook, "Apilar": null once the Pila is empty; while it isn't, nothing else can happen
+    // except the priority holder adding a faster response or passing.
+    chain: state.chain.length
+      ? {
+          priorityPlayer: state.priorityPlayer,
+          links: state.chain.map((l) => ({ controllerIndex: l.controllerIndex, instanceId: l.sourceInstanceId, cardName: l.cardName, speed: l.speed })),
+        }
+      : null,
   };
 }
 
