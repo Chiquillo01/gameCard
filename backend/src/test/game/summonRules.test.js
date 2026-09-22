@@ -56,10 +56,10 @@ describe('Normal Summon and the invocation method', () => {
     expect(state.players[0].hand).toContain(inHand('Kraken'));
   });
 
-  it('refuses a monster that needs a special summon requirement', async () => {
-    const { state, inHand } = await makeMatch(['Inferno, el Dragón de Fuego', 'Kraken']);
+  it('refuses a monster whose method says "Solo puede ser invocado especial..."', async () => {
+    const { state, inHand } = await makeMatch(['Lich', 'Kraken']);
     toMain1(state);
-    const res = applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Inferno, el Dragón de Fuego'), position: 'attack' });
+    const res = applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Lich'), position: 'attack' });
     expect(res).toMatchObject({ ok: false, reason: 'special-summon-only' });
   });
 
@@ -69,6 +69,17 @@ describe('Normal Summon and the invocation method', () => {
     expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Avispa gigante'), position: 'attack' }).ok).toBe(true);
     state.players[0].normalSummonUsed = false;
     expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Pegaso'), position: 'attack' }).ok).toBe(true);
+  });
+
+  it('also allows Normal Summon for a conditional special-summon trigger with no "solo" ("Si X, invocarlo especial")', async () => {
+    // Avispa Mutante, the 4 baby dragons, Perro Esqueleto and Cofre Esqueleto all read this way:
+    // an imperative ("invocarlo especial") or a trigger condition, never "solo puede/puedes/se".
+    const { state, inHand } = await makeMatch(['Avispa Mutante', 'Inferno, el Dragón de Fuego', 'Perro Esqueleto', 'Kraken']);
+    toMain1(state);
+    ['Avispa Mutante', 'Inferno, el Dragón de Fuego', 'Perro Esqueleto'].forEach((name) => {
+      state.players[0].normalSummonUsed = false;
+      expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand(name), position: 'attack' })).toMatchObject({ ok: true });
+    });
   });
 
   it('lets a monster with no invocation method be Normal Summoned', async () => {

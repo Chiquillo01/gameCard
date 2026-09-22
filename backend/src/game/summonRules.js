@@ -1,10 +1,13 @@
 // Rulebook, "Método de invocación": a monster whose summoning-method line is empty is a plain
 // Normal Summon. If it says anything, the wording decides:
-//   - "No puede ser invocado"            -> can never be summoned from hand;
-//   - "Puedes ... / Se puede ... / Se permite ..." (no "solo") -> an OPTIONAL special summon: the
-//     card can be Normal Summoned as usual, or special summoned through that text;
-//   - anything else ("Solo puede...", "Descarta 2 Dragones para invocarlo especial", "Si ...,
-//     invocarlo") -> a requirement: it can only be special summoned.
+//   - "No puede ser invocado"        -> can never be summoned from hand;
+//   - "Solo puede/puedes/se ..."     -> an actual restriction: only special summon works;
+//   - anything else (an optional "Puedes...", a condition like "Si controlas X, se puede...", or
+//     an imperative like "Descarta 2 Dragones para invocarlo especial" / "invocarlo
+//     inmediatamente") -> describes an ADDITIONAL way to summon the card, not a replacement for
+//     Normal Summon — the card can still be Normal Summoned as usual, too.
+// "Solo una vez por turno" (Golpeador/Machacador de Engranaje) isn't a summon-method restriction,
+// so the "solo" check requires a possibility verb right after it ("solo puede/puedes/se").
 // The text is free-form, so this reads the wording rather than a structured field.
 function invocationRequirement(card) {
   return ((card && card.invocationText) || '').trim();
@@ -14,16 +17,13 @@ function cannotBeSummoned(card) {
   return /^no puede ser invocad/i.test(invocationRequirement(card));
 }
 
-function isOptionalSpecialSummon(card) {
-  const text = invocationRequirement(card);
-  // "Solo puede ..." restricts the card to special summons; "solo una vez por turno" doesn't.
-  if (!text || /\bsolo\s+(puede|puedes|se)\b/i.test(text)) return false;
-  return /\b(puedes?|se permite)\b/i.test(text);
+function isSpecialSummonOnly(card) {
+  return /\bsolo\s+(puede|puedes|se)\b/i.test(invocationRequirement(card));
 }
 
 function canBeNormalSummoned(card) {
   if (card.category !== 'monster' || cannotBeSummoned(card)) return false;
-  return !invocationRequirement(card) || isOptionalSpecialSummon(card);
+  return !isSpecialSummonOnly(card);
 }
 
-module.exports = { invocationRequirement, cannotBeSummoned, isOptionalSpecialSummon, canBeNormalSummoned };
+module.exports = { invocationRequirement, cannotBeSummoned, isSpecialSummonOnly, canBeNormalSummoned };
