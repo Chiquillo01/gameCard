@@ -1,8 +1,10 @@
 const { getCard, getEffect } = require('./cardIndex');
-const { player, placeSupport, placeTerritory, moveToZone, log } = require('./zones');
+const { player, opponentIndex, placeSupport, placeTerritory, moveToZone, log } = require('./zones');
 const { payCost } = require('./effects/costs');
 const { checkConditions } = require('./effects/conditions');
 const { runAction, checkWin } = require('./effects/actions');
+const { pendingSearchChoice } = require('./effects/fieldActions');
+const { matchesFilter } = require('./filters');
 const { recomputeContinuous, requiredZoneFor } = require('./effectEngine');
 const { cardIdFromInstance } = require('./deckUtils');
 
@@ -50,6 +52,29 @@ function activateSetSupport(state, controllerIndex, instanceId, { targets = [] }
 function resolveActivation(state, controllerIndex, instanceId, card, targets, setEntry = null) {
   const pl = player(state, controllerIndex);
   const ctx = { state, controllerIndex, sourceInstanceId: instanceId };
+
+  // Rulebook, Cartas de Equipo: an Equipo card always names the monster it goes on when you
+  // activate it — there's no "activate it plain" the way a Normal/Continuo card works.
+  if (card.subtype === 'equipment') {
+    const candidates = legalEquipTargets(state, controllerIndex, card);
+    if (!targets.length) {
+      if (!candidates.length) return { ok: false, reason: 'no-legal-equip-target' };
+      return { ok: false, reason: 'choose-target', options: candidates.map(describeFieldTarget) };
+    }
+    if (!candidates.some((m) => m.instanceId === targets[0])) return { ok: false, reason: 'invalid-equip-target' };
+  }
+
+  // Effects that will actually run right now (their zone/conditions already satisfied) — used
+  // for both the search-choice check below and, once the player has chosen, to pay their costs
+  // and resolve their actions, so all three agree on exactly the same set.
+  const runningEffects = effectsToResolve(ctx, card);
+
+  // A search action (e.g. Enjambre de Avispas' "añade un monstruo Avispa de tu Mazo") is the
+  // player's pick, not automatic — with more than one legal match and nothing chosen, ask instead
+  // of silently grabbing whichever the deck happens to put first.
+  const searchOptions = runningEffects.map((effect) => pendingSearchChoice(state, controllerIndex, effect, targets)).find(Boolean);
+  if (searchOptions) return { ok: false, reason: 'choose-target', options: searchOptions };
+
   const before = { pixelcoins: pl.pixelcoins, vp: pl.vp };
   const cost = card.activationCost;
   if (cost && cost.fn) {
@@ -58,7 +83,7 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   }
   // Some cards add a cost inside their effect ("destruye un monstruo en tu Campo:"): pay it now, and
   // hand back the activation cost if it can't be paid.
-  if (!payEffectCosts(ctx, card, targets)) {
+  if (!payEffectCosts(ctx, runningEffects, targets)) {
     pl.pixelcoins = before.pixelcoins;
     pl.vp = before.vp;
     return { ok: false, reason: 'cannot-pay-cost' };
@@ -67,21 +92,23 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   if (card.subtype === 'field') {
     placeTerritory(state, instanceId, controllerIndex);
     log(state, `${pl.userId} activa el Territorio ${card.name}.`);
-    resolveCardEffects(ctx, card, targets);
+    resolveCardEffects(ctx, runningEffects, targets);
     recomputeContinuous(state);
     checkWin(state);
     return { ok: true };
   }
 
   if (card.subtype === 'continuous' || card.subtype === 'equipment') {
-    if (setEntry) {
-      setEntry.faceDown = false; // already in its zone: just turn it over
+    let entry = setEntry;
+    if (entry) {
+      entry.faceDown = false; // already in its zone: just turn it over
     } else {
-      const placed = placeSupport(state, instanceId, controllerIndex, { faceDown: false });
-      if (!placed) return { ok: false, reason: 'no-field-space' };
+      entry = placeSupport(state, instanceId, controllerIndex, { faceDown: false });
+      if (!entry) return { ok: false, reason: 'no-field-space' };
     }
+    if (card.subtype === 'equipment') entry.equippedTo = targets[0];
     log(state, `${pl.userId} activa ${card.name}.`);
-    resolveCardEffects(ctx, card, targets);
+    resolveCardEffects(ctx, runningEffects, targets);
     recomputeContinuous(state);
     checkWin(state);
     return { ok: true };
@@ -90,12 +117,30 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   // Normal, Veloz (activated directly instead of set), Contraataque: resolve now, then graveyard.
   const removedFromHand = pl.hand.includes(instanceId);
   if (removedFromHand) pl.hand = pl.hand.filter((id) => id !== instanceId);
-  resolveCardEffects(ctx, card, targets);
+  resolveCardEffects(ctx, runningEffects, targets);
   moveToZone(state, instanceId, 'graveyard', controllerIndex);
   log(state, `${pl.userId} activa ${card.name} y se envía al cementerio.`);
   recomputeContinuous(state);
   checkWin(state);
   return { ok: true };
+}
+
+// Which face-up field monsters an Equipo card can legally be equipped to right now: its own side
+// unless the effect's whileEquipped trigger says `side: "opponent"` (Fuegos Fatuos), narrowed by
+// whatever breed/family/attribute restriction that trigger's args carry (e.g. "Solo se puede ser
+// equipada a un monstruo Insecto") — read from the data, not parsed out of the card's text.
+function legalEquipTargets(state, controllerIndex, card) {
+  const equipEffect = (card.effectCodes || []).map(getEffect).find((e) => e && e.trigger && e.trigger.fn === 'whileEquipped');
+  const restriction = (equipEffect && equipEffect.trigger.args) || {};
+  const side = restriction.side === 'opponent' ? opponentIndex(controllerIndex) : controllerIndex;
+  const filter = { breed: restriction.breed, family: restriction.family, attribute: restriction.attribute };
+  return player(state, side).field.monsters.filter((m) => m && !m.faceDown && matchesFilter(m, filter));
+}
+
+function describeFieldTarget(m) {
+  if (m.isToken) return { instanceId: m.instanceId, name: m.tokenDef.name, image: null };
+  const card = getCard(m.cardId);
+  return { instanceId: m.instanceId, cardId: card._id.toString(), name: card.name, image: card.image };
 }
 
 // Resolves a support card's own on-play effect(s) — called right as the card is activated from
@@ -106,27 +151,21 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
 // Avispas) waits for its event and a "continuous" one is recomputed from the board.
 const ON_PLAY_EFFECT_TYPES = ['activated', 'quick', 'ignition'];
 
-// The effect-level costs of the effects that resolve as the card is played.
-function payEffectCosts(ctx, card, targets) {
-  return (card.effectCodes || []).every((effectId) => {
-    const effect = getEffect(effectId);
-    if (!effect || !effect.cost || !ON_PLAY_EFFECT_TYPES.includes(effect.type)) return true;
-    const requiredZone = requiredZoneFor(effect);
-    if (requiredZone === 'graveyard' || requiredZone === 'banished' || requiredZone === 'field') return true;
-    if (!checkConditions({ ...ctx, effect }, effect.conditions)) return true;
-    return payCost({ ...ctx, effect }, effect.cost, targets);
-  });
+function effectsToResolve(ctx, card) {
+  return (card.effectCodes || [])
+    .map((effectId) => getEffect(effectId))
+    .filter((effect) => effect && ON_PLAY_EFFECT_TYPES.includes(effect.type))
+    .filter((effect) => !['graveyard', 'banished', 'field'].includes(requiredZoneFor(effect)))
+    .filter((effect) => checkConditions({ ...ctx, effect }, effect.conditions));
 }
 
-function resolveCardEffects(ctx, card, targets) {
-  (card.effectCodes || []).forEach((effectId) => {
-    const effect = getEffect(effectId);
-    if (!effect || !ON_PLAY_EFFECT_TYPES.includes(effect.type)) return; // triggered/continuous ones act on their own
-    const requiredZone = requiredZoneFor(effect);
-    if (requiredZone === 'graveyard' || requiredZone === 'banished' || requiredZone === 'field') return;
-    if (!checkConditions(ctx, effect.conditions)) return;
-    (effect.actions || []).forEach((step) => runAction(ctx, step, targets));
-  });
+// The effect-level costs of the effects that resolve as the card is played.
+function payEffectCosts(ctx, effects, targets) {
+  return effects.every((effect) => !effect.cost || payCost({ ...ctx, effect }, effect.cost, targets));
+}
+
+function resolveCardEffects(ctx, effects, targets) {
+  effects.forEach((effect) => (effect.actions || []).forEach((step) => runAction({ ...ctx, effect }, step, targets)));
 }
 
 module.exports = { activateSupport, activateSetSupport };

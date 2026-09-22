@@ -1198,13 +1198,12 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
-    },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
+      "fn": "whileEquipped",
+      "args": {
+        "attribute": "Fuego"
       }
-    ],
+    },
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",
@@ -1222,13 +1221,10 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
+      "fn": "whileEquipped",
+      "args": {}
     },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "enableDirectAttack",
@@ -1249,13 +1245,12 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
-    },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
+      "fn": "whileEquipped",
+      "args": {
+        "side": "opponent"
       }
-    ],
+    },
+    "conditions": [],
     "actions": [
       {
         "fn": "disableEffects",
@@ -1276,13 +1271,10 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
+      "fn": "whileEquipped",
+      "args": {}
     },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "modifyStatsPerMonsterOnField",
@@ -1299,13 +1291,10 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
+      "fn": "whileEquipped",
+      "args": {}
     },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",
@@ -1323,13 +1312,10 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
+      "fn": "whileEquipped",
+      "args": {}
     },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",
@@ -1347,13 +1333,12 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
-    },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
+      "fn": "whileEquipped",
+      "args": {
+        "attribute": "Agua"
       }
-    ],
+    },
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",
@@ -1371,13 +1356,12 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
-    },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
+      "fn": "whileEquipped",
+      "args": {
+        "family": "Insecto"
       }
-    ],
+    },
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",

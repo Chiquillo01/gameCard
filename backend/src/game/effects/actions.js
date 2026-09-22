@@ -1,5 +1,5 @@
 const { getCard } = require('../cardIndex');
-const { player, opponentIndex, moveToZone, placeMonster, log, findInstanceLocation, removeFromZone, findEmptySlot, corrodedSlots } = require('../zones');
+const { player, opponentIndex, moveToZone, placeMonster, log, findInstanceLocation, removeFromZone, findEmptySlot, corrodedSlots, releaseEquipment } = require('../zones');
 const { addStatus, setStatusDebuff, FREEZE, BURN, POISON } = require('../statuses');
 const { matchesFilter, matchesCardFilter } = require('../filters');
 const { cardIdFromInstance } = require('../deckUtils');
@@ -112,7 +112,11 @@ function changePosition(ctx, args, targets) {
   (targets || []).forEach((instanceId) => {
     const m = ctx.state.players.flatMap((p) => p.field.monsters).find((x) => x && x.instanceId === instanceId);
     if (!m) return;
-    if (args.position === 'defenseDown') { m.position = 'defense'; m.faceDown = true; }
+    if (args.position === 'defenseDown') {
+      m.position = 'defense';
+      m.faceDown = true;
+      releaseEquipment(ctx.state, instanceId); // "volteado boca abajo" also releases its Equipo cards
+    }
     else if (args.position === 'defense') m.position = 'defense';
     else if (args.position === 'attack') { m.position = 'attack'; m.faceDown = false; }
   });
@@ -292,30 +296,9 @@ function summonToken(ctx, args) {
   summonTokenEntry(ctx, args.token);
 }
 
-function addCardToHandFromDeck(ctx, args) {
-  const pl = player(ctx.state, ctx.controllerIndex);
-  const filter = args.filter || { breed: args.breed, family: args.family, name: args.name };
-  const count = args.count || 1;
-  let moved = 0;
-  for (let i = 0; i < pl.deck.length && moved < count; i++) {
-    const card = getCard(cardIdFromInstance(pl.deck[i]));
-    if (matchesCardFilter(card, filter)) {
-      const [id] = pl.deck.splice(i, 1);
-      pl.hand.push(id);
-      moved++;
-      i--;
-    }
-  }
-  log(ctx.state, `${pl.userId} añade ${moved} carta(s) del mazo a la mano.`);
-}
-
-function searchDeck(ctx, args) {
-  addCardToHandFromDeck(ctx, { count: args.count, filter: { attribute: args.attribute, breed: args.breed, family: args.family } });
-}
-
-function searchFromDeck(ctx, args) {
-  addCardToHandFromDeck(ctx, { count: 1, filter: args });
-}
+// addCardToHandFromDeck / searchDeck / searchFromDeck / recoverCardsToHand / addCardToHandFromGraveyard
+// all live in fieldActions.js now (Object.assign(registry, require('./fieldActions')) below pulls
+// them in) — they need the same targets-aware, player-chosen search logic.
 
 function specialSummonFromGY(ctx, args) {
   const idx = resolvePlayerIndex(ctx, args.player);
@@ -376,7 +359,7 @@ function cannotBeNegated() {
 //   scope "opponentField" : count and buff the rival's monsters;
 //   target "self"         : the buff lands on the card that has the effect;
 //   excludeSelf           : that card doesn't count itself ("excepto el mismo").
-function applyScaledBuff(ctx, args) {
+function applyScaledBuff(ctx, args, targets) {
   const filter = args.filter || { name: args.name, nameContains: args.nameContains, breed: args.breed, family: args.family, attribute: args.attribute };
   const hasFilter = Object.values(filter).some((v) => v !== undefined && v !== null && v !== '');
   const controllerMonsters = allOwnedMonsters(ctx.state, ctx.controllerIndex);
@@ -385,9 +368,12 @@ function applyScaledBuff(ctx, args) {
   const pool = args.scope === 'field' ? allFieldMonsters(ctx.state) : args.scope === 'opponentField' ? enemyMonsters : controllerMonsters;
   const counted = pool.filter((m) => monsterMatches(m, filter) && !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId));
   const scaleBy = args.scope === 'field' || args.scope === 'opponentField' ? counted.length : counted.length || 1;
-  let targetSet = hasFilter ? controllerMonsters.filter((m) => monsterMatches(m, filter)) : controllerMonsters;
-  if (args.target === 'self') targetSet = controllerMonsters.filter((m) => m.instanceId === ctx.sourceInstanceId);
-  else if (args.scope === 'opponentField') targetSet = enemyMonsters;
+  // Explicit targets (an equipped monster, a picked one) always win over the filter-based default.
+  let targetSet = targets && targets.length ? allFieldMonsters(ctx.state).filter((m) => targets.includes(m.instanceId)) : hasFilter ? controllerMonsters.filter((m) => monsterMatches(m, filter)) : controllerMonsters;
+  if (!(targets && targets.length)) {
+    if (args.target === 'self') targetSet = controllerMonsters.filter((m) => m.instanceId === ctx.sourceInstanceId);
+    else if (args.scope === 'opponentField') targetSet = enemyMonsters;
+  }
   targetSet.forEach((m) => {
     m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
     m.tempBuff.atk += perUnit.atk * scaleBy;
@@ -396,10 +382,14 @@ function applyScaledBuff(ctx, args) {
 }
 
 function disableEffects(ctx, args, targets) {
-  (targets && targets.length ? targets : []).forEach((id) => {
-    const m = ctx.state.players.flatMap((p) => p.field.monsters).find((x) => x && x.instanceId === id);
-    if (m) m.negated = true;
-  });
+  const filter = args.filter || {};
+  const hasFilter = Object.values(filter).some((v) => v !== undefined && v !== null && v !== '');
+  const list = targets && targets.length
+    ? ctx.state.players.flatMap((p) => p.field.monsters).filter((m) => m && targets.includes(m.instanceId))
+    : hasFilter
+      ? allFieldMonsters(ctx.state).filter((m) => monsterMatches(m, filter))
+      : [];
+  list.forEach((m) => { m.negated = true; });
 }
 
 function negateActivationOfEffects(ctx) {
@@ -407,8 +397,11 @@ function negateActivationOfEffects(ctx) {
   player(ctx.state, oppIdx).field.monsters.filter(Boolean).forEach((m) => { m.negated = true; });
 }
 
-function enableDirectAttack(ctx) {
-  const m = ctx.state.players.flatMap((p) => p.field.monsters).find((x) => x && x.instanceId === ctx.sourceInstanceId);
+// enableDirectAttack lands on whoever the effect actually names: the equipped monster when there
+// is one, else the card carrying the effect itself.
+function enableDirectAttack(ctx, args, targets) {
+  const id = (targets && targets[0]) || ctx.sourceInstanceId;
+  const m = ctx.state.players.flatMap((p) => p.field.monsters).find((x) => x && x.instanceId === id);
   if (m) m.canAttackDirectly = true;
 }
 
@@ -428,25 +421,6 @@ function preventBattleDestruction(ctx, args) {
 function setWinLoseLock(ctx, args) {
   ctx.state.players[ctx.controllerIndex].cantLose = !!(args.owner && args.owner.cantLose);
   ctx.state.players[opponentIndex(ctx.controllerIndex)].cantWin = !!(args.opponent && args.opponent.cantWin);
-}
-
-function recoverCardsToHand(ctx, args) {
-  const pl = player(ctx.state, ctx.controllerIndex);
-  const scope = Array.isArray(args.scope) ? args.scope : [args.scope || 'graveyard'];
-  const filter = { breed: args.breed || args.family, family: args.family };
-  let moved = 0;
-  scope.forEach((zoneName) => {
-    const zone = zoneName === 'banished' ? 'banished' : 'graveyard';
-    const arr = pl[zone];
-    for (let i = arr.length - 1; i >= 0 && moved < (args.count || 1); i--) {
-      const card = getCard(cardIdFromInstance(arr[i]));
-      if (matchesCardFilter(card, filter)) {
-        const [id] = arr.splice(i, 1);
-        pl.hand.push(id);
-        moved++;
-      }
-    }
-  });
 }
 
 function returnFromGraveyardToDeck(ctx, args) {
@@ -633,9 +607,6 @@ const registry = {
   grantBuff,
   summonTokens,
   summonToken,
-  addCardToHandFromDeck,
-  searchDeck,
-  searchFromDeck,
   specialSummonFromGY,
   specialSummon,
   mirrorEvent,
@@ -657,7 +628,6 @@ const registry = {
   limitUnique,
   preventBattleDestruction,
   setWinLoseLock,
-  recoverCardsToHand,
   returnFromGraveyardToDeck,
   returnToDeck,
   returnCardToHand,

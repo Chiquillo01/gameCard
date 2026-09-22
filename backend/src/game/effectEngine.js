@@ -3,9 +3,10 @@ const { checkConditions, markLimitUsed, markCardEffectUsed } = require('./effect
 const { matchesCardFilter } = require('./filters');
 const { payCost } = require('./effects/costs');
 const { runAction, checkWin } = require('./effects/actions');
-const { player, log, findInstanceLocation } = require('./zones');
+const { player, log, findInstanceLocation, getFieldMonster } = require('./zones');
 const { cardIdFromInstance } = require('./deckUtils');
 const { hasStatus, poisonDebuff, FREEZE } = require('./statuses');
+const { pendingSearchChoice } = require('./effects/fieldActions');
 
 function makeCtx(state, controllerIndex, effect, sourceInstanceId) {
   return { state, controllerIndex, sourceInstanceId, effect };
@@ -56,6 +57,12 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
   }
 
   if (!checkConditions(ctx, effect.conditions)) return { ok: false, reason: 'conditions-not-met' };
+
+  // A search action (e.g. an ignition ability that adds a card from the deck) is the player's
+  // pick, not automatic — with more than one legal match and nothing chosen yet, ask instead of
+  // grabbing whichever the deck happens to put first.
+  const searchOptions = pendingSearchChoice(state, controllerIndex, effect, targets);
+  if (searchOptions) return { ok: false, reason: 'choose-target', options: searchOptions };
 
   if (effect.cost) {
     const paid = payCost(ctx, effect.cost, targets);
@@ -153,9 +160,13 @@ function recomputeContinuous(state) {
       (card.effectCodes || []).forEach((effectId) => {
         const effect = getEffect(effectId);
         if (!effect || effect.type !== 'continuous') return;
+        // An Equipo card's effect only runs for the monster it's equipped to; with none (or that
+        // monster gone) it does nothing until the field-leave cleanup sends the card to the graveyard.
+        const isEquip = effect.trigger && effect.trigger.fn === 'whileEquipped';
+        if (isEquip && !getFieldMonster(state, entry.equippedTo)) return;
         const ctx = makeCtx(state, controllerIndex, effect, entry.instanceId);
         if (!checkConditions(ctx, effect.conditions)) return;
-        resolveActions(ctx, effect, []);
+        resolveActions(ctx, effect, isEquip ? [entry.equippedTo] : []);
       });
     });
   });

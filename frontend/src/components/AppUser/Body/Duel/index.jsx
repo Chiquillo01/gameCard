@@ -61,6 +61,9 @@ const DuelPage = () => {
   const [fusion, setFusion] = useState(null);
   // A Cementerio/Exilio/Mazo-C pile the player clicked open: { side: 'me'|'enemy', zone }.
   const [openPile, setOpenPile] = useState(null);
+  // The server asked us to pick a target for the action we just sent (a search effect's matches
+  // from the deck/cementerio, or an Equipo card's legal monsters): { action, options }.
+  const [pendingChoice, setPendingChoice] = useState(null);
   const socketRef = useRef(null);
   // Every card's full data (art, effect text, ...) by id, fetched once for the hover preview, and
   // the card the cursor last rested on.
@@ -126,7 +129,16 @@ const DuelPage = () => {
     try {
       const result = await sendDuelAction(matchId, action);
       setView(result.state);
-      if (!result.ok) showToast('error', humanizeReason(result.reason));
+      if (!result.ok) {
+        // Not a rule violation — the server needs the player to pick which of these it means.
+        if (result.reason === 'choose-target' && result.options && result.options.length) {
+          setPendingChoice({ action, options: result.options });
+        } else {
+          showToast('error', humanizeReason(result.reason));
+        }
+      } else {
+        setPendingChoice(null);
+      }
       return result;
     } catch (e) {
       showToast('error', 'Error al procesar la acción.');
@@ -142,6 +154,13 @@ const DuelPage = () => {
     setSelectedAttacker(null);
   };
 
+  // The player picked one of the options the server offered for a pending choose-target action:
+  // resend the exact same action, this time with that pick as its target.
+  const chooseTarget = (instanceId) => {
+    if (!pendingChoice) return;
+    act({ ...pendingChoice.action, targets: [instanceId] });
+  };
+
   // Only one decision can be open at a time: opening a new one replaces whatever was pending, so the
   // single panel always shows the card that was just picked.
   const closeChoices = () => {
@@ -149,6 +168,7 @@ const DuelPage = () => {
     setPendingSupportChoice(null);
     setPendingPosition(null);
     setFusion(null);
+    setPendingChoice(null);
   };
 
   const confirmPositionChange = (position) => {
@@ -417,9 +437,30 @@ const DuelPage = () => {
       {view.status === 'finished' && (
         <div className={styles.gameOverOverlay}>
           <div className={styles.gameOverPlaque}>
-            {view.winnerIndex === you ? '¡Victoria!' : view.winnerIndex === opp ? 'Derrota' : 'Partida terminada'}
+            <div>{view.winnerIndex === you ? '¡Victoria!' : view.winnerIndex === opp ? 'Derrota' : 'Partida terminada'}</div>
+            <div className={styles.gameOverActions}>
+              <button className={styles.actionButton} onClick={() => navigate('/duel')}>
+                Jugar de nuevo
+              </button>
+              <button className={styles.surrenderButton} onClick={() => navigate('/')}>
+                Salir
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {pendingChoice && (
+        <PileModal
+          title='Elige un objetivo'
+          cards={pendingChoice.options}
+          onClose={() => setPendingChoice(null)}
+          renderCardExtra={(card) => (
+            <button className={styles.effectButton} onClick={() => chooseTarget(card.instanceId)}>
+              Elegir
+            </button>
+          )}
+        />
       )}
 
       {openPile && (
@@ -782,6 +823,8 @@ function humanizeReason(reason) {
     'cannot-set-territory': 'Un Territorio no se puede colocar boca abajo.',
     'not-set-support': 'Ese apoyo no está colocado boca abajo.',
     'use-its-effect': 'Ese apoyo se activa con su efecto.',
+    'no-legal-equip-target': 'No tienes ningún monstruo válido para equipar esta carta.',
+    'invalid-equip-target': 'Ese monstruo no puede llevar este equipo.',
     frozen: 'Ese monstruo está congelado y no puede activar efectos.',
     'not-compiled': 'Ese monstruo no es un monstruo compilado.',
     'compiled-this-turn': 'No puedes descompilar un monstruo el turno en que fue compilado.',

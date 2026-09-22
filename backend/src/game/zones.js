@@ -45,9 +45,23 @@ function removeFromZone(state, instanceId, loc) {
   else if (loc.zone === 'extra') pl.extra = pl.extra.filter((i) => i !== instanceId);
   else if (loc.zone === 'graveyard') pl.graveyard = pl.graveyard.filter((i) => i !== instanceId);
   else if (loc.zone === 'banished') pl.banished = pl.banished.filter((i) => i !== instanceId);
-  else if (loc.zone === 'field:monster') pl.field.monsters[loc.slot] = null;
-  else if (loc.zone === 'field:support') pl.field.support[loc.slot] = null;
+  else if (loc.zone === 'field:monster') {
+    pl.field.monsters[loc.slot] = null;
+    releaseEquipment(state, instanceId);
+  } else if (loc.zone === 'field:support') pl.field.support[loc.slot] = null;
   else if (loc.zone === 'field:territory') pl.field.territory = null;
+}
+
+// Rulebook, Cartas de Equipo: "Si el monstruo equipado es destruido, volteado boca abajo o
+// retirado del juego, su o sus Cartas de Equipo son enviadas al cementerio." Covers every way a
+// monster leaves its field slot; a flip to face-down (which stays in the same slot) is released
+// separately, at the one place that does that (effects/actions.js's changePosition).
+function releaseEquipment(state, instanceId) {
+  state.players.forEach((pl, ownerIndex) => {
+    pl.field.support
+      .filter((s) => s && s.equippedTo === instanceId)
+      .forEach((s) => moveToZone(state, s.instanceId, 'graveyard', ownerIndex));
+  });
 }
 
 // Rulebook, Corrosión: a zone marked as corrosive can't hold cards. `blocked` is the set of slot
@@ -120,20 +134,22 @@ function placeMonster(state, instanceId, ownerIndex, { position = 'attack', face
   return true;
 }
 
+// Returns the created field entry (truthy), or null if the support zone has no free slot.
 function placeSupport(state, instanceId, ownerIndex, { faceDown = false } = {}) {
   const loc = findInstanceLocation(state, instanceId);
   if (loc) removeFromZone(state, instanceId, loc);
   const pl = state.players[ownerIndex];
   const slot = findEmptySlot(pl.field.support, corrodedSlots(pl, 'support'));
-  if (slot === -1) return false;
+  if (slot === -1) return null;
   const card = getCard(require('./deckUtils').cardIdFromInstance(instanceId));
-  pl.field.support[slot] = {
+  const entry = {
     instanceId,
     cardId: card._id.toString(),
     faceDown,
     activatedThisTurn: false,
   };
-  return true;
+  pl.field.support[slot] = entry;
+  return entry;
 }
 
 // Territorio (Reino) has its own single-card zone, separate from the general support zone.
@@ -161,6 +177,7 @@ module.exports = {
   removeFromZone,
   moveToZone,
   releaseMaterials,
+  releaseEquipment,
   findEmptySlot,
   corrodedSlots,
   placeMonster,

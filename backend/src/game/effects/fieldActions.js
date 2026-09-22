@@ -119,7 +119,9 @@ function takeControl(ctx, args, targets) {
     log(ctx.state, 'No hay espacio para tomar el control del monstruo.');
     return;
   }
-  opp.field.monsters[opp.field.monsters.indexOf(chosen)] = null;
+  // Through removeFromZone, not a bare null assignment, so this also releases any Equipo cards
+  // that were on the stolen monster (per the rulebook, they don't follow it to the new controller).
+  removeFromZone(ctx.state, chosen.instanceId, { zone: 'field:monster', ownerIndex: oppIdx, slot: opp.field.monsters.indexOf(chosen) });
   chosen.hasAttacked = true;
   if (args.changeBreed) chosen.breedOverride = args.changeBreed;
   me.field.monsters[slot] = chosen;
@@ -129,42 +131,76 @@ function takeControl(ctx, args, targets) {
   }
 }
 
-// Search a zone list ("del Mazo o Cementerio"), a filter, and put the first `count` matches in hand.
-function addCardToHandFromDeck(ctx, args) {
-  const pl = player(ctx.state, ctx.controllerIndex);
-  const filter = args.filter || { breed: args.breed, family: args.family, name: args.name, attribute: args.attribute };
+// --- Search actions: "añade a tu Mano X del Mazo/Cementerio/Exilio" --------------------------
+// Every search-style action step funnels through here, so the candidates offered to the player
+// (searchCandidates, below) and the cards an activation actually moves can never drift apart.
+
+// Normalizes the handful of search-action shapes the effect data uses into one { filter, zones, count }.
+function normalizeSearchArgs(fn, args = {}) {
+  if (fn === 'searchDeck') return { filter: { attribute: args.attribute, breed: args.breed, family: args.family }, zones: ['deck'], count: args.count || 1 };
+  if (fn === 'searchFromDeck') return { filter: args, zones: ['deck'], count: 1 };
+  if (fn === 'addCardToHandFromGraveyard') return { filter: args.filter || args, zones: ['graveyard'], count: args.count || 1 };
+  if (fn === 'recoverCardsToHand') {
+    const zones = (Array.isArray(args.scope) ? args.scope : [args.scope || 'graveyard']).map((z) => (z === 'banished' ? 'banished' : 'graveyard'));
+    return { filter: args.filter || { breed: args.breed, family: args.family }, zones, count: args.count || 1 };
+  }
+  // addCardToHandFromDeck (the default/most general one)
   const zones = (Array.isArray(args.scope) ? args.scope : [args.scope || 'deck']).map((z) => (z === 'banished' ? 'banished' : z === 'graveyard' ? 'graveyard' : 'deck'));
-  const count = args.count || 1;
+  return { filter: args.filter || { breed: args.breed, family: args.family, name: args.name, attribute: args.attribute, nameContains: args.nameContains }, zones, count: args.count || 1 };
+}
+
+// Every card instance a search step could legally pick right now — what the player gets to choose
+// from, and also what a plain automatic resolution (no choice offered) falls back to.
+function searchCandidates(state, controllerIndex, fn, args) {
+  const pl = player(state, controllerIndex);
+  const { filter, zones } = normalizeSearchArgs(fn, args);
+  const ids = [];
+  zones.forEach((zone) => pl[zone].forEach((id) => {
+    if (matchesCardFilter(getCard(cardIdFromInstance(id)), filter)) ids.push(id);
+  }));
+  return ids;
+}
+
+// Moves the player's chosen `targets` to hand; with none given (a triggered effect that resolves
+// on its own, with no interactive step) falls back to the first legal matches.
+function runSearch(ctx, fn, args, targets) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const { filter, zones, count } = normalizeSearchArgs(fn, args);
+  const picked = (targets && targets.length ? targets : searchCandidates(ctx.state, ctx.controllerIndex, fn, args)).slice(0, count);
   let moved = 0;
-  zones.forEach((zone) => {
-    const arr = pl[zone];
-    for (let i = 0; i < arr.length && moved < count; i++) {
-      if (!matchesCardFilter(getCard(cardIdFromInstance(arr[i])), filter)) continue;
-      const [id] = arr.splice(i, 1);
-      pl.hand.push(id);
-      moved++;
-      i--;
-    }
+  picked.forEach((id) => {
+    const zone = zones.find((z) => pl[z].includes(id));
+    if (!zone || !matchesCardFilter(getCard(cardIdFromInstance(id)), filter)) return;
+    pl[zone] = pl[zone].filter((x) => x !== id);
+    pl.hand.push(id);
+    moved++;
   });
   log(ctx.state, `${pl.userId} añade ${moved} carta(s) a la mano.`);
 }
 
-function recoverCardsToHand(ctx, args) {
-  const pl = player(ctx.state, ctx.controllerIndex);
-  const scope = Array.isArray(args.scope) ? args.scope : [args.scope || 'graveyard'];
-  const filter = args.filter || { breed: args.breed, family: args.family };
-  let moved = 0;
-  scope.forEach((zoneName) => {
-    const arr = pl[zoneName === 'banished' ? 'banished' : 'graveyard'];
-    for (let i = arr.length - 1; i >= 0 && moved < (args.count || 1); i--) {
-      if (matchesCardFilter(getCard(cardIdFromInstance(arr[i])), filter)) {
-        const [id] = arr.splice(i, 1);
-        pl.hand.push(id);
-        moved++;
-      }
-    }
+const addCardToHandFromDeck = (ctx, args, targets) => runSearch(ctx, 'addCardToHandFromDeck', args, targets);
+const recoverCardsToHand = (ctx, args, targets) => runSearch(ctx, 'recoverCardsToHand', args, targets);
+const searchDeck = (ctx, args, targets) => runSearch(ctx, 'searchDeck', args, targets);
+const searchFromDeck = (ctx, args, targets) => runSearch(ctx, 'searchFromDeck', args, targets);
+const addCardToHandFromGraveyard = (ctx, args, targets) => runSearch(ctx, 'addCardToHandFromGraveyard', args, targets);
+
+const SEARCH_FNS = ['addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck', 'searchFromDeck', 'addCardToHandFromGraveyard'];
+
+// Rulebook doesn't say a search is random — the player picks. Used by support.js/effectEngine.js
+// right before an effect would resolve: if its search step has more legal matches than the
+// player has already picked for, this hands back the options instead of letting the effect grab
+// whichever came first.
+function pendingSearchChoice(state, controllerIndex, effect, targets) {
+  if (targets && targets.length) return null; // already chosen
+  const step = (effect.actions || []).find((s) => SEARCH_FNS.includes(s.fn));
+  if (!step) return null;
+  const { count } = normalizeSearchArgs(step.fn, step.args || {});
+  const candidates = searchCandidates(state, controllerIndex, step.fn, step.args || {});
+  if (candidates.length <= count) return null; // 0 or exactly enough — nothing to choose between
+  return candidates.map((id) => {
+    const card = getCard(cardIdFromInstance(id));
+    return { instanceId: id, cardId: card._id.toString(), name: card.name, image: card.image };
   });
-  log(ctx.state, `${pl.userId} recupera ${moved} carta(s) a la mano.`);
 }
 
 // "No puede ser destruido en batalla": flags are recomputed every board change (see
@@ -195,8 +231,12 @@ module.exports = {
   takeControl,
   addCardToHandFromDeck,
   recoverCardsToHand,
+  searchDeck,
+  searchFromDeck,
+  addCardToHandFromGraveyard,
   preventBattleDestruction,
   cannotBeDestroyedOrExiled: protectFromOpponentEffects,
   cannotBeDestroyedByOpponentEffects: protectFromOpponentEffects,
   grantTimedBuff,
+  pendingSearchChoice,
 };

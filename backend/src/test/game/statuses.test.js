@@ -150,8 +150,15 @@ describe('Decompiling', () => {
   });
 });
 
+// Two of the (few) monsters left with no effectCodes at all: these tests hardcode exact VP/Atk
+// math, so a card that happens to carry its own continuous effect (several PLAIN monsters do,
+// e.g. Capitán Bandido's battle-destruction immunity) would silently throw the numbers off
+// depending on which one the shuffle put first in hand.
+const VANILLA = ['Esqueleto', 'Valkiria'];
+
 async function twoMonsters() {
-  const { state } = await makeMatch(PLAIN);
+  const { state } = await makeMatch(VANILLA, VANILLA);
+  padDecks(state); // several of these tests advance multiple turns' worth of draws
   const [aId, bId] = [state.players[0].hand[0], state.players[1].hand[0]];
   placeMonster(state, aId, 0, { position: 'attack' });
   placeMonster(state, bId, 1, { position: 'attack' });

@@ -70,11 +70,6 @@ function controlsCard(ctx, args) {
   return [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name);
 }
 
-function isEquippedToRace(ctx, args) {
-  const support = ctx.state.players.flatMap((p) => p.field.support).find((s) => s && s.instanceId === ctx.sourceInstanceId);
-  return !!(support && support.equippedTo);
-}
-
 function effectIncludes() {
   return true; // negation-style guard evaluated at activation time by effectEngine
 }
@@ -93,7 +88,6 @@ const registry = {
   firstTimeSummon,
   oncePerCardOnField,
   controlsCard,
-  isEquippedToRace,
   effectIncludes,
   canActivateOnOpponentTurn,
 };
