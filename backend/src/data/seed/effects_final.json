@@ -282,7 +282,7 @@
   {
     "_id": "PEZ_LEVIATAN_DISCARD",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onMonsterDestroyed",
       "args": {
@@ -337,7 +337,7 @@
   {
     "_id": "RAKSHASA_NEGATE",
     "type": "quick",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "conditions": [],
     "cost": {
       "fn": "discardSelf"
@@ -387,7 +387,7 @@
   {
     "_id": "KRAKEN_NEGATE",
     "type": "quick",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -420,7 +420,7 @@
   {
     "_id": "MASTER_DRAGONS_SEARCH",
     "type": "ignition",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "conditions": [],
     "cost": {
       "fn": "discardSelf"
@@ -594,7 +594,7 @@
   {
     "_id": "WASP_SWARM_GRAVE",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -617,7 +617,7 @@
   {
     "_id": "WASP_SWARM_SEARCH",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -2055,7 +2055,7 @@
   {
     "_id": "ACECHADOR_INVISIBLE_ATK_BOOST",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "battleDamageDealt",
       "args": {
@@ -2176,7 +2176,7 @@
   {
     "_id": "LICANTROPO_MAGO_TRANSFORM",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByEffect",
       "args": {
@@ -2205,7 +2205,7 @@
   {
     "_id": "LICANTROPO_MAGO_RETURN_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -2233,7 +2233,7 @@
   {
     "_id": "LICANTROPO_HIELO_DESTROY",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByEffect",
       "args": {
@@ -2254,7 +2254,7 @@
   {
     "_id": "LICANTROPO_HIELO_RETURN_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -2298,7 +2298,7 @@
   {
     "_id": "DAMARCO_DESTROY_TWO",
     "type": "ignition",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "conditions": [],
     "requiresTarget": true,
     "actions": [
@@ -2452,7 +2452,7 @@
   {
     "_id": "HEROE_FENIX_REVIVE",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "sentToGraveyard"
     },
@@ -2564,7 +2564,7 @@
   {
     "_id": "APOYO_HEROE_REVIVE",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation"
     },
@@ -2611,7 +2611,7 @@
   {
     "_id": "TORMENTA_RELAMPAGOS_DESTROY_ALL",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation"
     },
@@ -2933,7 +2933,7 @@
   {
     "_id": "HEROE_ESCARCHA_ONSUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -3129,7 +3129,7 @@
   {
     "_id": "LICANTROPO_GEVAUDAN_ONSUMMON_SEARCH",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon",
       "args": {
@@ -3159,7 +3159,7 @@
   {
     "_id": "LICANTROPO_GEVAUDAN_ENDBATTLE_SWAP",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -3193,7 +3193,7 @@
   {
     "_id": "LICANTROPO_GIGANTE_ONSUMMON_DESTROY",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon",
       "args": {
@@ -3218,7 +3218,7 @@
   {
     "_id": "LICANTROPO_GIGANTE_ENDBATTLE_SWAP",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -3353,7 +3353,7 @@
   {
     "_id": "HEROE_ESPERANZA_ONSUMMON_DESTROY",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -3382,7 +3382,7 @@
   {
     "_id": "HEROE_ESPERANZA_BATTLE_DESTROY",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "involvedInBattle",
       "args": {
@@ -3520,7 +3520,7 @@
   {
     "_id": "CHATARRA_SEARCH",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -3545,7 +3545,7 @@
   {
     "_id": "CHATARRA_GY_GEAR",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -3575,7 +3575,7 @@
   {
     "_id": "SACRIFICIO_INNECESARIO_GAIN_PIXELS",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation"
     },
@@ -3694,7 +3694,7 @@
   {
     "_id": "INFERNO_DRAGON_DESTROY_ON_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -3750,7 +3750,7 @@
   {
     "_id": "ROCO_DRAGON_SEARCH_ON_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -4029,7 +4029,7 @@
   {
     "_id": "HEROE_MONTADO_GY_SEARCH",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "sentToGraveyard"
     },
@@ -4259,7 +4259,7 @@
   {
     "_id": "LICANTROPO_ZOMBIE_SEARCH",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByCardEffect",
       "args": {
@@ -4292,7 +4292,7 @@
   {
     "_id": "LICANTROPO_ZOMBIE_ENDPHASE_RETURN_SUMMON",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -4464,7 +4464,7 @@
   {
     "_id": "HEROE_BERSERKER_MATERIAL_REVIVE",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "usedAsMaterial"
     },
@@ -4562,7 +4562,7 @@
   {
     "_id": "AMOOTH_SUMMON_DISCARD",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -4646,7 +4646,7 @@
   {
     "_id": "SACRIFICIO_MEMORABLE_EXILE_GAIN",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -4801,7 +4801,7 @@
   {
     "_id": "SKY_DRAGON_VIENTO_ONSUMMON_SEARCH",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -5105,7 +5105,7 @@
   {
     "_id": "LICANTROPO_ALFA_CHAIN_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByEffect",
       "args": {
@@ -5131,7 +5131,7 @@
   {
     "_id": "LICANTROPO_ALFA_BOUNCE_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -5160,7 +5160,7 @@
   {
     "_id": "LICANTROPO_CAZADOR_CHAIN_ATK",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByEffect",
       "args": {
@@ -5182,7 +5182,7 @@
   {
     "_id": "LICANTROPO_CAZADOR_BOUNCE_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -5212,7 +5212,7 @@
   {
     "_id": "LICANTROPO_ROUGAROU_NEGATE",
     "type": "quick",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "card_effect_activated",
       "args": {
@@ -5438,7 +5438,7 @@
   {
     "_id": "REFUERZOS_SEARCH",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -5463,7 +5463,7 @@
   {
     "_id": "REFUERZOS_GY_SHUFFLE_DRAW",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -5504,7 +5504,7 @@
   {
     "_id": "RELAMPAGO_DESTROY",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation"
     },
@@ -5687,7 +5687,7 @@
     "source": "authored",
     "_id": "OSCURO_DRAGON_DESTROY_FACEDOWN",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },

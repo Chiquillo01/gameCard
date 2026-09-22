@@ -24,9 +24,12 @@ function noCardsControlled(ctx) {
   return pl.field.monsters.every((m) => !m) && pl.field.support.every((s) => !s);
 }
 
+// A shared budget across a few alternative effects on THIS card ("puedes activar 1 de estos 2
+// efectos... una vez por turno") — `args.name` always names the effect's own card, so the key
+// still needs the source instance or two copies of that card would wrongly share one budget.
 function limitPerTurn(ctx, args) {
   ctx.state.turnLimits = ctx.state.turnLimits || {};
-  const key = `${ctx.turnNumberAtCheck || ctx.state.turnNumber}:${args.name}`;
+  const key = `${ctx.turnNumberAtCheck || ctx.state.turnNumber}:${args.name}:${ctx.sourceInstanceId}`;
   const used = ctx.state.turnLimits[key] || 0;
   return used < (args.max || 1);
 }
@@ -100,9 +103,9 @@ function checkConditions(ctx, conditions = []) {
   });
 }
 
-function markLimitUsed(state, name) {
+function markLimitUsed(state, name, sourceInstanceId) {
   state.turnLimits = state.turnLimits || {};
-  const key = `${state.turnNumber}:${name}`;
+  const key = `${state.turnNumber}:${name}:${sourceInstanceId}`;
   state.turnLimits[key] = (state.turnLimits[key] || 0) + 1;
 }
 

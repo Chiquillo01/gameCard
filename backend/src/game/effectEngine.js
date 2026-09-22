@@ -50,9 +50,11 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
 
   const ctx = makeCtx(state, controllerIndex, effect, sourceInstanceId);
 
+  // "Una vez por turno" limits THIS card's own use of its effect — two copies of the same card
+  // each get their own turn, so the key includes the source instance, not just the effect id.
   if (effect.oncePerTurn) {
     state.turnLimits = state.turnLimits || {};
-    const key = `${state.turnNumber}:${effectId}`;
+    const key = `${state.turnNumber}:${effectId}:${sourceInstanceId}`;
     if (state.turnLimits[key]) return { ok: false, reason: 'once-per-turn' };
   }
 
@@ -72,11 +74,11 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
   resolveActions(ctx, effect, targets);
 
   if (effect.oncePerTurn) {
-    const key = `${state.turnNumber}:${effectId}`;
+    const key = `${state.turnNumber}:${effectId}:${sourceInstanceId}`;
     state.turnLimits[key] = true;
   }
   const cond = (effect.conditions || []).find((c) => c.fn === 'limitPerTurn');
-  if (cond) markLimitUsed(state, cond.args.name);
+  if (cond) markLimitUsed(state, cond.args.name, sourceInstanceId);
 
   recomputeContinuous(state);
   checkWin(state);
@@ -127,7 +129,7 @@ function fireTrigger(state, eventName, eventArgs = {}) {
         if (!checkConditions(ctx, effect.conditions)) return;
         if (effect.oncePerTurn) {
           state.turnLimits = state.turnLimits || {};
-          const key = `${state.turnNumber}:${effectId}`;
+          const key = `${state.turnNumber}:${effectId}:${m.instanceId}`;
           if (state.turnLimits[key]) return;
           state.turnLimits[key] = true;
         }
