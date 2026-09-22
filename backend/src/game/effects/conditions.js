@@ -1,6 +1,7 @@
 const { getCard } = require('../cardIndex');
 const { player, opponentIndex, getFieldMonster, findInstanceLocation } = require('../zones');
 const { cardIdFromInstance } = require('../deckUtils');
+const { matchesFilter } = require('../filters');
 
 function wasOnField(ctx) {
   return true; // by the time a "sent to graveyard" trigger fires we can no longer check the
@@ -68,6 +69,22 @@ function markCardEffectUsed(ctx) {
 }
 
 // "Si controlas a X": a face-up monster or Apoyo of yours with that name.
+// "Si controlas [count] monstruo(s) [filter]" (breed/family/attribute/name) — count defaults to 1.
+function controlsMonster(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const filter = args.filter || { breed: args.breed, family: args.family, attribute: args.attribute, name: args.name };
+  const count = args.count || 1;
+  return pl.field.monsters.filter((m) => m && !m.faceDown && matchesFilter(m, filter)).length >= count;
+}
+
+// "Si controlas [count] monstruo(s) [filter]" EXCLUDING the card whose own effect this is
+// (Avispa gigante's continuous buff: "si controlas OTRO Insecto").
+function controlsAnotherOfFamily(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const filter = { family: args.family };
+  return pl.field.monsters.some((m) => m && m.instanceId !== ctx.sourceInstanceId && !m.faceDown && matchesFilter(m, filter));
+}
+
 function controlsCard(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
   return [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name);
@@ -91,6 +108,8 @@ const registry = {
   firstTimeSummon,
   oncePerCardOnField,
   controlsCard,
+  controlsMonster,
+  controlsAnotherOfFamily,
   effectIncludes,
   canActivateOnOpponentTurn,
 };

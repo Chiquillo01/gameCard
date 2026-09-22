@@ -1,4 +1,7 @@
 const { player, moveToZone, log } = require('../zones');
+const { matchesFilter, matchesCardFilter } = require('../filters');
+const { getCard } = require('../cardIndex');
+const { cardIdFromInstance } = require('../deckUtils');
 
 function payPixels(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
@@ -28,6 +31,35 @@ function discart(ctx, args) {
   const amount = args.amount || 1;
   if (pl.hand.length < amount) return false;
   for (let i = 0; i < amount; i++) moveToZone(ctx.state, pl.hand[0], 'graveyard');
+  return true;
+}
+
+// "Descarta [count] [filter] de tu Mano" (special-summon costs: "descarta un Insecto", "descarta
+// 2 Dragones") — the picked cards if they match, else the first that do.
+function discardFromHand(ctx, args, targets) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const count = args.count || 1;
+  const filter = args.filter || { breed: args.breed, family: args.family, attribute: args.attribute };
+  const pool = pl.hand.filter((id) => args.includeSelf || id !== ctx.sourceInstanceId);
+  const matches = (id) => matchesCardFilter(getCard(cardIdFromInstance(id)), filter);
+  const picked = (targets || []).filter((id) => pool.includes(id) && matches(id));
+  const chosen = picked.length >= count ? picked.slice(0, count) : pool.filter(matches).slice(0, count);
+  if (chosen.length < count) return false;
+  chosen.forEach((id) => moveToZone(ctx.state, id, 'graveyard', ctx.controllerIndex));
+  return true;
+}
+
+// "Sacrifica/sacrificando un monstruo [filter] en tu Campo" (special-summon costs) — the picked
+// one if it matches, else the weakest match.
+function sacrificeFiltered(ctx, args, targets) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const filter = args.filter || { breed: args.breed, family: args.family, attribute: args.attribute };
+  const candidates = pl.field.monsters.filter((m) => m && matchesFilter(m, filter));
+  const picked = (targets || []).length ? candidates.find((m) => targets.includes(m.instanceId)) : null;
+  const weakest = [...candidates].sort((a, b) => (a.baseAtk || 0) - (b.baseAtk || 0))[0];
+  const chosen = picked || weakest;
+  if (!chosen) return false;
+  moveToZone(ctx.state, chosen.instanceId, 'graveyard', ctx.controllerIndex);
   return true;
 }
 
@@ -62,7 +94,7 @@ function destroyOwnMonster(ctx, args, targets) {
   return true;
 }
 
-const registry = { payPixels, payVP, discardSelf, discart, sacrificeControlled, spendCounter, destroyMonster, destroyOwnMonster };
+const registry = { payPixels, payVP, discardSelf, discart, discardFromHand, sacrificeControlled, sacrificeFiltered, spendCounter, destroyMonster, destroyOwnMonster };
 
 // Returns true if the cost could be (and was) paid; false means activation fails and nothing
 // should be mutated beyond what already ran (costs run first, before the effect's actions).

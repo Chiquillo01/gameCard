@@ -1,6 +1,6 @@
 const { createMatchState } = require('./state');
 const { advancePhase, runPhaseEntry } = require('./turns');
-const { normalSummon, compileSummon, decompile } = require('./summon');
+const { normalSummon, specialSummon, compileSummon, decompile } = require('./summon');
 const { canBeNormalSummoned, cannotBeSummoned } = require('./summonRules');
 const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport, activateSetSupport } = require('./support');
@@ -8,6 +8,7 @@ const { declareAttack } = require('./combat');
 const { changePosition } = require('./position');
 const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone } = require('./effectEngine');
 const { passPriority } = require('./chain');
+const { checkConditions } = require('./effects/conditions');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
 
@@ -80,6 +81,9 @@ function applyAction(state, playerIndex, action) {
         position: action.position || 'attack',
         faceDown: !!action.faceDown,
       });
+
+    case 'SPECIAL_SUMMON':
+      return specialSummon(state, playerIndex, action.instanceId);
 
     case 'ACTIVATE_SUPPORT':
       return activateSupport(state, playerIndex, action.instanceId, {
@@ -173,6 +177,20 @@ function viewFor(state, viewerIndex) {
   };
 }
 
+// The card's own summon_rule effect (its "método de invocación especial"), if it has one.
+function specialSummonRuleFor(card) {
+  return (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && (e.actions || []).some((a) => a.fn === 'specialSummon'));
+}
+
+// Whether that rule's CONDITIONS are met right now (cost affordability isn't checked here — the
+// player finds out when they try, same as any other cost).
+function specialSummonAvailable(state, ownerIndex, instanceId, card) {
+  const rule = specialSummonRuleFor(card);
+  if (!rule) return false;
+  const ctx = { state, controllerIndex: ownerIndex, sourceInstanceId: instanceId, effect: rule };
+  return checkConditions(ctx, rule.conditions);
+}
+
 function describeInstance(state, instanceId, ownerIndex, isViewerOwner) {
   const cardId = instanceId.split(':')[1];
   const card = getCard(cardId);
@@ -180,6 +198,7 @@ function describeInstance(state, instanceId, ownerIndex, isViewerOwner) {
   if (card.category === 'monster') {
     base.normalSummonable = canBeNormalSummoned(card);
     base.cannotBeSummoned = cannotBeSummoned(card);
+    base.specialSummonAvailable = isViewerOwner && specialSummonAvailable(state, ownerIndex, instanceId, card);
   }
   if (!isViewerOwner) return base;
   return { ...base, availableEffects: computeAvailableEffects(state, ownerIndex, instanceId, cardId) };

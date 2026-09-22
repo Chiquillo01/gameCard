@@ -1,7 +1,8 @@
 const { getCard } = require('./cardIndex');
 const { player, placeMonster, moveToZone, removeFromZone, releaseMaterials, corrodedSlots, findInstanceLocation, log } = require('./zones');
 const { payCost } = require('./effects/costs');
-const { fireTrigger, fireMaterialTriggers, recomputeContinuous } = require('./effectEngine');
+const { fireTrigger, fireMaterialTriggers, recomputeContinuous, resolveActions } = require('./effectEngine');
+const { checkConditions } = require('./effects/conditions');
 const { getEffect } = require('./cardIndex');
 const { clearStatus, BURN } = require('./statuses');
 const { matchesCardFilter } = require('./filters');
@@ -36,6 +37,48 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
   pl.normalSummonUsed = true;
   log(state, `${pl.userId} invoca a ${card.name}.`);
   announceSummon(state, controllerIndex, instanceId, card, faceDown);
+  recomputeContinuous(state);
+  return { ok: true };
+}
+
+// Rulebook, "Método de invocación": a monster whose invocation method describes a special-summon
+// condition/cost (own effectCodes carry a `summon_rule` effect) — doesn't touch normalSummonUsed,
+// since a special summon is an ADDITIONAL way to bring it out, not a replacement for the turn's
+// Normal Summon.
+function specialSummon(state, controllerIndex, instanceId) {
+  const pl = player(state, controllerIndex);
+  if (!pl.hand.includes(instanceId)) return { ok: false, reason: 'not-in-hand' };
+
+  const cardId = cardIdFromInstance(instanceId);
+  const card = getCard(cardId);
+  if (card.category !== 'monster') return { ok: false, reason: 'not-a-monster' };
+  if (cannotBeSummoned(card)) return { ok: false, reason: 'cannot-be-summoned' };
+
+  const rule = (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && (e.actions || []).some((a) => a.fn === 'specialSummon'));
+  if (!rule) return { ok: false, reason: 'no-special-summon-method' };
+
+  const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect: rule };
+  if (!checkConditions(ctx, rule.conditions)) return { ok: false, reason: 'special-summon-condition-not-met' };
+  if (rule.oncePerTurn) {
+    state.turnLimits = state.turnLimits || {};
+    const key = `${state.turnNumber}:${rule._id}:${instanceId}`;
+    if (state.turnLimits[key]) return { ok: false, reason: 'once-per-turn' };
+    state.turnLimits[key] = true;
+  }
+  if (rule.cost) {
+    const paid = payCost(ctx, rule.cost, []);
+    if (!paid) return { ok: false, reason: 'cannot-pay-special-summon-cost' };
+  }
+
+  // The rule's own actions place it (the `specialSummon` action puts the source on the field,
+  // attack position) — reusing the same dispatch every other effect resolves through.
+  resolveActions(ctx, rule, []);
+  if (!findInstanceLocation(state, instanceId) || findInstanceLocation(state, instanceId).zone !== 'field:monster') {
+    return { ok: false, reason: 'no-field-space' };
+  }
+
+  log(state, `${pl.userId} invoca especial a ${card.name}.`);
+  announceSummon(state, controllerIndex, instanceId, card, false);
   recomputeContinuous(state);
   return { ok: true };
 }
@@ -162,4 +205,4 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   return { ok: true };
 }
 
-module.exports = { normalSummon, compileSummon, decompile };
+module.exports = { normalSummon, specialSummon, compileSummon, decompile };

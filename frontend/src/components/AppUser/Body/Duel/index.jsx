@@ -225,13 +225,20 @@ const DuelPage = () => {
       return;
     }
 
-    // Rulebook: a monster whose invocation method says anything can't be Normal Summoned.
+    // Rulebook: a monster whose invocation method says "Solo puede..." can only be special
+    // summoned — with no Normal Summon option at all, its own card click just does that directly.
     if (card.normalSummonable === false) {
-      showToast('error', humanizeReason(card.cannotBeSummoned ? 'cannot-be-summoned' : 'special-summon-only'));
+      if (card.specialSummonAvailable) {
+        act({ type: 'SPECIAL_SUMMON', instanceId: card.instanceId });
+      } else {
+        showToast('error', humanizeReason(card.cannotBeSummoned ? 'cannot-be-summoned' : 'special-summon-only'));
+      }
       return;
     }
 
-    setPendingSummon(card.instanceId);
+    // With both ways open (e.g. Avispa gigante), ask which one first — the Normal Summon slot for
+    // the turn is only checked once that's the one picked.
+    setPendingSummon({ instanceId: card.instanceId, stage: card.specialSummonAvailable ? 'method' : 'position' });
   };
 
   const toggleFusionMaterial = (instanceId) => {
@@ -246,7 +253,13 @@ const DuelPage = () => {
 
   const confirmSummon = (position, faceDown) => {
     if (!pendingSummon) return;
-    act({ type: 'NORMAL_SUMMON', instanceId: pendingSummon, position, faceDown });
+    act({ type: 'NORMAL_SUMMON', instanceId: pendingSummon.instanceId, position, faceDown });
+    setPendingSummon(null);
+  };
+
+  const confirmSpecialSummon = () => {
+    if (!pendingSummon) return;
+    act({ type: 'SPECIAL_SUMMON', instanceId: pendingSummon.instanceId });
     setPendingSummon(null);
   };
 
@@ -404,9 +417,20 @@ const DuelPage = () => {
         options: [{ label: 'Confirmar compilación', variant: 'confirm', onClick: confirmFusion }, cancel],
       };
     }
+    if (pendingSummon && pendingSummon.stage === 'method') {
+      return {
+        card: cardInPlay(pendingSummon.instanceId),
+        prompt: '¿Invocas de forma normal o especial?',
+        options: [
+          { label: 'Invocar normal', onClick: () => setPendingSummon({ ...pendingSummon, stage: 'position' }) },
+          { label: 'Invocar especial', variant: 'confirm', onClick: confirmSpecialSummon },
+          cancel,
+        ],
+      };
+    }
     if (pendingSummon) {
       return {
-        card: cardInPlay(pendingSummon),
+        card: cardInPlay(pendingSummon.instanceId),
         prompt: '¿Cómo invocas esta carta?',
         options: [
           { label: 'Ataque', onClick: () => confirmSummon('attack', false) },
@@ -855,6 +879,9 @@ function humanizeReason(reason) {
     'trigger-choice-pending': 'Primero tienes que elegir la carta para ese efecto.',
     'not-your-choice': 'Esa elección le corresponde al rival.',
     'no-pending-choice': 'No hay ninguna elección pendiente.',
+    'no-special-summon-method': 'Esa carta no tiene un método de invocación especial.',
+    'special-summon-condition-not-met': 'No cumples la condición para invocarla de forma especial.',
+    'cannot-pay-special-summon-cost': 'No puedes pagar el coste de la invocación especial.',
     'invalid-equip-target': 'Ese monstruo no puede llevar este equipo.',
     frozen: 'Ese monstruo está congelado y no puede activar efectos.',
     'not-compiled': 'Ese monstruo no es un monstruo compilado.',

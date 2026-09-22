@@ -4080,9 +4080,10 @@
     "requiresTarget": false,
     "actions": [
       {
-        "fn": "setSummonCost",
+        "fn": "specialSummon",
         "args": {
-          "amount": 0
+          "card": "self",
+          "zone": "field"
         }
       }
     ]
@@ -5972,5 +5973,575 @@
         "args": {}
       }
     ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "AVISPA_GIGANTE_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "family": "Insecto",
+        "count": 1
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "attribute": "Agua",
+          "count": 2
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "CANGREJO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "MURCIELAGO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "payVP",
+      "args": {
+        "amount": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Hada",
+          "count": 1
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "PEGASO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DRAGON_0_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "breed": "Dragón",
+        "count": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DRAGON_1_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "breed": "Dragón",
+        "count": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DRAGON_2_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "breed": "Dragón",
+        "count": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DRAGON_3_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "breed": "Dragón",
+        "count": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "name": "Matón",
+          "count": 3
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "CAPITAN_BANDIDO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Héroe"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "HEROE_SILENCIOSO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Héroe"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "HEROE_CORRUPTO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Enano Constructor"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "GOLPEADOR_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Enano Constructor"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "MACHACADOR_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Goblin",
+          "count": 2
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DUENDE_ASTUTO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "FIRE_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Fuego"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "LIGHTNING_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Electricidad"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "STONE_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Tierra"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "CLOUD_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Viento"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "FROST_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Hielo"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Demonio"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "REY_DEMONIO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "BALOR_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Fuego"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "VAMPIRO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "payVP",
+      "args": {
+        "amount": 5
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Súcubo"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "INCUBO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Íncubo"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "SUCUBO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "VAMPIRESA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "payVP",
+      "args": {
+        "amount": 4
+      }
+    }
   }
 ]

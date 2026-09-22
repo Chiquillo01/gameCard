@@ -162,7 +162,8 @@
     "state": 4,
     "number": 7,
     "effectCodes": [
-      "AVISPA_GIGANTE_MATERIAL_PIXEL"
+      "AVISPA_GIGANTE_MATERIAL_PIXEL",
+      "AVISPA_GIGANTE_SPECIAL_SUMMON"
     ]
   },
   {
@@ -207,7 +208,8 @@
     "state": 4,
     "number": 9,
     "effectCodes": [
-      "CRAB_WATER_PROTECTION"
+      "CRAB_WATER_PROTECTION",
+      "CANGREJO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -272,7 +274,8 @@
     "state": 4,
     "number": 12,
     "effectCodes": [
-      "MURCIELAGO_GY_SEARCH"
+      "MURCIELAGO_GY_SEARCH",
+      "MURCIELAGO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -527,7 +530,8 @@
     "number": 22,
     "effectCodes": [
       "PEGASO",
-      "PEGASO_MATERIAL_DRAW"
+      "PEGASO_MATERIAL_DRAW",
+      "PEGASO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -826,7 +830,8 @@
     "state": 3,
     "number": 34,
     "effectCodes": [
-      "INFERNO_DRAGON_DESTROY_ON_SUMMON"
+      "INFERNO_DRAGON_DESTROY_ON_SUMMON",
+      "DRAGON_0_SPECIAL_SUMMON"
     ]
   },
   {
@@ -848,7 +853,8 @@
     "state": 3,
     "number": 35,
     "effectCodes": [
-      "OSCURO_DRAGON_DESTROY_FACEDOWN"
+      "OSCURO_DRAGON_DESTROY_FACEDOWN",
+      "DRAGON_1_SPECIAL_SUMMON"
     ]
   },
   {
@@ -891,7 +897,8 @@
     "state": 3,
     "number": 37,
     "effectCodes": [
-      "ROCO_DRAGON_SEARCH_ON_SUMMON"
+      "ROCO_DRAGON_SEARCH_ON_SUMMON",
+      "DRAGON_2_SPECIAL_SUMMON"
     ]
   },
   {
@@ -934,7 +941,8 @@
     "state": 3,
     "number": 39,
     "effectCodes": [
-      "SKY_DRAGON_VIENTO_ONSUMMON_SEARCH"
+      "SKY_DRAGON_VIENTO_ONSUMMON_SEARCH",
+      "DRAGON_3_SPECIAL_SUMMON"
     ]
   },
   {
@@ -1089,7 +1097,8 @@
     "effectCodes": [
       "CAPITAN_BANDIDO_STEAL",
       "CAPITAN_BANDIDO_BATTLE_IMMUNE",
-      "CAPITAN_BANDIDO_MATON_BUFF"
+      "CAPITAN_BANDIDO_MATON_BUFF",
+      "CAPITAN_BANDIDO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -1462,7 +1471,9 @@
     "invocationText": "Si controlas un \"Héroe\", puede ser invocada de forma especial.",
     "state": 4,
     "number": 57,
-    "effectCodes": []
+    "effectCodes": [
+      "HEROE_SILENCIOSO_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Héroe Montado",
@@ -1593,7 +1604,8 @@
     "state": 3,
     "number": 63,
     "effectCodes": [
-      "HEROE_CORRUPTO_SELF_DEBUFF"
+      "HEROE_CORRUPTO_SELF_DEBUFF",
+      "HEROE_CORRUPTO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -1637,7 +1649,8 @@
     "state": 3,
     "number": 65,
     "effectCodes": [
-      "GOLPEADOR_ONSUMMON_GEARS"
+      "GOLPEADOR_ONSUMMON_GEARS",
+      "GOLPEADOR_SPECIAL_SUMMON"
     ]
   },
   {
@@ -1659,7 +1672,8 @@
     "state": 3,
     "number": 66,
     "effectCodes": [
-      "MACHACADOR_ONSUMMON_DESTROY"
+      "MACHACADOR_ONSUMMON_DESTROY",
+      "MACHACADOR_SPECIAL_SUMMON"
     ]
   },
   {
@@ -1681,7 +1695,8 @@
     "state": 3,
     "number": 67,
     "effectCodes": [
-      "TRASGO_ASTUTO_SACRIFICE_SUMMON"
+      "TRASGO_ASTUTO_SACRIFICE_SUMMON",
+      "DUENDE_ASTUTO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -2219,7 +2234,10 @@
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Fuego en tu Campo.",
     "state": 4,
-    "number": 91
+    "number": 91,
+    "effectCodes": [
+      "FIRE_GIANT_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Lightning Giant",
@@ -2238,7 +2256,10 @@
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Electricidad en tu Campo.",
     "state": 4,
-    "number": 92
+    "number": 92,
+    "effectCodes": [
+      "LIGHTNING_GIANT_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Stone Giant",
@@ -2257,7 +2278,10 @@
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Tierra en tu Campo.",
     "state": 4,
-    "number": 93
+    "number": 93,
+    "effectCodes": [
+      "STONE_GIANT_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Cloud Giant",
@@ -2276,7 +2300,10 @@
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Viento en tu Campo.",
     "state": 4,
-    "number": 94
+    "number": 94,
+    "effectCodes": [
+      "CLOUD_GIANT_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Frost Giant",
@@ -2295,7 +2322,10 @@
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Hielo en tu Campo.",
     "state": 4,
-    "number": 95
+    "number": 95,
+    "effectCodes": [
+      "FROST_GIANT_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Rey Demonio",
@@ -2317,7 +2347,8 @@
     "number": 96,
     "effectCodes": [
       "REY_DEMONIO_DESTROY_DEMON",
-      "REY_DEMONIO_PROTECTION"
+      "REY_DEMONIO_PROTECTION",
+      "REY_DEMONIO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -2743,7 +2774,10 @@
     "effect": "Monstruo sin efecto.",
     "invocationText": "Si tu oponente controla más monstruos que tu, Invocalo de forma especial.",
     "state": 4,
-    "number": 114
+    "number": 114,
+    "effectCodes": [
+      "COFRE_ESQUELETICO_FREE_SUMMON"
+    ]
   },
   {
     "name": "Homúnculo",
@@ -2950,7 +2984,8 @@
     "effectCodes": [
       "BALOR_BURN",
       "BALOR_EXTRA_ATTACK",
-      "BALOR_INFLICT_BURN"
+      "BALOR_INFLICT_BURN",
+      "BALOR_SPECIAL_SUMMON"
     ]
   },
   {
@@ -3085,7 +3120,8 @@
     "number": 128,
     "effectCodes": [
       "VAMPIRO_GENERATE_PIXEL",
-      "VAMPIRO_DESTROY_MODIFIED_ATK"
+      "VAMPIRO_DESTROY_MODIFIED_ATK",
+      "VAMPIRO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -3225,7 +3261,8 @@
     "number": 134,
     "effectCodes": [
       "INCUBO_COLUMN_DEBUFF",
-      "INCUBO_RELOCATE"
+      "INCUBO_RELOCATE",
+      "INCUBO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -3248,7 +3285,8 @@
     "number": 135,
     "effectCodes": [
       "SUCUBO_COLUMN_DEBUFF",
-      "SUCUBO_RELOCATE"
+      "SUCUBO_RELOCATE",
+      "SUCUBO_SPECIAL_SUMMON"
     ]
   },
   {
@@ -3410,7 +3448,8 @@
     "state": 3,
     "number": 141,
     "effectCodes": [
-      "VAMPIRESA_CHOICE"
+      "VAMPIRESA_CHOICE",
+      "VAMPIRESA_SPECIAL_SUMMON"
     ]
   },
   {
