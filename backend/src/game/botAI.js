@@ -11,6 +11,15 @@ function runBotTurn(state, botIndex) {
   while (state.status === 'active' && guard < 50) {
     guard++;
 
+    // An automatic trigger on one of the bot's own cards needs a pick (e.g. Avispa de Obsidiana's
+    // on-summon search) — no strategy yet, it just takes the first option so its turn can continue.
+    if (state.pendingTriggerChoices && state.pendingTriggerChoices.length) {
+      const pending = state.pendingTriggerChoices[0];
+      if (pending.controllerIndex !== botIndex) break; // waiting on the human
+      applyAction(state, botIndex, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [pending.options[0].instanceId] });
+      continue;
+    }
+
     // Rulebook, "Apilar": while a Pila is open, only the player holding priority can act. The bot
     // has no chain strategy yet (v1) — it always passes, which either hands priority back to the
     // human or, if they'd already passed, resolves the chain and lets the loop carry on below.

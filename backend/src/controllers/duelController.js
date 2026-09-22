@@ -33,9 +33,11 @@ function maybeRunBot(state) {
   const botIndex = state.players.findIndex((p) => p.userId === 'BOT');
   if (botIndex === -1) return;
   // Either it's genuinely the bot's turn, or the human just activated something during their own
-  // turn and opened a Pila the bot now has to respond to (or pass) before anything can continue.
+  // turn and opened a Pila the bot now has to respond to (or pass), or a trigger on the bot's own
+  // card needs a pick — any of which the bot must resolve before anything else can continue.
   const botHasChainPriority = state.chain.length > 0 && state.priorityPlayer === botIndex;
-  if (state.turnPlayer !== botIndex && !botHasChainPriority) return;
+  const botHasPendingChoice = state.pendingTriggerChoices && state.pendingTriggerChoices[0] && state.pendingTriggerChoices[0].controllerIndex === botIndex;
+  if (state.turnPlayer !== botIndex && !botHasChainPriority && !botHasPendingChoice) return;
   runBotTurn(state, botIndex);
 }
 

@@ -35,6 +35,9 @@ function createMatchState({ matchId, playerA, deckA, playerB, deckB, vsBot = fal
     priorityPlayer: 0,
     chain: [],
     pendingActivation: null, // { effectId, sourceInstanceId, controllerIndex } awaiting target selection
+    // Automatic triggers with an ambiguous search (more than one legal card) wait here for the
+    // player's pick instead of grabbing one at random — see effectEngine.fireTrigger.
+    pendingTriggerChoices: [],
     winnerIndex: null,
     log: [],
     players: [makePlayer(playerA, deckA, 0), makePlayer(playerB, deckB, 1)],

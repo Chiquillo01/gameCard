@@ -158,6 +158,10 @@ describe('Nido de Avispas (first "Avispa" summoned while it is on the field)', (
     const { state, inHand } = await nidoMatch();
     const handBefore = state.players[0].hand.length;
     expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Avispa gigante'), position: 'defense' }).ok).toBe(true);
+    // Two Avispas are still in the deck, so the search waits on a pick instead of grabbing one.
+    expect(state.pendingTriggerChoices).toHaveLength(1);
+    const picked = state.pendingTriggerChoices[0].options[0].instanceId;
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [picked] })).toMatchObject({ ok: true });
     // -1 summoned, +1 searched: one of the two Avispas left the deck.
     expect(state.players[0].hand.length).toBe(handBefore);
     expect(state.players[0].deck.length).toBe(1);

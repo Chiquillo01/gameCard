@@ -141,6 +141,19 @@ function fireTrigger(state, eventName, eventArgs = {}) {
           state.turnLimits[key] = true;
         }
         if ((effect.conditions || []).some((cnd) => cnd.fn === 'oncePerCardOnField')) markCardEffectUsed(ctx);
+
+        // A search inside an automatic trigger (Avispa de Obsidiana's "En invocación: añade a tu
+        // Mano un monstruo Avispa") is still the player's pick — with more than one legal match,
+        // defer it instead of grabbing one at random; RESOLVE_TRIGGER_CHOICE finishes it once the
+        // player answers.
+        const searchOptions = pendingSearchChoice(state, controllerIndex, effect, []);
+        if (searchOptions) {
+          state.pendingTriggerChoices = state.pendingTriggerChoices || [];
+          state.pendingTriggerChoices.push({ controllerIndex, effectId, sourceInstanceId: m.instanceId, event: eventArgs, options: searchOptions });
+          log(state, `${card.name} espera que elijas para su efecto.`);
+          return;
+        }
+
         resolveActions(ctx, effect, []);
         log(state, `Efecto disparado: ${effectId} (${card.name}).`);
       });
@@ -148,6 +161,23 @@ function fireTrigger(state, eventName, eventArgs = {}) {
   });
   recomputeContinuous(state);
   checkWin(state);
+}
+
+// Answers the oldest deferred trigger search (see fireTrigger above) with the player's pick.
+function resolveTriggerChoice(state, controllerIndex, targets) {
+  const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
+  if (!pending) return { ok: false, reason: 'no-pending-choice' };
+  if (pending.controllerIndex !== controllerIndex) return { ok: false, reason: 'not-your-choice' };
+  if (!targets || !targets.length) return { ok: false, reason: 'choose-target', options: pending.options };
+
+  state.pendingTriggerChoices.shift();
+  const effect = getEffect(pending.effectId);
+  const ctx = { ...makeCtx(state, pending.controllerIndex, effect, pending.sourceInstanceId), event: pending.event };
+  resolveActions(ctx, effect, targets);
+  log(state, `Efecto disparado: ${pending.effectId} (${getCard(cardIdFromInstance(pending.sourceInstanceId)).name}).`);
+  recomputeContinuous(state);
+  checkWin(state);
+  return { ok: true };
 }
 
 // Continuous effects aren't stored as applied deltas — every mutation we recompute them fresh
@@ -255,4 +285,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { activateEffect, resolveActions, fireTrigger, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone };
+module.exports = { activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone };

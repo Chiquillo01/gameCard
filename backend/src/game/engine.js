@@ -6,7 +6,7 @@ const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport, activateSetSupport } = require('./support');
 const { declareAttack } = require('./combat');
 const { changePosition } = require('./position');
-const { activateEffect, requiredZoneFor, locationIsInZone } = require('./effectEngine');
+const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone } = require('./effectEngine');
 const { passPriority } = require('./chain');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
@@ -57,10 +57,17 @@ const CHAIN_RESPONSE_TYPES = ['ACTIVATE_SUPPORT', 'ACTIVATE_EFFECT', 'PASS_CHAIN
 function applyAction(state, playerIndex, action) {
   if (state.status !== 'active') return { ok: false, reason: 'match-finished' };
 
-  if (action.type !== 'SURRENDER' && state.chain.length > 0) {
+  if (action.type === 'SURRENDER') {
+    // always allowed, regardless of chain/pending-choice state
+  } else if (state.pendingTriggerChoices && state.pendingTriggerChoices.length > 0) {
+    // An automatic trigger (Avispa de Obsidiana's on-summon search, say) is waiting on the
+    // player's pick — nothing else can happen until they answer.
+    if (action.type !== 'RESOLVE_TRIGGER_CHOICE') return { ok: false, reason: 'trigger-choice-pending' };
+    if (playerIndex !== state.pendingTriggerChoices[0].controllerIndex) return { ok: false, reason: 'not-your-choice' };
+  } else if (state.chain.length > 0) {
     if (!CHAIN_RESPONSE_TYPES.includes(action.type)) return { ok: false, reason: 'chain-open' };
     if (playerIndex !== state.priorityPlayer) return { ok: false, reason: 'not-your-priority' };
-  } else if (action.type !== 'SURRENDER' && playerIndex !== state.turnPlayer && !['ACTIVATE_EFFECT'].includes(action.type)) {
+  } else if (playerIndex !== state.turnPlayer && !['ACTIVATE_EFFECT'].includes(action.type)) {
     return { ok: false, reason: 'not-your-turn' };
   }
 
@@ -100,6 +107,9 @@ function applyAction(state, playerIndex, action) {
 
     case 'PASS_CHAIN':
       return passPriority(state, playerIndex);
+
+    case 'RESOLVE_TRIGGER_CHOICE':
+      return resolveTriggerChoice(state, playerIndex, action.targets || []);
 
     case 'SURRENDER': {
       state.winnerIndex = opponentIndex(playerIndex);
@@ -154,6 +164,11 @@ function viewFor(state, viewerIndex) {
           priorityPlayer: state.priorityPlayer,
           links: state.chain.map((l) => ({ controllerIndex: l.controllerIndex, instanceId: l.sourceInstanceId, cardName: l.cardName, speed: l.speed })),
         }
+      : null,
+    // An automatic trigger's search (Avispa de Obsidiana, Nido de Avispas...) waiting on this
+    // viewer's pick — null for the other player, who has nothing to do about it.
+    pendingTriggerChoice: state.pendingTriggerChoices && state.pendingTriggerChoices[0] && state.pendingTriggerChoices[0].controllerIndex === viewerIndex
+      ? { options: state.pendingTriggerChoices[0].options }
       : null,
   };
 }

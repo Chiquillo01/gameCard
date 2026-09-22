@@ -131,3 +131,38 @@ describe('Activating a card opens a chain instead of resolving right away', () =
     expect(state.chain).toEqual([]);
   });
 });
+
+describe('Automatic triggers with a search also wait on the player, not random', () => {
+  it('Avispa de Obsidiana\'s on-summon search defers to a pick with more than one match', async () => {
+    const { state, inHand } = await makeMatch(['Avispa de Obsidiana', 'Avispa gigante', 'Avispa Mutante', 'Kraken']);
+    const { getCard } = require('../../game/cardIndex');
+    // Two Avispas go back to the deck so there's something ambiguous to search for.
+    ['Avispa gigante', 'Avispa Mutante'].forEach((name) => {
+      const id = inHand(name);
+      state.players[0].hand = state.players[0].hand.filter((i) => i !== id);
+      state.players[0].deck.push(id);
+    });
+    toMain1(state);
+    const id = inHand('Avispa de Obsidiana');
+
+    const res = applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: id, position: 'attack' });
+    expect(res.ok).toBe(true);
+    // The search hasn't happened yet — nothing was grabbed at random.
+    expect(state.players[0].deck.length).toBe(2);
+
+    const view = viewFor(state, 0);
+    expect(view.pendingTriggerChoice.options).toHaveLength(2);
+    expect(new Set(view.pendingTriggerChoice.options.map((o) => o.name))).toEqual(new Set(['Avispa gigante', 'Avispa Mutante']));
+
+    // Everything else is blocked meanwhile.
+    expect(applyAction(state, 0, { type: 'ADVANCE_PHASE' })).toMatchObject({ ok: false, reason: 'trigger-choice-pending' });
+
+    const chosenName = view.pendingTriggerChoice.options[0].name;
+    const chosenId = state.players[0].deck.find((cid) => getCard(cid.split(':')[1]).name === chosenName);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [chosenId] })).toMatchObject({ ok: true });
+
+    expect(state.players[0].hand).toContain(chosenId);
+    expect(state.players[0].deck.length).toBe(1);
+    expect(viewFor(state, 0).pendingTriggerChoice).toBeNull();
+  });
+});

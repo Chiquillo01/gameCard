@@ -88,10 +88,20 @@ const DuelPage = () => {
     getUserDecks().then(setDecks);
   }, [matchId]);
 
+  // A view update can itself carry a pending choice — an automatic trigger's search (Avispa de
+  // Obsidiana, Nido de Avispas...) waiting on this viewer's pick, not just a failed action's
+  // choose-target. Reuses the same picker modal as ACTIVATE_SUPPORT/ACTIVATE_EFFECT's.
+  const applyView = (data) => {
+    setView(data);
+    if (data && data.pendingTriggerChoice) {
+      setPendingChoice({ action: { type: 'RESOLVE_TRIGGER_CHOICE' }, options: data.pendingTriggerChoice.options });
+    }
+  };
+
   const refreshState = useCallback(async (id) => {
     try {
       const data = await getDuelState(id);
-      setView(data);
+      applyView(data);
     } catch (e) {
       showToast('error', 'No se pudo cargar la partida.');
     }
@@ -105,7 +115,7 @@ const DuelPage = () => {
     socketRef.current = socket;
     socket.emit('auth', getUserToken());
     socket.on('duel:state', (data) => {
-      if (data.id === matchId) setView(data);
+      if (data.id === matchId) applyView(data);
     });
 
     return () => socket.disconnect();
@@ -128,7 +138,7 @@ const DuelPage = () => {
     if (!matchId) return;
     try {
       const result = await sendDuelAction(matchId, action);
-      setView(result.state);
+      applyView(result.state); // may itself open the picker if the new state has a trigger waiting
       if (!result.ok) {
         // Not a rule violation — the server needs the player to pick which of these it means.
         if (result.reason === 'choose-target' && result.options && result.options.length) {
@@ -136,7 +146,7 @@ const DuelPage = () => {
         } else {
           showToast('error', humanizeReason(result.reason));
         }
-      } else {
+      } else if (!(result.state && result.state.pendingTriggerChoice)) {
         setPendingChoice(null);
       }
       return result;
@@ -842,6 +852,9 @@ function humanizeReason(reason) {
     'chain-open': 'Hay una cadena abierta: primero hay que resolverla.',
     'not-your-priority': 'Ahora mismo le toca responder al rival.',
     'no-chain': 'No hay ninguna cadena que pasar.',
+    'trigger-choice-pending': 'Primero tienes que elegir la carta para ese efecto.',
+    'not-your-choice': 'Esa elección le corresponde al rival.',
+    'no-pending-choice': 'No hay ninguna elección pendiente.',
     'invalid-equip-target': 'Ese monstruo no puede llevar este equipo.',
     frozen: 'Ese monstruo está congelado y no puede activar efectos.',
     'not-compiled': 'Ese monstruo no es un monstruo compilado.',
