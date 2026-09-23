@@ -147,11 +147,12 @@ function fireHandTrigger(state, eventName, instanceId, controllerIndex) {
 
 // True when `loc` is a zone the controller actually owns and that satisfies `req.zone` (a
 // string or array of "hand" | "field" | "graveyard"; materials with no `zone` default to
-// "hand"/"field" — a classic Compilación draws from either, same as the UI lets the player pick
-// a material from their hand or their board — unless the card's own recipe names a zone).
+// "field" only — Compilación is meant to be harder to pull off than just discarding cards from
+// hand — unless the card's own recipe names a different zone, e.g. Héroe Fénix's "en Campo" or
+// Gigante Elemental's "de tu Campo o Cementerio").
 function materialLocationSatisfies(loc, controllerIndex, req) {
   if (!loc || loc.ownerIndex !== controllerIndex) return false;
-  const allowed = req.zone ? (Array.isArray(req.zone) ? req.zone : [req.zone]) : ['hand', 'field'];
+  const allowed = req.zone ? (Array.isArray(req.zone) ? req.zone : [req.zone]) : ['field'];
   return allowed.some((z) => {
     if (z === 'hand') return loc.zone === 'hand';
     if (z === 'graveyard') return loc.zone === 'graveyard';

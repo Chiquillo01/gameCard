@@ -8,6 +8,7 @@ const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { passChain } = require('./chainHelpers');
 const { getCard } = require('../../game/cardIndex');
+const { placeMonster } = require('../../game/zones');
 
 beforeAll(async () => {
   await connectDB();
@@ -218,7 +219,13 @@ describe('Effect values follow the card text', () => {
     state.players[0].pixelcoins = 0;
     const fusion = inHand('Ciempiés Gigante');
     const obsidiana = inHand('Avispa de Obsidiana');
-    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: fusion, materialInstanceIds: [inHand('Avispa gigante'), inHand('Avispa Mutante')] }).ok).toBe(true);
+    // Rulebook: Compilación materials come from the field, not hand, when the recipe names no zone.
+    const gigante = inHand('Avispa gigante');
+    const mutante = inHand('Avispa Mutante');
+    placeMonster(state, gigante, 0, { position: 'attack' });
+    placeMonster(state, mutante, 0, { position: 'attack' });
+    state.players[0].hand = state.players[0].hand.filter((id) => id !== gigante && id !== mutante);
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: fusion, materialInstanceIds: [gigante, mutante] }).ok).toBe(true);
     expect(state.players[0].pixelcoins).toBe(1);
     expect(monsterOf(state, 0, fusion).tempBuff.atk).toBe(0);
 

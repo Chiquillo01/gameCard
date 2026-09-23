@@ -69,6 +69,9 @@ async function compiled() {
   padDecks(ctx.state);
   const fusionId = ctx.inHand('Ciempiés Gigante');
   const mats = [ctx.inHand('Avispa gigante'), ctx.inHand('Avispa Mutante')];
+  // Rulebook: Compilación materials come from the field, not hand, when the recipe names no zone.
+  mats.forEach((id) => placeMonster(ctx.state, id, 0, { position: 'attack' }));
+  ctx.state.players[0].hand = ctx.state.players[0].hand.filter((id) => !mats.includes(id));
   const res = applyAction(ctx.state, 0, { type: 'COMPILE_SUMMON', instanceId: fusionId, materialInstanceIds: mats });
   expect(res.ok).toBe(true);
   return { ...ctx, fusionId, mats };
@@ -99,15 +102,27 @@ describe('Compiled monsters keep their materials', () => {
 
   it('refuses to compile when there is no free zone, without consuming any material', async () => {
     const { state, inHand } = await makeMatch(COMPILE_NAMES);
-    const filler = [...state.players[1].hand, ...state.players[1].deck].slice(0, 5);
+    const gigante = inHand('Avispa gigante');
+    const mutante = inHand('Avispa Mutante');
+    const filler = [...state.players[1].hand, ...state.players[1].deck].slice(0, 3);
     filler.forEach((id) => placeMonster(state, id, 0, { position: 'attack' }));
+    placeMonster(state, gigante, 0, { position: 'attack', slot: 3 });
+    placeMonster(state, mutante, 0, { position: 'attack', slot: 4 });
+    state.players[0].hand = state.players[0].hand.filter((id) => id !== gigante && id !== mutante);
+    // Corroded, so the zones the materials are about to vacate still aren't legal to land in.
+    state.players[0].corrosion = [
+      { zone: 'monsters', slot: 3 },
+      { zone: 'monsters', slot: 4 },
+    ];
+
     const res = applyAction(state, 0, {
       type: 'COMPILE_SUMMON',
       instanceId: inHand('Ciempiés Gigante'),
-      materialInstanceIds: [inHand('Avispa gigante'), inHand('Avispa Mutante')],
+      materialInstanceIds: [gigante, mutante],
     });
     expect(res).toMatchObject({ ok: false, reason: 'no-field-space' });
-    expect(state.players[0].hand).toContain(inHand('Avispa gigante'));
+    expect(state.players[0].field.monsters[3]).toMatchObject({ instanceId: gigante });
+    expect(state.players[0].field.monsters[4]).toMatchObject({ instanceId: mutante });
   });
 });
 

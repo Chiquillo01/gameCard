@@ -114,7 +114,10 @@ describe('Board placement is the player\'s own choice', () => {
     const mat1Card = await Card.findOne({ name: 'Avispa gigante' }).lean();
     const mat1 = `0:${mat1Card._id}:m1`;
     placeMonster(state, mat1, 0, { position: 'attack', slot: 4 }); // the only slot this Compilación will use is the one freed by mat1
+    // Rulebook: Compilación materials come from the field, not hand, when the recipe names no zone.
     const mat2 = inHand('Avispa Mutante');
+    placeMonster(state, mat2, 0, { position: 'attack', slot: 0 });
+    state.players[0].hand = state.players[0].hand.filter((id) => id !== mat2);
 
     const res = applyAction(state, 0, {
       type: 'COMPILE_SUMMON',

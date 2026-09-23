@@ -219,6 +219,15 @@ const DuelPage = () => {
 
     if (fusion) {
       if (card.instanceId === fusion.instanceId || card.category !== 'monster') return;
+      // Rulebook: Compilación materials come from the field, not hand, unless the card's own
+      // recipe names "hand" for a specific requirement — check the real data instead of assuming.
+      const fusionCardData = cardsById[cardInPlay(fusion.instanceId)?.cardId];
+      const materialReqs = fusionCardData?.activationCost?.args?.materials || [];
+      const allowsHand = materialReqs.some((m) => (m.zone ? [].concat(m.zone).includes('hand') : false));
+      if (!allowsHand) {
+        showToast('info', 'Esta Compilación solo acepta materiales que ya estén en tu Campo.');
+        return;
+      }
       toggleFusionMaterial(card.instanceId);
       return;
     }
@@ -471,7 +480,7 @@ const DuelPage = () => {
       return {
         card: fusionCard,
         prompt: 'Compilar',
-        hint: `${requirement ? `${requirement} — ` : ''}Selecciona los materiales en tu mano o campo (${fusion.materials.size} elegidos)`,
+        hint: `${requirement ? `${requirement} — ` : ''}Selecciona los materiales en tu Campo (${fusion.materials.size} elegidos)`,
         options: [{ label: 'Confirmar compilación', variant: 'confirm', onClick: confirmFusion }, cancel],
       };
     }

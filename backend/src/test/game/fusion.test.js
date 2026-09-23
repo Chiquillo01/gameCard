@@ -59,7 +59,34 @@ async function makeMatchWithHand(names) {
 }
 
 describe('Compilación (fusion) summon', () => {
-  it('consumes the required materials from hand and puts the fusion monster on the field', async () => {
+  it('consumes materials from the field (not hand) and puts the fusion monster on the field', async () => {
+    const names = ['Ciempiés Gigante', 'Avispa gigante', 'Avispa Mutante'];
+    const { state, byName } = await makeMatchWithHand(names);
+
+    const findInHand = (name) => state.players[0].hand.find((id) => id.split(':')[1] === byName.get(name)._id.toString());
+    const fusionId = findInHand('Ciempiés Gigante');
+    const mat1 = findInHand('Avispa gigante');
+    const mat2 = findInHand('Avispa Mutante');
+    // Rulebook: Compilación is meant to be harder than discarding cards straight from hand — a
+    // recipe with no explicit zone only accepts materials already on the field.
+    placeMonster(state, mat1, 0, { position: 'attack' });
+    placeMonster(state, mat2, 0, { position: 'attack' });
+    state.players[0].hand = state.players[0].hand.filter((id) => id !== mat1 && id !== mat2);
+
+    const result = applyAction(state, 0, {
+      type: 'COMPILE_SUMMON',
+      instanceId: fusionId,
+      materialInstanceIds: [mat1, mat2],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(state.players[0].field.monsters.some((m) => m && m.instanceId === fusionId)).toBe(true);
+    // Rulebook: the materials are stacked under the compiled monster, not sent to the graveyard.
+    expect(state.players[0].graveyard).not.toContain(mat1);
+    expect(state.players[0].field.monsters.find((m) => m && m.instanceId === fusionId).materials).toEqual([mat1, mat2]);
+  });
+
+  it('refuses materials that are still in hand when the recipe names no zone', async () => {
     const names = ['Ciempiés Gigante', 'Avispa gigante', 'Avispa Mutante'];
     const { state, byName } = await makeMatchWithHand(names);
 
@@ -74,37 +101,10 @@ describe('Compilación (fusion) summon', () => {
       materialInstanceIds: [mat1, mat2],
     });
 
-    expect(result.ok).toBe(true);
-    expect(state.players[0].field.monsters.some((m) => m && m.instanceId === fusionId)).toBe(true);
-    expect(state.players[0].hand).not.toContain(mat1);
-    expect(state.players[0].hand).not.toContain(mat2);
-    // Rulebook: the materials are stacked under the compiled monster, not sent to the graveyard.
-    expect(state.players[0].graveyard).not.toContain(mat1);
-    expect(state.players[0].field.monsters.find((m) => m && m.instanceId === fusionId).materials).toEqual([mat1, mat2]);
-  });
-
-  it('also accepts materials already on the field, not just in hand', async () => {
-    const names = ['Ciempiés Gigante', 'Avispa gigante', 'Avispa de Obsidiana'];
-    const { state, byName } = await makeMatchWithHand(names);
-
-    const findInHand = (name) => state.players[0].hand.find((id) => id.split(':')[1] === byName.get(name)._id.toString());
-    const fusionId = findInHand('Ciempiés Gigante');
-    const mat1 = findInHand('Avispa gigante');
-    const mat2 = findInHand('Avispa de Obsidiana');
-    // Both materials are already on the board, same as a player who normal-summoned them earlier.
-    placeMonster(state, mat1, 0, { position: 'attack' });
-    placeMonster(state, mat2, 0, { position: 'attack' });
-    state.players[0].hand = state.players[0].hand.filter((id) => id !== mat1 && id !== mat2);
-
-    const result = applyAction(state, 0, {
-      type: 'COMPILE_SUMMON',
-      instanceId: fusionId,
-      materialInstanceIds: [mat1, mat2],
-    });
-
-    expect(result.ok).toBe(true);
-    expect(state.players[0].field.monsters.some((m) => m && m.instanceId === fusionId)).toBe(true);
-    expect(state.players[0].field.monsters.find((m) => m && m.instanceId === fusionId).materials).toEqual([mat1, mat2]);
+    expect(result.ok).toBe(false);
+    expect(state.players[0].hand).toContain(mat1);
+    expect(state.players[0].hand).toContain(mat2);
+    expect(state.players[0].field.monsters.every((m) => !m || m.instanceId !== fusionId)).toBe(true);
   });
 
   it('rejects the summon when materials do not satisfy the requirement', async () => {
@@ -114,6 +114,8 @@ describe('Compilación (fusion) summon', () => {
     const findInHand = (name) => state.players[0].hand.find((id) => id.split(':')[1] === byName.get(name)._id.toString());
     const fusionId = findInHand('Ciempiés Gigante');
     const mat1 = findInHand('Avispa gigante');
+    placeMonster(state, mat1, 0, { position: 'attack' });
+    state.players[0].hand = state.players[0].hand.filter((id) => id !== mat1);
 
     // Needs 2 Insecto-family monsters; only supplying 1.
     const result = applyAction(state, 0, {
@@ -123,7 +125,6 @@ describe('Compilación (fusion) summon', () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(state.players[0].hand).toContain(mat1);
     expect(state.players[0].field.monsters.every((m) => !m || m.instanceId !== fusionId)).toBe(true);
   });
 
@@ -133,6 +134,8 @@ describe('Compilación (fusion) summon', () => {
 
     const fusionId = state.players[0].hand.find((id) => id.split(':')[1] === byName.get('Ciempiés Gigante')._id.toString());
     const ownMaterial = state.players[0].hand.find((id) => id.split(':')[1] === byName.get('Avispa gigante')._id.toString());
+    placeMonster(state, ownMaterial, 0, { position: 'attack' });
+    state.players[0].hand = state.players[0].hand.filter((id) => id !== ownMaterial);
     // Player B's hand has "Arboleda" cards — a support card, not even a valid material by
     // filter, but the real point is it belongs to the opponent.
     const opponentCard = state.players[1].hand[0];
