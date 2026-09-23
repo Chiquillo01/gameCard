@@ -177,9 +177,11 @@ function viewFor(state, viewerIndex) {
   };
 }
 
-// The card's own summon_rule effect (its "método de invocación especial"), if it has one.
+// The card's own summon_rule effect (its "método de invocación especial"), if it has one the
+// PLAYER chooses to use — a rule with its own `trigger` (Avispa Mutante's "si es añadida a tu
+// Mano...") fires automatically instead (see summon.js fireHandTrigger) and isn't a button here.
 function specialSummonRuleFor(card) {
-  return (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && (e.actions || []).some((a) => a.fn === 'specialSummon'));
+  return (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && !e.trigger && (e.actions || []).some((a) => a.fn === 'specialSummon'));
 }
 
 // Whether that rule's CONDITIONS are met right now (cost affordability isn't checked here — the

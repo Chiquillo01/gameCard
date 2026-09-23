@@ -147,7 +147,9 @@ describe('Search effects offer real choices instead of grabbing whichever card i
     // Nothing was spent while the choice is pending.
     expect(state.players[0].pixelcoins).toBe(6);
 
-    const chosen = res.options[1].instanceId;
+    // Not Avispa Mutante — its own "invócalo inmediatamente" would pull it right back out of hand,
+    // which is correct but unrelated to what this test is checking.
+    const chosen = res.options.find((o) => o.name !== 'Avispa Mutante').instanceId;
     const res2 = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Enjambre de Avispas'), targets: [chosen] });
     expect(res2.ok).toBe(true);
     passChain(state);

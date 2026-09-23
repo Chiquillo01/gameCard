@@ -106,6 +106,12 @@ function moveToZone(state, instanceId, toZone, ownerIndexOverride) {
     // A burning monster that is destroyed stops burning; other statuses stay with the card.
     clearStatus(state, instanceId, BURN);
     releaseMaterials(state, leaving, ownerIndex, toZone);
+    // Rulebook, Aboleth: "al destruir un monstruo Agua en el Campo" — opens its special-summon
+    // window for the rest of the turn (see game/summonRules "waterMonsterDestroyed" condition).
+    if (toZone === 'graveyard' && !leaving.isToken && getCard(leaving.cardId).attribute === 'Agua') {
+      state.specialSummonWindows = state.specialSummonWindows || {};
+      state.specialSummonWindows.waterMonsterDestroyed = state.turnNumber;
+    }
   }
   return true;
 }

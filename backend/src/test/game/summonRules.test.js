@@ -160,7 +160,9 @@ describe('Nido de Avispas (first "Avispa" summoned while it is on the field)', (
     expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: inHand('Avispa gigante'), position: 'defense' }).ok).toBe(true);
     // Two Avispas are still in the deck, so the search waits on a pick instead of grabbing one.
     expect(state.pendingTriggerChoices).toHaveLength(1);
-    const picked = state.pendingTriggerChoices[0].options[0].instanceId;
+    // Not Avispa Mutante — its own "invócalo inmediatamente" would pull it right back out of hand,
+    // which is correct but unrelated to what this test is checking.
+    const picked = state.pendingTriggerChoices[0].options.find((o) => o.name !== 'Avispa Mutante').instanceId;
     expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [picked] })).toMatchObject({ ok: true });
     // -1 summoned, +1 searched: one of the two Avispas left the deck.
     expect(state.players[0].hand.length).toBe(handBefore);
@@ -168,12 +170,14 @@ describe('Nido de Avispas (first "Avispa" summoned while it is on the field)', (
     const nidoFires = () => state.log.filter((l) => l.message.includes('NIDO_AVISPAS_FIRST_SUMMON')).length;
     expect(nidoFires()).toBe(1);
 
-    // A second Avispa summoned later does not fire the Nido again.
-    const obsidiana = state.players[0].deck.find((id) => getCard(id.split(':')[1]).name === 'Avispa de Obsidiana');
-    state.players[0].deck = state.players[0].deck.filter((id) => id !== obsidiana);
-    state.players[0].hand.push(obsidiana);
+    // A second Avispa summoned later does not fire the Nido again. Whichever wasp is still in the
+    // deck (the search above always avoided Avispa Mutante, so this is it) — pushed straight to
+    // hand rather than searched, so it never triggers its own auto-special-summon.
+    const secondWasp = state.players[0].deck.find((id) => getCard(id.split(':')[1]).name === 'Avispa Mutante');
+    state.players[0].deck = state.players[0].deck.filter((id) => id !== secondWasp);
+    state.players[0].hand.push(secondWasp);
     state.players[0].normalSummonUsed = false;
-    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: obsidiana, position: 'attack' }).ok).toBe(true);
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: secondWasp, position: 'attack' }).ok).toBe(true);
     expect(nidoFires()).toBe(1);
   });
 

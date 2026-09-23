@@ -85,6 +85,12 @@ function controlsAnotherOfFamily(ctx, args) {
   return pl.field.monsters.some((m) => m && m.instanceId !== ctx.sourceInstanceId && !m.faceDown && matchesFilter(m, filter));
 }
 
+// Aboleth's event-based summon window (see zones.js moveToZone) — open for the rest of the turn
+// a water monster was destroyed, on either side.
+function waterMonsterDestroyedThisTurn(ctx) {
+  return !!ctx.state.specialSummonWindows && ctx.state.specialSummonWindows.waterMonsterDestroyed === ctx.state.turnNumber;
+}
+
 function controlsCard(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
   return [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name);
@@ -110,6 +116,7 @@ const registry = {
   controlsCard,
   controlsMonster,
   controlsAnotherOfFamily,
+  waterMonsterDestroyedThisTurn,
   effectIncludes,
   canActivateOnOpponentTurn,
 };

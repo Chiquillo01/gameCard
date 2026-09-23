@@ -63,6 +63,22 @@ function sacrificeFiltered(ctx, args, targets) {
   return true;
 }
 
+// "Exiliando [count] [filter] del Campo y/o Cementerio" (Lich: 5 NoMuertos) — the picked cards if
+// they match, else the first that do, drawn from both zones together.
+function exileFiltered(ctx, args, targets) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const filter = args.filter || { breed: args.breed, family: args.family, attribute: args.attribute };
+  const count = args.count || 1;
+  const fromField = pl.field.monsters.filter((m) => m && matchesFilter(m, filter)).map((m) => m.instanceId);
+  const fromGrave = pl.graveyard.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), filter));
+  const pool = [...fromField, ...fromGrave];
+  const picked = (targets || []).filter((id) => pool.includes(id));
+  const chosen = picked.length >= count ? picked.slice(0, count) : pool.slice(0, count);
+  if (chosen.length < count) return false;
+  chosen.forEach((id) => moveToZone(ctx.state, id, 'banished', ctx.controllerIndex));
+  return true;
+}
+
 function sacrificeControlled(ctx, args, targets) {
   const amount = args.amount || 1;
   const list = (targets || []).slice(0, amount);
@@ -94,7 +110,7 @@ function destroyOwnMonster(ctx, args, targets) {
   return true;
 }
 
-const registry = { payPixels, payVP, discardSelf, discart, discardFromHand, sacrificeControlled, sacrificeFiltered, spendCounter, destroyMonster, destroyOwnMonster };
+const registry = { payPixels, payVP, discardSelf, discart, discardFromHand, exileFiltered, sacrificeControlled, sacrificeFiltered, spendCounter, destroyMonster, destroyOwnMonster };
 
 // Returns true if the cost could be (and was) paid; false means activation fails and nothing
 // should be mutated beyond what already ran (costs run first, before the effect's actions).

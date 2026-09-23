@@ -47,15 +47,24 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
 // Normal Summon.
 function specialSummon(state, controllerIndex, instanceId) {
   const pl = player(state, controllerIndex);
-  if (!pl.hand.includes(instanceId)) return { ok: false, reason: 'not-in-hand' };
+  const loc = findInstanceLocation(state, instanceId);
+  if (!loc || loc.ownerIndex !== controllerIndex) return { ok: false, reason: 'not-in-hand' };
 
   const cardId = cardIdFromInstance(instanceId);
   const card = getCard(cardId);
   if (card.category !== 'monster') return { ok: false, reason: 'not-a-monster' };
   if (cannotBeSummoned(card)) return { ok: false, reason: 'cannot-be-summoned' };
 
-  const rule = (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && (e.actions || []).some((a) => a.fn === 'specialSummon'));
+  // A rule with its own `trigger` (Avispa Mutante) fires automatically instead — see
+  // fireHandTrigger below — not something the player invokes with this action.
+  const rule = (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && !e.trigger && (e.actions || []).some((a) => a.fn === 'specialSummon'));
   if (!rule) return { ok: false, reason: 'no-special-summon-method' };
+
+  // Most special summons are from hand; a few (Aboleth, Perro Esqueleto) name other zones via
+  // their own canBeSummonedFrom condition.
+  const zoneRule = (rule.conditions || []).find((c) => c.fn === 'canBeSummonedFrom');
+  const allowedZones = zoneRule ? zoneRule.args.zones : ['hand'];
+  if (!allowedZones.includes(loc.zone)) return { ok: false, reason: 'not-in-hand' };
 
   const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect: rule };
   if (!checkConditions(ctx, rule.conditions)) return { ok: false, reason: 'special-summon-condition-not-met' };
@@ -89,6 +98,40 @@ function announceSummon(state, controllerIndex, instanceId, card, faceDown = fal
   const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown };
   if (!faceDown) fireTrigger(state, 'onSummon', event);
   fireTrigger(state, 'allySummoned', event);
+}
+
+// A card's own summon_rule can trigger off something OTHER than the player choosing to special
+// summon it — Avispa Mutante: "Si es añadida a tu Mano desde el Mazo o Cementerio, invocarlo
+// inmediatamente de forma especial." Called wherever a card can land in hand that way (a search,
+// or a card-effect draw — never the turn's own draw, which is what `exceptPhase: 'draw'` on the
+// rule is for).
+function fireHandTrigger(state, eventName, instanceId, controllerIndex) {
+  const card = getCard(cardIdFromInstance(instanceId));
+  if (card.category !== 'monster') return;
+  const rule = (card.effectCodes || []).find((id) => {
+    const e = getEffect(id);
+    return e && e.type === 'summon_rule' && e.trigger && e.trigger.fn === eventName;
+  });
+  if (!rule) return;
+  const effect = getEffect(rule);
+  if (effect.trigger.args && effect.trigger.args.exceptPhase === state.phase) return;
+  if (effect.oncePerTurn) {
+    state.turnLimits = state.turnLimits || {};
+    const key = `${state.turnNumber}:${effect._id}:${instanceId}`;
+    if (state.turnLimits[key]) return;
+    state.turnLimits[key] = true;
+  }
+  const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect };
+  if (!checkConditions(ctx, effect.conditions)) return;
+  if (effect.cost) {
+    const paid = payCost(ctx, effect.cost, []);
+    if (!paid) return;
+  }
+  resolveActions(ctx, effect, []);
+  if (!findInstanceLocation(state, instanceId) || findInstanceLocation(state, instanceId).zone !== 'field:monster') return;
+  log(state, `${player(state, controllerIndex).userId} invoca especial a ${card.name}.`);
+  announceSummon(state, controllerIndex, instanceId, card, false);
+  recomputeContinuous(state);
 }
 
 // True when `loc` is a zone the controller actually owns and that satisfies `req.zone` (a
@@ -205,4 +248,4 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   return { ok: true };
 }
 
-module.exports = { normalSummon, specialSummon, compileSummon, decompile };
+module.exports = { normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger };

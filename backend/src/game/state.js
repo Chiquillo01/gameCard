@@ -38,6 +38,9 @@ function createMatchState({ matchId, playerA, deckA, playerB, deckB, vsBot = fal
     // Automatic triggers with an ambiguous search (more than one legal card) wait here for the
     // player's pick instead of grabbing one at random — see effectEngine.fireTrigger.
     pendingTriggerChoices: [],
+    // Event-based special-summon windows (Aboleth: "al destruir un monstruo Agua") — the turn
+    // number the event last happened, so the window stays open through the rest of that turn.
+    specialSummonWindows: {},
     winnerIndex: null,
     log: [],
     players: [makePlayer(playerA, deckA, 0), makePlayer(playerB, deckB, 1)],

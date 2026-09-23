@@ -167,15 +167,19 @@ function runSearch(ctx, fn, args, targets) {
   const pl = player(ctx.state, ctx.controllerIndex);
   const { filter, zones, count } = normalizeSearchArgs(fn, args);
   const picked = (targets && targets.length ? targets : searchCandidates(ctx.state, ctx.controllerIndex, fn, args)).slice(0, count);
-  let moved = 0;
+  const moved = [];
   picked.forEach((id) => {
     const zone = zones.find((z) => pl[z].includes(id));
     if (!zone || !matchesCardFilter(getCard(cardIdFromInstance(id)), filter)) return;
     pl[zone] = pl[zone].filter((x) => x !== id);
     pl.hand.push(id);
-    moved++;
+    moved.push(id);
   });
-  log(ctx.state, `${pl.userId} añade ${moved} carta(s) a la mano.`);
+  log(ctx.state, `${pl.userId} añade ${moved.length} carta(s) a la mano.`);
+  // Rulebook, Avispa Mutante: "Si es añadida a tu Mano desde el Mazo o Cementerio, invocarlo
+  // inmediatamente de forma especial." — every search lands cards from one of those two zones.
+  const { fireHandTrigger } = require('../summon');
+  moved.forEach((id) => fireHandTrigger(ctx.state, 'addedToHand', id, ctx.controllerIndex));
 }
 
 const addCardToHandFromDeck = (ctx, args, targets) => runSearch(ctx, 'addCardToHandFromDeck', args, targets);

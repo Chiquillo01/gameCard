@@ -507,6 +507,18 @@ const DuelPage = () => {
               <button className={styles.effectButton} onClick={() => startFusion(card)}>
                 Fusionar
               </button>
+            ) : openPile.side === 'me' && card.specialSummonAvailable ? (
+              // Aboleth, Perro Esqueleto: their invocation method names the Cementerio/Exilio as
+              // a legal source, not just the Mano.
+              <button
+                className={styles.effectButton}
+                onClick={() => {
+                  act({ type: 'SPECIAL_SUMMON', instanceId: card.instanceId });
+                  setOpenPile(null);
+                }}
+              >
+                Invocar especial
+              </button>
             ) : (
               renderEffectButtons(card, true)
             )

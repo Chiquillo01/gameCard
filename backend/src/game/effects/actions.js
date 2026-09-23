@@ -15,11 +15,17 @@ function drawCards(ctx, args) {
   const idx = resolvePlayerIndex(ctx, args.player);
   const pl = player(ctx.state, idx);
   const amount = args.amount || 1;
+  const drawn = [];
   for (let i = 0; i < amount; i++) {
     if (!pl.deck.length) { ctx.state.winnerIndex = opponentIndex(idx); log(ctx.state, `${pl.userId} se quedó sin mazo y pierde.`); break; }
-    pl.hand.push(pl.deck.shift());
+    drawn.push(pl.deck.shift());
   }
+  drawn.forEach((id) => pl.hand.push(id));
   log(ctx.state, `${pl.userId} roba ${amount} carta(s).`);
+  // Card-effect draws (Olla de la Usura...) count as "added to hand from the Mazo" for Avispa
+  // Mutante — the turn's own draw never goes through this action, so no exceptPhase check needed.
+  const { fireHandTrigger } = require('../summon');
+  drawn.forEach((id) => fireHandTrigger(ctx.state, 'addedToHand', id, idx));
 }
 
 function damageOpponent(ctx, args) {

@@ -578,6 +578,9 @@
             "graveyard"
           ]
         }
+      },
+      {
+        "fn": "waterMonsterDestroyedThisTurn"
       }
     ],
     "actions": [
@@ -6543,5 +6546,28 @@
         "amount": 4
       }
     }
+  },
+  {
+    "_id": "LICH_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "cost": {
+      "fn": "exileFiltered",
+      "args": {
+        "family": "NoMuerto",
+        "count": 5
+      }
+    },
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

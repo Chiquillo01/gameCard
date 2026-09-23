@@ -9,7 +9,8 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
-const { placeMonster } = require('../../game/zones');
+const { placeMonster, moveToZone } = require('../../game/zones');
+const { passChain } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -118,5 +119,81 @@ describe('SPECIAL_SUMMON', () => {
     const { state, inHand } = await makeMatch(['Slime', 'Kraken']);
     toMain1(state);
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: inHand('Slime') })).toMatchObject({ ok: false, reason: 'no-special-summon-method' });
+  });
+
+  it('Lich: exiles 5 NoMuertos from the Campo and/or Cementerio together', async () => {
+    const { state, inHand } = await makeMatch(['Lich', 'Kraken']);
+    const skeleton = await Card.findOne({ name: 'Esqueleto' }).lean();
+    const graveIds = ['g1', 'g2', 'g3'].map((s) => `0:${skeleton._id}:${s}`);
+    const fieldIds = ['f1', 'f2'].map((s) => `0:${skeleton._id}:${s}`);
+    graveIds.forEach((id) => state.players[0].graveyard.push(id));
+    fieldIds.forEach((id) => placeMonster(state, id, 0, { position: 'attack' }));
+    toMain1(state);
+
+    const lich = inHand('Lich');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: lich })).toMatchObject({ ok: true });
+    expect(monsterOf(state, 0, lich)).toBeDefined();
+    [...graveIds, ...fieldIds].forEach((id) => expect(state.players[0].banished).toContain(id));
+    expect(state.players[0].graveyard).toHaveLength(0);
+  });
+
+  it('Lich: refuses without 5 NoMuertos to exile', async () => {
+    const { state, inHand } = await makeMatch(['Lich', 'Kraken']);
+    const skeleton = await Card.findOne({ name: 'Esqueleto' }).lean();
+    state.players[0].graveyard.push(`0:${skeleton._id}:g1`, `0:${skeleton._id}:g2`);
+    toMain1(state);
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: inHand('Lich') })).toMatchObject({ ok: false, reason: 'cannot-pay-special-summon-cost' });
+  });
+
+  it('Aboleth: only special-summonable the turn a water monster was destroyed, from hand or Cementerio', async () => {
+    const { state, inHand } = await makeMatch(['Aboleth', 'Kraken']);
+    const hipocampo = await Card.findOne({ name: 'HipoCampo' }).lean();
+    const water1 = `0:${hipocampo._id}:w1`;
+    const water2 = `0:${hipocampo._id}:w2`;
+    placeMonster(state, water1, 0, { position: 'attack' });
+    placeMonster(state, water2, 0, { position: 'attack' });
+    toMain1(state);
+
+    const aboleth = inHand('Aboleth');
+    // No water monster destroyed yet this turn: the window is closed.
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
+
+    moveToZone(state, water1, 'graveyard');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth })).toMatchObject({ ok: true });
+    expect(monsterOf(state, 0, aboleth)).toBeDefined();
+
+    // Send Aboleth itself to the graveyard and special-summon it from there in the same window.
+    moveToZone(state, aboleth, 'graveyard');
+    moveToZone(state, water2, 'graveyard');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth })).toMatchObject({ ok: true });
+    expect(monsterOf(state, 0, aboleth)).toBeDefined();
+  });
+
+  it('Avispa Mutante: a card-effect draw (Olla de la Usura) special-summons it the instant it reaches hand', async () => {
+    const { state, inHand } = await makeMatch(['Olla de la Usura', 'Kraken']);
+    const mutante = await Card.findOne({ name: 'Avispa Mutante' }).lean();
+    const mutanteId = `0:${mutante._id}:m1`;
+    state.players[0].deck.unshift(mutanteId);
+    toMain1(state);
+    state.players[0].pixelcoins = 6;
+
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Olla de la Usura') }).ok).toBe(true);
+    passChain(state);
+    expect(monsterOf(state, 0, mutanteId)).toBeDefined();
+    expect(state.players[0].hand).not.toContain(mutanteId);
+    // It didn't use up the turn's own Normal Summon.
+    expect(state.players[0].normalSummonUsed).toBe(false);
+  });
+
+  it("Avispa Mutante: its trigger's own exceptPhase guard skips the turn's own draw phase", async () => {
+    const { state } = await makeMatch(['Kraken']);
+    const mutante = await Card.findOne({ name: 'Avispa Mutante' }).lean();
+    const mutanteId = `0:${mutante._id}:m1`;
+    state.players[0].hand.push(mutanteId);
+    state.phase = 'draw';
+    const { fireHandTrigger } = require('../../game/summon');
+    fireHandTrigger(state, 'addedToHand', mutanteId, 0);
+    expect(state.players[0].hand).toContain(mutanteId);
+    expect(monsterOf(state, 0, mutanteId)).toBeUndefined();
   });
 });
