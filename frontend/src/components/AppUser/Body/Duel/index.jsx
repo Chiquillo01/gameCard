@@ -165,10 +165,13 @@ const DuelPage = () => {
   };
 
   // The player picked one of the options the server offered for a pending choose-target action:
-  // resend the exact same action, this time with that pick as its target.
+  // resend the same action with that pick added to whatever was already chosen — a cost needing
+  // more than one card (Inferno's "descarta 2 Dragones") re-asks for the rest instead of grabbing
+  // them itself, so this has to accumulate picks across rounds rather than replace them.
   const chooseTarget = (instanceId) => {
     if (!pendingChoice) return;
-    act({ ...pendingChoice.action, targets: [instanceId] });
+    const targets = [...(pendingChoice.action.targets || []), instanceId];
+    act({ ...pendingChoice.action, targets });
   };
 
   // Only one decision can be open at a time: opening a new one replaces whatever was pending, so the
@@ -196,8 +199,15 @@ const DuelPage = () => {
   const onHandCardClick = (card) => {
     const isMyTurn = view.turnPlayer === view.you;
     const isMainPhase = view.phase === 'main1' || view.phase === 'main2';
-    if (!isMyTurn || !isMainPhase) {
-      showToast('info', 'Solo puedes jugar cartas en tu fase principal.');
+    const chainOpen = !!view.chain;
+    const canRespondToChain = chainOpen && view.chain.priorityPlayer === view.you;
+    // Rulebook, Velocidades: an Apoyo Veloz/Contraataque (Speed 2/3) can be activated from hand in
+    // any phase of its controller's own turn, not just Main Phase — and, like any Speed 2+ card,
+    // as a response whenever it's this player's priority on an open Pila.
+    const isFastSupport = card.category === 'support' && (card.subtype === 'instant' || card.subtype === 'counter');
+    const canPlayNow = canRespondToChain || (isMyTurn && (isMainPhase || isFastSupport));
+    if (!canPlayNow) {
+      showToast('info', chainOpen ? 'Ahora mismo le toca responder al rival.' : 'Solo puedes jugar cartas en tu fase principal.');
       return;
     }
 

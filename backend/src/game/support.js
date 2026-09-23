@@ -1,6 +1,6 @@
 const { getCard, getEffect } = require('./cardIndex');
 const { player, opponentIndex, placeSupport, placeTerritory, moveToZone, log } = require('./zones');
-const { payCost } = require('./effects/costs');
+const { payCost, pendingCostChoice } = require('./effects/costs');
 const { checkConditions } = require('./effects/conditions');
 const { checkWin } = require('./effects/actions');
 const { pendingSearchChoice } = require('./effects/fieldActions');
@@ -82,8 +82,14 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   const searchOptions = runningEffects.map((effect) => pendingSearchChoice(state, controllerIndex, effect, targets)).find(Boolean);
   if (searchOptions) return { ok: false, reason: 'choose-target', options: searchOptions };
 
-  const before = { pixelcoins: pl.pixelcoins, vp: pl.vp };
+  // Rulebook: a cost never picks for the player (see costs.js pendingCostChoice) — with more
+  // legal payers than the cost needs and nothing chosen yet, ask instead of silently taking one.
   const cost = card.activationCost;
+  const costChoice = (cost && pendingCostChoice(ctx, cost, targets))
+    || runningEffects.map((effect) => effect.cost && pendingCostChoice({ ...ctx, effect }, effect.cost, targets)).find(Boolean);
+  if (costChoice) return { ok: false, reason: 'choose-target', options: costChoice };
+
+  const before = { pixelcoins: pl.pixelcoins, vp: pl.vp };
   if (cost && cost.fn) {
     const paid = payCost(ctx, cost, targets);
     if (!paid) return { ok: false, reason: 'cannot-pay-cost' };

@@ -83,7 +83,7 @@ function applyAction(state, playerIndex, action) {
       });
 
     case 'SPECIAL_SUMMON':
-      return specialSummon(state, playerIndex, action.instanceId);
+      return specialSummon(state, playerIndex, action.instanceId, action.targets || []);
 
     case 'ACTIVATE_SUPPORT':
       return activateSupport(state, playerIndex, action.instanceId, {

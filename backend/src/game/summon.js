@@ -1,6 +1,6 @@
 const { getCard } = require('./cardIndex');
 const { player, placeMonster, moveToZone, removeFromZone, releaseMaterials, corrodedSlots, findInstanceLocation, log } = require('./zones');
-const { payCost } = require('./effects/costs');
+const { payCost, pendingCostChoice } = require('./effects/costs');
 const { fireTrigger, fireMaterialTriggers, recomputeContinuous, resolveActions } = require('./effectEngine');
 const { checkConditions } = require('./effects/conditions');
 const { getEffect } = require('./cardIndex');
@@ -45,7 +45,7 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
 // condition/cost (own effectCodes carry a `summon_rule` effect) — doesn't touch normalSummonUsed,
 // since a special summon is an ADDITIONAL way to bring it out, not a replacement for the turn's
 // Normal Summon.
-function specialSummon(state, controllerIndex, instanceId) {
+function specialSummon(state, controllerIndex, instanceId, targets = []) {
   const pl = player(state, controllerIndex);
   const loc = findInstanceLocation(state, instanceId);
   if (!loc || loc.ownerIndex !== controllerIndex) return { ok: false, reason: 'not-in-hand' };
@@ -68,15 +68,23 @@ function specialSummon(state, controllerIndex, instanceId) {
 
   const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect: rule };
   if (!checkConditions(ctx, rule.conditions)) return { ok: false, reason: 'special-summon-condition-not-met' };
-  if (rule.oncePerTurn) {
-    state.turnLimits = state.turnLimits || {};
-    const key = `${state.turnNumber}:${rule._id}:${instanceId}`;
-    if (state.turnLimits[key]) return { ok: false, reason: 'once-per-turn' };
-    state.turnLimits[key] = true;
-  }
+
+  // Checked but not marked yet — a still-pending cost choice or a failed payment shouldn't burn
+  // the turn's shot at this, only an actual summon should.
+  const turnLimitKey = rule.oncePerTurn && `${state.turnNumber}:${rule._id}:${instanceId}`;
+  if (turnLimitKey && state.turnLimits && state.turnLimits[turnLimitKey]) return { ok: false, reason: 'once-per-turn' };
+
   if (rule.cost) {
-    const paid = payCost(ctx, rule.cost, []);
+    // Rulebook: a cost never picks for the player (see costs.js pendingCostChoice) — with more
+    // legal payers than it needs and nothing chosen yet, ask instead of silently taking one.
+    const costChoice = pendingCostChoice(ctx, rule.cost, targets);
+    if (costChoice) return { ok: false, reason: 'choose-target', options: costChoice };
+    const paid = payCost(ctx, rule.cost, targets);
     if (!paid) return { ok: false, reason: 'cannot-pay-special-summon-cost' };
+  }
+  if (turnLimitKey) {
+    state.turnLimits = state.turnLimits || {};
+    state.turnLimits[turnLimitKey] = true;
   }
 
   // The rule's own actions place it (the `specialSummon` action puts the source on the field,
