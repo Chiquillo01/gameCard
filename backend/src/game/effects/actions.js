@@ -323,7 +323,7 @@ function specialSummonFromGY(ctx, args) {
 }
 
 function specialSummon(ctx) {
-  placeMonster(ctx.state, ctx.sourceInstanceId, ctx.controllerIndex, { position: 'attack' });
+  placeMonster(ctx.state, ctx.sourceInstanceId, ctx.controllerIndex, { position: 'attack', slot: ctx.slot ?? null });
 }
 
 function mirrorEvent(ctx, args) {

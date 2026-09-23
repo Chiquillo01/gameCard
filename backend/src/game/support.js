@@ -18,7 +18,7 @@ const { cardIdFromInstance } = require('./deckUtils');
 // including on the opponent's turn. Continuo/Equipo/Reino stay face-up on the field once
 // activated. This single entry point routes a support card to the right behavior for its
 // subtype instead of treating every Apoyo card the same way.
-function activateSupport(state, controllerIndex, instanceId, { targets = [], setFaceDown = false } = {}) {
+function activateSupport(state, controllerIndex, instanceId, { targets = [], setFaceDown = false, slot = null } = {}) {
   const pl = player(state, controllerIndex);
   if (!pl.hand.includes(instanceId)) return { ok: false, reason: 'not-in-hand' };
 
@@ -28,13 +28,14 @@ function activateSupport(state, controllerIndex, instanceId, { targets = [], set
 
   if (setFaceDown) {
     if (card.subtype === 'field') return { ok: false, reason: 'cannot-set-territory' };
-    const placed = placeSupport(state, instanceId, controllerIndex, { faceDown: true });
+    // Rulebook: the player chooses where on the board the card lands, not the engine.
+    const placed = placeSupport(state, instanceId, controllerIndex, { faceDown: true, slot });
     if (!placed) return { ok: false, reason: 'no-field-space' };
     log(state, `${pl.userId} coloca boca abajo un apoyo.`);
     return { ok: true };
   }
 
-  return resolveActivation(state, controllerIndex, instanceId, card, targets);
+  return resolveActivation(state, controllerIndex, instanceId, card, targets, null, slot);
 }
 
 // Activates a support that was set face-down in the support zone: turn it face-up, pay its
@@ -50,7 +51,7 @@ function activateSetSupport(state, controllerIndex, instanceId, { targets = [] }
   return resolveActivation(state, controllerIndex, instanceId, card, targets, entry);
 }
 
-function resolveActivation(state, controllerIndex, instanceId, card, targets, setEntry = null) {
+function resolveActivation(state, controllerIndex, instanceId, card, targets, setEntry = null, slot = null) {
   const pl = player(state, controllerIndex);
   const ctx = { state, controllerIndex, sourceInstanceId: instanceId };
 
@@ -112,7 +113,8 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
     if (entry) {
       entry.faceDown = false; // already in its zone: just turn it over
     } else {
-      entry = placeSupport(state, instanceId, controllerIndex, { faceDown: false });
+      // Rulebook: the player chooses where on the board the card lands, not the engine.
+      entry = placeSupport(state, instanceId, controllerIndex, { faceDown: false, slot });
       if (!entry) return { ok: false, reason: 'no-field-space' };
     }
     if (card.subtype === 'equipment') entry.equippedTo = targets[0];

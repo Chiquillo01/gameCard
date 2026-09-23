@@ -80,22 +80,24 @@ function applyAction(state, playerIndex, action) {
       return normalSummon(state, playerIndex, action.instanceId, {
         position: action.position || 'attack',
         faceDown: !!action.faceDown,
+        slot: action.slot ?? null,
       });
 
     case 'SPECIAL_SUMMON':
-      return specialSummon(state, playerIndex, action.instanceId, action.targets || []);
+      return specialSummon(state, playerIndex, action.instanceId, action.targets || [], action.slot ?? null);
 
     case 'ACTIVATE_SUPPORT':
       return activateSupport(state, playerIndex, action.instanceId, {
         targets: action.targets || [],
         setFaceDown: !!action.setFaceDown,
+        slot: action.slot ?? null,
       });
 
     case 'ACTIVATE_SET_SUPPORT':
       return activateSetSupport(state, playerIndex, action.instanceId, { targets: action.targets || [] });
 
     case 'COMPILE_SUMMON':
-      return compileSummon(state, playerIndex, action.instanceId, action.materialInstanceIds || []);
+      return compileSummon(state, playerIndex, action.instanceId, action.materialInstanceIds || [], action.slot ?? null);
 
     case 'DECLARE_ATTACK':
       return declareAttack(state, playerIndex, action.attackerInstanceId, action.targetInstanceId || null);

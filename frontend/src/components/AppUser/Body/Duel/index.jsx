@@ -59,6 +59,10 @@ const DuelPage = () => {
   const [pendingPosition, setPendingPosition] = useState(null);
   // Fusion in progress: the Compilación card plus the material instanceIds picked so far.
   const [fusion, setFusion] = useState(null);
+  // Rulebook: the player chooses where on the board a card lands. Set once what to place is known
+  // (a Normal/Special Summon, a support placement, a Compilación) but before it's sent: the board's
+  // own empty zones become clickable — { zone: 'monster'|'support', action, freeing }.
+  const [pendingBoardSlot, setPendingBoardSlot] = useState(null);
   // A Cementerio/Exilio/Mazo-C pile the player clicked open: { side: 'me'|'enemy', zone }.
   const [openPile, setOpenPile] = useState(null);
   // The server asked us to pick a target for the action we just sent (a search effect's matches
@@ -162,6 +166,7 @@ const DuelPage = () => {
     setPendingPosition(null);
     setFusion(null);
     setSelectedAttacker(null);
+    setPendingBoardSlot(null);
   };
 
   // The player picked one of the options the server offered for a pending choose-target action:
@@ -182,6 +187,7 @@ const DuelPage = () => {
     setPendingPosition(null);
     setFusion(null);
     setPendingChoice(null);
+    setPendingBoardSlot(null);
   };
 
   const confirmPositionChange = (position) => {
@@ -239,7 +245,7 @@ const DuelPage = () => {
     // summoned — with no Normal Summon option at all, its own card click just does that directly.
     if (card.normalSummonable === false) {
       if (card.specialSummonAvailable) {
-        act({ type: 'SPECIAL_SUMMON', instanceId: card.instanceId });
+        placeOnBoard('monster', { type: 'SPECIAL_SUMMON', instanceId: card.instanceId });
       } else {
         showToast('error', humanizeReason(card.cannotBeSummoned ? 'cannot-be-summoned' : 'special-summon-only'));
       }
@@ -261,32 +267,64 @@ const DuelPage = () => {
     });
   };
 
+  // Which of the player's own board zones are empty right now — `freeing` lets a Compilación
+  // count the slots its own field materials are about to vacate as available too.
+  const emptySlots = (zone, freeing = []) => {
+    const arr = zone === 'monster' ? me.field.monsters : me.field.support;
+    return arr.reduce((acc, entry, i) => (entry === null || (entry && freeing.includes(entry.instanceId)) ? [...acc, i] : acc), []);
+  };
+
+  // Rulebook: the player chooses where on the board a card lands, not the engine — same "ask only
+  // when it's a real choice" rule as everywhere else (cost payers, search picks): with 0 or 1
+  // legal empty zone there's nothing to decide, otherwise the board's own empty zones light up.
+  const placeOnBoard = async (zone, action, { freeing = [], onSuccess } = {}) => {
+    const free = emptySlots(zone, freeing);
+    if (free.length > 1) {
+      setPendingBoardSlot({ zone, action, freeing, onSuccess });
+      return;
+    }
+    const result = await act({ ...action, slot: free[0] });
+    if (result?.ok && onSuccess) onSuccess();
+  };
+
+  const pickBoardSlot = async (slot) => {
+    if (!pendingBoardSlot) return;
+    const { action, onSuccess } = pendingBoardSlot;
+    setPendingBoardSlot(null);
+    const result = await act({ ...action, slot });
+    if (result?.ok && onSuccess) onSuccess();
+  };
+
   const confirmSummon = (position, faceDown) => {
     if (!pendingSummon) return;
-    act({ type: 'NORMAL_SUMMON', instanceId: pendingSummon.instanceId, position, faceDown });
+    const instanceId = pendingSummon.instanceId;
     setPendingSummon(null);
+    placeOnBoard('monster', { type: 'NORMAL_SUMMON', instanceId, position, faceDown });
   };
 
   const confirmSpecialSummon = () => {
     if (!pendingSummon) return;
-    act({ type: 'SPECIAL_SUMMON', instanceId: pendingSummon.instanceId });
+    const instanceId = pendingSummon.instanceId;
     setPendingSummon(null);
+    placeOnBoard('monster', { type: 'SPECIAL_SUMMON', instanceId });
   };
 
   const confirmSupportChoice = (setFaceDown) => {
     if (!pendingSupportChoice) return;
-    act({ type: 'ACTIVATE_SUPPORT', instanceId: pendingSupportChoice, setFaceDown });
+    const instanceId = pendingSupportChoice;
     setPendingSupportChoice(null);
+    placeOnBoard('support', { type: 'ACTIVATE_SUPPORT', instanceId, setFaceDown });
   };
 
-  const confirmFusion = async () => {
+  const confirmFusion = () => {
     if (!fusion) return;
-    const result = await act({
-      type: 'COMPILE_SUMMON',
-      instanceId: fusion.instanceId,
-      materialInstanceIds: [...fusion.materials],
-    });
-    if (result?.ok) setFusion(null);
+    // A material already on the board frees its own slot — the compiled monster can land there too.
+    const freeing = [...fusion.materials].filter((id) => me.field.monsters.some((m) => m && m.instanceId === id));
+    placeOnBoard(
+      'monster',
+      { type: 'COMPILE_SUMMON', instanceId: fusion.instanceId, materialInstanceIds: [...fusion.materials] },
+      { freeing, onSuccess: () => setFusion(null) }
+    );
   };
 
   // What the preview panel shows: the hovered card's full data, with the on-board Atk/Vida when it
@@ -419,11 +457,21 @@ const DuelPage = () => {
   const cardInPlay = (instanceId) => me.hand.find((c) => c.instanceId === instanceId) || me.field.monsters.find((m) => m && m.instanceId === instanceId);
   const choicePanel = (() => {
     const cancel = { label: 'Cancelar', variant: 'cancel', onClick: cancelPendingChoices };
-    if (fusion) {
+    if (pendingBoardSlot) {
       return {
-        card: cardInPlay(fusion.instanceId),
+        card: cardInPlay(pendingBoardSlot.action.instanceId),
+        prompt: 'Elige dónde colocarla',
+        hint: `Haz click en una casilla vacía de tu ${pendingBoardSlot.zone === 'monster' ? 'zona de Monstruos' : 'zona de Apoyo'}`,
+        options: [cancel],
+      };
+    }
+    if (fusion) {
+      const fusionCard = cardInPlay(fusion.instanceId);
+      const requirement = cardsById[fusionCard?.cardId]?.invocationText;
+      return {
+        card: fusionCard,
         prompt: 'Compilar',
-        hint: `Selecciona los materiales en tu mano o campo (${fusion.materials.size} elegidos)`,
+        hint: `${requirement ? `${requirement} — ` : ''}Selecciona los materiales en tu mano o campo (${fusion.materials.size} elegidos)`,
         options: [{ label: 'Confirmar compilación', variant: 'confirm', onClick: confirmFusion }, cancel],
       };
     }
@@ -515,7 +563,7 @@ const DuelPage = () => {
           renderCardExtra={(card) =>
             openPile.side === 'me' && openPile.zone === 'extra' ? (
               <button className={styles.effectButton} onClick={() => startFusion(card)}>
-                Fusionar
+                Compilar
               </button>
             ) : openPile.side === 'me' && card.specialSummonAvailable ? (
               // Aboleth, Perro Esqueleto: their invocation method names the Cementerio/Exilio as
@@ -523,7 +571,7 @@ const DuelPage = () => {
               <button
                 className={styles.effectButton}
                 onClick={() => {
-                  act({ type: 'SPECIAL_SUMMON', instanceId: card.instanceId });
+                  placeOnBoard('monster', { type: 'SPECIAL_SUMMON', instanceId: card.instanceId });
                   setOpenPile(null);
                 }}
               >
@@ -610,6 +658,8 @@ const DuelPage = () => {
           onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
           renderEffectButtons={renderEffectButtons}
           onHover={setHovered}
+          slotPicker={pendingBoardSlot}
+          onPickSlot={pickBoardSlot}
         />
 
         <div className={styles.log}>
@@ -661,8 +711,11 @@ const DuelPage = () => {
 //   row 3: (—) x6, Mazo
 // `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
 // next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
-function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick }) {
+function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick, slotPicker, onPickSlot }) {
   const row = (r) => (flipped ? 3 - r : r);
+  // A zone the player can click to place the card they're summoning/compiling/setting — either
+  // empty, or one of a Compilación's own field materials that's about to vacate it.
+  const isPickable = (zone, m) => isOwner && slotPicker && slotPicker.zone === zone && (m === null || (m && slotPicker.freeing.includes(m.instanceId)));
 
   return (
     <div className={styles.fieldGrid}>
@@ -672,8 +725,8 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
           style={{ gridRow: row(1), gridColumn: i + 1 }}
           className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''} ${
             m && (m.instanceId === selectedAttacker || (fusion && isOwner && fusion.materials.has(m.instanceId))) ? styles.selected : ''
-          }`}
-          onClick={() => m && onMonsterClick(m)}
+          } ${isPickable('monster', m) ? styles.pickable : ''}`}
+          onClick={() => (isPickable('monster', m) ? onPickSlot(i) : m && onMonsterClick(m))}
           onMouseEnter={() => m && (m.isToken ? onHover({ isToken: true, name: m.name, atk: m.atk, def: m.def }) : m.cardId && onHover({ cardId: m.cardId, atk: m.faceDown ? null : m.atk, def: m.faceDown ? null : m.def }))}
         >
           {m && !m.faceDown && (
@@ -735,7 +788,14 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       </div>
 
       {player.field.support.map((s, i) => (
-        <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte' onClick={() => s && isOwner && onSupportClick && onSupportClick(s)} onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}>
+        <div
+          key={`s${i}`}
+          style={{ gridRow: row(2), gridColumn: i + 2 }}
+          className={`${styles.slot} ${isPickable('support', s) ? styles.pickable : ''}`}
+          title='Soporte'
+          onClick={() => (isPickable('support', s) ? onPickSlot(i) : s && isOwner && onSupportClick && onSupportClick(s))}
+          onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}
+        >
           {s && !s.faceDown && <img src={s.image} alt={s.name} title={s.name} />}
           {s && s.faceDown && <div className={styles.faceDown} />}
           {s && isOwner && renderEffectButtons(s)}
@@ -872,7 +932,7 @@ function humanizeReason(reason) {
     'no-field-space': 'No tienes espacio en el campo.',
     'not-in-hand': 'Esa carta no está en tu mano.',
     'invalid-position': 'Esa combinación de posición no es válida.',
-    'not-available': 'Esa carta de fusión no está disponible.',
+    'not-available': 'Esa carta de compilación no está disponible.',
     'already-attacked': 'Ese monstruo ya atacó este turno.',
     'not-main-phase': 'Solo puedes hacer eso en tu Fase Principal.',
     'summoned-this-turn': 'Ese monstruo no puede cambiar de posición el turno en que fue invocado.',
@@ -909,7 +969,7 @@ function humanizeReason(reason) {
     'not-compiled': 'Ese monstruo no es un monstruo compilado.',
     'compiled-this-turn': 'No puedes descompilar un monstruo el turno en que fue compilado.',
   };
-  if (reason && reason.startsWith('missing-material')) return 'Los materiales elegidos no cumplen el requisito de fusión.';
+  if (reason && reason.startsWith('missing-material')) return 'Los materiales elegidos no cumplen el requisito de compilación.';
   return map[reason] || 'Acción no válida.';
 }
 

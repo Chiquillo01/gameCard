@@ -6,6 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction } = require('../../game/engine');
+const { placeMonster } = require('../../game/zones');
 
 beforeAll(async () => {
   await connectDB();
@@ -79,6 +80,30 @@ describe('Compilación (fusion) summon', () => {
     expect(state.players[0].hand).not.toContain(mat2);
     // Rulebook: the materials are stacked under the compiled monster, not sent to the graveyard.
     expect(state.players[0].graveyard).not.toContain(mat1);
+    expect(state.players[0].field.monsters.find((m) => m && m.instanceId === fusionId).materials).toEqual([mat1, mat2]);
+  });
+
+  it('also accepts materials already on the field, not just in hand', async () => {
+    const names = ['Ciempiés Gigante', 'Avispa gigante', 'Avispa de Obsidiana'];
+    const { state, byName } = await makeMatchWithHand(names);
+
+    const findInHand = (name) => state.players[0].hand.find((id) => id.split(':')[1] === byName.get(name)._id.toString());
+    const fusionId = findInHand('Ciempiés Gigante');
+    const mat1 = findInHand('Avispa gigante');
+    const mat2 = findInHand('Avispa de Obsidiana');
+    // Both materials are already on the board, same as a player who normal-summoned them earlier.
+    placeMonster(state, mat1, 0, { position: 'attack' });
+    placeMonster(state, mat2, 0, { position: 'attack' });
+    state.players[0].hand = state.players[0].hand.filter((id) => id !== mat1 && id !== mat2);
+
+    const result = applyAction(state, 0, {
+      type: 'COMPILE_SUMMON',
+      instanceId: fusionId,
+      materialInstanceIds: [mat1, mat2],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(state.players[0].field.monsters.some((m) => m && m.instanceId === fusionId)).toBe(true);
     expect(state.players[0].field.monsters.find((m) => m && m.instanceId === fusionId).materials).toEqual([mat1, mat2]);
   });
 

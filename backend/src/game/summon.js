@@ -9,7 +9,7 @@ const { matchesCardFilter } = require('./filters');
 const { cardIdFromInstance } = require('./deckUtils');
 const { cannotBeSummoned, canBeNormalSummoned } = require('./summonRules');
 
-function normalSummon(state, controllerIndex, instanceId, { position = 'attack', faceDown = false } = {}) {
+function normalSummon(state, controllerIndex, instanceId, { position = 'attack', faceDown = false, slot = null } = {}) {
   const pl = player(state, controllerIndex);
   if (pl.normalSummonUsed) return { ok: false, reason: 'normal-summon-used' };
   if (!pl.hand.includes(instanceId)) return { ok: false, reason: 'not-in-hand' };
@@ -31,7 +31,8 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
     if (!paid) return { ok: false, reason: 'cannot-pay-summon-cost' };
   }
 
-  const placed = placeMonster(state, instanceId, controllerIndex, { position, faceDown });
+  // Rulebook: the player chooses where on the board the monster lands, not the engine.
+  const placed = placeMonster(state, instanceId, controllerIndex, { position, faceDown, slot });
   if (!placed) return { ok: false, reason: 'no-field-space' };
 
   pl.normalSummonUsed = true;
@@ -45,7 +46,7 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
 // condition/cost (own effectCodes carry a `summon_rule` effect) — doesn't touch normalSummonUsed,
 // since a special summon is an ADDITIONAL way to bring it out, not a replacement for the turn's
 // Normal Summon.
-function specialSummon(state, controllerIndex, instanceId, targets = []) {
+function specialSummon(state, controllerIndex, instanceId, targets = [], slot = null) {
   const pl = player(state, controllerIndex);
   const loc = findInstanceLocation(state, instanceId);
   if (!loc || loc.ownerIndex !== controllerIndex) return { ok: false, reason: 'not-in-hand' };
@@ -66,7 +67,9 @@ function specialSummon(state, controllerIndex, instanceId, targets = []) {
   const allowedZones = zoneRule ? zoneRule.args.zones : ['hand'];
   if (!allowedZones.includes(loc.zone)) return { ok: false, reason: 'not-in-hand' };
 
-  const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect: rule };
+  // `slot` rides along on ctx for the rule's own `specialSummon` action (actions.js) to place it
+  // where the player picked, rather than the engine's own first-empty fallback.
+  const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect: rule, slot };
   if (!checkConditions(ctx, rule.conditions)) return { ok: false, reason: 'special-summon-condition-not-met' };
 
   // Checked but not marked yet — a still-pending cost choice or a failed payment shouldn't burn
@@ -144,10 +147,11 @@ function fireHandTrigger(state, eventName, instanceId, controllerIndex) {
 
 // True when `loc` is a zone the controller actually owns and that satisfies `req.zone` (a
 // string or array of "hand" | "field" | "graveyard"; materials with no `zone` default to
-// "hand", matching a classic fusion that discards component monsters from your hand).
+// "hand"/"field" — a classic Compilación draws from either, same as the UI lets the player pick
+// a material from their hand or their board — unless the card's own recipe names a zone).
 function materialLocationSatisfies(loc, controllerIndex, req) {
   if (!loc || loc.ownerIndex !== controllerIndex) return false;
-  const allowed = req.zone ? (Array.isArray(req.zone) ? req.zone : [req.zone]) : ['hand'];
+  const allowed = req.zone ? (Array.isArray(req.zone) ? req.zone : [req.zone]) : ['hand', 'field'];
   return allowed.some((z) => {
     if (z === 'hand') return loc.zone === 'hand';
     if (z === 'graveyard') return loc.zone === 'graveyard';
@@ -158,7 +162,7 @@ function materialLocationSatisfies(loc, controllerIndex, req) {
 
 // Fusion/compilado summon. `materialInstanceIds` must satisfy every requirement in
 // card.activationCost.args.materials (see backend game docs / compilate_costs.json).
-function compileSummon(state, controllerIndex, compiladoInstanceId, materialInstanceIds) {
+function compileSummon(state, controllerIndex, compiladoInstanceId, materialInstanceIds, slot = null) {
   const pl = player(state, controllerIndex);
   const zonesWithCompilado = [...pl.hand, ...pl.extra];
   if (!zonesWithCompilado.includes(compiladoInstanceId)) return { ok: false, reason: 'not-available' };
@@ -187,9 +191,14 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
   }
 
   // Check there will be a free zone before touching anything: materials on the field free theirs.
+  // Rulebook: the player chooses where the compiled monster lands, same as any other summon.
   const blocked = corrodedSlots(pl, 'monsters');
-  const hasRoom = pl.field.monsters.some((m, i) => !blocked.includes(i) && (m === null || usedIds.has(m.instanceId)));
-  if (!hasRoom) return { ok: false, reason: 'no-field-space' };
+  const isFreeOnceMaterialsLeave = (i) => !blocked.includes(i) && (pl.field.monsters[i] === null || usedIds.has(pl.field.monsters[i].instanceId));
+  if (slot !== null) {
+    if (slot < 0 || slot >= pl.field.monsters.length || !isFreeOnceMaterialsLeave(slot)) return { ok: false, reason: 'no-field-space' };
+  } else if (!pl.field.monsters.some((m, i) => isFreeOnceMaterialsLeave(i))) {
+    return { ok: false, reason: 'no-field-space' };
+  }
 
   // Rulebook: the materials are stacked under the compiled monster (not sent to the graveyard) and
   // follow it wherever it goes; they can be summoned back by decompiling it.
@@ -203,7 +212,7 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
     }
     removeFromZone(state, id, loc);
   });
-  placeMonster(state, compiladoInstanceId, controllerIndex, { position: 'attack' });
+  placeMonster(state, compiladoInstanceId, controllerIndex, { position: 'attack', slot });
   const entry = pl.field.monsters.find((m) => m && m.instanceId === compiladoInstanceId);
   entry.materials = used;
 

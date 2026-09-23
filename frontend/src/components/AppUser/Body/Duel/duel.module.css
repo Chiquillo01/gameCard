@@ -281,6 +281,14 @@
   box-shadow: 0 0 12px 2px rgba(255, 215, 106, 0.7);
 }
 
+/* An empty zone the player can click to choose where a card lands. */
+.slot.pickable {
+  cursor: pointer;
+  outline: 3px dashed #6fdc8c;
+  outline-offset: -3px;
+  background: rgba(111, 220, 140, 0.15);
+}
+
 .faceDown {
   width: 88%;
   height: 88%;

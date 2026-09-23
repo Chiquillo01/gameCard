@@ -116,15 +116,27 @@ function moveToZone(state, instanceId, toZone, ownerIndexOverride) {
   return true;
 }
 
-// Puts a card instance onto the field as a monster.
-function placeMonster(state, instanceId, ownerIndex, { position = 'attack', faceDown = false } = {}) {
+// Resolves which slot a card lands in: the player's own pick if they gave one (validated against
+// the zone's actual free slots), otherwise the first free slot — same fallback every automatic
+// placement (a token, a triggered special summon, the bot) already relied on before slots became
+// player-choosable.
+function resolveSlot(arr, blocked, slot) {
+  if (slot === null || slot === undefined) return findEmptySlot(arr, blocked);
+  return slot >= 0 && slot < arr.length && arr[slot] === null && !blocked.includes(slot) ? slot : -1;
+}
+
+// Puts a card instance onto the field as a monster. `slot` (0-based) is the player's own pick —
+// Rulebook: the player chooses where on the board a card lands, not the engine.
+function placeMonster(state, instanceId, ownerIndex, { position = 'attack', faceDown = false, slot = null } = {}) {
+  const pl = state.players[ownerIndex];
+  // Resolved — and refused, on an occupied/corroded/out-of-range pick — before touching the
+  // card's current zone, so a rejected placement leaves it exactly where it was.
+  const targetSlot = resolveSlot(pl.field.monsters, corrodedSlots(pl, 'monsters'), slot);
+  if (targetSlot === -1) return false;
   const loc = findInstanceLocation(state, instanceId);
   if (loc) removeFromZone(state, instanceId, loc);
-  const pl = state.players[ownerIndex];
-  const slot = findEmptySlot(pl.field.monsters, corrodedSlots(pl, 'monsters'));
-  if (slot === -1) return false;
   const card = getCard(require('./deckUtils').cardIdFromInstance(instanceId));
-  pl.field.monsters[slot] = {
+  pl.field.monsters[targetSlot] = {
     instanceId,
     cardId: card._id.toString(),
     position,
@@ -140,13 +152,16 @@ function placeMonster(state, instanceId, ownerIndex, { position = 'attack', face
   return true;
 }
 
-// Returns the created field entry (truthy), or null if the support zone has no free slot.
-function placeSupport(state, instanceId, ownerIndex, { faceDown = false } = {}) {
+// Returns the created field entry (truthy), or null if the chosen/first free support slot isn't
+// available. `slot` (0-based) is the player's own pick.
+function placeSupport(state, instanceId, ownerIndex, { faceDown = false, slot = null } = {}) {
+  const pl = state.players[ownerIndex];
+  // Resolved — and refused, on an occupied/corroded/out-of-range pick — before touching the
+  // card's current zone, so a rejected placement leaves it exactly where it was.
+  const targetSlot = resolveSlot(pl.field.support, corrodedSlots(pl, 'support'), slot);
+  if (targetSlot === -1) return null;
   const loc = findInstanceLocation(state, instanceId);
   if (loc) removeFromZone(state, instanceId, loc);
-  const pl = state.players[ownerIndex];
-  const slot = findEmptySlot(pl.field.support, corrodedSlots(pl, 'support'));
-  if (slot === -1) return null;
   const card = getCard(require('./deckUtils').cardIdFromInstance(instanceId));
   const entry = {
     instanceId,
@@ -154,7 +169,7 @@ function placeSupport(state, instanceId, ownerIndex, { faceDown = false } = {}) 
     faceDown,
     activatedThisTurn: false,
   };
-  pl.field.support[slot] = entry;
+  pl.field.support[targetSlot] = entry;
   return entry;
 }
 
