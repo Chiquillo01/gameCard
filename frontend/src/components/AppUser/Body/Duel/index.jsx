@@ -681,7 +681,11 @@ const DuelPage = () => {
               ))}
             </div>
           </div>
-          {choicePanel && <ChoicePanel panel={choicePanel} />}
+          {choicePanel && (
+            <div className={styles.actionSlot}>
+              <ChoicePanel panel={choicePanel} />
+            </div>
+          )}
         </div>
         </div>
 

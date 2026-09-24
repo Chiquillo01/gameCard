@@ -612,18 +612,32 @@
 }
 
 @media (min-width: 1421px) {
-  /* Room enough beside the board: hangs off the right instead of pushing the page down, so the
-     action panel that follows the log doesn't add to the page's total height. */
+  /* Room enough beside the board: the log hangs off the right, exactly as tall as both fields,
+     and the action panel sits under it, level with the hand — nothing adds to the page height. */
   .sidePanel {
     position: absolute;
     top: 0;
+    bottom: 0;
     left: 100%;
     margin: 0 0 0 1rem;
-    width: 300px;
+    width: min(440px, calc((100vw - 700px) / 2 - 2rem));
+  }
+
+  .sidePanel .log {
+    height: 100%;
+  }
+
+  .actionSlot {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 2.5rem;
   }
 }
 
 .log {
+  box-sizing: border-box;
   position: relative;
   width: 100%;
   height: 260px;
