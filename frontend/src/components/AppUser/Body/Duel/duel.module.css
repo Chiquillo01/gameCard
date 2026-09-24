@@ -602,13 +602,31 @@
   border: 3px dashed rgba(232, 211, 160, 0.3);
 }
 
-/* Stacked under the fields, full width — never floats off to the side, so anything shown below
-   it (the hand, the action panel) always reads as coming after it, not beside it. */
+/* Holds the log and, once one is open, the action panel right below it — stacked in normal flow
+   on narrow screens, moved beside the fields (not stretching the page taller) on wide ones. */
+.sidePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+
+@media (min-width: 1421px) {
+  /* Room enough beside the board: hangs off the right instead of pushing the page down, so the
+     action panel that follows the log doesn't add to the page's total height. */
+  .sidePanel {
+    position: absolute;
+    top: 0;
+    left: 100%;
+    margin: 0 0 0 1rem;
+    width: 300px;
+  }
+}
+
 .log {
   position: relative;
-  margin: 0.5rem 0 0;
-  width: auto;
-  height: 150px;
+  width: 100%;
+  height: 260px;
   background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
   border: 3px solid #4a2a10;
   box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.35);

@@ -671,14 +671,17 @@ const DuelPage = () => {
           onPickSlot={pickBoardSlot}
         />
 
-        <div className={styles.log}>
-          <div className={styles.logScroll} ref={logRef}>
-            {view.log.map((l, i) => (
-              <div key={i} className={styles.logLine}>
-                [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
-              </div>
-            ))}
+        <div className={styles.sidePanel}>
+          <div className={styles.log}>
+            <div className={styles.logScroll} ref={logRef}>
+              {view.log.map((l, i) => (
+                <div key={i} className={styles.logLine}>
+                  [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
+                </div>
+              ))}
+            </div>
           </div>
+          {choicePanel && <ChoicePanel panel={choicePanel} />}
         </div>
         </div>
 
@@ -706,8 +709,6 @@ const DuelPage = () => {
             </div>
           ))}
         </div>
-
-        {choicePanel && <ChoicePanel panel={choicePanel} />}
       </div>
 
     </div>
