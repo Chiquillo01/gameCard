@@ -86,6 +86,8 @@ const Store = () => {
         errorToast('Solicitud incorrecta');
       } else if (e.status === 404) {
         errorToast('Algun recurso no se ha encontrado o no está disponible');
+      } else if (e.status === 402) {
+        errorToast('Los pagos con dinero real aún no están disponibles');
       } else if (e.status === 410) {
         errorToast('Saldo insuficiente');
       } else {

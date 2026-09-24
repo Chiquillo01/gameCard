@@ -56,7 +56,7 @@ export const buyCurrency = async (productId, paymentMethod, quantity = 1) => {
 
   const response = await API.post(
     `/products/${productId}/buy-currency`,
-    { productId, quantity },
+    { productId, paymentMethod, quantity },
     {
       headers: { Authorization: `Bearer ${token}` },
     },

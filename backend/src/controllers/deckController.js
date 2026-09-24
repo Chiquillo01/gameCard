@@ -2,51 +2,78 @@ const mongoose = require('mongoose');
 const { Deck } = require('../data/Schema/deck');
 const { User } = require('../data/Schema/user');
 const { Card } = require('../data/Schema/card');
-const { MAX_DECK_SIZE, MAX_FUSION_CARDS } = require('../game/deckRules');
+const { UserCollection } = require('../data/Schema/userCollection');
+const { MAX_DECK_SIZE, MAX_FUSION_CARDS, maxCopiesOf, mergeEntries } = require('../game/deckRules');
 
-// Fallback only — used if a Card document somehow has no `state` (banlist value). The real,
-// authoritative limit lives on each card's own `state` field (see Schema/card.js), so a card
-// can be banned/limited without touching this code.
-const MAX_COPIES_BY_RARITY = { legendary: 1, epic: 2, rare: 3, common: 4 };
+// The only owner fields a deck response carries — never the email, admin flag or password hash.
+const PUBLIC_OWNER_FIELDS = 'userName profilePicture';
 
-// A deck can be saved while still under construction — the 40-card *minimum* is only enforced
-// at duel-start time (see game/deckRules.js's isDeckPlayable, used by duelController) — but it
-// can never be saved over the 50-card max, since that's a hard limit either way. Max copies per
-// card come from its own banlist `state` value (defaults by rarity: Legendaria 1 / Épica 2 /
-// Rara 3 / Común 4).
-function validateDeckComposition(cards, cardDocsById) {
-  const totalNormalCards = cards.reduce((sum, c) => sum + (c.amount || 0), 0);
-  if (totalNormalCards > MAX_DECK_SIZE) {
-    return `El mazo principal no puede tener más de ${MAX_DECK_SIZE} cartas (tiene ${totalNormalCards}).`;
+// Validates and normalizes a deck payload before it's saved. A deck can be saved while still under
+// construction — the 40-card *minimum* is only enforced at duel-start time (see
+// game/deckRules.js's isDeckPlayable) — but everything else is a hard limit:
+//   - every entry is a real card with a whole, positive number of copies (a negative amount used
+//     to shrink the counted total, letting an oversized deck through);
+//   - the same card listed twice counts as one entry (two "x4" rows of a Legendaria used to slip
+//     past the per-card limit);
+//   - main deck holds no Compilación/token cards, the fusion list holds only Compilación cards;
+//   - main deck ≤ 50, fusion ≤ 10, per-card copies ≤ its banlist `state` (rarity default);
+//   - the player actually owns that many copies in their collection.
+// Returns { error } or the normalized { cards, fusionCards, tokens } to store.
+async function validateDeckPayload(userId, { cards, fusionCards, tokens }) {
+  if (!Array.isArray(cards) || !Array.isArray(fusionCards) || !Array.isArray(tokens)) {
+    return { error: 'Formato de mazo no válido.' };
   }
-  for (const c of cards) {
-    const card = cardDocsById.get(c.card.toString());
-    const max = card?.state ?? MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
-    if (c.amount > max) {
-      return `Solo puedes tener ${max} copias de "${card?.name || c.card}" (rareza ${card?.rarity}).`;
-    }
-  }
-  return null;
-}
+  const entries = [...cards, ...fusionCards];
+  const badEntry = entries.find((c) => !c || !mongoose.Types.ObjectId.isValid(String(c.card)) || !Number.isInteger(c.amount) || c.amount < 1);
+  if (badEntry) return { error: 'Cada carta del mazo necesita un número entero de copias mayor que 0.' };
+  if (tokens.some((id) => !mongoose.Types.ObjectId.isValid(String(id)))) return { error: 'Token no válido.' };
 
-// Tokens aren't drawn from a deck — an effect conjures them outright — so they only need to be
-// real token cards, with no size or per-copy limit (a duel can need more instances of a token
-// than the player "owns").
-function validateTokenSelection(tokenIds, cardDocsById) {
-  for (const id of tokenIds) {
-    const card = cardDocsById.get(id.toString());
-    if (!card || card.category !== 'token') {
-      return `"${card?.name || id}" no es una carta de token válida.`;
-    }
+  const mainCards = mergeEntries(cards);
+  const extraCards = mergeEntries(fusionCards);
+  const tokenIds = [...new Set(tokens.map(String))];
+
+  const allCardIds = [...new Set([...mainCards.map((c) => c.card), ...extraCards.map((c) => c.card), ...tokenIds])];
+  const existingCards = await Card.find({ _id: { $in: allCardIds } });
+  if (existingCards.length !== allCardIds.length) return { error: 'Algunas cartas no existen en la base de datos.' };
+  const cardDocsById = new Map(existingCards.map((c) => [c._id.toString(), c]));
+
+  const wrongMain = mainCards.find((c) => ['fusion', 'token'].includes(cardDocsById.get(c.card).category));
+  if (wrongMain) return { error: `"${cardDocsById.get(wrongMain.card).name}" no puede ir en el mazo principal.` };
+  const wrongExtra = extraCards.find((c) => cardDocsById.get(c.card).category !== 'fusion');
+  if (wrongExtra) return { error: `"${cardDocsById.get(wrongExtra.card).name}" no es una carta de Compilación.` };
+  const wrongToken = tokenIds.find((id) => cardDocsById.get(id).category !== 'token');
+  if (wrongToken) return { error: `"${cardDocsById.get(wrongToken).name}" no es una carta de token válida.` };
+
+  const totalMain = mainCards.reduce((sum, c) => sum + c.amount, 0);
+  if (totalMain > MAX_DECK_SIZE) return { error: `El mazo principal no puede tener más de ${MAX_DECK_SIZE} cartas (tiene ${totalMain}).` };
+  const totalExtra = extraCards.reduce((sum, c) => sum + c.amount, 0);
+  if (totalExtra > MAX_FUSION_CARDS) return { error: `No puedes añadir más de ${MAX_FUSION_CARDS} cartas de fusión al mazo.` };
+
+  for (const c of [...mainCards, ...extraCards]) {
+    const card = cardDocsById.get(c.card);
+    const max = maxCopiesOf(card);
+    if (c.amount > max) return { error: `Solo puedes tener ${max} copias de "${card.name}" (rareza ${card.rarity}).` };
   }
-  return null;
+
+  // Tokens aren't drawn from a deck — an effect conjures them outright — so they don't need to be
+  // owned; every real card does.
+  const collection = await UserCollection.findOne({ userId }).lean();
+  const owned = new Map((collection?.cards || []).map((c) => [c.cardId.toString(), c.amount]));
+  const notOwned = [...mainCards, ...extraCards].find((c) => (owned.get(c.card) || 0) < c.amount);
+  if (notOwned) {
+    const card = cardDocsById.get(notOwned.card);
+    return { error: `No tienes suficientes copias de "${card.name}" en tu colección (tienes ${owned.get(notOwned.card) || 0}, necesitas ${notOwned.amount}).` };
+  }
+
+  const toDoc = (list) => list.map((c) => ({ card: new mongoose.Types.ObjectId(c.card), amount: c.amount }));
+  return { cards: toDoc(mainCards), fusionCards: toDoc(extraCards), tokens: tokenIds.map((id) => new mongoose.Types.ObjectId(id)) };
 }
 
 const getDecksUser = async (req, res) => {
   const userId = req.jwtPayload.id;
   try {
     const decks = await Deck.find({ owner: userId })
-      .populate('owner')
+      .populate('owner', PUBLIC_OWNER_FIELDS)
       .populate('cards.card')
       .populate('fusionCards.card')
       .populate('tokens');
@@ -65,12 +92,14 @@ const getDeckById = async (req, res) => {
     }
 
     const deck = await Deck.findById(id)
-      .populate('owner')
+      .populate('owner', PUBLIC_OWNER_FIELDS)
       .populate('cards.card')
       .populate('fusionCards.card')
       .populate('tokens');
 
-    if (!deck) {
+    // Only the owner can open a private deck; someone else's is reported as missing, so the
+    // endpoint can't be used to probe which deck ids exist.
+    if (!deck || (!deck.public && deck.owner._id.toString() !== req.jwtPayload.id)) {
       return res.status(404).json({ error: 'No se ha podido encontrar el mazo' });
     }
 
@@ -100,54 +129,21 @@ const createDeck = async (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
-    const totalFusionCards = fusionCards.reduce((sum, card) => sum + (card.amount || 0), 0);
-
-    if (totalFusionCards > MAX_FUSION_CARDS) {
-      return res.status(400).json({ error: `No puedes añadir más de ${MAX_FUSION_CARDS} cartas de fusión al mazo.` });
-    }
-
-    const allCardIds = [...cards.map((c) => c.card), ...fusionCards.map((c) => c.card), ...tokens];
-    const existingCards = await Card.find({ _id: { $in: allCardIds } });
-
-    if (existingCards.length !== new Set(allCardIds.map(String)).size) {
-      return res.status(400).json({ error: 'Algunas cartas no existen en la base de datos.' });
-    }
-
-    const cardDocsById = new Map(existingCards.map((c) => [c._id.toString(), c]));
-    const mainDeckError = validateDeckComposition(cards, cardDocsById);
-    if (mainDeckError) return res.status(400).json({ error: mainDeckError });
-    for (const c of fusionCards) {
-      const card = cardDocsById.get(c.card.toString());
-      const max = card?.state ?? MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
-      if (c.amount > max) {
-        return res.status(400).json({ error: `Solo puedes tener ${max} copias de "${card?.name || c.card}" (rareza ${card?.rarity}).` });
-      }
-    }
-    const tokenError = validateTokenSelection(tokens, cardDocsById);
-    if (tokenError) return res.status(400).json({ error: tokenError });
-
-    const formattedCards = cards.map((c) => ({
-      card: new mongoose.Types.ObjectId(c.card),
-      amount: c.amount,
-    }));
-
-    const formattedFusionCards = fusionCards.map((c) => ({
-      card: new mongoose.Types.ObjectId(c.card),
-      amount: c.amount,
-    }));
+    const validated = await validateDeckPayload(userId, { cards, fusionCards, tokens });
+    if (validated.error) return res.status(400).json({ error: validated.error });
 
     const newDeck = new Deck({
       deckTitle: deckTitle.trim(),
       owner: userId,
-      cards: formattedCards,
-      fusionCards: formattedFusionCards,
-      tokens: tokens.map((id) => new mongoose.Types.ObjectId(id)),
+      cards: validated.cards,
+      fusionCards: validated.fusionCards,
+      tokens: validated.tokens,
     });
 
     await newDeck.save();
 
     const deckToReturn = await Deck.findById(newDeck._id)
-      .populate('owner')
+      .populate('owner', PUBLIC_OWNER_FIELDS)
       .populate('cards.card')
       .populate('fusionCards.card')
       .populate('tokens');
@@ -179,33 +175,15 @@ const updateDeck = async (req, res) => {
       return res.status(403).json({ error: 'No tienes permiso para modificar este mazo' });
     }
 
-    const totalFusionCards = fusionCards.reduce((sum, card) => sum + (card.amount || 0), 0);
-
-    if (totalFusionCards > MAX_FUSION_CARDS) {
-      return res.status(400).json({ error: `No puedes añadir más de ${MAX_FUSION_CARDS} cartas de fusión al mazo` });
-    }
-
-    const allCardIds = [...cards.map((c) => c.card), ...fusionCards.map((c) => c.card), ...tokens];
-    const existingCards = await Card.find({ _id: { $in: allCardIds } });
-    const cardDocsById = new Map(existingCards.map((c) => [c._id.toString(), c]));
-    const mainDeckError = validateDeckComposition(cards, cardDocsById);
-    if (mainDeckError) return res.status(400).json({ error: mainDeckError });
-    for (const c of fusionCards) {
-      const card = cardDocsById.get(c.card.toString());
-      const max = card?.state ?? MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
-      if (c.amount > max) {
-        return res.status(400).json({ error: `Solo puedes tener ${max} copias de "${card?.name || c.card}" (rareza ${card?.rarity}).` });
-      }
-    }
-    const tokenError = validateTokenSelection(tokens, cardDocsById);
-    if (tokenError) return res.status(400).json({ error: tokenError });
+    const validated = await validateDeckPayload(userId, { cards, fusionCards, tokens });
+    if (validated.error) return res.status(400).json({ error: validated.error });
 
     const updatedDeck = await Deck.findByIdAndUpdate(
       id,
-      { deckTitle: deckTitle.trim(), cards, fusionCards, tokens },
+      { deckTitle: deckTitle.trim(), cards: validated.cards, fusionCards: validated.fusionCards, tokens: validated.tokens },
       { new: true, runValidators: true },
     )
-      .populate('owner')
+      .populate('owner', PUBLIC_OWNER_FIELDS)
       .populate('cards.card')
       .populate('fusionCards.card')
       .populate('tokens');

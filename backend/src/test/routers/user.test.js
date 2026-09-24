@@ -63,6 +63,14 @@ describe('User Controller TEST', () => {
     });
   });
 
+  describe('GET /user/me', () => {
+    it('never returns the password hash', async () => {
+      const response = await fakeRequest.get('/user/me').set('Authorization', `Bearer ${regularToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body.password).toBeUndefined();
+    });
+  });
+
   describe('POST /user/update', () => {
     it('ignores server-owned fields (admin, currency, level, password) sent by the user', async () => {
       const before = await User.findOne({ email: 'regular.user@gmail.com' }).lean();

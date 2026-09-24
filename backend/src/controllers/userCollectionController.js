@@ -5,7 +5,7 @@ const getUserCollection = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
 
-    const userCollection = await UserCollection.findOne({ userId }).populate('userId').populate('cards.cardId');
+    const userCollection = await UserCollection.findOne({ userId }).populate('userId', 'userName profilePicture').populate('cards.cardId');
     if (!userCollection) {
       return res.status(404).send();
     }

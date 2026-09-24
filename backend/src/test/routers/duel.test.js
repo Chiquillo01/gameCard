@@ -6,6 +6,8 @@ const app = bootstrapApp();
 const fakeRequest = supertest(app);
 const { disconnectDB, connectDB } = require('../../mongo/connection');
 const { Card } = require('../../data/Schema/card');
+const { User } = require('../../data/Schema/user');
+const { UserCollection } = require('../../data/Schema/userCollection');
 
 beforeAll(async () => {
   await connectDB();
@@ -47,6 +49,11 @@ describe('Duel Controller TEST', () => {
       ),
     );
     const legalDeckCards = cards.map((c) => ({ card: c._id.toString(), amount: 4 })); // 10x4 = 40
+    // A deck can only use cards the player owns.
+    await UserCollection.updateOne(
+      { userId: (await User.findOne({ email: 'duel.starter@gmail.com' }))._id },
+      { cards: cards.map((c) => ({ cardId: c._id, amount: 4 })) },
+    );
 
     const legalDeck = await fakeRequest
       .post('/deck')

@@ -17,7 +17,7 @@ const getUsers = async (req, res) => {
 const getCurrentUser = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
-    const currentUser = await User.findById(userId);
+    const currentUser = await User.findById(userId).select('-password');
     if (!currentUser) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }

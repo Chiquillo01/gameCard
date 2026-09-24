@@ -57,7 +57,17 @@ const userSchema = new Schema(
       default: 0,
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    // Never serialize the password hash — not in /user/me, not when a user is populated into a
+    // deck, collection or market listing. Queries that need it (login) read the document itself.
+    toJSON: {
+      transform: (doc, ret) => {
+        delete ret.password;
+        return ret;
+      },
+    },
+  },
 );
 
 userSchema.pre('save', async function (next) {
