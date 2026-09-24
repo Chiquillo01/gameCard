@@ -27,6 +27,10 @@ async function seed() {
   await Promise.all(
     effects.map((e) => Effect.findByIdAndUpdate(e._id, e, { upsert: true, setDefaultsOnInsert: true })),
   );
+  // effects_final.json is the whole catalog: an effect removed from it (the old keywords) goes
+  // from the database too, instead of lingering for cards that still reference it.
+  const pruned = await Effect.deleteMany({ _id: { $nin: effects.map((e) => e._id) } });
+  if (pruned.deletedCount) console.log(`Removed ${pruned.deletedCount} effect(s) no longer in effects_final.json.`);
 
   const numbers = cards.map((c) => c.number);
   if (new Set(numbers).size !== numbers.length) {

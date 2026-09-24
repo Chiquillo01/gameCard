@@ -1,29 +1,5 @@
 [
   {
-    "_id": "TOQUE_DE_MUERTE",
-    "type": "keyword",
-    "oncePerTurn": false,
-    "conditions": [],
-    "actions": [
-      {
-        "fn": "deathTouch"
-      }
-    ],
-    "source": "Efecto(monster)"
-  },
-  {
-    "_id": "VOLAR",
-    "type": "keyword",
-    "oncePerTurn": false,
-    "conditions": [],
-    "actions": [
-      {
-        "fn": "flying"
-      }
-    ],
-    "source": "Efecto(monster)"
-  },
-  {
     "_id": "JINETE_DRAGON_BUFF",
     "type": "continuous",
     "oncePerTurn": false,
@@ -338,23 +314,46 @@
     "_id": "RAKSHASA_NEGATE",
     "type": "quick",
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "effectIncludes",
+        "args": {
+          "effects": [
+            "addFromDeckToHand",
+            "summonFromDeck",
+            "sendFromDeckToGraveyard",
+            "banishFromDeck"
+          ]
+        }
+      }
+    ],
     "cost": {
       "fn": "discardSelf"
     },
     "actions": [
       {
-        "fn": "negateEffect"
+        "fn": "negateActivation"
       }
     ],
-    "source": "Efecto(monster)"
+    "source": "Efecto(monster)",
+    "trigger": {
+      "fn": "card_effect_activated",
+      "args": {
+        "phase": "main",
+        "source": "any",
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "ONI_NEGATE",
     "type": "quick",
     "oncePerTurn": true,
     "trigger": {
-      "fn": "chainResponse"
+      "fn": "chainResponse",
+      "args": {
+        "from": "hand"
+      }
     },
     "conditions": [],
     "cost": {
@@ -389,9 +388,11 @@
     "type": "quick",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "phase",
+      "fn": "card_effect_activated",
       "args": {
-        "timing": "mainPhase"
+        "phase": "main",
+        "source": "any",
+        "from": "hand"
       }
     },
     "conditions": [
@@ -412,7 +413,7 @@
     },
     "actions": [
       {
-        "fn": "negateEffect"
+        "fn": "negateActivation"
       }
     ],
     "source": "Efecto(monster)"
@@ -433,7 +434,13 @@
         }
       }
     ],
-    "source": "Efecto(monster)"
+    "source": "Efecto(monster)",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "MIMETO_FLIP_SUPPORT",
@@ -534,13 +541,14 @@
   {
     "_id": "PEGASO",
     "type": "ignition",
-    "oncePerTurn": false,
+    "oncePerTurn": true,
     "conditions": [],
     "actions": [
       {
         "fn": "changeBeed",
         "args": {
-          "breed": "Hada"
+          "breed": "Hada",
+          "target": "selected"
         }
       }
     ],
@@ -735,10 +743,14 @@
     },
     "conditions": [
       {
-        "fn": "noCardsControlled"
-      },
-      {
-        "fn": "canActivateOnOpponentTurn"
+        "fn": "canActivateOnOpponentTurn",
+        "args": {
+          "requires": [
+            {
+              "fn": "noCardsControlled"
+            }
+          ]
+        }
       }
     ],
     "requiresTarget": false,
@@ -942,7 +954,7 @@
         "fn": "negateAttack"
       },
       {
-        "fn": "endTurn"
+        "fn": "endBattlePhase"
       }
     ],
     "source": "EfectoBD(activated)"
@@ -1010,10 +1022,7 @@
     "targetSelector": "triggeredEffect",
     "actions": [
       {
-        "fn": "negateEffect",
-        "args": {
-          "sendCard": false
-        }
+        "fn": "negateActivation"
       }
     ],
     "source": "EfectoBD(activated)"
@@ -1055,7 +1064,8 @@
     "trigger": {
       "fn": "onActivation",
       "args": {
-        "phase": "main"
+        "phase": "main",
+        "from": "field"
       }
     },
     "conditions": [
@@ -1079,7 +1089,8 @@
       {
         "fn": "negateEffect",
         "args": {
-          "target": "fieldCard"
+          "target": "fieldCard",
+          "destroyIfControls": "Enano Constructor"
         }
       }
     ],
@@ -1092,7 +1103,8 @@
     "trigger": {
       "fn": "onActivation",
       "args": {
-        "phase": "main"
+        "phase": "main",
+        "from": "field"
       }
     },
     "conditions": [
@@ -1134,7 +1146,8 @@
     "trigger": {
       "fn": "onActivation",
       "args": {
-        "phase": "main"
+        "phase": "main",
+        "from": "field"
       }
     },
     "conditions": [
@@ -1816,7 +1829,13 @@
           "sendCard": false
         }
       }
-    ]
+    ],
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "SERPIENTE_MUELLE_BOUNCE",
@@ -2008,22 +2027,6 @@
           "condition": {
             "costCardBreed": "Orco"
           },
-          "target": "self"
-        }
-      }
-    ]
-  },
-  {
-    "_id": "INVISIBILIDAD",
-    "type": "keyword",
-    "oncePerTurn": false,
-    "conditions": [],
-    "requiresTarget": false,
-    "actions": [
-      {
-        "fn": "grantAbility",
-        "args": {
-          "ability": "invisibilidad",
           "target": "self"
         }
       }
@@ -2247,9 +2250,10 @@
     "requiresTarget": true,
     "actions": [
       {
-        "fn": "destroy",
+        "fn": "applyStatus",
         "args": {
-          "target": "selected"
+          "target": "selected",
+          "status": "Congelado"
         }
       }
     ]
@@ -2278,22 +2282,6 @@
           "exclude": "self",
           "destination": "field",
           "sendCard": false
-        }
-      }
-    ]
-  },
-  {
-    "_id": "BLOQUEO",
-    "type": "keyword",
-    "oncePerTurn": false,
-    "conditions": [],
-    "requiresTarget": false,
-    "actions": [
-      {
-        "fn": "grantAbility",
-        "args": {
-          "ability": "bloqueo",
-          "target": "self"
         }
       }
     ]
@@ -2533,7 +2521,7 @@
     "requiresTarget": true,
     "actions": [
       {
-        "fn": "negateEffect"
+        "fn": "negateActivation"
       }
     ]
   },
@@ -2752,7 +2740,13 @@
           }
         }
       }
-    ]
+    ],
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "SHADOW_DRAGON_ONSUMMON_ADD",
@@ -3375,7 +3369,7 @@
         }
       },
       {
-        "fn": "generatePixelsPerCardDestroyed",
+        "fn": "drawCardsPerDestroyed",
         "args": {
           "amount": 1
         }
@@ -3569,7 +3563,7 @@
         "fn": "addCounter",
         "args": {
           "counter": "gear",
-          "amount": 1,
+          "amount": 2,
           "target": "selected"
         }
       }
@@ -3834,7 +3828,13 @@
           "sendCard": false
         }
       }
-    ]
+    ],
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "AVISPA_GIGANTE_BUFF",
@@ -4099,14 +4099,10 @@
     "requiresTarget": false,
     "actions": [
       {
-        "fn": "grantBuff",
+        "fn": "debuffColumn",
         "args": {
-          "scope": "column",
-          "relativeTo": "self",
-          "buff": {
-            "atk": -2,
-            "def": -2
-          }
+          "atk": -2,
+          "def": -2
         }
       }
     ]
@@ -4272,11 +4268,9 @@
     },
     "conditions": [],
     "cost": {
-      "fn": "discardCards",
+      "fn": "discart",
       "args": {
-        "count": 1,
-        "breed": "Licano",
-        "zone": "hand"
+        "count": 1
       }
     },
     "requiresTarget": false,
@@ -4286,9 +4280,15 @@
         "args": {
           "count": 1,
           "filter": {
-            "breed": "Licano"
+            "nameContains": "Licántropo",
+            "category": "Monstruo"
           },
-          "excludeAttributeOf": "discardedCard"
+          "excludeAttributesOf": {
+            "zone": "graveyard",
+            "filter": {
+              "nameContains": "Licántropo"
+            }
+          }
         }
       }
     ]
@@ -4459,7 +4459,7 @@
       {
         "fn": "debuffAllByMaterialsAtk",
         "args": {
-          "scope": "allMonsters",
+          "scope": "opponentMonsters",
           "statSource": "fusionMaterials"
         }
       }
@@ -4800,7 +4800,13 @@
           "destination": "field"
         }
       }
-    ]
+    ],
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "SKY_DRAGON_VIENTO_ONSUMMON_SEARCH",
@@ -4994,8 +5000,7 @@
           "filter": {
             "name": "Matón",
             "zone": [
-              "deck",
-              "graveyard"
+              "deck"
             ]
           }
         }
@@ -5178,7 +5183,7 @@
         "args": {
           "target": "self",
           "value": 10,
-          "duration": "endOfTurn"
+          "duration": "endOfNextTurn"
         }
       }
     ]
@@ -5238,7 +5243,7 @@
     },
     "actions": [
       {
-        "fn": "negateEffect"
+        "fn": "negateActivation"
       }
     ]
   },
@@ -6569,5 +6574,23 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "_id": "DAMARCO_EXTRA_ATTACKS",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "grantExtraAttack",
+        "args": {
+          "perMaterial": true
+        }
+      }
+    ]
   }
 ]

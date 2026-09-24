@@ -55,18 +55,31 @@ const monsterOf = (state, p, id) => state.players[p].field.monsters.find((m) => 
 
 describe('Equipo cards must name a target to activate', () => {
   it('asks the player to pick a monster instead of activating "plain"', async () => {
+    const { state, inHand } = await makeMatch(['Armadura de Insecto', 'Avispa gigante', 'Avispa Mutante']);
+    toMain1(state);
+    state.players[0].pixelcoins = 6;
+    const insect = inHand('Avispa gigante');
+    const insect2 = inHand('Avispa Mutante');
+    placeMonster(state, insect, 0, { position: 'attack' });
+    placeMonster(state, insect2, 0, { position: 'attack' });
+
+    const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Armadura de Insecto') });
+    expect(res).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(res.options.map((o) => o.instanceId).sort()).toEqual([insect, insect2].sort());
+    // Nothing was spent or placed while waiting on the pick.
+    expect(state.players[0].pixelcoins).toBe(6);
+    expect(state.players[0].field.support.every((s) => !s)).toBe(true);
+  });
+
+  it('equips the only legal monster without asking (nothing to choose between)', async () => {
     const { state, inHand } = await makeMatch(['Armadura de Insecto', 'Avispa gigante']);
     toMain1(state);
     state.players[0].pixelcoins = 6;
     const insect = inHand('Avispa gigante');
     placeMonster(state, insect, 0, { position: 'attack' });
-
-    const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Armadura de Insecto') });
-    expect(res).toMatchObject({ ok: false, reason: 'choose-target' });
-    expect(res.options.map((o) => o.instanceId)).toEqual([insect]);
-    // Nothing was spent or placed while waiting on the pick.
-    expect(state.players[0].pixelcoins).toBe(6);
-    expect(state.players[0].field.support.every((s) => !s)).toBe(true);
+    const armadura = inHand('Armadura de Insecto');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: armadura })).toMatchObject({ ok: true });
+    expect(state.players[0].field.support.find((s) => s && s.instanceId === armadura)).toMatchObject({ equippedTo: insect });
   });
 
   it('rejects a target that fails the restriction on the card', async () => {

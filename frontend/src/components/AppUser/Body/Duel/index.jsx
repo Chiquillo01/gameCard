@@ -101,7 +101,8 @@ const DuelPage = () => {
     if (data && data.pendingTriggerChoice && data.pendingTriggerChoice.kind === 'slot') {
       setPendingChoice(null);
     } else if (data && data.pendingTriggerChoice) {
-      setPendingChoice({ action: { type: 'RESOLVE_TRIGGER_CHOICE' }, options: data.pendingTriggerChoice.options });
+      // An automatic effect's pick, or which cards to discard (hand limit, a rival's effect).
+      setPendingChoice({ action: { type: 'RESOLVE_TRIGGER_CHOICE' }, options: data.pendingTriggerChoice.options, prompt: data.pendingTriggerChoice.prompt, forced: true });
     }
   };
 
@@ -149,7 +150,7 @@ const DuelPage = () => {
       if (!result.ok) {
         // Not a rule violation — the server needs the player to pick which of these it means.
         if (result.reason === 'choose-target' && result.options && result.options.length) {
-          setPendingChoice({ action, options: result.options });
+          setPendingChoice({ action, options: result.options, prompt: result.prompt, forced: action.type === 'RESOLVE_TRIGGER_CHOICE' });
         } else {
           showToast('error', humanizeReason(result.reason));
         }
@@ -304,7 +305,7 @@ const DuelPage = () => {
   // pick one of its legal zones. It comes from the view, so no local cancel can drop it.
   const triggerSlot = view?.pendingTriggerChoice?.kind === 'slot' ? view.pendingTriggerChoice : null;
   const boardSlotPicker = triggerSlot
-    ? { zone: triggerSlot.zone, action: { type: 'RESOLVE_TRIGGER_CHOICE' }, freeing: [], slots: triggerSlot.slots, card: triggerSlot.card, forced: true }
+    ? { zone: triggerSlot.zone, action: { type: 'RESOLVE_TRIGGER_CHOICE' }, freeing: [], slots: triggerSlot.slots, card: triggerSlot.card, forced: true, prompt: triggerSlot.prompt }
     : pendingBoardSlot;
 
   const pickBoardSlot = async (slot) => {
@@ -481,7 +482,7 @@ const DuelPage = () => {
       const zoneLabel = boardSlotPicker.zone === 'monster' ? 'zona de Monstruos' : 'zona de Apoyo';
       return {
         card: boardSlotPicker.card || cardInPlay(boardSlotPicker.action.instanceId),
-        prompt: boardSlotPicker.forced ? 'Se invoca de forma especial: elige dónde' : 'Elige dónde colocarla',
+        prompt: boardSlotPicker.forced ? boardSlotPicker.prompt || 'Se invoca de forma especial: elige dónde' : 'Elige dónde colocarla',
         hint: `Haz click en una casilla vacía de tu ${zoneLabel}`,
         options: boardSlotPicker.forced ? [] : [cancel],
       };
@@ -565,9 +566,11 @@ const DuelPage = () => {
 
       {pendingChoice && (
         <PileModal
-          title='Elige un objetivo'
+          title={pendingChoice.prompt || 'Elige un objetivo'}
           cards={pendingChoice.options}
-          onClose={() => setPendingChoice(null)}
+          // A choice the duel is waiting on (an automatic effect's pick, a forced discard) can't be
+          // dismissed — nothing else can happen until it's answered.
+          onClose={pendingChoice.forced ? null : () => setPendingChoice(null)}
           renderCardExtra={(card) => (
             <button className={styles.effectButton} onClick={() => chooseTarget(card.instanceId)}>
               Elegir
@@ -722,6 +725,7 @@ const DuelPage = () => {
               title={card.name}
             >
               <img src={card.image} alt={card.name} />
+              {!fusion && renderEffectButtons(card)}
             </div>
           ))}
         </div>
@@ -891,7 +895,7 @@ function PileSlot({ style, label, count, onClick }) {
 
 function PileModal({ title, cards, onClose, renderCardExtra }) {
   return (
-    <div className={styles.pileOverlay} onClick={onClose}>
+    <div className={styles.pileOverlay} onClick={onClose || undefined}>
       <div className={styles.pileModal} onClick={(e) => e.stopPropagation()}>
         <h3 className={styles.pileModalTitle}>
           {title} ({cards.length})
@@ -900,15 +904,17 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
           {cards.length === 0 && <p className={styles.pileEmpty}>Vacío.</p>}
           {cards.map((card) => (
             <div key={card.instanceId} className={styles.pileModalCard}>
-              <img src={card.image} alt={card.name} />
+              {card.image && <img src={card.image} alt={card.name} />}
               <span className={styles.pileModalCardName}>{card.name}</span>
               {renderCardExtra && renderCardExtra(card)}
             </div>
           ))}
         </div>
-        <button className={styles.surrenderButton} onClick={onClose}>
-          Cerrar
-        </button>
+        {onClose && (
+          <button className={styles.surrenderButton} onClick={onClose}>
+            Cerrar
+          </button>
+        )}
       </div>
     </div>
   );
@@ -987,6 +993,17 @@ function humanizeReason(reason) {
     'not-your-priority': 'Ahora mismo le toca responder al rival.',
     'no-chain': 'No hay ninguna cadena que pasar.',
     'trigger-choice-pending': 'Primero tienes que elegir la carta para ese efecto.',
+    'no-response-window': 'Esa carta solo se puede usar en respuesta a lo que indica su texto.',
+    'no-legal-target': 'No hay ningún objetivo válido para ese efecto.',
+    'attacks-disabled': 'No puedes atacar este turno.',
+    'cannot-be-targeted': 'Ese monstruo no puede ser objetivo de ataques.',
+    'unique-card': 'Solo puedes tener una carta con ese nombre en el Campo.',
+    'invalid-equip-target': 'Esa carta no se puede equipar a ese monstruo.',
+    'not-your-card': 'Esa carta no es tuya.',
+    'face-down': 'Una carta boca abajo no puede activar sus efectos.',
+    frozen: 'Esa carta está congelada y no puede activar efectos.',
+    'attacker-not-found': 'Ese monstruo ya no está en el Campo.',
+    'defender-not-found': 'El monstruo atacado ya no está en el Campo.',
     'not-your-choice': 'Esa elección le corresponde al rival.',
     'no-pending-choice': 'No hay ninguna elección pendiente.',
     'no-special-summon-method': 'Esa carta no tiene un método de invocación especial.',

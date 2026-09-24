@@ -9,6 +9,14 @@ function opponentIndex(idx) {
   return idx === 0 ? 1 : 0;
 }
 
+// Who a card instance belongs to, read from its id (`<ownerIndex>:<cardId>:<n>`) — not the same
+// as who controls it right now (a monster taken with takeControl, a monster equipped to a rival's
+// Carnívora). Tokens (`token:...`) have no owner outside the field: null.
+function ownerOfInstance(instanceId) {
+  const owner = Number(String(instanceId).split(':')[0]);
+  return owner === 0 || owner === 1 ? owner : null;
+}
+
 function findInstanceLocation(state, instanceId) {
   for (let p = 0; p < 2; p++) {
     const pl = state.players[p];
@@ -50,17 +58,21 @@ function removeFromZone(state, instanceId, loc) {
     releaseEquipment(state, instanceId);
   } else if (loc.zone === 'field:support') pl.field.support[loc.slot] = null;
   else if (loc.zone === 'field:territory') pl.field.territory = null;
+  // A card that leaves the field comes back (if it ever does) as a new card: whatever negated it
+  // while it was there doesn't follow it.
+  if (loc.zone.startsWith('field:')) require('./negation').clearNegations(state, instanceId);
 }
 
 // Rulebook, Cartas de Equipo: "Si el monstruo equipado es destruido, volteado boca abajo o
 // retirado del juego, su o sus Cartas de Equipo son enviadas al cementerio." Covers every way a
 // monster leaves its field slot; a flip to face-down (which stays in the same slot) is released
-// separately, at the one place that does that (effects/actions.js's changePosition).
+// separately, at the one place that does that (effects/actions.js's changePosition). Each card goes
+// to its owner's Cementerio — a monster equipped as an Equipo (Carnívora) may belong to the rival.
 function releaseEquipment(state, instanceId) {
-  state.players.forEach((pl, ownerIndex) => {
+  state.players.forEach((pl) => {
     pl.field.support
       .filter((s) => s && s.equippedTo === instanceId)
-      .forEach((s) => moveToZone(state, s.instanceId, 'graveyard', ownerIndex));
+      .forEach((s) => moveToZone(state, s.instanceId, 'graveyard'));
   });
 }
 
@@ -88,19 +100,26 @@ function log(state, message) {
   if (state.log.length > 300) state.log.shift();
 }
 
-// Moves a card instance from wherever it currently is into a simple (non-field) zone.
-function moveToZone(state, instanceId, toZone, ownerIndexOverride) {
+// Moves a card instance from wherever it currently is into a simple (non-field) zone. Without an
+// explicit owner it goes to its real owner's zone (a stolen monster goes back to its owner's
+// Cementerio/Mano), falling back to whoever holds it now for ids that carry no owner.
+// `deckPosition: 'shuffle'` inserts it at a random spot ("baraja/regresa al Mazo") instead of on top.
+function moveToZone(state, instanceId, toZone, ownerIndexOverride, { deckPosition = 'top' } = {}) {
   const loc = findInstanceLocation(state, instanceId);
-  const ownerIndex = ownerIndexOverride ?? (loc ? loc.ownerIndex : null);
+  const ownerIndex = ownerIndexOverride ?? ownerOfInstance(instanceId) ?? (loc ? loc.ownerIndex : null);
   if (ownerIndex === null) return false;
   const leaving = loc && loc.zone === 'field:monster' ? state.players[loc.ownerIndex].field.monsters[loc.slot] : null;
   if (loc) removeFromZone(state, instanceId, loc);
   const pl = state.players[ownerIndex];
   if (toZone === 'hand') pl.hand.push(instanceId);
   else if (toZone === 'extra') pl.extra.push(instanceId);
-  else if (toZone === 'deck') pl.deck.unshift(instanceId);
-  else if (toZone === 'graveyard') pl.graveyard.push(instanceId);
-  else if (toZone === 'banished') pl.banished.push(instanceId);
+  else if (toZone === 'deck') {
+    if (deckPosition === 'shuffle') pl.deck.splice(Math.floor(Math.random() * (pl.deck.length + 1)), 0, instanceId);
+    else pl.deck.unshift(instanceId);
+  } else if (toZone === 'graveyard') {
+    pl.graveyard.push(instanceId);
+    markSentToGraveyard(state, instanceId);
+  } else if (toZone === 'banished') pl.banished.push(instanceId);
   else return false;
   if (leaving) {
     // A burning monster that is destroyed stops burning; other statuses stay with the card.
@@ -114,6 +133,13 @@ function moveToZone(state, instanceId, toZone, ownerIndexOverride) {
     }
   }
   return true;
+}
+
+// Remembers the turn each card last reached the Cementerio ("excepto el turno que fue enviada al
+// Cementerio" — Refuerzos, Loto de Obsidiana).
+function markSentToGraveyard(state, instanceId) {
+  state.graveyardTurn = state.graveyardTurn || {};
+  state.graveyardTurn[instanceId] = state.turnNumber;
 }
 
 // Resolves which slot a card lands in: the player's own pick if they gave one (validated against
@@ -145,9 +171,9 @@ function placeMonster(state, instanceId, ownerIndex, { position = 'attack', face
     baseDef: card.def || 0,
     summonedTurn: state.turnNumber,
     hasAttacked: false,
+    attacksThisTurn: 0,
     equips: [],
     counters: {},
-    negated: false,
   };
   return true;
 }
@@ -181,7 +207,9 @@ function placeTerritory(state, instanceId, ownerIndex) {
   if (loc) removeFromZone(state, instanceId, loc);
   const pl = state.players[ownerIndex];
   if (pl.field.territory) {
-    pl.graveyard.push(pl.field.territory.instanceId);
+    const old = pl.field.territory.instanceId;
+    pl.field.territory = null;
+    moveToZone(state, old, 'graveyard');
     log(state, 'El Territorio anterior es enviado al cementerio.');
   }
   const card = getCard(require('./deckUtils').cardIdFromInstance(instanceId));
@@ -192,6 +220,7 @@ function placeTerritory(state, instanceId, ownerIndex) {
 module.exports = {
   player,
   opponentIndex,
+  ownerOfInstance,
   findInstanceLocation,
   getFieldMonster,
   getFieldSupport,

@@ -3541,7 +3541,7 @@
     "state": 4,
     "number": 145,
     "effectCodes": [
-      "BLOQUEO",
+      "DAMARCO_EXTRA_ATTACKS",
       "DAMARCO_DESTROY_TWO"
     ],
     "activationCost": {
@@ -3640,7 +3640,6 @@
     "state": 4,
     "number": 149,
     "effectCodes": [
-      "BLOQUEO",
       "LICANTROPO_GIGANTE_ONSUMMON_DESTROY",
       "LICANTROPO_GIGANTE_ENDBATTLE_SWAP"
     ]

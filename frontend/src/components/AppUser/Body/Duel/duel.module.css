@@ -564,6 +564,17 @@
   border-color: #ffd76a;
 }
 
+/* Effects usable straight from the hand (Kraken, the baby Dragones) sit over the card's bottom
+   edge — the card clips anything outside it. */
+.handCard {
+  position: relative;
+}
+
+.handCard .effectButtons {
+  top: auto;
+  bottom: 0;
+}
+
 .handCard img {
   width: 100%;
   height: 100%;

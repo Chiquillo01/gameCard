@@ -49,7 +49,7 @@ async function makeMatchWithHands(namesA, namesB, { amountA = 2, amountB = 2 } =
   const populatedA = await Deck.findById(deckDocA._id).populate('cards.card').populate('fusionCards.card');
   const populatedB = await Deck.findById(deckDocB._id).populate('cards.card').populate('fusionCards.card');
 
-  return createMatch({
+  const state = await createMatch({
     matchId: `rule-${Date.now()}-${Math.random()}`,
     playerA: userA._id.toString(),
     deckA: populatedA,
@@ -57,6 +57,10 @@ async function makeMatchWithHands(namesA, namesB, { amountA = 2, amountB = 2 } =
     deckB: populatedB,
     vsBot: false,
   });
+  // Rulebook: an Apoyo Normal/Continuo/Territorio (Speed 1) is only played in your own Fase
+  // Principal — start every test there.
+  while (state.phase !== 'main1') applyAction(state, state.turnPlayer, { type: 'ADVANCE_PHASE' });
+  return state;
 }
 
 // Advances phases using whichever player currently holds priority, until `state.phase` matches

@@ -1,8 +1,10 @@
 const { PHASES, MAX_HAND_SIZE, PIXEL_INCOME_PER_TURN, PIXEL_CAP } = require('./constants');
-const { player, opponentIndex, moveToZone, log } = require('./zones');
+const { player, opponentIndex, log } = require('./zones');
 const { fireTrigger, recomputeContinuous, expireTimedBuffs } = require('./effectEngine');
-const { checkWin } = require('./effects/actions');
+const { checkWin } = require('./outcome');
 const { burningMonsters, expireStatuses, BURN_END_OF_TURN_DAMAGE } = require('./statuses');
+const { expireNegations } = require('./negation');
+const { drawCards, expireMirrors } = require('./draw');
 
 function advancePhase(state) {
   if (state.status !== 'active') return { ok: false, reason: 'match-finished' };
@@ -12,6 +14,10 @@ function advancePhase(state) {
     endTurn(state);
     return { ok: true, newTurn: true };
   }
+
+  // "Al final de la fase de batalla" (the Licanos going back to the Mazo) happens while it's
+  // still the Battle Phase, right before it's left.
+  if (state.phase === 'battle') fireTrigger(state, 'phase', { timing: 'endOfBattlePhase' });
 
   let nextPhase = PHASES[idx + 1];
   // Rulebook: the player who goes first cannot carry out a Battle Phase on their very first
@@ -31,14 +37,8 @@ function runPhaseEntry(state) {
   if (state.phase === 'draw') {
     const isVeryFirstTurn = state.firstTurn && state.turnNumber === 1;
     if (!isVeryFirstTurn) {
-      if (!pl.deck.length) {
-        state.winnerIndex = opponentIndex(state.turnPlayer);
-        state.status = 'finished';
-        log(state, `${pl.userId} no puede robar y pierde la partida.`);
-        return;
-      }
-      pl.hand.push(pl.deck.shift());
-      log(state, `${pl.userId} roba una carta.`);
+      drawCards(state, state.turnPlayer, 1);
+      if (state.status !== 'active') return;
     }
 
     // Rulebook: 6 pixels/turn automatically, capped at 12 — except a player's own first turn.
@@ -65,8 +65,12 @@ function runPhaseEntry(state) {
     applyBurnDamage(state);
     // Book contradicts itself on the exact number and destination (7-to-exile vs 8-to-graveyard
     // in different sections) — using the more detailed rule: discard to MAX_HAND_SIZE, to the
-    // graveyard. Flagged for the designer to confirm which is correct.
-    while (pl.hand.length > MAX_HAND_SIZE) moveToZone(state, pl.hand[pl.hand.length - 1], 'graveyard');
+    // graveyard. The player picks which cards go (Rulebook: a discard is never random unless the
+    // card says so) — the turn can't end until they have.
+    const excess = pl.hand.length - MAX_HAND_SIZE;
+    if (excess > 0) {
+      require('./effects/actions').requestDiscard(state, state.turnPlayer, excess, `Tienes más de ${MAX_HAND_SIZE} cartas: elige ${excess} para descartar`);
+    }
   }
 
   recomputeContinuous(state);
@@ -102,13 +106,23 @@ function applyBurnDamage(state) {
 function endTurn(state) {
   expireStatuses(state);
   expireTimedBuffs(state);
-  state.turnPlayer = opponentIndex(state.turnPlayer);
+  expireNegations(state);
+  expireMirrors(state);
+  // Paseo Temporal: "Añade otro turno después de este" — the same player goes again.
+  const current = state.turnPlayer;
+  state.extraTurns = state.extraTurns || {};
+  if (state.extraTurns[current] > 0) {
+    state.extraTurns[current] -= 1;
+    log(state, `${player(state, current).userId} juega un turno extra.`);
+  } else {
+    state.turnPlayer = opponentIndex(current);
+  }
   state.turnNumber += 1;
   state.firstTurn = false;
   state.phase = 'draw';
   const pl = player(state, state.turnPlayer);
   pl.normalSummonUsed = false;
-  pl.field.monsters.filter(Boolean).forEach((m) => { m.hasAttacked = false; });
+  state.players.forEach((p) => p.field.monsters.filter(Boolean).forEach((m) => { m.attacksThisTurn = 0; }));
   runPhaseEntry(state);
 }
 

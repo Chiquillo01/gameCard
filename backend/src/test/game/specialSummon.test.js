@@ -173,7 +173,8 @@ describe('SPECIAL_SUMMON', () => {
     const { state, inHand } = await makeMatch(['Olla de la Usura', 'Kraken']);
     const mutante = await Card.findOne({ name: 'Avispa Mutante' }).lean();
     const mutanteId = `0:${mutante._id}:m1`;
-    state.players[0].deck.unshift(mutanteId);
+    // Olla draws 2: Mutante plus a filler card, so the draw doesn't empty the Mazo (a loss).
+    state.players[0].deck.unshift(mutanteId, `0:${(await Card.findOne({ name: 'Kraken' }).lean())._id}:filler`);
     toMain1(state);
     state.players[0].pixelcoins = 6;
 

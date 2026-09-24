@@ -16,9 +16,7 @@ function runBotTurn(state, botIndex) {
     if (state.pendingTriggerChoices && state.pendingTriggerChoices.length) {
       const pending = state.pendingTriggerChoices[0];
       if (pending.controllerIndex !== botIndex) break; // waiting on the human
-      applyAction(state, botIndex, pending.kind === 'slot'
-        ? { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] }
-        : { type: 'RESOLVE_TRIGGER_CHOICE', targets: [pending.options[0].instanceId] });
+      if (!answerPendingChoice(state, botIndex, pending)) break;
       continue;
     }
 
@@ -57,13 +55,13 @@ function runBotTurn(state, botIndex) {
     }
 
     if (state.phase === 'battle') {
-      const eligibleAttackers = pl.field.monsters.filter(
-        (m) => m && !m.hasAttacked && m.position === 'attack',
-      );
+      const eligibleAttackers = state.attackBans && state.attackBans[botIndex] === state.turnNumber
+        ? []
+        : pl.field.monsters.filter((m) => m && !m.hasAttacked && m.position === 'attack');
       if (eligibleAttackers.length) {
         const attacker = eligibleAttackers[0];
         const oppIdx = botIndex === 0 ? 1 : 0;
-        const oppMonsters = state.players[oppIdx].field.monsters.filter(Boolean);
+        const oppMonsters = state.players[oppIdx].field.monsters.filter((m) => m && !m.untargetable);
         const weakestTarget = oppMonsters.sort((a, b) => (a.baseDef + (a.tempBuff?.def || 0)) - (b.baseDef + (b.tempBuff?.def || 0)))[0];
         const result = applyAction(state, botIndex, {
           type: 'DECLARE_ATTACK',
@@ -77,6 +75,20 @@ function runBotTurn(state, botIndex) {
     applyAction(state, botIndex, { type: 'ADVANCE_PHASE' });
     if (state.turnPlayer !== botIndex) break;
   }
+}
+
+// No strategy yet: takes the first option each round until the choice is done (a slot, the first
+// cards of the hand for a discard, the first candidate for an effect's pick).
+function answerPendingChoice(state, botIndex, pending) {
+  if (pending.kind === 'slot') return applyAction(state, botIndex, { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] }).ok;
+  const targets = [];
+  for (let round = 0; round < 20; round++) {
+    const result = applyAction(state, botIndex, { type: 'RESOLVE_TRIGGER_CHOICE', targets });
+    if (result.ok) return true;
+    if (result.reason !== 'choose-target' || !result.options || !result.options.length) return false;
+    targets.push(result.options[0].instanceId);
+  }
+  return false;
 }
 
 function canAffordSummon(pl, card) {

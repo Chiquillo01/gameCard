@@ -1,14 +1,16 @@
-// Actions that pick and remove/move cards on the board. They take the targets a player chose when
-// there are any; otherwise they resolve the effect's own rule ("destroy a monster of the
-// opponent" -> the strongest one, "a random monster" -> random, ...), because the interface has no
-// target picker yet. Registered over the older, simpler versions in actions.js.
+// Actions that pick and remove/move cards on the board. When the effect's text has the player
+// select ("selecciona", "un monstruo enemigo"), the step has a pool (targets.js) and gets exactly
+// the player's picks; otherwise they resolve the effect's own rule ("destroy all monsters", "a
+// random monster" -> random, ...). Registered over the older, simpler versions in actions.js.
 const { getCard } = require('../cardIndex');
 const { player, opponentIndex, moveToZone, placeMonster, removeFromZone, findEmptySlot, corrodedSlots, log } = require('../zones');
 const { matchesFilter, matchesCardFilter } = require('../filters');
 const { cardIdFromInstance } = require('../deckUtils');
 
-// A protected monster ignores destroy/exile effects that come from the opponent's cards.
+// A protected card ignores destroy/exile effects that come from the opponent's cards, and nothing
+// can affect a card that is immune to the effect's source (targets.js canAffect).
 function isProtectedFrom(entry, ownerIndex, ctx) {
+  if (!require('../targets').canAffect(ctx, entry)) return true;
   return !!entry.immuneToOpponentEffects && ownerIndex !== ctx.controllerIndex;
 }
 
@@ -46,29 +48,36 @@ function pickRows(rows, args) {
   return sorted.slice(0, args.count || 1);
 }
 
+// A card destroyed by an effect: to its owner's Cementerio, then "cuando es enviada al Cementerio"
+// and "cuando es destruido por efecto de una carta" (Gárgola, Pez Leviatán) fire.
 function sendToGraveyard(ctx, row) {
   const { entry, ownerIndex } = row;
   const card = entry.isToken ? null : getCard(entry.cardId);
+  const wasMonster = row.kind !== 'support' && !!player(ctx.state, ownerIndex).field.monsters.includes(entry);
   if (entry.isToken) {
     const pl = player(ctx.state, ownerIndex);
     const i = pl.field.monsters.indexOf(entry);
     if (i !== -1) pl.field.monsters[i] = null;
   } else {
-    moveToZone(ctx.state, entry.instanceId, 'graveyard', ownerIndex);
+    moveToZone(ctx.state, entry.instanceId, 'graveyard');
   }
   log(ctx.state, `${card ? card.name : 'Una ficha'} es destruida.`);
   if (!entry.isToken) {
     const { fireTrigger } = require('../effectEngine');
     fireTrigger(ctx.state, 'sentToGraveyard', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex });
+    if (wasMonster) fireTrigger(ctx.state, 'onMonsterDestroyed', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, reason: 'effect' });
   }
 }
 
-// destroy: the chosen targets, or `count` cards matching side/zone/filter picked per `pick`.
+// destroy: the player's picks when the step is a "selecciona" one (the only ones there are when
+// there was nothing to choose between), else `count` cards matching side/zone/filter per `pick`.
 // Remembers how many were destroyed in ctx.destroyedCount for a following "y si lo haces" step.
 function destroy(ctx, args, targets) {
   ctx.destroyedCount = 0;
   let rows;
-  if (targets && targets.length && targets.every((t) => typeof t === 'string')) {
+  if (Array.isArray(targets) && require('../targets').stepPool(ctx, { fn: 'destroy', args })) {
+    rows = fieldEntries(ctx, 'any', 'any').filter((r) => targets.includes(r.entry.instanceId));
+  } else if (targets && targets.length && targets.every((t) => typeof t === 'string')) {
     rows = fieldEntries(ctx, 'any', 'any').filter((r) => targets.includes(r.entry.instanceId));
   } else {
     const own = ctx.effect && ctx.effect.targetSelector === 'ownFieldMonster';
@@ -122,7 +131,7 @@ function takeControl(ctx, args, targets) {
   // Through removeFromZone, not a bare null assignment, so this also releases any Equipo cards
   // that were on the stolen monster (per the rulebook, they don't follow it to the new controller).
   removeFromZone(ctx.state, chosen.instanceId, { zone: 'field:monster', ownerIndex: oppIdx, slot: opp.field.monsters.indexOf(chosen) });
-  chosen.hasAttacked = true;
+  chosen.attackLockTurn = ctx.state.turnNumber;
   if (args.changeBreed) chosen.breedOverride = args.changeBreed;
   me.field.monsters[slot] = chosen;
   log(ctx.state, `${me.userId} toma el control de ${getCard(chosen.cardId).name}.`);
@@ -151,22 +160,37 @@ function normalizeSearchArgs(fn, args = {}) {
 
 // Every card instance a search step could legally pick right now — what the player gets to choose
 // from, and also what a plain automatic resolution (no choice offered) falls back to.
+// `excludeAttributesOf` (Licántropo Zombie: "con diferente atributo a los monstruos Licántropo que
+// tengas en Cementerio") drops candidates sharing an attribute with those cards.
 function searchCandidates(state, controllerIndex, fn, args) {
   const pl = player(state, controllerIndex);
   const { filter, zones } = normalizeSearchArgs(fn, args);
+  let taken = [];
+  if (args.excludeAttributesOf) {
+    const ex = args.excludeAttributesOf;
+    taken = (pl[ex.zone || 'graveyard'] || []).map((id) => getCard(cardIdFromInstance(id))).filter((c) => matchesCardFilter(c, ex.filter || {})).map((c) => c.attribute);
+  }
+  // Refuerzos: "un monstruo que comparta atributo con un monstruo que tengas en Campo".
+  const fieldAttributes = filter.matchAttributeWithFieldMonster
+    ? pl.field.monsters.filter((m) => m && !m.isToken && !m.faceDown).map((m) => getCard(m.cardId).attribute)
+    : null;
   const ids = [];
   zones.forEach((zone) => pl[zone].forEach((id) => {
-    if (matchesCardFilter(getCard(cardIdFromInstance(id)), filter)) ids.push(id);
+    const card = getCard(cardIdFromInstance(id));
+    if (!matchesCardFilter(card, filter) || taken.includes(card.attribute)) return;
+    if (fieldAttributes && !(['monster', 'fusion'].includes(card.category) && fieldAttributes.includes(card.attribute))) return;
+    ids.push(id);
   }));
   return ids;
 }
 
-// Moves the player's chosen `targets` to hand; with none given (a triggered effect that resolves
-// on its own, with no interactive step) falls back to the first legal matches.
+// Moves the player's chosen `targets` to hand; with none given (called outside the usual pick
+// flow) falls back to the first legal matches.
 function runSearch(ctx, fn, args, targets) {
   const pl = player(ctx.state, ctx.controllerIndex);
   const { filter, zones, count } = normalizeSearchArgs(fn, args);
-  const picked = (targets && targets.length ? targets : searchCandidates(ctx.state, ctx.controllerIndex, fn, args)).slice(0, count);
+  const candidates = searchCandidates(ctx.state, ctx.controllerIndex, fn, args);
+  const picked = (targets && targets.length ? targets.filter((id) => candidates.includes(id)) : candidates).slice(0, count);
   const moved = [];
   picked.forEach((id) => {
     const zone = zones.find((z) => pl[z].includes(id));
@@ -180,6 +204,8 @@ function runSearch(ctx, fn, args, targets) {
   // inmediatamente de forma especial." — every search lands cards from one of those two zones.
   const { fireHandTrigger } = require('../summon');
   moved.forEach((id) => fireHandTrigger(ctx.state, 'addedToHand', id, ctx.controllerIndex));
+  // Viaje de Unión: "si tu oponente añade cartas de su Mazo a su Mano, roba".
+  if (moved.length && zones.includes('deck')) require('../draw').runMirrors(ctx.state, 'search', ctx.controllerIndex, moved.length);
 }
 
 const addCardToHandFromDeck = (ctx, args, targets) => runSearch(ctx, 'addCardToHandFromDeck', args, targets);
@@ -190,21 +216,37 @@ const addCardToHandFromGraveyard = (ctx, args, targets) => runSearch(ctx, 'addCa
 
 const SEARCH_FNS = ['addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck', 'searchFromDeck', 'addCardToHandFromGraveyard'];
 
-// Rulebook doesn't say a search is random — the player picks. Used by support.js/effectEngine.js
-// right before an effect would resolve: if its search step has more legal matches than the
-// player has already picked for, this hands back the options instead of letting the effect grab
-// whichever came first.
-function pendingSearchChoice(state, controllerIndex, effect, targets) {
-  if (targets && targets.length) return null; // already chosen
-  const step = (effect.actions || []).find((s) => SEARCH_FNS.includes(s.fn));
-  if (!step) return null;
-  const { count } = normalizeSearchArgs(step.fn, step.args || {});
-  const candidates = searchCandidates(state, controllerIndex, step.fn, step.args || {});
-  if (candidates.length <= count) return null; // 0 or exactly enough — nothing to choose between
-  return candidates.map((id) => {
-    const card = getCard(cardIdFromInstance(id));
-    return { instanceId: id, cardId: card._id.toString(), name: card.name, image: card.image };
+// --- Summoning by a card's effect ("invoca del Mazo/Cementerio/Mano un X") ----------------------
+// Every one of these brings out exactly the cards the player picked (targets.js pools them), then
+// announces the summon like any other — so its "en invocación" effects fire — and marks it as a
+// summon *by an effect*, which "cuando es invocado por el efecto de un Licano" cards react to.
+function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx.controllerIndex } = {}) {
+  if (!placeMonster(ctx.state, instanceId, ownerIndex, { position })) {
+    log(ctx.state, 'No hay espacio en el Campo para invocar.');
+    return false;
+  }
+  const card = getCard(cardIdFromInstance(instanceId));
+  log(ctx.state, `${player(ctx.state, ownerIndex).userId} invoca a ${card.name} por un efecto.`);
+  const { announceSummon } = require('../summon');
+  const by = ctx.sourceInstanceId && !String(ctx.sourceInstanceId).startsWith('token:') ? ctx.sourceInstanceId : null;
+  announceSummon(ctx.state, ownerIndex, instanceId, card, false, { byEffect: true, bySourceInstanceId: by, bySourceCardId: by ? cardIdFromInstance(by) : null });
+  return true;
+}
+
+// The generic "summon the picked card(s) from wherever the step's pool looks" action behind
+// summonFromDeck / specialSummonFromDeck / summonFromHand / specialSummonFromGY / summonFromZones /
+// summon. `targets` are the picks resolveActions handed this step (already inside its pool).
+function summonPicked(ctx, args, targets) {
+  (targets || []).forEach((id) => summonByEffect(ctx, id, { position: args.position || 'attack' }));
+}
+
+// "Envía al Cementerio un [filter] de tu Mazo" (Héroe de Marfil) — the one the player picks.
+function sendFromDeckToGY(ctx, args, targets) {
+  (targets || []).forEach((id) => {
+    moveToZone(ctx.state, id, 'graveyard');
+    log(ctx.state, `${getCard(cardIdFromInstance(id)).name} es enviada del Mazo al Cementerio.`);
   });
+  ctx.movedCards = [...(ctx.movedCards || []), ...(targets || [])];
 }
 
 // "No puede ser destruido en batalla": flags are recomputed every board change (see
@@ -242,5 +284,17 @@ module.exports = {
   cannotBeDestroyedOrExiled: protectFromOpponentEffects,
   cannotBeDestroyedByOpponentEffects: protectFromOpponentEffects,
   grantTimedBuff,
-  pendingSearchChoice,
+  summonFromDeck: summonPicked,
+  specialSummonFromDeck: summonPicked,
+  summonFromHand: summonPicked,
+  specialSummonFromGY: summonPicked,
+  summonFromZones: summonPicked,
+  summon: summonPicked,
+  sendFromDeckToGY,
+  // Not actions — shared with targets.js / effectEngine.js.
+  sendToGraveyard,
+  summonByEffect,
+  searchCandidates,
+  normalizeSearchArgs,
+  SEARCH_FNS,
 };

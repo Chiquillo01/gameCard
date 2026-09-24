@@ -6,37 +6,41 @@ const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport, activateSetSupport } = require('./support');
 const { declareAttack } = require('./combat');
 const { changePosition } = require('./position');
-const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone } = require('./effectEngine');
-const { passPriority } = require('./chain');
+const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand } = require('./effectEngine');
+const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
 const { checkConditions } = require('./effects/conditions');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
 
 // Player-initiated effect types (as opposed to 'triggered'/'trigger', which fire automatically,
-// 'continuous', which is passive, and 'keyword'/'summon_rule'/'rule', which are static).
+// 'continuous', which is passive, and 'summon_rule'/'rule', which are static).
 const PLAYER_ACTIVATABLE_TYPES = ['activated', 'quick', 'ignition'];
 
 // Effect ids this card instance can send as ACTIVATE_EFFECT right now, from its owner's point of
 // view — computed server-side so the client never has to know the effect catalog itself, just
-// which buttons to show.
+// which buttons to show. Only the ones whose timing is legal right now (the Pila's speed rules and
+// "cuando ..." response windows); whether costs/conditions hold is found out when it's tried.
 function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
   const card = getCard(cardId);
   const loc = findInstanceLocation(state, instanceId);
   if (!loc || loc.ownerIndex !== ownerIndex) return [];
   if (hasStatus(state, instanceId, FREEZE)) return [];
+  const entry = fieldEntryAt(state, loc);
+  if (entry && entry.isMonsterEquip) return [];
   // A face-down Normal/Continuo/Equipo support is activated by turning it over (ACTIVATE_SET_SUPPORT),
   // which pays its cost; only Veloz/Contraataque cards act through their own effects while set.
-  if (loc.zone === 'field:support') {
-    const entry = state.players[loc.ownerIndex].field.support[loc.slot];
-    if (entry && entry.faceDown && card.subtype !== 'instant' && card.subtype !== 'counter') return [];
-  }
-  return (card.effectCodes || []).filter((effectId) => {
+  if (loc.zone === 'field:support' && entry && entry.faceDown && card.subtype !== 'instant' && card.subtype !== 'counter') return [];
+  if (loc.zone === 'field:monster' && entry && entry.faceDown) return [];
+  const setFast = loc.zone === 'field:support' && entry && entry.faceDown;
+  return effectIdsAt(state, instanceId).filter((effectId) => {
     const effect = getEffect(effectId);
     if (!effect || !PLAYER_ACTIVATABLE_TYPES.includes(effect.type)) return false;
     // Effects that don't say which zone they need (most monster ignition/quick abilities)
     // default to "must be face-up on the field" — the ordinary case for that kind of ability.
     const requiredZone = requiredZoneFor(effect) || 'field';
-    return locationIsInZone(loc, requiredZone);
+    if (!setFast && !locationIsInZone(loc, requiredZone)) return false;
+    if (linkBlockReason(state, ownerIndex, speedOf(card, effect))) return false;
+    return responseWindowOpen(state, ownerIndex, effect);
   });
 }
 
@@ -168,7 +172,7 @@ function viewFor(state, viewerIndex) {
     chain: state.chain.length
       ? {
           priorityPlayer: state.priorityPlayer,
-          links: state.chain.map((l) => ({ controllerIndex: l.controllerIndex, instanceId: l.sourceInstanceId, cardName: l.cardName, speed: l.speed })),
+          links: state.chain.map((l) => ({ controllerIndex: l.controllerIndex, instanceId: l.sourceInstanceId, cardName: l.cardName, speed: l.speed, kind: l.kind || 'effect', targetInstanceId: l.targetInstanceId || null })),
         }
       : null,
     // An automatic trigger waiting on this viewer's pick — a search (Avispa de Obsidiana, Nido de
@@ -182,9 +186,18 @@ function describePendingTriggerChoice(state, viewerIndex) {
   const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
   if (!pending || pending.controllerIndex !== viewerIndex) return null;
   if (pending.kind === 'slot') {
-    return { kind: 'slot', zone: pending.zone, slots: pending.slots, card: describeInstance(state, pending.sourceInstanceId, viewerIndex, true) };
+    return {
+      kind: 'slot',
+      zone: pending.zone,
+      slots: pending.slots,
+      card: describeInstance(state, pending.sourceInstanceId, viewerIndex, true),
+      prompt: pending.prompt || 'Se invoca de forma especial: elige dónde',
+    };
   }
-  return { options: pending.options };
+  if (pending.kind === 'discard') {
+    return { kind: 'discard', count: pending.count, options: describeHand(state, viewerIndex), prompt: pending.prompt };
+  }
+  return { kind: 'effect', options: pending.options, prompt: pending.prompt };
 }
 
 // The card's own summon_rule effect (its "método de invocación especial"), if it has one the

@@ -1,8 +1,9 @@
 const { getCard } = require('./cardIndex');
 const { player, placeMonster, moveToZone, removeFromZone, releaseMaterials, corrodedSlots, findInstanceLocation, log } = require('./zones');
 const { payCost, pendingCostChoice } = require('./effects/costs');
-const { fireTrigger, fireMaterialTriggers, recomputeContinuous, resolveActions } = require('./effectEngine');
-const { checkConditions } = require('./effects/conditions');
+const { fireTrigger, fireMaterialTriggers, recomputeContinuous, resolveActions, violatesUnique } = require('./effectEngine');
+const { checkConditions, markDuelLimitUsed } = require('./effects/conditions');
+const { snapshot, restore } = require('./stateSnapshot');
 const { getEffect } = require('./cardIndex');
 const { clearStatus, BURN } = require('./statuses');
 const { matchesCardFilter } = require('./filters');
@@ -23,6 +24,7 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
   if (card.category !== 'monster') return { ok: false, reason: 'not-a-monster' };
   if (cannotBeSummoned(card)) return { ok: false, reason: 'cannot-be-summoned' };
   if (!canBeNormalSummoned(card)) return { ok: false, reason: 'special-summon-only' };
+  if (violatesUnique(state, controllerIndex, card)) return { ok: false, reason: 'unique-card' };
 
   const cost = card.summonCost;
   const ctx = { state, controllerIndex, sourceInstanceId: instanceId };
@@ -55,6 +57,7 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
   const card = getCard(cardId);
   if (card.category !== 'monster') return { ok: false, reason: 'not-a-monster' };
   if (cannotBeSummoned(card)) return { ok: false, reason: 'cannot-be-summoned' };
+  if (violatesUnique(state, controllerIndex, card)) return { ok: false, reason: 'unique-card' };
 
   // A rule with its own `trigger` (Avispa Mutante) fires automatically instead — see
   // fireHandTrigger below — not something the player invokes with this action.
@@ -77,25 +80,39 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
   const turnLimitKey = rule.oncePerTurn && `${state.turnNumber}:${rule._id}:${instanceId}`;
   if (turnLimitKey && state.turnLimits && state.turnLimits[turnLimitKey]) return { ok: false, reason: 'once-per-turn' };
 
+  // Every check before paying: a free zone for it (the rule's own cost can't free one — it pays with
+  // hand/Cementerio cards or sacrifices, which do, so only refuse when nothing could).
+  const blocked = corrodedSlots(pl, 'monsters');
+  const freeNow = pl.field.monsters.some((m, i) => m === null && !blocked.includes(i));
+  const sacrifices = rule.cost && ['sacrificeFiltered', 'tributeMonster', 'sacrificeControlled', 'destroyOwnMonster', 'exileFiltered'].includes(rule.cost.fn);
+  if (!freeNow && !sacrifices) return { ok: false, reason: 'no-field-space' };
+
+  const snap = snapshot(state);
   if (rule.cost) {
     // Rulebook: a cost never picks for the player (see costs.js pendingCostChoice) — with more
     // legal payers than it needs and nothing chosen yet, ask instead of silently taking one.
     const costChoice = pendingCostChoice(ctx, rule.cost, targets);
-    if (costChoice) return { ok: false, reason: 'choose-target', options: costChoice };
+    if (costChoice) return { ok: false, reason: 'choose-target', options: [...costChoice], prompt: costChoice.prompt };
     const paid = payCost(ctx, rule.cost, targets);
-    if (!paid) return { ok: false, reason: 'cannot-pay-special-summon-cost' };
-  }
-  if (turnLimitKey) {
-    state.turnLimits = state.turnLimits || {};
-    state.turnLimits[turnLimitKey] = true;
+    if (!paid) {
+      restore(state, snap);
+      return { ok: false, reason: 'cannot-pay-special-summon-cost' };
+    }
   }
 
   // The rule's own actions place it (the `specialSummon` action puts the source on the field,
   // attack position) — reusing the same dispatch every other effect resolves through.
   resolveActions(ctx, rule, []);
   if (!findInstanceLocation(state, instanceId) || findInstanceLocation(state, instanceId).zone !== 'field:monster') {
+    restore(state, snap);
     return { ok: false, reason: 'no-field-space' };
   }
+  if (turnLimitKey) {
+    state.turnLimits = state.turnLimits || {};
+    state.turnLimits[turnLimitKey] = true;
+  }
+  // "Una vez por duelo" (Perro Esqueleto) is used up once it has actually happened.
+  markDuelLimitUsed(state, controllerIndex, rule.conditions);
 
   log(state, `${pl.userId} invoca especial a ${card.name}.`);
   announceSummon(state, controllerIndex, instanceId, card, false);
@@ -104,11 +121,17 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
 }
 
 // Tells the board a monster was summoned: its own 'onSummon' effects fire, then the controller's
-// other cards get 'allySummoned' (a face-down Set isn't a summon).
-function announceSummon(state, controllerIndex, instanceId, card, faceDown = false) {
-  const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown };
+// other cards get 'allySummoned' (a face-down Set isn't a summon). A summon made by a card's effect
+// (`by`: { byEffect, bySourceInstanceId, bySourceCardId }) also fires the summoned card's own
+// "cuando es invocado por el efecto de un Licano" effects.
+function announceSummon(state, controllerIndex, instanceId, card, faceDown = false, by = {}) {
+  const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown, ...by };
   if (!faceDown) fireTrigger(state, 'onSummon', event);
   fireTrigger(state, 'allySummoned', event);
+  if (by.byEffect && !faceDown) {
+    fireTrigger(state, 'summonedByEffect', event);
+    fireTrigger(state, 'summonedByCardEffect', event);
+  }
 }
 
 // A card's own summon_rule can trigger off something OTHER than the player choosing to special
@@ -194,6 +217,7 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
 
   const cardId = cardIdFromInstance(compiladoInstanceId);
   const card = getCard(cardId);
+  if (violatesUnique(state, controllerIndex, card)) return { ok: false, reason: 'unique-card' };
   const materials = (card.activationCost && card.activationCost.args && card.activationCost.args.materials) || [];
 
   const pool = new Set(materialInstanceIds);
@@ -228,8 +252,11 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
   // Rulebook: the materials are stacked under the compiled monster (not sent to the graveyard) and
   // follow it wherever it goes; they can be summoned back by decompiling it.
   const used = [...usedIds];
+  // Counters a material had on the field (Engranajes) — some pass them on to the compiled monster.
+  const materialCounters = {};
   used.forEach((id) => {
     const loc = findInstanceLocation(state, id);
+    if (loc.zone === 'field:monster') materialCounters[id] = { ...(pl.field.monsters[loc.slot].counters || {}) };
     if (loc.zone === 'field:monster') {
       // A compiled monster used as material sends the materials under it to the graveyard.
       releaseMaterials(state, pl.field.monsters[loc.slot], controllerIndex, 'graveyard');
@@ -242,7 +269,7 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
   entry.materials = used;
 
   log(state, `${pl.userId} compila a ${card.name}.`);
-  fireMaterialTriggers(state, controllerIndex, used, compiladoInstanceId);
+  fireMaterialTriggers(state, controllerIndex, used, compiladoInstanceId, materialCounters);
   announceSummon(state, controllerIndex, compiladoInstanceId, card);
   recomputeContinuous(state);
   return { ok: true };
@@ -282,7 +309,7 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   materials.forEach((id) => {
     placeMonster(state, id, controllerIndex, { position: 'attack' });
     const back = pl.field.monsters.find((m) => m && m.instanceId === id);
-    if (back) back.hasAttacked = true; // decompiling happens as the Battle Phase ends
+    if (back) back.attackLockTurn = state.turnNumber; // decompiling happens as the Battle Phase ends
   });
   log(state, `${pl.userId} descompila a ${card.name}.`);
   materials.forEach((id) => announceSummon(state, controllerIndex, id, getCard(cardIdFromInstance(id))));
@@ -290,4 +317,4 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   return { ok: true };
 }
 
-module.exports = { normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger };
+module.exports = { normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };
