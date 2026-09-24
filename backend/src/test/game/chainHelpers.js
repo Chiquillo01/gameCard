@@ -12,4 +12,12 @@ function passChain(state) {
   }
 }
 
-module.exports = { passChain };
+// Declaring an attack always opens a response window; for tests about the battle itself, declare
+// it and let both players pass so the battle actually happens. Returns the declaration's result.
+function attackAndResolve(state, playerIndex, attackerInstanceId, targetInstanceId = null) {
+  const res = applyAction(state, playerIndex, { type: 'DECLARE_ATTACK', attackerInstanceId, targetInstanceId });
+  if (res.ok) passChain(state);
+  return res;
+}
+
+module.exports = { passChain, attackAndResolve };

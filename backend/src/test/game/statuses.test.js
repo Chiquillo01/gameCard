@@ -6,6 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
+const { attackAndResolve } = require('./chainHelpers');
 const { placeMonster, moveToZone, findInstanceLocation } = require('../../game/zones');
 const { addStatus, hasStatus, FREEZE, BURN, POISON } = require('../../game/statuses');
 const { recomputeContinuous } = require('../../game/effectEngine');
@@ -206,8 +207,9 @@ describe('Quemadura', () => {
     monsterOf(state, 0, aId).baseAtk = 6;
     monsterOf(state, 1, bId).baseAtk = 2;
     addStatus(state, bId, BURN);
-    const res = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: aId, targetInstanceId: bId });
-    expect(res.destroyedDefender).toBe(true);
+    const res = attackAndResolve(state, 0, aId, bId);
+    expect(res.ok).toBe(true);
+    expect(monsterOf(state, 1, bId)).toBeUndefined();
     expect(state.players[1].vp).toBe(80 - 8); // (6 - 2) x 2
   });
 
@@ -240,7 +242,7 @@ describe('Congelado', () => {
     addStatus(state, aId, FREEZE);
     monsterOf(state, 1, bId).cardId = (await Card.findOne({ name: 'Kraken' }).lean())._id.toString();
     const vp = state.players.map((p) => p.vp);
-    applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: aId, targetInstanceId: bId });
+    attackAndResolve(state, 0, aId, bId);
     expect(monsterOf(state, 0, aId)).toBeUndefined();
     expect(state.players.map((p) => p.vp)).toEqual(vp);
   });
@@ -250,7 +252,7 @@ describe('Congelado', () => {
     advanceUntil(state, 3, 'battle');
     addStatus(state, bId, FREEZE);
     monsterOf(state, 0, aId).cardId = (await Card.findOne({ name: 'Kraken' }).lean())._id.toString();
-    applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: aId, targetInstanceId: bId });
+    attackAndResolve(state, 0, aId, bId);
     expect(monsterOf(state, 1, bId)).toBeUndefined();
     expect(monsterOf(state, 0, aId)).toBeDefined();
   });

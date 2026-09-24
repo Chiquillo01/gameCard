@@ -6,6 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
+const { attackAndResolve } = require('./chainHelpers');
 const { runBotTurn } = require('../../game/botAI');
 
 beforeAll(async () => {
@@ -168,7 +169,7 @@ describe('Game engine', () => {
     const instanceId = state.players[0].hand[0];
     applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId, position: 'attack' });
     applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main1 -> battle
-    const result = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: instanceId, targetInstanceId: null });
+    const result = attackAndResolve(state, 0, instanceId, null);
     expect(result.ok).toBe(true);
     expect(result.direct).toBe(true);
   });
@@ -181,7 +182,7 @@ describe('Game engine', () => {
     advanceUntil(state, 3, 'battle'); // play out the rest of turn 1, all of turn 2, into turn 3's battle phase
 
     const vpBefore = state.players[1].vp;
-    const result = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: instanceId, targetInstanceId: null });
+    const result = attackAndResolve(state, 0, instanceId, null);
     expect(result.ok).toBe(true);
     // VP can't go negative — with the current (unrebalanced) card ATK values often exceeding
     // the 80 starting VP, a single hit routinely floors the defender at 0 rather than landing
@@ -194,7 +195,12 @@ describe('Game engine', () => {
     advanceUntil(state, 2, 'draw'); // hands the turn off to the bot (player 1)
     expect(state.turnPlayer).toBe(1);
 
-    runBotTurn(state, 1);
+    // Every attack (and every card it plays) opens a response window the human answers — here the
+    // human always passes, which lets the bot carry on, like duelController.maybeRunBot does.
+    for (let i = 0; i < 30 && state.turnPlayer === 1; i++) {
+      runBotTurn(state, 1);
+      if (state.chain.length && state.priorityPlayer === 0) applyAction(state, 0, { type: 'PASS_CHAIN' });
+    }
 
     expect(state.turnPlayer).toBe(0); // bot played through its whole turn and passed back
     expect(state.turnNumber).toBe(3);

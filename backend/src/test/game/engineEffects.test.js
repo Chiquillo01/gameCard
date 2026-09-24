@@ -281,6 +281,68 @@ describe('Actions and flags that used to do nothing', () => {
   });
 });
 
+describe('Optional effects ("Puedes...")', () => {
+  const summonEsperanza = async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    await onField(state, 0, 'Héroe Silencioso');
+    const targets = [await onField(state, 1, 'Slime'), await onField(state, 1, 'Valkiria'), await onField(state, 1, 'Pez Leviatán')];
+    const esperanza = await onField(state, 0, 'Héroe de la Esperanza');
+    fireTrigger(state, 'onSummon', { instanceId: esperanza, cardId: esperanza.split(':')[1], controllerIndex: 0 });
+    return { state, targets };
+  };
+
+  it('Héroe de la Esperanza: the player picks how many to destroy, up to the number of different Héroes, and draws one per card', async () => {
+    const { state, targets } = await summonEsperanza();
+    const first = viewFor(state, 0).pendingTriggerChoice;
+    expect(first.prompt).toContain('hasta 2');
+    expect(first.options.map((o) => o.instanceId)).toEqual(expect.arrayContaining([...targets, 'done:0']));
+    const next = applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [targets[1]] });
+    expect(next).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(next.options.map((o) => o.name)).toContain('Terminar');
+    const hand = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [targets[1], 'done:0'] }).ok).toBe(true);
+    expect(monster(state, targets[1])).toBeUndefined();
+    expect(monster(state, targets[0])).toBeDefined();
+    expect(state.players[0].hand.length).toBe(hand + 1);
+  });
+
+  it('Héroe de la Esperanza: choosing none destroys nothing and draws nothing', async () => {
+    const { state, targets } = await summonEsperanza();
+    const hand = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: ['done:0'] }).ok).toBe(true);
+    targets.forEach((id) => expect(monster(state, id)).toBeDefined());
+    expect(state.players[0].hand.length).toBe(hand);
+  });
+
+  it('Héroe del Viento: its "puedes elegir activar 1 de los efectos" can be declined', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const viento = await onField(state, 0, 'Héroe del Viento');
+    fireTrigger(state, 'onSummon', { instanceId: viento, cardId: viento.split(':')[1], controllerIndex: 0 });
+    const pending = viewFor(state, 0).pendingTriggerChoice;
+    expect(pending.options.map((o) => o.name)).toEqual(['Destruye 1 carta de Apoyo en el Campo.', 'Añade a la Mano un monstruo "Héroe" del Mazo.', 'No usar el efecto']);
+    const hand = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: ['choice:skip'] }).ok).toBe(true);
+    expect(state.pendingTriggerChoices).toHaveLength(0);
+    expect(state.players[0].hand.length).toBe(hand);
+  });
+
+  it('Bálor: "puedes activar uno de estos efectos" — one of the two per turn, not both', async () => {
+    const state = await makeDuel();
+    const balor = await onField(state, 0, 'Bálor');
+    await onField(state, 1, 'Slime');
+    toPhase(state, 'main1', 0);
+    expect(activate(state, 0, 'BALOR_EXTRA_ATTACK', balor).ok).toBe(true);
+    passAll(state);
+    expect(activate(state, 0, 'BALOR_INFLICT_BURN', balor)).toMatchObject({ ok: false, reason: 'conditions-not-met' });
+  });
+
+  it('Damarco no longer has the "destroy 2 cards" effect its text never had', async () => {
+    expect(getCard(await idOf('Damarco, licántropo luchador')).effectCodes).toEqual(['DAMARCO_EXTRA_ATTACKS']);
+  });
+});
+
 describe('Keywords and "monstruo sin efecto"', () => {
   it('no keyword effects remain in the data', () => {
     expect(effects.filter((e) => e.type === 'keyword')).toHaveLength(0);

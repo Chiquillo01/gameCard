@@ -3541,8 +3541,7 @@
     "state": 4,
     "number": 145,
     "effectCodes": [
-      "DAMARCO_EXTRA_ATTACKS",
-      "DAMARCO_DESTROY_TWO"
+      "DAMARCO_EXTRA_ATTACKS"
     ],
     "activationCost": {
       "fn": "compileFrom",

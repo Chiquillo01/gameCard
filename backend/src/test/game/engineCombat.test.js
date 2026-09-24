@@ -16,7 +16,13 @@ afterAll(async () => {
   await disconnectDB();
 });
 
-const attack = (state, p, attacker, target = null) => applyAction(state, p, { type: 'DECLARE_ATTACK', attackerInstanceId: attacker, targetInstanceId: target });
+// Declaring only opens the response window; `attack` also lets both players pass so it resolves.
+const declare = (state, p, attacker, target = null) => applyAction(state, p, { type: 'DECLARE_ATTACK', attackerInstanceId: attacker, targetInstanceId: target });
+const attack = (state, p, attacker, target = null) => {
+  const res = declare(state, p, attacker, target);
+  if (res.ok) passAll(state);
+  return res;
+};
 
 describe('Responding to an attack', () => {
   it('Trampa de Madera negates a direct attack and ends the Battle Phase', async () => {
@@ -25,7 +31,7 @@ describe('Responding to an attack', () => {
     const trampa = await toHand(state, 1, 'Trampa de Madera');
     toPhase(state, 'battle', 0);
 
-    const res = attack(state, 0, attacker);
+    const res = declare(state, 0, attacker);
     expect(res).toMatchObject({ ok: true, responseWindow: true });
     expect(state.chain).toHaveLength(1);
     expect(state.priorityPlayer).toBe(1);
@@ -45,11 +51,16 @@ describe('Responding to an attack', () => {
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: trampa })).toMatchObject({ ok: false, reason: 'no-response-window' });
   });
 
-  it('with nothing the defender could answer with, the battle happens at once', async () => {
+  it('the window opens even when the defender holds nothing (so it gives nothing away); passing lets the attack through', async () => {
     const state = await makeDuel();
     const attacker = await onField(state, 0, 'Orco Gladiador');
     toPhase(state, 'battle', 0);
-    expect(attack(state, 0, attacker)).toMatchObject({ ok: true });
+    expect(declare(state, 0, attacker)).toMatchObject({ ok: true, responseWindow: true });
+    expect(state.chain).toHaveLength(1);
+    expect(state.priorityPlayer).toBe(1);
+    expect(state.players[1].vp).toBe(80);
+    // Declaring already counts as the attacker's pass: one pass from the defender resolves it.
+    expect(applyAction(state, 1, { type: 'PASS_CHAIN' }).ok).toBe(true);
     expect(state.chain).toHaveLength(0);
     expect(state.players[1].vp).toBe(80 - 3);
   });

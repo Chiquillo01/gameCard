@@ -27,8 +27,7 @@ function canStillAttack(state, m) {
 
 // Declaring an attack doesn't resolve it on the spot: it opens a response window (the attack is
 // the bottom link of the Pila, see chain.js) so the defender can answer with a Speed 2+ card —
-// Trampa de Madera "cuando un monstruo declara un ataque directo". When the defender has nothing
-// that could possibly respond, the battle just happens.
+// Trampa de Madera "cuando un monstruo declara un ataque directo" — or pass, and then it happens.
 function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanceId /* null = direct */) {
   if (state.phase !== 'battle') return { ok: false, reason: 'not-battle-phase' };
   if (state.turnPlayer !== controllerIndex) return { ok: false, reason: 'not-your-turn' };
@@ -59,38 +58,11 @@ function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanc
   attacker.attacksThisTurn = (attacker.attacksThisTurn || 0) + 1;
   attacker.hasAttacked = !canStillAttack(state, attacker);
   const name = attacker.isToken ? attacker.tokenDef.name : getCard(attacker.cardId).name;
+  // The window always opens, whatever the defender holds — opening it only when they had an answer
+  // would tell the attacker they have one.
   const link = { kind: 'attack', controllerIndex, attackerInstanceId, targetInstanceId: targetInstanceId || null, sourceInstanceId: attackerInstanceId, cardName: `Ataque de ${name}`, speed: 1 };
-  if (!canRespondToAttack(state, oppIdx, link)) {
-    return { ok: true, direct: !targetInstanceId, ...(performBattle(state, link) || {}) };
-  }
   require('./chain').addAttackLink(state, link);
   return { ok: true, direct: !targetInstanceId, responseWindow: true };
-}
-
-// Whether the defender holds anything that could be used right now in answer to this attack: an
-// Apoyo Veloz/Contraataque in hand or set, or a Speed 2+ effect of theirs on the field or in hand,
-// whose own "cuando..." (if it has one) matches the attack.
-function canRespondToAttack(state, playerIndex, link) {
-  const { responseWindowOpen } = require('./chain');
-  const { requiredZoneFor } = require('./effectEngine');
-  const pl = player(state, playerIndex);
-  const effectsOf = (cardId) => (getCard(cardId).effectCodes || []).map(getEffect).filter(Boolean);
-  const opens = (effect) => responseWindowOpen(state, playerIndex, effect, link);
-  const fastSupport = (card) => card.category === 'support' && (card.subtype === 'instant' || card.subtype === 'counter');
-  const supportCanAnswer = (card) => {
-    const cost = card.activationCost;
-    if (cost && cost.fn === 'payPixels' && pl.pixelcoins < ((cost.args && cost.args.amount) || 0)) return false;
-    const playable = effectsOf(card._id.toString()).filter((e) => ['activated', 'quick', 'ignition'].includes(e.type) && !['graveyard', 'banished'].includes(requiredZoneFor(e)));
-    return playable.some(opens);
-  };
-  const handAnswers = pl.hand.some((id) => {
-    const card = getCard(cardIdFromInstance(id));
-    if (fastSupport(card)) return supportCanAnswer(card);
-    return effectsOf(card._id.toString()).some((e) => e.type === 'quick' && requiredZoneFor(e) === 'hand' && opens(e));
-  });
-  const setAnswers = pl.field.support.some((s) => s && s.faceDown && fastSupport(getCard(s.cardId)) && supportCanAnswer(getCard(s.cardId)));
-  const fieldAnswers = pl.field.monsters.some((m) => m && !m.faceDown && !m.isToken && effectsOf(m.cardId).some((e) => e.type === 'quick' && !requiredZoneFor(e) && opens(e)));
-  return handAnswers || setAnswers || fieldAnswers;
 }
 
 // The battle itself, once the attack's response window has closed without it being negated.
@@ -233,4 +205,4 @@ function destroyInBattle(state, ownerIndex, victim, destroyer) {
   }
 }
 
-module.exports = { declareAttack, performBattle, canStillAttack, allowedAttacks, canRespondToAttack };
+module.exports = { declareAttack, performBattle, canStillAttack, allowedAttacks };

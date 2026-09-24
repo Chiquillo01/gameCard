@@ -479,7 +479,15 @@
     "_id": "BALOR_INFLICT_BURN",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Bálor",
+          "max": 1
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "applyStatus",
@@ -496,7 +504,15 @@
     "_id": "BALOR_EXTRA_ATTACK",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Bálor",
+          "max": 1
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "grantExtraAttack",
@@ -2287,23 +2303,6 @@
     ]
   },
   {
-    "_id": "DAMARCO_DESTROY_TWO",
-    "type": "ignition",
-    "oncePerTurn": false,
-    "conditions": [],
-    "requiresTarget": true,
-    "actions": [
-      {
-        "fn": "destroy",
-        "args": {
-          "target": "selected",
-          "count": 2,
-          "zone": "field"
-        }
-      }
-    ]
-  },
-  {
     "_id": "BAO_DESTROY",
     "type": "quick",
     "oncePerTurn": true,
@@ -2398,7 +2397,15 @@
     "_id": "TRITURADORA_BURN",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Trituradora de Batalla",
+          "max": 1
+        }
+      }
+    ],
     "cost": {
       "fn": "spendCounter",
       "args": {
@@ -2419,7 +2426,15 @@
     "_id": "TRITURADORA_REVIVE_MACHINE",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Trituradora de Batalla",
+          "max": 1
+        }
+      }
+    ],
     "cost": {
       "fn": "spendCounter",
       "args": {
@@ -3365,7 +3380,8 @@
             "breed": "Héroe",
             "uniqueNames": true,
             "scope": "field"
-          }
+          },
+          "upTo": true
         }
       },
       {
@@ -4931,7 +4947,8 @@
           "count": 1
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "_id": "HEROE_VIENTO_MATERIAL_DRAW",

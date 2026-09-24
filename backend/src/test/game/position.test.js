@@ -6,6 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction } = require('../../game/engine');
+const { attackAndResolve } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -78,8 +79,8 @@ describe('Attacking a monster in defense position (rulebook)', () => {
   it('destroys the defender with no VP loss when ATK > Vida', async () => {
     const { state, attackerId, defenderId } = await battleSetup({ atk: 6, def: 3, defenderOpts: { position: 'defense' } });
     const vp = [state.players[0].vp, state.players[1].vp];
-    const result = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: attackerId, targetInstanceId: defenderId });
-    expect(result.destroyedDefender).toBe(true);
+    const result = attackAndResolve(state, 0, attackerId, defenderId);
+    expect(result.ok).toBe(true);
     expect(monsterOf(state, 1, defenderId)).toBeUndefined();
     expect([state.players[0].vp, state.players[1].vp]).toEqual(vp);
   });
@@ -87,18 +88,20 @@ describe('Attacking a monster in defense position (rulebook)', () => {
   it('destroys nothing and deals no damage when ATK = Vida', async () => {
     const { state, attackerId, defenderId } = await battleSetup({ atk: 4, def: 4, defenderOpts: { position: 'defense' } });
     const vp = [state.players[0].vp, state.players[1].vp];
-    const result = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: attackerId, targetInstanceId: defenderId });
-    expect(result.destroyedDefender).toBe(false);
-    expect(result.destroyedAttacker).toBe(false);
+    const result = attackAndResolve(state, 0, attackerId, defenderId);
+    expect(result.ok).toBe(true);
+    expect(monsterOf(state, 1, defenderId)).toBeDefined();
+    expect(monsterOf(state, 0, attackerId)).toBeDefined();
     expect([state.players[0].vp, state.players[1].vp]).toEqual(vp);
   });
 
   it('costs the attacker Vida - ATK in VP and destroys nothing when ATK < Vida', async () => {
     const { state, attackerId, defenderId } = await battleSetup({ atk: 2, def: 7, defenderOpts: { position: 'defense' } });
     const before = state.players[0].vp;
-    const result = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: attackerId, targetInstanceId: defenderId });
-    expect(result.destroyedDefender).toBe(false);
-    expect(result.destroyedAttacker).toBe(false);
+    const result = attackAndResolve(state, 0, attackerId, defenderId);
+    expect(result.ok).toBe(true);
+    expect(monsterOf(state, 1, defenderId)).toBeDefined();
+    expect(monsterOf(state, 0, attackerId)).toBeDefined();
     expect(state.players[0].vp).toBe(before - 5);
     expect(state.players[1].vp).toBe(80);
   });
@@ -106,7 +109,7 @@ describe('Attacking a monster in defense position (rulebook)', () => {
   it('turns a face-down defender face-up when it is attacked', async () => {
     const { state, attackerId, defenderId } = await battleSetup({ atk: 1, def: 9, defenderOpts: { position: 'defense', faceDown: true } });
     expect(monsterOf(state, 1, defenderId).faceDown).toBe(true);
-    applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: attackerId, targetInstanceId: defenderId });
+    attackAndResolve(state, 0, attackerId, defenderId);
     expect(monsterOf(state, 1, defenderId).faceDown).toBe(false);
   });
 });

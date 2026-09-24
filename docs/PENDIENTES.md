@@ -9,10 +9,16 @@ Cosas detectadas en la auditoría que se dejan para más adelante, agrupadas por
   Hace falta `CLOUDINARY_URL` (o `CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_API_KEY` +
   `CLOUDINARY_API_SECRET`) y revisar el flujo completo de subida.
 
+## Admin de usuarios
+
+- La página `/user` se ve bien en escritorio, pero en ventanas estrechas la tabla se descoloca
+  (cabeceras apiladas y la foto de perfil a tamaño completo). Falta hacerla responsive.
+
 ## Email de bienvenida (SendGrid)
 
-Ya no falla sin avisar: si no está configurado, no intenta enviarlo y lo dice una vez en el log
-del servidor. Para activarlo, en el `.env` del backend:
+Se implementará desde cero más adelante. De momento no falla sin avisar: si no está configurado,
+no intenta enviarlo y lo dice una vez en el log del servidor. Lo que pide el código actual, por si
+sirve de referencia:
 
 - `SENDGRID_API_KEY`: una API key de SendGrid con permiso "Mail Send" (empieza por `SG.`).
 - `EMAIL`: la dirección remitente, verificada en SendGrid (Single Sender o dominio).

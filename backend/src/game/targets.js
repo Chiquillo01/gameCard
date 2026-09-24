@@ -169,10 +169,38 @@ function stepCount(ctx, step) {
   return args.count || 1;
 }
 
-// "Puedes activar uno de estos efectos": `choice:<n>` in the picks says which one.
+// "Puedes activar uno de estos efectos": `choice:<n>` in the picks says which one (`choice:skip`:
+// none — only offered for an optional effect).
 function chosenIndex(targets) {
   const token = (targets || []).find((t) => typeof t === 'string' && t.startsWith('choice:'));
-  return token ? Number(token.split(':')[1]) : null;
+  if (!token) return null;
+  return token === 'choice:skip' ? 'skip' : Number(token.split(':')[1]);
+}
+
+// Tokens that travel in `targets` but aren't cards: which alternative, "use it / don't", "that's
+// all" for an up-to pick.
+const isToken = (t) => typeof t === 'string' && /^(choice|optional|done):/.test(t);
+
+// "Hasta N": the player picks how many, from none up to N (Héroe de la Esperanza).
+const isUpTo = (step) => !!((step.args && step.args.upTo) || step.fn === 'destroyUpToHeroCount');
+
+// Whether the player has declined an optional effect ("No usarlo" / "No usar el efecto").
+function declined(targets) {
+  return (targets || []).some((t) => t === 'optional:no' || t === 'choice:skip');
+}
+
+// "Puedes ..." on an automatic effect: ask first whether to use it at all. An optional "uno de
+// estos efectos" instead gets a "No usar el efecto" entry among its alternatives.
+function pendingOptionalChoice(ctx, effect, targets) {
+  if (!effect.optional || effect.choice || declined(targets) || (targets || []).includes('optional:yes')) return null;
+  const card = getCard(cardIdFromInstance(ctx.sourceInstanceId));
+  return {
+    prompt: `¿Usar el efecto de ${card.name}?`,
+    options: [
+      { instanceId: 'optional:yes', name: 'Usar el efecto', image: card.image },
+      { instanceId: 'optional:no', name: 'No usarlo', image: null },
+    ],
+  };
 }
 
 // The steps that will actually run: all of them, or the one alternative chosen.
@@ -180,7 +208,7 @@ function activeSteps(effect, targets) {
   const steps = effect.actions || [];
   if (!effect.choice) return steps.map((step, index) => ({ step, index }));
   const idx = chosenIndex(targets);
-  return idx === null || !steps[idx] ? [] : [{ step: steps[idx], index: idx }];
+  return idx === null || idx === 'skip' || !steps[idx] ? [] : [{ step: steps[idx], index: idx }];
 }
 
 // Splits `targets` among the steps that have a pool: each takes, in order, up to its count of picks
@@ -193,16 +221,19 @@ function assignPicks(ctx, effect, targets, exclude = []) {
     const count = stepCount(ctx, step);
     const picks = (targets || []).filter((t) => !taken.has(t) && pool.includes(t)).slice(0, count);
     picks.forEach((t) => taken.add(t));
-    return { step, index, pool: pool.filter((t) => !exclude.includes(t)), picks, count };
+    return { step, index, pool: pool.filter((t) => !exclude.includes(t)), picks, count, upTo: isUpTo(step), done: (targets || []).includes(`done:${index}`) };
   });
 }
 
-// Labels for "one of these" alternatives: the card's own bullet points when they line up with the
-// effect's actions, otherwise a plain "Opción N".
+// Labels for "one of these" alternatives: the card's own bullet points right after the sentence
+// that offers the choice ("puedes activar uno de estos efectos: • ... • ..."), otherwise a plain
+// "Opción N".
 function choiceLabels(ctx, effect) {
   const text = String(getCard(cardIdFromInstance(ctx.sourceInstanceId)).effect || '');
-  const bullets = text.split('•').slice(1).map((b) => b.split('\n')[0].trim()).filter(Boolean);
-  return (effect.actions || []).map((_, i) => bullets[bullets.length - effect.actions.length + i] || `Opción ${i + 1}`);
+  const intro = text.search(/\b(uno|1) de (estos|los)\b/i);
+  const rest = intro === -1 ? text : text.slice(intro);
+  const bullets = rest.split('•').slice(1).map((b) => b.split('\n')[0].trim()).filter(Boolean);
+  return (effect.actions || []).map((_, i) => bullets[i] || `Opción ${i + 1}`);
 }
 
 const STEP_PROMPTS = {
@@ -250,15 +281,22 @@ function describeCandidate(state, id) {
 function pendingEffectChoice(ctx, effect, targets = [], exclude = []) {
   if (effect.choice && chosenIndex(targets) === null) {
     const image = getCard(cardIdFromInstance(ctx.sourceInstanceId)).image;
-    return {
-      prompt: 'Elige qué efecto aplicar',
-      options: choiceLabels(ctx, effect).map((name, i) => ({ instanceId: `choice:${i}`, name, image })),
-    };
+    const options = choiceLabels(ctx, effect).map((name, i) => ({ instanceId: `choice:${i}`, name, image }));
+    if (effect.optional) options.push({ instanceId: 'choice:skip', name: 'No usar el efecto', image: null });
+    return { prompt: 'Elige qué efecto aplicar', options };
   }
-  for (const { step, pool, picks, count } of assignPicks(ctx, effect, targets, exclude)) {
+  for (const { step, index, pool, picks, count, upTo, done } of assignPicks(ctx, effect, targets, exclude)) {
     if (!pool) continue;
     if (picks.length >= count) continue;
     const remaining = pool.filter((t) => !(targets || []).includes(t));
+    if (upTo) {
+      // "Hasta N": always the player's call — one pick at a time, until they say that's all.
+      if (done || remaining.length === 0) continue;
+      return {
+        prompt: `${STEP_PROMPTS[step.fn] || 'Elige un objetivo'} (hasta ${count}; llevas ${picks.length})`,
+        options: [...remaining.map((id) => describeCandidate(ctx.state, id)), { instanceId: `done:${index}`, name: picks.length ? 'Terminar' : 'No elegir ninguna', image: null }],
+      };
+    }
     if (pool.length <= count || remaining.length === 0) continue; // nothing to choose between
     return {
       prompt: STEP_PROMPTS[step.fn] || 'Elige un objetivo',
@@ -275,4 +313,4 @@ function hasNoLegalTarget(ctx, effect) {
 }
 const TARGET_REQUIRED = new Set(['negateEffect', 'negateEffects', 'target', 'changeBeed', 'equipMonster', 'equipMonsterToSelf', 'destroyAndCopyEffect', 'destroyAndGainVP']);
 
-module.exports = { stepPool, stepCount, assignPicks, activeSteps, chosenIndex, pendingEffectChoice, hasNoLegalTarget, canAffect, selectRows, fieldRows, describeCandidate, getEffect };
+module.exports = { stepPool, stepCount, assignPicks, activeSteps, chosenIndex, pendingEffectChoice, pendingOptionalChoice, declined, isToken, isUpTo, hasNoLegalTarget, canAffect, selectRows, fieldRows, describeCandidate, getEffect };

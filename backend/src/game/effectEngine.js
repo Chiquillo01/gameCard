@@ -9,7 +9,7 @@ const { cardIdFromInstance } = require('./deckUtils');
 const { hasStatus, poisonDebuff, FREEZE } = require('./statuses');
 const { speedOf, linkBlockReason, addLink, responseWindowOpen } = require('./chain');
 const { isNegated } = require('./negation');
-const { assignPicks, pendingEffectChoice, hasNoLegalTarget, activeSteps } = require('./targets');
+const { assignPicks, pendingEffectChoice, pendingOptionalChoice, declined, isToken, hasNoLegalTarget, activeSteps } = require('./targets');
 const { snapshot, restore } = require('./stateSnapshot');
 
 function makeCtx(state, controllerIndex, effect, sourceInstanceId) {
@@ -154,13 +154,14 @@ function resolveActions(ctx, effect, targets = []) {
       const pool = (stepPool(ctx, step) || []).filter((t) => !exclude.includes(t));
       const count = stepCount(ctx, step);
       stepTargets = a.picks.filter((t) => pool.includes(t));
-      if (!a.picks.length && pool.length <= count) stepTargets = pool;
+      // "Hasta N" takes exactly what the player picked — possibly nothing.
+      if (!a.picks.length && pool.length <= count && !a.upTo) stepTargets = pool;
       if (!stepTargets.length) {
         if (step.fn === 'destroy' || step.fn === 'destroyUpToHeroCount') ctx.destroyedCount = 0;
         return;
       }
     } else {
-      stepTargets = list.filter((t) => !exclude.includes(t) && !(typeof t === 'string' && t.startsWith('choice:')));
+      stepTargets = list.filter((t) => !exclude.includes(t) && !isToken(t));
     }
     runAction(ctx, step, stepTargets);
   });
@@ -249,9 +250,14 @@ function fireTrigger(state, eventName, eventArgs = {}) {
 // which alternative, what it searches or targets): with one to make it waits in
 // state.pendingTriggerChoices — nothing else can happen until RESOLVE_TRIGGER_CHOICE answers it.
 function runTriggered(state, ctx, effect, card, targets) {
+  if (declined(targets)) {
+    log(state, `${player(state, ctx.controllerIndex).userId} decide no usar el efecto de ${card.name}.`);
+    return false;
+  }
   const costChoice = effect.cost && pendingCostChoice(ctx, effect.cost, targets);
   const costTaken = costPicks(ctx, effect.cost, targets);
-  const choice = costChoice || pendingEffectChoice(ctx, effect, targets, costTaken);
+  // "Puedes ...": whether to use it at all comes first.
+  const choice = pendingOptionalChoice(ctx, effect, targets) || costChoice || pendingEffectChoice(ctx, effect, targets, costTaken);
   if (choice) {
     state.pendingTriggerChoices = state.pendingTriggerChoices || [];
     state.pendingTriggerChoices.push({ kind: 'effect', controllerIndex: ctx.controllerIndex, effectId: effect._id, sourceInstanceId: ctx.sourceInstanceId, event: ctx.event || null, ...asChoice(choice) });
@@ -303,9 +309,9 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
   const effect = getEffect(pending.effectId);
   const card = getCard(cardIdFromInstance(pending.sourceInstanceId));
   const ctx = { ...makeCtx(state, pending.controllerIndex, effect, pending.sourceInstanceId), event: pending.event };
-  const costChoice = effect.cost && pendingCostChoice(ctx, effect.cost, picks);
+  const costChoice = !declined(picks) && effect.cost && pendingCostChoice(ctx, effect.cost, picks);
   const costTaken = costPicks(ctx, effect.cost, picks);
-  const choice = costChoice || pendingEffectChoice(ctx, effect, picks, costTaken);
+  const choice = !declined(picks) && (pendingOptionalChoice(ctx, effect, picks) || costChoice || pendingEffectChoice(ctx, effect, picks, costTaken));
   if (choice) return chooseTarget(choice);
   state.pendingTriggerChoices.shift();
   runTriggered(state, ctx, effect, card, picks);
