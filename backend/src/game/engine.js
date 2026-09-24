@@ -47,8 +47,19 @@ function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
 async function createMatch(opts) {
   await loadCardIndex();
   const state = createMatchState(opts);
+  if (opts.coinToss) {
+    const { log } = require('./zones');
+    log(state, `Sorteo: sale ${opts.coinToss}. Empieza ${state.players[state.turnPlayer].userId === 'BOT' ? 'el BOT' : state.players[state.turnPlayer].userId}.`);
+  }
   runPhaseEntry(state); // processes turn 1's draw phase (no draw/income, per the rulebook) and marks it played
   return state;
+}
+
+// Rulebook: who goes first is decided by a coin toss — heads, the player who started the duel
+// (playerA); tails, the other one.
+function coinTossFirstPlayer(random = Math.random) {
+  const heads = random() < 0.5;
+  return { firstPlayer: heads ? 0 : 1, coinToss: heads ? 'cara' : 'cruz' };
 }
 
 // Single entry point for every player-initiated change. `action.type` selects the handler;
@@ -260,4 +271,4 @@ function describeFieldSupport(state, s, ownerIndex, isViewerOwner) {
   return { ...described, availableEffects: computeAvailableEffects(state, ownerIndex, s.instanceId, s.cardId) };
 }
 
-module.exports = { createMatch, applyAction, viewFor };
+module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer };

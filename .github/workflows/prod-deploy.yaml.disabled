@@ -8,9 +8,6 @@ on:
 jobs:
   build-deploy-to-koyeb:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: './backend'
     steps:
       - name: 'Checkout GitHub Action'
         uses: actions/checkout@main
@@ -24,7 +21,7 @@ jobs:
 
       - name: 'Build Backend Image'
         run: |
-          docker build . --tag ghcr.io/nds-fsd/tcg:latest
+          docker build -f backend/Dockerfile . --tag ghcr.io/nds-fsd/tcg:latest
           docker push ghcr.io/nds-fsd/tcg:latest
 
       - name: Install and configure the Koyeb CLI

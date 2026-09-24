@@ -82,20 +82,17 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// Sessions last a week. (The old code passed "seconds since 1970" as the duration, so tokens
+// effectively never expired.)
+const SESSION_DURATION = '7d';
+
 userSchema.methods.generateJWT = function () {
-  const today = new Date();
-  const expirationDate = new Date();
-
-  expirationDate.setDate(today.getDate());
-
-  let payload = {
+  const payload = {
     id: this._id,
     admin: this.admin,
   };
 
-  return jwt.sign(payload, secret, {
-    expiresIn: parseInt(expirationDate.getTime() / 1000, 10),
-  });
+  return jwt.sign(payload, secret, { expiresIn: SESSION_DURATION });
 };
 
 const User = model('User', userSchema);

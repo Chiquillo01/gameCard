@@ -84,7 +84,8 @@ describe('Auth Controller TEST', () => {
         email: userData.email,
         password: 'WrongPassword1',
       });
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: 'Email o contraseña incorrectos' });
       expect(response.body.token).toBeUndefined();
     });
 
@@ -97,17 +98,55 @@ describe('Auth Controller TEST', () => {
       expect(response.body.token).toBeDefined();
     });
 
-    it('should reject login for a non-existent email', async () => {
+    it('answers a non-existent email exactly like a wrong password (no way to tell which emails exist)', async () => {
       const response = await fakeRequest.post('/auth/login').send({
         email: 'doesnotexist@gmail.com',
         password: '123456Ab',
       });
-      expect(response.status).toBe(410);
+      expect(response.status).toBe(401);
+      expect(response.body).toEqual({ error: 'Email o contraseña incorrectos' });
     });
 
     it('should reject login with missing fields', async () => {
       const response = await fakeRequest.post('/auth/login').send({ email: userData.email });
       expect(response.status).toBe(400);
+    });
+
+    it('issues a token that expires in a week', async () => {
+      const response = await fakeRequest.post('/auth/login').send({ email: userData.email, password: userData.password });
+      const { exp, iat } = JSON.parse(Buffer.from(response.body.token.split('.')[1], 'base64url').toString());
+      expect(exp - iat).toBe(7 * 24 * 60 * 60);
+    });
+  });
+
+  describe('Login attempt limit', () => {
+    const limiter = require('../../security/loginLimiter');
+    beforeEach(() => limiter.resetAll());
+
+    it('blocks an email after 5 failed attempts, even with the right password', async () => {
+      for (let i = 0; i < limiter.MAX_FAILS_PER_ACCOUNT; i++) {
+        const r = await fakeRequest.post('/auth/login').send({ email: userData.email, password: 'WrongPassword1' });
+        expect(r.status).toBe(401);
+      }
+      const blocked = await fakeRequest.post('/auth/login').send({ email: userData.email, password: userData.password });
+      expect(blocked.status).toBe(429);
+      expect(blocked.headers['retry-after']).toBeDefined();
+      expect(blocked.body.token).toBeUndefined();
+    });
+
+    it('a successful login clears the count', async () => {
+      for (let i = 0; i < limiter.MAX_FAILS_PER_ACCOUNT - 1; i++) {
+        await fakeRequest.post('/auth/login').send({ email: userData.email, password: 'WrongPassword1' });
+      }
+      expect((await fakeRequest.post('/auth/login').send({ email: userData.email, password: userData.password })).status).toBe(200);
+      expect((await fakeRequest.post('/auth/login').send({ email: userData.email, password: 'WrongPassword1' })).status).toBe(401);
+    });
+
+    it('also limits one IP trying many different emails', async () => {
+      for (let i = 0; i < limiter.MAX_FAILS_PER_IP; i++) {
+        await fakeRequest.post('/auth/login').send({ email: `probe${i}@gmail.com`, password: 'WrongPassword1' });
+      }
+      expect((await fakeRequest.post('/auth/login').send({ email: 'another@gmail.com', password: 'WrongPassword1' })).status).toBe(429);
     });
   });
 });

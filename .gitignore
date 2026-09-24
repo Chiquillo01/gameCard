@@ -2,3 +2,13 @@ node_modules/
 .idea
 .DS_Store
 .turbo
+
+# Secrets
+.env
+.env.*
+
+# Build and test output
+dist/
+coverage/
+storybook-static/
+*.timestamp-*.mjs
