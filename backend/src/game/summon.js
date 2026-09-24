@@ -138,6 +138,30 @@ function fireHandTrigger(state, eventName, instanceId, controllerIndex) {
     const paid = payCost(ctx, effect.cost, []);
     if (!paid) return;
   }
+  // Rulebook: the player picks where on the board a card lands, even when the summon itself is
+  // automatic — with more than one legal monster zone, defer it until they answer through
+  // RESOLVE_TRIGGER_CHOICE (effectEngine.resolveTriggerChoice → finishHandTrigger).
+  const slots = freeMonsterSlots(state, controllerIndex);
+  if (slots.length > 1 && (effect.actions || []).some((a) => a.fn === 'specialSummon')) {
+    state.pendingTriggerChoices = state.pendingTriggerChoices || [];
+    state.pendingTriggerChoices.push({ kind: 'slot', zone: 'monster', controllerIndex, effectId: effect._id, sourceInstanceId: instanceId, slots });
+    log(state, `${card.name} espera que elijas dónde invocarla.`);
+    return;
+  }
+  finishHandTrigger(state, controllerIndex, instanceId, effect, null);
+}
+
+// Monster zones a card could land in right now: empty and not blocked by corrosion.
+function freeMonsterSlots(state, controllerIndex) {
+  const pl = player(state, controllerIndex);
+  const blocked = corrodedSlots(pl, 'monsters');
+  return pl.field.monsters.reduce((acc, m, i) => (m === null && !blocked.includes(i) ? [...acc, i] : acc), []);
+}
+
+// Runs a hand trigger's summon (see fireHandTrigger) into `slot`, or the first free zone when null.
+function finishHandTrigger(state, controllerIndex, instanceId, effect, slot) {
+  const card = getCard(cardIdFromInstance(instanceId));
+  const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect, slot };
   resolveActions(ctx, effect, []);
   if (!findInstanceLocation(state, instanceId) || findInstanceLocation(state, instanceId).zone !== 'field:monster') return;
   log(state, `${player(state, controllerIndex).userId} invoca especial a ${card.name}.`);
@@ -266,4 +290,4 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   return { ok: true };
 }
 
-module.exports = { normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger };
+module.exports = { normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger };

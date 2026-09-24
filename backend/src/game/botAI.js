@@ -16,7 +16,9 @@ function runBotTurn(state, botIndex) {
     if (state.pendingTriggerChoices && state.pendingTriggerChoices.length) {
       const pending = state.pendingTriggerChoices[0];
       if (pending.controllerIndex !== botIndex) break; // waiting on the human
-      applyAction(state, botIndex, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [pending.options[0].instanceId] });
+      applyAction(state, botIndex, pending.kind === 'slot'
+        ? { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] }
+        : { type: 'RESOLVE_TRIGGER_CHOICE', targets: [pending.options[0].instanceId] });
       continue;
     }
 

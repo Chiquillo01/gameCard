@@ -115,7 +115,7 @@ function applyAction(state, playerIndex, action) {
       return passPriority(state, playerIndex);
 
     case 'RESOLVE_TRIGGER_CHOICE':
-      return resolveTriggerChoice(state, playerIndex, action.targets || []);
+      return resolveTriggerChoice(state, playerIndex, action.targets || [], action.slot ?? null);
 
     case 'SURRENDER': {
       state.winnerIndex = opponentIndex(playerIndex);
@@ -171,12 +171,20 @@ function viewFor(state, viewerIndex) {
           links: state.chain.map((l) => ({ controllerIndex: l.controllerIndex, instanceId: l.sourceInstanceId, cardName: l.cardName, speed: l.speed })),
         }
       : null,
-    // An automatic trigger's search (Avispa de Obsidiana, Nido de Avispas...) waiting on this
-    // viewer's pick — null for the other player, who has nothing to do about it.
-    pendingTriggerChoice: state.pendingTriggerChoices && state.pendingTriggerChoices[0] && state.pendingTriggerChoices[0].controllerIndex === viewerIndex
-      ? { options: state.pendingTriggerChoices[0].options }
-      : null,
+    // An automatic trigger waiting on this viewer's pick — a search (Avispa de Obsidiana, Nido de
+    // Avispas...) or where to place a self-summon (Avispa Mutante, kind 'slot'). Null for the
+    // other player, who has nothing to do about it.
+    pendingTriggerChoice: describePendingTriggerChoice(state, viewerIndex),
   };
+}
+
+function describePendingTriggerChoice(state, viewerIndex) {
+  const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
+  if (!pending || pending.controllerIndex !== viewerIndex) return null;
+  if (pending.kind === 'slot') {
+    return { kind: 'slot', zone: pending.zone, slots: pending.slots, card: describeInstance(state, pending.sourceInstanceId, viewerIndex, true) };
+  }
+  return { options: pending.options };
 }
 
 // The card's own summon_rule effect (its "método de invocación especial"), if it has one the

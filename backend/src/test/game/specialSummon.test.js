@@ -179,10 +179,45 @@ describe('SPECIAL_SUMMON', () => {
 
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Olla de la Usura') }).ok).toBe(true);
     passChain(state);
-    expect(monsterOf(state, 0, mutanteId)).toBeDefined();
+    // Rulebook: the player still picks which monster zone it lands in — the game waits on that.
+    expect(viewFor(state, 0).pendingTriggerChoice).toMatchObject({ kind: 'slot', zone: 'monster', slots: [0, 1, 2, 3, 4], card: { instanceId: mutanteId } });
+    expect(viewFor(state, 1).pendingTriggerChoice).toBeNull();
+    expect(applyAction(state, 0, { type: 'ADVANCE_PHASE' })).toMatchObject({ ok: false, reason: 'trigger-choice-pending' });
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: 3 })).toMatchObject({ ok: true });
+    expect(state.players[0].field.monsters[3]).toMatchObject({ instanceId: mutanteId });
     expect(state.players[0].hand).not.toContain(mutanteId);
     // It didn't use up the turn's own Normal Summon.
     expect(state.players[0].normalSummonUsed).toBe(false);
+  });
+
+  it('Avispa Mutante: an occupied zone is refused and the choice stays open', async () => {
+    const { state } = await makeMatch(['Kraken']);
+    toMain1(state);
+    const mutante = await Card.findOne({ name: 'Avispa Mutante' }).lean();
+    const kraken = await Card.findOne({ name: 'Kraken' }).lean();
+    const mutanteId = `0:${mutante._id}:m1`;
+    placeMonster(state, `0:${kraken._id}:blocker`, 0, { position: 'attack', slot: 1 });
+    state.players[0].hand.push(mutanteId);
+    const { fireHandTrigger } = require('../../game/summon');
+    fireHandTrigger(state, 'addedToHand', mutanteId, 0);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: 1 })).toMatchObject({ ok: false, reason: 'no-field-space' });
+    expect(state.players[0].hand).toContain(mutanteId);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: 4 })).toMatchObject({ ok: true });
+    expect(state.players[0].field.monsters[4]).toMatchObject({ instanceId: mutanteId });
+  });
+
+  it('Avispa Mutante: with a single free zone there is nothing to ask, it lands there directly', async () => {
+    const { state } = await makeMatch(['Kraken']);
+    toMain1(state);
+    const mutante = await Card.findOne({ name: 'Avispa Mutante' }).lean();
+    const kraken = await Card.findOne({ name: 'Kraken' }).lean();
+    const mutanteId = `0:${mutante._id}:m1`;
+    [0, 1, 3, 4].forEach((slot) => placeMonster(state, `0:${kraken._id}:b${slot}`, 0, { position: 'attack', slot }));
+    state.players[0].hand.push(mutanteId);
+    const { fireHandTrigger } = require('../../game/summon');
+    fireHandTrigger(state, 'addedToHand', mutanteId, 0);
+    expect(state.pendingTriggerChoices || []).toHaveLength(0);
+    expect(state.players[0].field.monsters[2]).toMatchObject({ instanceId: mutanteId });
   });
 
   it("Avispa Mutante: its trigger's own exceptPhase guard skips the turn's own draw phase", async () => {

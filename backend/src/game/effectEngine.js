@@ -164,10 +164,19 @@ function fireTrigger(state, eventName, eventArgs = {}) {
 }
 
 // Answers the oldest deferred trigger search (see fireTrigger above) with the player's pick.
-function resolveTriggerChoice(state, controllerIndex, targets) {
+// A `kind: 'slot'` entry (Avispa Mutante summoning itself — see summon.js fireHandTrigger) is
+// answered with the board `slot` instead of targets.
+function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
   const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
   if (!pending) return { ok: false, reason: 'no-pending-choice' };
   if (pending.controllerIndex !== controllerIndex) return { ok: false, reason: 'not-your-choice' };
+  if (pending.kind === 'slot') {
+    if (!pending.slots.includes(slot)) return { ok: false, reason: 'no-field-space' };
+    state.pendingTriggerChoices.shift();
+    require('./summon').finishHandTrigger(state, pending.controllerIndex, pending.sourceInstanceId, getEffect(pending.effectId), slot);
+    checkWin(state);
+    return { ok: true };
+  }
   if (!targets || !targets.length) return { ok: false, reason: 'choose-target', options: pending.options };
 
   state.pendingTriggerChoices.shift();

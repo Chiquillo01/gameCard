@@ -97,7 +97,10 @@ const DuelPage = () => {
   // choose-target. Reuses the same picker modal as ACTIVATE_SUPPORT/ACTIVATE_EFFECT's.
   const applyView = (data) => {
     setView(data);
-    if (data && data.pendingTriggerChoice) {
+    // A 'slot' choice (Avispa Mutante summoning itself) is answered on the board, not in the modal.
+    if (data && data.pendingTriggerChoice && data.pendingTriggerChoice.kind === 'slot') {
+      setPendingChoice(null);
+    } else if (data && data.pendingTriggerChoice) {
       setPendingChoice({ action: { type: 'RESOLVE_TRIGGER_CHOICE' }, options: data.pendingTriggerChoice.options });
     }
   };
@@ -150,7 +153,7 @@ const DuelPage = () => {
         } else {
           showToast('error', humanizeReason(result.reason));
         }
-      } else if (!(result.state && result.state.pendingTriggerChoice)) {
+      } else if (!(result.state && result.state.pendingTriggerChoice) || result.state.pendingTriggerChoice.kind === 'slot') {
         setPendingChoice(null);
       }
       return result;
@@ -296,9 +299,17 @@ const DuelPage = () => {
     if (result?.ok && onSuccess) onSuccess();
   };
 
+  // A card that summons itself (Avispa Mutante: "Si es añadida a tu Mano... invocarlo
+  // inmediatamente") still lands where the player says — the server holds the duel until they
+  // pick one of its legal zones. It comes from the view, so no local cancel can drop it.
+  const triggerSlot = view?.pendingTriggerChoice?.kind === 'slot' ? view.pendingTriggerChoice : null;
+  const boardSlotPicker = triggerSlot
+    ? { zone: triggerSlot.zone, action: { type: 'RESOLVE_TRIGGER_CHOICE' }, freeing: [], slots: triggerSlot.slots, card: triggerSlot.card, forced: true }
+    : pendingBoardSlot;
+
   const pickBoardSlot = async (slot) => {
-    if (!pendingBoardSlot) return;
-    const { action, onSuccess } = pendingBoardSlot;
+    if (!boardSlotPicker) return;
+    const { action, onSuccess } = boardSlotPicker;
     setPendingBoardSlot(null);
     const result = await act({ ...action, slot });
     if (result?.ok && onSuccess) onSuccess();
@@ -466,12 +477,13 @@ const DuelPage = () => {
   const cardInPlay = (instanceId) => me.hand.find((c) => c.instanceId === instanceId) || me.field.monsters.find((m) => m && m.instanceId === instanceId);
   const choicePanel = (() => {
     const cancel = { label: 'Cancelar', variant: 'cancel', onClick: cancelPendingChoices };
-    if (pendingBoardSlot) {
+    if (boardSlotPicker) {
+      const zoneLabel = boardSlotPicker.zone === 'monster' ? 'zona de Monstruos' : 'zona de Apoyo';
       return {
-        card: cardInPlay(pendingBoardSlot.action.instanceId),
-        prompt: 'Elige dónde colocarla',
-        hint: `Haz click en una casilla vacía de tu ${pendingBoardSlot.zone === 'monster' ? 'zona de Monstruos' : 'zona de Apoyo'}`,
-        options: [cancel],
+        card: boardSlotPicker.card || cardInPlay(boardSlotPicker.action.instanceId),
+        prompt: boardSlotPicker.forced ? 'Se invoca de forma especial: elige dónde' : 'Elige dónde colocarla',
+        hint: `Haz click en una casilla vacía de tu ${zoneLabel}`,
+        options: boardSlotPicker.forced ? [] : [cancel],
       };
     }
     if (fusion) {
@@ -667,7 +679,7 @@ const DuelPage = () => {
           onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
           renderEffectButtons={renderEffectButtons}
           onHover={setHovered}
-          slotPicker={pendingBoardSlot}
+          slotPicker={boardSlotPicker}
           onPickSlot={pickBoardSlot}
         />
 
@@ -729,7 +741,9 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
   const row = (r) => (flipped ? 3 - r : r);
   // A zone the player can click to place the card they're summoning/compiling/setting — either
   // empty, or one of a Compilación's own field materials that's about to vacate it.
-  const isPickable = (zone, m) => isOwner && slotPicker && slotPicker.zone === zone && (m === null || (m && slotPicker.freeing.includes(m.instanceId)));
+  // `slots`, when the server sent them, is the exact legal list (it already skips corroded zones).
+  const isPickable = (zone, m, i) =>
+    isOwner && slotPicker && slotPicker.zone === zone && (slotPicker.slots ? slotPicker.slots.includes(i) : m === null || (m && slotPicker.freeing.includes(m.instanceId)));
 
   return (
     <div className={styles.fieldGrid}>
@@ -739,8 +753,8 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
           style={{ gridRow: row(1), gridColumn: i + 1 }}
           className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''} ${
             m && (m.instanceId === selectedAttacker || (fusion && isOwner && fusion.materials.has(m.instanceId))) ? styles.selected : ''
-          } ${isPickable('monster', m) ? styles.pickable : ''}`}
-          onClick={() => (isPickable('monster', m) ? onPickSlot(i) : m && onMonsterClick(m))}
+          } ${isPickable('monster', m, i) ? styles.pickable : ''}`}
+          onClick={() => (isPickable('monster', m, i) ? onPickSlot(i) : m && onMonsterClick(m))}
           onMouseEnter={() => m && (m.isToken ? onHover({ isToken: true, name: m.name, atk: m.atk, def: m.def }) : m.cardId && onHover({ cardId: m.cardId, atk: m.faceDown ? null : m.atk, def: m.faceDown ? null : m.def }))}
         >
           {m && !m.faceDown && (
@@ -805,9 +819,9 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
         <div
           key={`s${i}`}
           style={{ gridRow: row(2), gridColumn: i + 2 }}
-          className={`${styles.slot} ${isPickable('support', s) ? styles.pickable : ''}`}
+          className={`${styles.slot} ${isPickable('support', s, i) ? styles.pickable : ''}`}
           title='Soporte'
-          onClick={() => (isPickable('support', s) ? onPickSlot(i) : s && isOwner && onSupportClick && onSupportClick(s))}
+          onClick={() => (isPickable('support', s, i) ? onPickSlot(i) : s && isOwner && onSupportClick && onSupportClick(s))}
           onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}
         >
           {s && !s.faceDown && <img src={s.image} alt={s.name} title={s.name} />}
