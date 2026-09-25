@@ -30,4 +30,34 @@ function isIndexLoaded() {
   return cardsById.size > 0;
 }
 
-module.exports = { loadCardIndex, getCard, getEffect, isIndexLoaded };
+// The effects a field entry currently has: its own card's, plus any it copied (Doppelganger:
+// "el efecto de este monstruo es el del monstruo destruido"). Tokens have none.
+function effectCodesOf(entry) {
+  if (!entry || entry.isToken || !entry.cardId) return [];
+  return [...(getCard(entry.cardId).effectCodes || []), ...(entry.copiedEffectCodes || [])];
+}
+
+// "Monstruo sin efecto": a monster whose only effects describe how it's summoned (summon_rule) or
+// static rules about the card itself — Valkiria, Esqueleto, the Giants, Perro Esqueleto... Other
+// cards can refer to exactly that (filter key `effectless`).
+function isEffectless(card) {
+  if (!card || !['monster', 'fusion'].includes(card.category)) return false;
+  return (card.effectCodes || []).every((id) => {
+    const effect = getEffect(id);
+    return !effect || effect.type === 'summon_rule' || effect.type === 'rule';
+  });
+}
+
+// Attributes a card has on top of its own (Héroe del Caos: "también es de atributo Luz"), read
+// from its `rule` effects' gainAttribute actions.
+function extraAttributesOf(card) {
+  const attrs = [];
+  (card && card.effectCodes ? card.effectCodes : []).forEach((id) => {
+    const effect = getEffect(id);
+    if (!effect || effect.type !== 'rule') return;
+    (effect.actions || []).forEach((a) => { if (a.fn === 'gainAttribute' && a.args && a.args.attribute) attrs.push(a.args.attribute); });
+  });
+  return attrs;
+}
+
+module.exports = { loadCardIndex, getCard, getEffect, isIndexLoaded, effectCodesOf, isEffectless, extraAttributesOf };

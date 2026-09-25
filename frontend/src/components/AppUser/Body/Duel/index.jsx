@@ -59,8 +59,15 @@ const DuelPage = () => {
   const [pendingPosition, setPendingPosition] = useState(null);
   // Fusion in progress: the Compilación card plus the material instanceIds picked so far.
   const [fusion, setFusion] = useState(null);
+  // Rulebook: the player chooses where on the board a card lands. Set once what to place is known
+  // (a Normal/Special Summon, a support placement, a Compilación) but before it's sent: the board's
+  // own empty zones become clickable — { zone: 'monster'|'support', action, freeing }.
+  const [pendingBoardSlot, setPendingBoardSlot] = useState(null);
   // A Cementerio/Exilio/Mazo-C pile the player clicked open: { side: 'me'|'enemy', zone }.
   const [openPile, setOpenPile] = useState(null);
+  // The server asked us to pick a target for the action we just sent (a search effect's matches
+  // from the deck/cementerio, or an Equipo card's legal monsters): { action, options }.
+  const [pendingChoice, setPendingChoice] = useState(null);
   const socketRef = useRef(null);
   // Every card's full data (art, effect text, ...) by id, fetched once for the hover preview, and
   // the card the cursor last rested on.
@@ -85,10 +92,24 @@ const DuelPage = () => {
     getUserDecks().then(setDecks);
   }, [matchId]);
 
+  // A view update can itself carry a pending choice — an automatic trigger's search (Avispa de
+  // Obsidiana, Nido de Avispas...) waiting on this viewer's pick, not just a failed action's
+  // choose-target. Reuses the same picker modal as ACTIVATE_SUPPORT/ACTIVATE_EFFECT's.
+  const applyView = (data) => {
+    setView(data);
+    // A 'slot' choice (Avispa Mutante summoning itself) is answered on the board, not in the modal.
+    if (data && data.pendingTriggerChoice && data.pendingTriggerChoice.kind === 'slot') {
+      setPendingChoice(null);
+    } else if (data && data.pendingTriggerChoice) {
+      // An automatic effect's pick, or which cards to discard (hand limit, a rival's effect).
+      setPendingChoice({ action: { type: 'RESOLVE_TRIGGER_CHOICE' }, options: data.pendingTriggerChoice.options, prompt: data.pendingTriggerChoice.prompt, forced: true });
+    }
+  };
+
   const refreshState = useCallback(async (id) => {
     try {
       const data = await getDuelState(id);
-      setView(data);
+      applyView(data);
     } catch (e) {
       showToast('error', 'No se pudo cargar la partida.');
     }
@@ -102,7 +123,7 @@ const DuelPage = () => {
     socketRef.current = socket;
     socket.emit('auth', getUserToken());
     socket.on('duel:state', (data) => {
-      if (data.id === matchId) setView(data);
+      if (data.id === matchId) applyView(data);
     });
 
     return () => socket.disconnect();
@@ -125,8 +146,17 @@ const DuelPage = () => {
     if (!matchId) return;
     try {
       const result = await sendDuelAction(matchId, action);
-      setView(result.state);
-      if (!result.ok) showToast('error', humanizeReason(result.reason));
+      applyView(result.state); // may itself open the picker if the new state has a trigger waiting
+      if (!result.ok) {
+        // Not a rule violation — the server needs the player to pick which of these it means.
+        if (result.reason === 'choose-target' && result.options && result.options.length) {
+          setPendingChoice({ action, options: result.options, prompt: result.prompt, forced: action.type === 'RESOLVE_TRIGGER_CHOICE' });
+        } else {
+          showToast('error', humanizeReason(result.reason));
+        }
+      } else if (!(result.state && result.state.pendingTriggerChoice) || result.state.pendingTriggerChoice.kind === 'slot') {
+        setPendingChoice(null);
+      }
       return result;
     } catch (e) {
       showToast('error', 'Error al procesar la acción.');
@@ -140,6 +170,17 @@ const DuelPage = () => {
     setPendingPosition(null);
     setFusion(null);
     setSelectedAttacker(null);
+    setPendingBoardSlot(null);
+  };
+
+  // The player picked one of the options the server offered for a pending choose-target action:
+  // resend the same action with that pick added to whatever was already chosen — a cost needing
+  // more than one card (Inferno's "descarta 2 Dragones") re-asks for the rest instead of grabbing
+  // them itself, so this has to accumulate picks across rounds rather than replace them.
+  const chooseTarget = (instanceId) => {
+    if (!pendingChoice) return;
+    const targets = [...(pendingChoice.action.targets || []), instanceId];
+    act({ ...pendingChoice.action, targets });
   };
 
   // Only one decision can be open at a time: opening a new one replaces whatever was pending, so the
@@ -149,6 +190,8 @@ const DuelPage = () => {
     setPendingSupportChoice(null);
     setPendingPosition(null);
     setFusion(null);
+    setPendingChoice(null);
+    setPendingBoardSlot(null);
   };
 
   const confirmPositionChange = (position) => {
@@ -166,13 +209,29 @@ const DuelPage = () => {
   const onHandCardClick = (card) => {
     const isMyTurn = view.turnPlayer === view.you;
     const isMainPhase = view.phase === 'main1' || view.phase === 'main2';
-    if (!isMyTurn || !isMainPhase) {
-      showToast('info', 'Solo puedes jugar cartas en tu fase principal.');
+    const chainOpen = !!view.chain;
+    const canRespondToChain = chainOpen && view.chain.priorityPlayer === view.you;
+    // Rulebook, Velocidades: an Apoyo Veloz/Contraataque (Speed 2/3) can be activated from hand in
+    // any phase of its controller's own turn, not just Main Phase — and, like any Speed 2+ card,
+    // as a response whenever it's this player's priority on an open Pila.
+    const isFastSupport = card.category === 'support' && (card.subtype === 'instant' || card.subtype === 'counter');
+    const canPlayNow = canRespondToChain || (isMyTurn && (isMainPhase || isFastSupport));
+    if (!canPlayNow) {
+      showToast('info', chainOpen ? 'Ahora mismo le toca responder al rival.' : 'Solo puedes jugar cartas en tu fase principal.');
       return;
     }
 
     if (fusion) {
       if (card.instanceId === fusion.instanceId || card.category !== 'monster') return;
+      // Rulebook: Compilación materials come from the field, not hand, unless the card's own
+      // recipe names "hand" for a specific requirement — check the real data instead of assuming.
+      const fusionCardData = cardsById[cardInPlay(fusion.instanceId)?.cardId];
+      const materialReqs = fusionCardData?.activationCost?.args?.materials || [];
+      const allowsHand = materialReqs.some((m) => (m.zone ? [].concat(m.zone).includes('hand') : false));
+      if (!allowsHand) {
+        showToast('info', 'Esta Compilación solo acepta materiales que ya estén en tu Campo.');
+        return;
+      }
       toggleFusionMaterial(card.instanceId);
       return;
     }
@@ -195,13 +254,20 @@ const DuelPage = () => {
       return;
     }
 
-    // Rulebook: a monster whose invocation method says anything can't be Normal Summoned.
+    // Rulebook: a monster whose invocation method says "Solo puede..." can only be special
+    // summoned — with no Normal Summon option at all, its own card click just does that directly.
     if (card.normalSummonable === false) {
-      showToast('error', humanizeReason(card.cannotBeSummoned ? 'cannot-be-summoned' : 'special-summon-only'));
+      if (card.specialSummonAvailable) {
+        placeOnBoard('monster', { type: 'SPECIAL_SUMMON', instanceId: card.instanceId });
+      } else {
+        showToast('error', humanizeReason(card.cannotBeSummoned ? 'cannot-be-summoned' : 'special-summon-only'));
+      }
       return;
     }
 
-    setPendingSummon(card.instanceId);
+    // With both ways open (e.g. Avispa gigante), ask which one first — the Normal Summon slot for
+    // the turn is only checked once that's the one picked.
+    setPendingSummon({ instanceId: card.instanceId, stage: card.specialSummonAvailable ? 'method' : 'position' });
   };
 
   const toggleFusionMaterial = (instanceId) => {
@@ -214,26 +280,72 @@ const DuelPage = () => {
     });
   };
 
+  // Which of the player's own board zones are empty right now — `freeing` lets a Compilación
+  // count the slots its own field materials are about to vacate as available too.
+  const emptySlots = (zone, freeing = []) => {
+    const arr = zone === 'monster' ? me.field.monsters : me.field.support;
+    return arr.reduce((acc, entry, i) => (entry === null || (entry && freeing.includes(entry.instanceId)) ? [...acc, i] : acc), []);
+  };
+
+  // Rulebook: the player chooses where on the board a card lands, not the engine — same "ask only
+  // when it's a real choice" rule as everywhere else (cost payers, search picks): with 0 or 1
+  // legal empty zone there's nothing to decide, otherwise the board's own empty zones light up.
+  const placeOnBoard = async (zone, action, { freeing = [], onSuccess } = {}) => {
+    const free = emptySlots(zone, freeing);
+    if (free.length > 1) {
+      setPendingBoardSlot({ zone, action, freeing, onSuccess });
+      return;
+    }
+    const result = await act({ ...action, slot: free[0] });
+    if (result?.ok && onSuccess) onSuccess();
+  };
+
+  // A card that summons itself (Avispa Mutante: "Si es añadida a tu Mano... invocarlo
+  // inmediatamente") still lands where the player says — the server holds the duel until they
+  // pick one of its legal zones. It comes from the view, so no local cancel can drop it.
+  const triggerSlot = view?.pendingTriggerChoice?.kind === 'slot' ? view.pendingTriggerChoice : null;
+  const boardSlotPicker = triggerSlot
+    ? { zone: triggerSlot.zone, action: { type: 'RESOLVE_TRIGGER_CHOICE' }, freeing: [], slots: triggerSlot.slots, card: triggerSlot.card, forced: true, prompt: triggerSlot.prompt }
+    : pendingBoardSlot;
+
+  const pickBoardSlot = async (slot) => {
+    if (!boardSlotPicker) return;
+    const { action, onSuccess } = boardSlotPicker;
+    setPendingBoardSlot(null);
+    const result = await act({ ...action, slot });
+    if (result?.ok && onSuccess) onSuccess();
+  };
+
   const confirmSummon = (position, faceDown) => {
     if (!pendingSummon) return;
-    act({ type: 'NORMAL_SUMMON', instanceId: pendingSummon, position, faceDown });
+    const instanceId = pendingSummon.instanceId;
     setPendingSummon(null);
+    placeOnBoard('monster', { type: 'NORMAL_SUMMON', instanceId, position, faceDown });
+  };
+
+  const confirmSpecialSummon = () => {
+    if (!pendingSummon) return;
+    const instanceId = pendingSummon.instanceId;
+    setPendingSummon(null);
+    placeOnBoard('monster', { type: 'SPECIAL_SUMMON', instanceId });
   };
 
   const confirmSupportChoice = (setFaceDown) => {
     if (!pendingSupportChoice) return;
-    act({ type: 'ACTIVATE_SUPPORT', instanceId: pendingSupportChoice, setFaceDown });
+    const instanceId = pendingSupportChoice;
     setPendingSupportChoice(null);
+    placeOnBoard('support', { type: 'ACTIVATE_SUPPORT', instanceId, setFaceDown });
   };
 
-  const confirmFusion = async () => {
+  const confirmFusion = () => {
     if (!fusion) return;
-    const result = await act({
-      type: 'COMPILE_SUMMON',
-      instanceId: fusion.instanceId,
-      materialInstanceIds: [...fusion.materials],
-    });
-    if (result?.ok) setFusion(null);
+    // A material already on the board frees its own slot — the compiled monster can land there too.
+    const freeing = [...fusion.materials].filter((id) => me.field.monsters.some((m) => m && m.instanceId === id));
+    placeOnBoard(
+      'monster',
+      { type: 'COMPILE_SUMMON', instanceId: fusion.instanceId, materialInstanceIds: [...fusion.materials] },
+      { freeing, onSuccess: () => setFusion(null) }
+    );
   };
 
   // What the preview panel shows: the hovered card's full data, with the on-board Atk/Vida when it
@@ -366,17 +478,39 @@ const DuelPage = () => {
   const cardInPlay = (instanceId) => me.hand.find((c) => c.instanceId === instanceId) || me.field.monsters.find((m) => m && m.instanceId === instanceId);
   const choicePanel = (() => {
     const cancel = { label: 'Cancelar', variant: 'cancel', onClick: cancelPendingChoices };
-    if (fusion) {
+    if (boardSlotPicker) {
+      const zoneLabel = boardSlotPicker.zone === 'monster' ? 'zona de Monstruos' : 'zona de Apoyo';
       return {
-        card: cardInPlay(fusion.instanceId),
+        card: boardSlotPicker.card || cardInPlay(boardSlotPicker.action.instanceId),
+        prompt: boardSlotPicker.forced ? boardSlotPicker.prompt || 'Se invoca de forma especial: elige dónde' : 'Elige dónde colocarla',
+        hint: `Haz click en una casilla vacía de tu ${zoneLabel}`,
+        options: boardSlotPicker.forced ? [] : [cancel],
+      };
+    }
+    if (fusion) {
+      const fusionCard = cardInPlay(fusion.instanceId);
+      const requirement = cardsById[fusionCard?.cardId]?.invocationText;
+      return {
+        card: fusionCard,
         prompt: 'Compilar',
-        hint: `Selecciona los materiales en tu mano o campo (${fusion.materials.size} elegidos)`,
+        hint: `${requirement ? `${requirement} — ` : ''}Selecciona los materiales en tu Campo (${fusion.materials.size} elegidos)`,
         options: [{ label: 'Confirmar compilación', variant: 'confirm', onClick: confirmFusion }, cancel],
+      };
+    }
+    if (pendingSummon && pendingSummon.stage === 'method') {
+      return {
+        card: cardInPlay(pendingSummon.instanceId),
+        prompt: '¿Invocas de forma normal o especial?',
+        options: [
+          { label: 'Invocar normal', onClick: () => setPendingSummon({ ...pendingSummon, stage: 'position' }) },
+          { label: 'Invocar especial', variant: 'confirm', onClick: confirmSpecialSummon },
+          cancel,
+        ],
       };
     }
     if (pendingSummon) {
       return {
-        card: cardInPlay(pendingSummon),
+        card: cardInPlay(pendingSummon.instanceId),
         prompt: '¿Cómo invocas esta carta?',
         options: [
           { label: 'Ataque', onClick: () => confirmSummon('attack', false) },
@@ -417,9 +551,32 @@ const DuelPage = () => {
       {view.status === 'finished' && (
         <div className={styles.gameOverOverlay}>
           <div className={styles.gameOverPlaque}>
-            {view.winnerIndex === you ? '¡Victoria!' : view.winnerIndex === opp ? 'Derrota' : 'Partida terminada'}
+            <div>{view.winnerIndex === you ? '¡Victoria!' : view.winnerIndex === opp ? 'Derrota' : 'Partida terminada'}</div>
+            <div className={styles.gameOverActions}>
+              <button className={styles.actionButton} onClick={() => navigate('/duel')}>
+                Jugar de nuevo
+              </button>
+              <button className={styles.surrenderButton} onClick={() => navigate('/')}>
+                Salir
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {pendingChoice && (
+        <PileModal
+          title={pendingChoice.prompt || 'Elige un objetivo'}
+          cards={pendingChoice.options}
+          // A choice the duel is waiting on (an automatic effect's pick, a forced discard) can't be
+          // dismissed — nothing else can happen until it's answered.
+          onClose={pendingChoice.forced ? null : () => setPendingChoice(null)}
+          renderCardExtra={(card) => (
+            <button className={styles.effectButton} onClick={() => chooseTarget(card.instanceId)}>
+              Elegir
+            </button>
+          )}
+        />
       )}
 
       {openPile && (
@@ -430,7 +587,19 @@ const DuelPage = () => {
           renderCardExtra={(card) =>
             openPile.side === 'me' && openPile.zone === 'extra' ? (
               <button className={styles.effectButton} onClick={() => startFusion(card)}>
-                Fusionar
+                Compilar
+              </button>
+            ) : openPile.side === 'me' && card.specialSummonAvailable ? (
+              // Aboleth, Perro Esqueleto: their invocation method names the Cementerio/Exilio as
+              // a legal source, not just the Mano.
+              <button
+                className={styles.effectButton}
+                onClick={() => {
+                  placeOnBoard('monster', { type: 'SPECIAL_SUMMON', instanceId: card.instanceId });
+                  setOpenPile(null);
+                }}
+              >
+                Invocar especial
               </button>
             ) : (
               renderEffectButtons(card, true)
@@ -449,7 +618,7 @@ const DuelPage = () => {
         <div className={styles.topBarActions}>
           <button
             className={styles.actionButton}
-            disabled={!isMyTurn || view.status !== 'active'}
+            disabled={!isMyTurn || view.status !== 'active' || !!view.chain}
             onClick={() => act({ type: 'ADVANCE_PHASE' })}
           >
             Avanzar fase
@@ -464,6 +633,20 @@ const DuelPage = () => {
           </button>
         </div>
       </div>
+
+      {view.chain && (
+        <div className={styles.chainBar}>
+          <span className={styles.chainLinks}>
+            🔗 {view.chain.links.map((l) => l.cardName).join(' → ')}
+          </span>
+          <span>{view.chain.priorityPlayer === you ? 'Responde o pasa' : 'Esperando al rival...'}</span>
+          {view.chain.priorityPlayer === you && (
+            <button className={styles.actionButton} onClick={() => act({ type: 'PASS_CHAIN' })}>
+              Pasar
+            </button>
+          )}
+        </div>
+      )}
 
       <div className={styles.board}>
         <div className={styles.playerHeader}>
@@ -499,16 +682,25 @@ const DuelPage = () => {
           onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
           renderEffectButtons={renderEffectButtons}
           onHover={setHovered}
+          slotPicker={boardSlotPicker}
+          onPickSlot={pickBoardSlot}
         />
 
-        <div className={styles.log}>
-          <div className={styles.logScroll} ref={logRef}>
-            {view.log.map((l, i) => (
-              <div key={i} className={styles.logLine}>
-                [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
-              </div>
-            ))}
+        <div className={styles.sidePanel}>
+          <div className={styles.log}>
+            <div className={styles.logScroll} ref={logRef}>
+              {view.log.map((l, i) => (
+                <div key={i} className={styles.logLine}>
+                  [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
+                </div>
+              ))}
+            </div>
           </div>
+          {choicePanel && (
+            <div className={styles.actionSlot}>
+              <ChoicePanel panel={choicePanel} />
+            </div>
+          )}
         </div>
         </div>
 
@@ -533,11 +725,10 @@ const DuelPage = () => {
               title={card.name}
             >
               <img src={card.image} alt={card.name} />
+              {!fusion && renderEffectButtons(card)}
             </div>
           ))}
         </div>
-
-        {choicePanel && <ChoicePanel panel={choicePanel} />}
       </div>
 
     </div>
@@ -550,8 +741,13 @@ const DuelPage = () => {
 //   row 3: (—) x6, Mazo
 // `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
 // next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
-function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick }) {
+function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick, slotPicker, onPickSlot }) {
   const row = (r) => (flipped ? 3 - r : r);
+  // A zone the player can click to place the card they're summoning/compiling/setting — either
+  // empty, or one of a Compilación's own field materials that's about to vacate it.
+  // `slots`, when the server sent them, is the exact legal list (it already skips corroded zones).
+  const isPickable = (zone, m, i) =>
+    isOwner && slotPicker && slotPicker.zone === zone && (slotPicker.slots ? slotPicker.slots.includes(i) : m === null || (m && slotPicker.freeing.includes(m.instanceId)));
 
   return (
     <div className={styles.fieldGrid}>
@@ -561,8 +757,8 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
           style={{ gridRow: row(1), gridColumn: i + 1 }}
           className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''} ${
             m && (m.instanceId === selectedAttacker || (fusion && isOwner && fusion.materials.has(m.instanceId))) ? styles.selected : ''
-          }`}
-          onClick={() => m && onMonsterClick(m)}
+          } ${isPickable('monster', m, i) ? styles.pickable : ''}`}
+          onClick={() => (isPickable('monster', m, i) ? onPickSlot(i) : m && onMonsterClick(m))}
           onMouseEnter={() => m && (m.isToken ? onHover({ isToken: true, name: m.name, atk: m.atk, def: m.def }) : m.cardId && onHover({ cardId: m.cardId, atk: m.faceDown ? null : m.atk, def: m.faceDown ? null : m.def }))}
         >
           {m && !m.faceDown && (
@@ -624,7 +820,14 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       </div>
 
       {player.field.support.map((s, i) => (
-        <div key={`s${i}`} style={{ gridRow: row(2), gridColumn: i + 2 }} className={styles.slot} title='Soporte' onClick={() => s && isOwner && onSupportClick && onSupportClick(s)} onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}>
+        <div
+          key={`s${i}`}
+          style={{ gridRow: row(2), gridColumn: i + 2 }}
+          className={`${styles.slot} ${isPickable('support', s, i) ? styles.pickable : ''}`}
+          title='Soporte'
+          onClick={() => (isPickable('support', s, i) ? onPickSlot(i) : s && isOwner && onSupportClick && onSupportClick(s))}
+          onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}
+        >
           {s && !s.faceDown && <img src={s.image} alt={s.name} title={s.name} />}
           {s && s.faceDown && <div className={styles.faceDown} />}
           {s && isOwner && renderEffectButtons(s)}
@@ -692,7 +895,7 @@ function PileSlot({ style, label, count, onClick }) {
 
 function PileModal({ title, cards, onClose, renderCardExtra }) {
   return (
-    <div className={styles.pileOverlay} onClick={onClose}>
+    <div className={styles.pileOverlay} onClick={onClose || undefined}>
       <div className={styles.pileModal} onClick={(e) => e.stopPropagation()}>
         <h3 className={styles.pileModalTitle}>
           {title} ({cards.length})
@@ -701,15 +904,17 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
           {cards.length === 0 && <p className={styles.pileEmpty}>Vacío.</p>}
           {cards.map((card) => (
             <div key={card.instanceId} className={styles.pileModalCard}>
-              <img src={card.image} alt={card.name} />
+              {card.image && <img src={card.image} alt={card.name} />}
               <span className={styles.pileModalCardName}>{card.name}</span>
               {renderCardExtra && renderCardExtra(card)}
             </div>
           ))}
         </div>
-        <button className={styles.surrenderButton} onClick={onClose}>
-          Cerrar
-        </button>
+        {onClose && (
+          <button className={styles.surrenderButton} onClick={onClose}>
+            Cerrar
+          </button>
+        )}
       </div>
     </div>
   );
@@ -761,7 +966,7 @@ function humanizeReason(reason) {
     'no-field-space': 'No tienes espacio en el campo.',
     'not-in-hand': 'Esa carta no está en tu mano.',
     'invalid-position': 'Esa combinación de posición no es válida.',
-    'not-available': 'Esa carta de fusión no está disponible.',
+    'not-available': 'Esa carta de compilación no está disponible.',
     'already-attacked': 'Ese monstruo ya atacó este turno.',
     'not-main-phase': 'Solo puedes hacer eso en tu Fase Principal.',
     'summoned-this-turn': 'Ese monstruo no puede cambiar de posición el turno en que fue invocado.',
@@ -782,11 +987,34 @@ function humanizeReason(reason) {
     'cannot-set-territory': 'Un Territorio no se puede colocar boca abajo.',
     'not-set-support': 'Ese apoyo no está colocado boca abajo.',
     'use-its-effect': 'Ese apoyo se activa con su efecto.',
+    'no-legal-equip-target': 'No tienes ningún monstruo válido para equipar esta carta.',
+    'too-slow': 'Esa carta no es lo bastante rápida para responder ahora mismo.',
+    'chain-open': 'Hay una cadena abierta: primero hay que resolverla.',
+    'not-your-priority': 'Ahora mismo le toca responder al rival.',
+    'no-chain': 'No hay ninguna cadena que pasar.',
+    'trigger-choice-pending': 'Primero tienes que elegir la carta para ese efecto.',
+    'no-response-window': 'Esa carta solo se puede usar en respuesta a lo que indica su texto.',
+    'no-legal-target': 'No hay ningún objetivo válido para ese efecto.',
+    'attacks-disabled': 'No puedes atacar este turno.',
+    'cannot-be-targeted': 'Ese monstruo no puede ser objetivo de ataques.',
+    'unique-card': 'Solo puedes tener una carta con ese nombre en el Campo.',
+    'invalid-equip-target': 'Esa carta no se puede equipar a ese monstruo.',
+    'not-your-card': 'Esa carta no es tuya.',
+    'face-down': 'Una carta boca abajo no puede activar sus efectos.',
+    frozen: 'Esa carta está congelada y no puede activar efectos.',
+    'attacker-not-found': 'Ese monstruo ya no está en el Campo.',
+    'defender-not-found': 'El monstruo atacado ya no está en el Campo.',
+    'not-your-choice': 'Esa elección le corresponde al rival.',
+    'no-pending-choice': 'No hay ninguna elección pendiente.',
+    'no-special-summon-method': 'Esa carta no tiene un método de invocación especial.',
+    'special-summon-condition-not-met': 'No cumples la condición para invocarla de forma especial.',
+    'cannot-pay-special-summon-cost': 'No puedes pagar el coste de la invocación especial.',
+    'invalid-equip-target': 'Ese monstruo no puede llevar este equipo.',
     frozen: 'Ese monstruo está congelado y no puede activar efectos.',
     'not-compiled': 'Ese monstruo no es un monstruo compilado.',
     'compiled-this-turn': 'No puedes descompilar un monstruo el turno en que fue compilado.',
   };
-  if (reason && reason.startsWith('missing-material')) return 'Los materiales elegidos no cumplen el requisito de fusión.';
+  if (reason && reason.startsWith('missing-material')) return 'Los materiales elegidos no cumplen el requisito de compilación.';
   return map[reason] || 'Acción no válida.';
 }
 

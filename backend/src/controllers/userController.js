@@ -1,6 +1,7 @@
 const { default: mongoose } = require('mongoose');
 const { User } = require('../data/Schema/user');
 const cloudinary = require('cloudinary').v2;
+const { validateEmailFormat } = require('../middlewares');
 
 const getUsers = async (req, res) => {
   try {
@@ -16,7 +17,7 @@ const getUsers = async (req, res) => {
 const getCurrentUser = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
-    const currentUser = await User.findById(userId);
+    const currentUser = await User.findById(userId).select('-password');
     if (!currentUser) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
@@ -26,30 +27,54 @@ const getCurrentUser = async (req, res) => {
   }
 };
 
+// The only fields a user may change on their own profile. Everything else on the document —
+// admin, pixelcoins, pixelgems, level, password — is server-owned: copying the request body
+// straight into the update would let anyone grant themselves admin or currency.
+const SELF_EDITABLE_FIELDS = ['userName', 'email', 'birthDate'];
+
 const updateUser = async (req, res) => {
   const userId = req.jwtPayload.id;
-  const updateInfo = req.body;
-  const { buffer, mimetype } = req.file;
 
   try {
     const requestingUser = await User.findById(userId);
     if (!requestingUser) {
       return res.status(401).send();
     }
-    const encodedImage = buffer.toString('base64');
-    const imageUrl = `data:${mimetype};base64,${encodedImage}`;
-    const imageUploaded = await cloudinary.uploader.upload(imageUrl);
-    const secureUrl = imageUploaded.secure_url;
-    const userUpdated = {
-      ...updateInfo,
-      profilePicture: secureUrl,
-    };
+
+    const userUpdated = {};
+    SELF_EDITABLE_FIELDS.forEach((field) => {
+      const value = req.body[field];
+      // A multipart form sends blank inputs as '' (or 'undefined'/'null' strings): treat those as "not changed".
+      if (typeof value !== 'string' || !value.trim() || value === 'undefined' || value === 'null') return;
+      userUpdated[field] = value.trim();
+    });
+    if (userUpdated.email) {
+      userUpdated.email = userUpdated.email.toLowerCase();
+      if (!validateEmailFormat(userUpdated.email)) {
+        return res.status(400).json({ error: 'El formato del email no es correcto' });
+      }
+    }
+    if (userUpdated.birthDate && Number.isNaN(new Date(userUpdated.birthDate).getTime())) {
+      return res.status(400).json({ error: 'La fecha de nacimiento no es válida' });
+    }
+
+    // The profile picture is optional: only upload when a file actually came with the request.
+    if (req.file) {
+      const { buffer, mimetype } = req.file;
+      const imageUrl = `data:${mimetype};base64,${buffer.toString('base64')}`;
+      const imageUploaded = await cloudinary.uploader.upload(imageUrl);
+      userUpdated.profilePicture = imageUploaded.secure_url;
+    }
+
     const updatedUser = await User.findByIdAndUpdate(userId, userUpdated, {
       new: true,
-    });
+      runValidators: true,
+    }).select('-password');
 
     res.status(200).json(updatedUser);
   } catch (error) {
+    // Duplicate userName/email (unique index).
+    if (error && error.code === 11000) return res.status(409).json({ error: 'Ese nombre de usuario o email ya está en uso' });
     res.status(500).send();
   }
 };

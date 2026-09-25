@@ -17,9 +17,13 @@ const effectSchema = new Schema(
     type: {
       type: String,
       required: true,
-      enum: ['keyword', 'continuous', 'triggered', 'trigger', 'quick', 'ignition', 'summon_rule', 'rule', 'activated'],
+      enum: ['continuous', 'triggered', 'trigger', 'quick', 'ignition', 'summon_rule', 'rule', 'activated'],
     },
     oncePerTurn: { type: Boolean, default: false },
+    // "Puedes activar uno de estos efectos": the actions are alternatives — the player picks one.
+    choice: { type: Boolean, default: false },
+    // "Puedes ...": an automatic effect its player may decline (they're asked before it resolves).
+    optional: { type: Boolean, default: false },
     trigger: { type: stepSchema, default: null }, // WHEN this can/does fire
     conditions: { type: [stepSchema], default: [] }, // extra checks that must hold
     cost: { type: stepSchema, default: null }, // what the activating player pays

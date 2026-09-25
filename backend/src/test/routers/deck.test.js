@@ -6,6 +6,8 @@ const app = bootstrapApp();
 const fakeRequest = supertest(app);
 const { disconnectDB, connectDB } = require('../../mongo/connection');
 const { Card } = require('../../data/Schema/card');
+const { User } = require('../../data/Schema/user');
+const { UserCollection } = require('../../data/Schema/userCollection');
 
 beforeAll(async () => {
   await connectDB();
@@ -59,7 +61,21 @@ describe('Deck Controller TEST', () => {
     );
     cardId = cards[0]._id.toString();
     legalDeckCards = cards.map((c) => ({ card: c._id.toString(), amount: 4 }));
+
+    // A deck can only use cards its owner actually has: give the owner 4 of each (plus 4 of an
+    // extra card and 1 legendary used below); the intruder keeps an empty collection.
+    unownedCard = await new Card({ ...cards[0].toObject(), _id: undefined, number: 90, name: 'Unowned Card' }).save();
+    legendary = await new Card({ ...cards[0].toObject(), _id: undefined, number: 91, name: 'Legend Card', rarity: 'legendary', state: 1 }).save();
+    fusionCard = await new Card({ ...cards[0].toObject(), _id: undefined, number: 92, name: 'Fusion Card', category: 'fusion' }).save();
+    await UserCollection.updateOne(
+      { userId: (await User.findOne({ email: 'deck.owner@gmail.com' }))._id },
+      { cards: [...cards.map((c) => ({ cardId: c._id, amount: 4 })), { cardId: legendary._id, amount: 3 }, { cardId: fusionCard._id, amount: 2 }] },
+    );
   });
+
+  let unownedCard;
+  let legendary;
+  let fusionCard;
 
   describe('POST /deck', () => {
     it('should reject deck creation without a token', async () => {
@@ -99,6 +115,38 @@ describe('Deck Controller TEST', () => {
       expect(response.status).toBe(400);
     });
 
+    const post = (cards, extra = {}) =>
+      fakeRequest.post('/deck').set('Authorization', `Bearer ${ownerToken}`).send({ deckTitle: 'Probe', cards, ...extra });
+
+    it('counts the same card listed twice as one entry for the copy limit', async () => {
+      // 1 legendary allowed; two rows of 1 used to pass as "1 each".
+      const response = await post([{ card: legendary._id.toString(), amount: 1 }, { card: legendary._id.toString(), amount: 1 }]);
+      expect(response.status).toBe(400);
+    });
+
+    it('rejects negative or fractional amounts (they used to shrink the counted total)', async () => {
+      const negative = await post([...legalDeckCards, { card: unownedCard._id.toString(), amount: -10 }]);
+      expect(negative.status).toBe(400);
+      const fractional = await post([{ card: cardId, amount: 1.5 }]);
+      expect(fractional.status).toBe(400);
+    });
+
+    it('rejects cards the user does not own, or more copies than owned', async () => {
+      const unowned = await post([{ card: unownedCard._id.toString(), amount: 1 }]);
+      expect(unowned.status).toBe(400);
+      const intruder = await fakeRequest.post('/deck').set('Authorization', `Bearer ${otherToken}`).send({ deckTitle: 'Stolen', cards: [{ card: cardId, amount: 1 }] });
+      expect(intruder.status).toBe(400);
+    });
+
+    it('keeps Compilación cards out of the main deck and normal cards out of the fusion list', async () => {
+      const fusionInMain = await post([{ card: fusionCard._id.toString(), amount: 1 }]);
+      expect(fusionInMain.status).toBe(400);
+      const normalInFusion = await post([], { fusionCards: [{ card: cardId, amount: 1 }] });
+      expect(normalInFusion.status).toBe(400);
+      const ok = await post([{ card: cardId, amount: 1 }], { fusionCards: [{ card: fusionCard._id.toString(), amount: 1 }] });
+      expect(ok.status).toBe(201);
+    });
+
     it('should let an authenticated user create a deck', async () => {
       const response = await fakeRequest
         .post('/deck')
@@ -107,7 +155,28 @@ describe('Deck Controller TEST', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.deckTitle).toBe('My Deck');
+      expect(response.body.owner).toEqual({ _id: expect.any(String), userName: 'Deck Owner', profilePicture: expect.any(String) });
       deckId = response.body._id;
+    });
+  });
+
+  describe('GET /deck/user/:id', () => {
+    it('requires a token', async () => {
+      const response = await fakeRequest.get(`/deck/user/${deckId}`);
+      expect(response.status).toBe(401);
+    });
+
+    it("hides another user's private deck", async () => {
+      const response = await fakeRequest.get(`/deck/user/${deckId}`).set('Authorization', `Bearer ${otherToken}`);
+      expect(response.status).toBe(404);
+    });
+
+    it('lets the owner read it, without leaking private owner data', async () => {
+      const response = await fakeRequest.get(`/deck/user/${deckId}`).set('Authorization', `Bearer ${ownerToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body.owner.password).toBeUndefined();
+      expect(response.body.owner.email).toBeUndefined();
+      expect(response.body.owner.admin).toBeUndefined();
     });
   });
 
@@ -152,7 +221,7 @@ describe('Deck Controller TEST', () => {
       const response = await fakeRequest.delete(`/deck/${deckId}`).set('Authorization', `Bearer ${ownerToken}`);
       expect(response.status).toBe(200);
 
-      const getResponse = await fakeRequest.get(`/deck/user/${deckId}`);
+      const getResponse = await fakeRequest.get(`/deck/user/${deckId}`).set('Authorization', `Bearer ${ownerToken}`);
       expect(getResponse.status).toBe(404);
     });
   });

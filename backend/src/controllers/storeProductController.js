@@ -252,6 +252,8 @@ const buyCurrency = async (req, res) => {
     const quantity = parseQuantity(req.body.quantity);
     if (quantity === null) return res.status(400).json({ error: 'Cantidad inválida.' });
 
+    const { paymentMethod } = req.body;
+
     const product = await StoreProduct.findById(productId);
     if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
 
@@ -262,8 +264,18 @@ const buyCurrency = async (req, res) => {
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
+    // A pack is only handed out once it's actually been paid for. Packs priced in in-game currency
+    // are charged like any other product; packs priced in euros need a real payment provider that
+    // confirms the charge server-side, and there isn't one yet — so they can't be bought at all,
+    // instead of being given away for free as before.
+    if (!PAYMENT_METHODS.includes(paymentMethod) || !product.price[paymentMethod]) {
+      return res.status(402).json({ error: 'Los pagos con dinero real aún no están disponibles.' });
+    }
+    if (!canAfford(user, product, paymentMethod, quantity)) return res.status(410).json({ error: 'Saldo insuficiente' });
+
     const previousBalance = { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems };
 
+    chargeUser(user, product, paymentMethod, quantity);
     user.pixelgems += product.reward.pixelgems * quantity;
 
     await user.save();

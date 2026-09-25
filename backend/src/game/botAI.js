@@ -8,8 +8,28 @@ const { canBeNormalSummoned } = require('./summonRules');
 // path, it's just another caller of the public engine API.
 function runBotTurn(state, botIndex) {
   let guard = 0;
-  while (state.status === 'active' && state.turnPlayer === botIndex && guard < 50) {
+  while (state.status === 'active' && guard < 50) {
     guard++;
+
+    // An automatic trigger on one of the bot's own cards needs a pick (e.g. Avispa de Obsidiana's
+    // on-summon search) — no strategy yet, it just takes the first option so its turn can continue.
+    if (state.pendingTriggerChoices && state.pendingTriggerChoices.length) {
+      const pending = state.pendingTriggerChoices[0];
+      if (pending.controllerIndex !== botIndex) break; // waiting on the human
+      if (!answerPendingChoice(state, botIndex, pending)) break;
+      continue;
+    }
+
+    // Rulebook, "Apilar": while a Pila is open, only the player holding priority can act. The bot
+    // has no chain strategy yet (v1) — it always passes, which either hands priority back to the
+    // human or, if they'd already passed, resolves the chain and lets the loop carry on below.
+    if (state.chain.length) {
+      if (state.priorityPlayer !== botIndex) break; // waiting on the human to respond or pass
+      applyAction(state, botIndex, { type: 'PASS_CHAIN' });
+      continue;
+    }
+
+    if (state.turnPlayer !== botIndex) break;
     const pl = state.players[botIndex];
 
     if (state.phase === 'main1' || state.phase === 'main2') {
@@ -35,13 +55,13 @@ function runBotTurn(state, botIndex) {
     }
 
     if (state.phase === 'battle') {
-      const eligibleAttackers = pl.field.monsters.filter(
-        (m) => m && !m.hasAttacked && m.position === 'attack',
-      );
+      const eligibleAttackers = state.attackBans && state.attackBans[botIndex] === state.turnNumber
+        ? []
+        : pl.field.monsters.filter((m) => m && !m.hasAttacked && m.position === 'attack');
       if (eligibleAttackers.length) {
         const attacker = eligibleAttackers[0];
         const oppIdx = botIndex === 0 ? 1 : 0;
-        const oppMonsters = state.players[oppIdx].field.monsters.filter(Boolean);
+        const oppMonsters = state.players[oppIdx].field.monsters.filter((m) => m && !m.untargetable);
         const weakestTarget = oppMonsters.sort((a, b) => (a.baseDef + (a.tempBuff?.def || 0)) - (b.baseDef + (b.tempBuff?.def || 0)))[0];
         const result = applyAction(state, botIndex, {
           type: 'DECLARE_ATTACK',
@@ -55,6 +75,20 @@ function runBotTurn(state, botIndex) {
     applyAction(state, botIndex, { type: 'ADVANCE_PHASE' });
     if (state.turnPlayer !== botIndex) break;
   }
+}
+
+// No strategy yet: takes the first option each round until the choice is done (a slot, the first
+// cards of the hand for a discard, the first candidate for an effect's pick).
+function answerPendingChoice(state, botIndex, pending) {
+  if (pending.kind === 'slot') return applyAction(state, botIndex, { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] }).ok;
+  const targets = [];
+  for (let round = 0; round < 20; round++) {
+    const result = applyAction(state, botIndex, { type: 'RESOLVE_TRIGGER_CHOICE', targets });
+    if (result.ok) return true;
+    if (result.reason !== 'choose-target' || !result.options || !result.options.length) return false;
+    targets.push(result.options[0].instanceId);
+  }
+  return false;
 }
 
 function canAffordSummon(pl, card) {

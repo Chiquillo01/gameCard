@@ -62,4 +62,68 @@ describe('User Controller TEST', () => {
       });
     });
   });
+
+  describe('GET /user/me', () => {
+    it('never returns the password hash', async () => {
+      const response = await fakeRequest.get('/user/me').set('Authorization', `Bearer ${regularToken}`);
+      expect(response.status).toBe(200);
+      expect(response.body.password).toBeUndefined();
+    });
+  });
+
+  describe('POST /user/update', () => {
+    it('ignores server-owned fields (admin, currency, level, password) sent by the user', async () => {
+      const before = await User.findOne({ email: 'regular.user@gmail.com' }).lean();
+      const response = await fakeRequest
+        .post('/user/update')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .field('userName', 'Regular Renamed')
+        .field('admin', 'true')
+        .field('pixelcoins', '999999')
+        .field('pixelgems', '999999')
+        .field('level', '99')
+        .field('password', 'hacked');
+
+      expect(response.status).toBe(200);
+      expect(response.body.password).toBeUndefined();
+      const after = await User.findOne({ email: 'regular.user@gmail.com' }).lean();
+      expect(after.userName).toBe('Regular Renamed');
+      expect(after.admin).toBe(false);
+      expect(after.pixelcoins).toBe(before.pixelcoins);
+      expect(after.pixelgems).toBe(before.pixelgems);
+      expect(after.level).toBe(before.level);
+      expect(after.password).toBe(before.password);
+
+      // The account still logs in with its real password.
+      const login = await fakeRequest.post('/auth/login').send({ email: 'regular.user@gmail.com', password: '123456Ab' });
+      expect(login.status).toBe(200);
+    });
+
+    it('updates the profile without a picture, leaving blank fields unchanged', async () => {
+      const response = await fakeRequest
+        .post('/user/update')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .field('userName', '')
+        .field('birthDate', '2000-05-10');
+      expect(response.status).toBe(200);
+      expect(response.body.userName).toBe('Regular Renamed');
+      expect(new Date(response.body.birthDate).toISOString().slice(0, 10)).toBe('2000-05-10');
+    });
+
+    it('rejects an invalid email', async () => {
+      const response = await fakeRequest
+        .post('/user/update')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .field('email', 'no-es-un-email');
+      expect(response.status).toBe(400);
+    });
+
+    it('rejects a userName already taken by someone else', async () => {
+      const response = await fakeRequest
+        .post('/user/update')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .field('userName', 'Soon Admin');
+      expect(response.status).toBe(409);
+    });
+  });
 });

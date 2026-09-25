@@ -6,7 +6,9 @@ const API = axios.create({
 });
 
 export const fetchUsers = async () => {
-  const response = await API.get('/user');
+  const response = await API.get('/user', {
+    headers: { Authorization: `Bearer ${getUserToken()}` },
+  });
   return response.data;
 };
 
@@ -45,7 +47,7 @@ export const updateUser = async (userUpdate) => {
   formData.append('userName', userUpdate.userName);
   formData.append('email', userUpdate.email);
   formData.append('birthDate', userUpdate.birthDate);
-  formData.append('profilePicture', userUpdate.profilePicture[0]);
+  if (userUpdate.profilePicture && userUpdate.profilePicture[0]) formData.append('profilePicture', userUpdate.profilePicture[0]);
 
   const response = await API.post('/user/update', formData, {
     headers: {

@@ -15,7 +15,6 @@ const PIXEL_CAP = 12;
 const PHASES = ['draw', 'standby', 'main1', 'battle', 'main2', 'end'];
 
 const EFFECT_TYPES = {
-  KEYWORD: 'keyword',
   CONTINUOUS: 'continuous',
   TRIGGERED: 'triggered',
   TRIGGER: 'trigger',

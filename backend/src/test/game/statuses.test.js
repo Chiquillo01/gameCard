@@ -6,6 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
+const { attackAndResolve } = require('./chainHelpers');
 const { placeMonster, moveToZone, findInstanceLocation } = require('../../game/zones');
 const { addStatus, hasStatus, FREEZE, BURN, POISON } = require('../../game/statuses');
 const { recomputeContinuous } = require('../../game/effectEngine');
@@ -69,6 +70,9 @@ async function compiled() {
   padDecks(ctx.state);
   const fusionId = ctx.inHand('Ciempiés Gigante');
   const mats = [ctx.inHand('Avispa gigante'), ctx.inHand('Avispa Mutante')];
+  // Rulebook: Compilación materials come from the field, not hand, when the recipe names no zone.
+  mats.forEach((id) => placeMonster(ctx.state, id, 0, { position: 'attack' }));
+  ctx.state.players[0].hand = ctx.state.players[0].hand.filter((id) => !mats.includes(id));
   const res = applyAction(ctx.state, 0, { type: 'COMPILE_SUMMON', instanceId: fusionId, materialInstanceIds: mats });
   expect(res.ok).toBe(true);
   return { ...ctx, fusionId, mats };
@@ -99,15 +103,27 @@ describe('Compiled monsters keep their materials', () => {
 
   it('refuses to compile when there is no free zone, without consuming any material', async () => {
     const { state, inHand } = await makeMatch(COMPILE_NAMES);
-    const filler = [...state.players[1].hand, ...state.players[1].deck].slice(0, 5);
+    const gigante = inHand('Avispa gigante');
+    const mutante = inHand('Avispa Mutante');
+    const filler = [...state.players[1].hand, ...state.players[1].deck].slice(0, 3);
     filler.forEach((id) => placeMonster(state, id, 0, { position: 'attack' }));
+    placeMonster(state, gigante, 0, { position: 'attack', slot: 3 });
+    placeMonster(state, mutante, 0, { position: 'attack', slot: 4 });
+    state.players[0].hand = state.players[0].hand.filter((id) => id !== gigante && id !== mutante);
+    // Corroded, so the zones the materials are about to vacate still aren't legal to land in.
+    state.players[0].corrosion = [
+      { zone: 'monsters', slot: 3 },
+      { zone: 'monsters', slot: 4 },
+    ];
+
     const res = applyAction(state, 0, {
       type: 'COMPILE_SUMMON',
       instanceId: inHand('Ciempiés Gigante'),
-      materialInstanceIds: [inHand('Avispa gigante'), inHand('Avispa Mutante')],
+      materialInstanceIds: [gigante, mutante],
     });
     expect(res).toMatchObject({ ok: false, reason: 'no-field-space' });
-    expect(state.players[0].hand).toContain(inHand('Avispa gigante'));
+    expect(state.players[0].field.monsters[3]).toMatchObject({ instanceId: gigante });
+    expect(state.players[0].field.monsters[4]).toMatchObject({ instanceId: mutante });
   });
 });
 
@@ -150,8 +166,15 @@ describe('Decompiling', () => {
   });
 });
 
+// Two of the (few) monsters left with no effectCodes at all: these tests hardcode exact VP/Atk
+// math, so a card that happens to carry its own continuous effect (several PLAIN monsters do,
+// e.g. Capitán Bandido's battle-destruction immunity) would silently throw the numbers off
+// depending on which one the shuffle put first in hand.
+const VANILLA = ['Esqueleto', 'Valkiria'];
+
 async function twoMonsters() {
-  const { state } = await makeMatch(PLAIN);
+  const { state } = await makeMatch(VANILLA, VANILLA);
+  padDecks(state); // several of these tests advance multiple turns' worth of draws
   const [aId, bId] = [state.players[0].hand[0], state.players[1].hand[0]];
   placeMonster(state, aId, 0, { position: 'attack' });
   placeMonster(state, bId, 1, { position: 'attack' });
@@ -184,8 +207,9 @@ describe('Quemadura', () => {
     monsterOf(state, 0, aId).baseAtk = 6;
     monsterOf(state, 1, bId).baseAtk = 2;
     addStatus(state, bId, BURN);
-    const res = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: aId, targetInstanceId: bId });
-    expect(res.destroyedDefender).toBe(true);
+    const res = attackAndResolve(state, 0, aId, bId);
+    expect(res.ok).toBe(true);
+    expect(monsterOf(state, 1, bId)).toBeUndefined();
     expect(state.players[1].vp).toBe(80 - 8); // (6 - 2) x 2
   });
 
@@ -218,7 +242,7 @@ describe('Congelado', () => {
     addStatus(state, aId, FREEZE);
     monsterOf(state, 1, bId).cardId = (await Card.findOne({ name: 'Kraken' }).lean())._id.toString();
     const vp = state.players.map((p) => p.vp);
-    applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: aId, targetInstanceId: bId });
+    attackAndResolve(state, 0, aId, bId);
     expect(monsterOf(state, 0, aId)).toBeUndefined();
     expect(state.players.map((p) => p.vp)).toEqual(vp);
   });
@@ -228,7 +252,7 @@ describe('Congelado', () => {
     advanceUntil(state, 3, 'battle');
     addStatus(state, bId, FREEZE);
     monsterOf(state, 0, aId).cardId = (await Card.findOne({ name: 'Kraken' }).lean())._id.toString();
-    applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: aId, targetInstanceId: bId });
+    attackAndResolve(state, 0, aId, bId);
     expect(monsterOf(state, 1, bId)).toBeUndefined();
     expect(monsterOf(state, 0, aId)).toBeDefined();
   });

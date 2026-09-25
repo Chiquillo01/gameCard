@@ -6,6 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
+const { attackAndResolve } = require('./chainHelpers');
 const { runBotTurn } = require('../../game/botAI');
 
 beforeAll(async () => {
@@ -23,12 +24,15 @@ afterAll(async () => {
 });
 
 // Free-to-summon AND effect-free monsters, so combat math in these tests is just raw ATK vs
-// raw ATK/Vida — no continuous buff on the drawn card can shift the numbers depending on which
-// one the (randomly shuffled) deck happens to put in hand.
+// raw ATK/Vida. The real card set has almost no vanilla monsters left (nearly every card has an
+// effect now), so the tests mint a dozen copies of a vanilla one under their own names.
 async function getVanillaFreeMonsters(limit = 20) {
-  return Card.find({ category: 'monster', 'summonCost.fn': { $exists: false }, effectCodes: { $size: 0 }, invocationText: { $in: ['', null] } })
-    .limit(limit)
-    .lean();
+  const base = await Card.findOne({ name: 'Esqueleto' }).lean();
+  const { _id, createdAt, updatedAt, __v, ...rest } = base;
+  for (let i = 1; i <= 12; i++) {
+    await Card.findOneAndUpdate({ name: `Vanilla ${i}` }, { ...rest, name: `Vanilla ${i}`, number: 1000 + i, effectCodes: [] }, { upsert: true });
+  }
+  return Card.find({ name: /^Vanilla / }).limit(limit).lean();
 }
 
 async function makeTestMatch({ vsBot = false } = {}) {
@@ -165,7 +169,7 @@ describe('Game engine', () => {
     const instanceId = state.players[0].hand[0];
     applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId, position: 'attack' });
     applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // main1 -> battle
-    const result = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: instanceId, targetInstanceId: null });
+    const result = attackAndResolve(state, 0, instanceId, null);
     expect(result.ok).toBe(true);
     expect(result.direct).toBe(true);
   });
@@ -178,7 +182,7 @@ describe('Game engine', () => {
     advanceUntil(state, 3, 'battle'); // play out the rest of turn 1, all of turn 2, into turn 3's battle phase
 
     const vpBefore = state.players[1].vp;
-    const result = applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: instanceId, targetInstanceId: null });
+    const result = attackAndResolve(state, 0, instanceId, null);
     expect(result.ok).toBe(true);
     // VP can't go negative — with the current (unrebalanced) card ATK values often exceeding
     // the 80 starting VP, a single hit routinely floors the defender at 0 rather than landing
@@ -191,7 +195,12 @@ describe('Game engine', () => {
     advanceUntil(state, 2, 'draw'); // hands the turn off to the bot (player 1)
     expect(state.turnPlayer).toBe(1);
 
-    runBotTurn(state, 1);
+    // Every attack (and every card it plays) opens a response window the human answers — here the
+    // human always passes, which lets the bot carry on, like duelController.maybeRunBot does.
+    for (let i = 0; i < 30 && state.turnPlayer === 1; i++) {
+      runBotTurn(state, 1);
+      if (state.chain.length && state.priorityPlayer === 0) applyAction(state, 0, { type: 'PASS_CHAIN' });
+    }
 
     expect(state.turnPlayer).toBe(0); // bot played through its whole turn and passed back
     expect(state.turnNumber).toBe(3);

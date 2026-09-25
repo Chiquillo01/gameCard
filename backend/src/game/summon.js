@@ -1,14 +1,16 @@
 const { getCard } = require('./cardIndex');
 const { player, placeMonster, moveToZone, removeFromZone, releaseMaterials, corrodedSlots, findInstanceLocation, log } = require('./zones');
-const { payCost } = require('./effects/costs');
-const { fireTrigger, fireMaterialTriggers, recomputeContinuous } = require('./effectEngine');
+const { payCost, pendingCostChoice } = require('./effects/costs');
+const { fireTrigger, fireMaterialTriggers, recomputeContinuous, resolveActions, violatesUnique } = require('./effectEngine');
+const { checkConditions, markDuelLimitUsed } = require('./effects/conditions');
+const { snapshot, restore } = require('./stateSnapshot');
 const { getEffect } = require('./cardIndex');
 const { clearStatus, BURN } = require('./statuses');
 const { matchesCardFilter } = require('./filters');
 const { cardIdFromInstance } = require('./deckUtils');
 const { cannotBeSummoned, canBeNormalSummoned } = require('./summonRules');
 
-function normalSummon(state, controllerIndex, instanceId, { position = 'attack', faceDown = false } = {}) {
+function normalSummon(state, controllerIndex, instanceId, { position = 'attack', faceDown = false, slot = null } = {}) {
   const pl = player(state, controllerIndex);
   if (pl.normalSummonUsed) return { ok: false, reason: 'normal-summon-used' };
   if (!pl.hand.includes(instanceId)) return { ok: false, reason: 'not-in-hand' };
@@ -22,6 +24,7 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
   if (card.category !== 'monster') return { ok: false, reason: 'not-a-monster' };
   if (cannotBeSummoned(card)) return { ok: false, reason: 'cannot-be-summoned' };
   if (!canBeNormalSummoned(card)) return { ok: false, reason: 'special-summon-only' };
+  if (violatesUnique(state, controllerIndex, card)) return { ok: false, reason: 'unique-card' };
 
   const cost = card.summonCost;
   const ctx = { state, controllerIndex, sourceInstanceId: instanceId };
@@ -30,22 +33,173 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
     if (!paid) return { ok: false, reason: 'cannot-pay-summon-cost' };
   }
 
-  const placed = placeMonster(state, instanceId, controllerIndex, { position, faceDown });
+  // Rulebook: the player chooses where on the board the monster lands, not the engine.
+  const placed = placeMonster(state, instanceId, controllerIndex, { position, faceDown, slot });
   if (!placed) return { ok: false, reason: 'no-field-space' };
 
   pl.normalSummonUsed = true;
   log(state, `${pl.userId} invoca a ${card.name}.`);
-  fireTrigger(state, 'onSummon', { breed: card.breed });
+  announceSummon(state, controllerIndex, instanceId, card, faceDown);
   recomputeContinuous(state);
   return { ok: true };
 }
 
+// Rulebook, "Método de invocación": a monster whose invocation method describes a special-summon
+// condition/cost (own effectCodes carry a `summon_rule` effect) — doesn't touch normalSummonUsed,
+// since a special summon is an ADDITIONAL way to bring it out, not a replacement for the turn's
+// Normal Summon.
+function specialSummon(state, controllerIndex, instanceId, targets = [], slot = null) {
+  const pl = player(state, controllerIndex);
+  const loc = findInstanceLocation(state, instanceId);
+  if (!loc || loc.ownerIndex !== controllerIndex) return { ok: false, reason: 'not-in-hand' };
+
+  const cardId = cardIdFromInstance(instanceId);
+  const card = getCard(cardId);
+  if (card.category !== 'monster') return { ok: false, reason: 'not-a-monster' };
+  if (cannotBeSummoned(card)) return { ok: false, reason: 'cannot-be-summoned' };
+  if (violatesUnique(state, controllerIndex, card)) return { ok: false, reason: 'unique-card' };
+
+  // A rule with its own `trigger` (Avispa Mutante) fires automatically instead — see
+  // fireHandTrigger below — not something the player invokes with this action.
+  const rule = (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && !e.trigger && (e.actions || []).some((a) => a.fn === 'specialSummon'));
+  if (!rule) return { ok: false, reason: 'no-special-summon-method' };
+
+  // Most special summons are from hand; a few (Aboleth, Perro Esqueleto) name other zones via
+  // their own canBeSummonedFrom condition.
+  const zoneRule = (rule.conditions || []).find((c) => c.fn === 'canBeSummonedFrom');
+  const allowedZones = zoneRule ? zoneRule.args.zones : ['hand'];
+  if (!allowedZones.includes(loc.zone)) return { ok: false, reason: 'not-in-hand' };
+
+  // `slot` rides along on ctx for the rule's own `specialSummon` action (actions.js) to place it
+  // where the player picked, rather than the engine's own first-empty fallback.
+  const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect: rule, slot };
+  if (!checkConditions(ctx, rule.conditions)) return { ok: false, reason: 'special-summon-condition-not-met' };
+
+  // Checked but not marked yet — a still-pending cost choice or a failed payment shouldn't burn
+  // the turn's shot at this, only an actual summon should.
+  const turnLimitKey = rule.oncePerTurn && `${state.turnNumber}:${rule._id}:${instanceId}`;
+  if (turnLimitKey && state.turnLimits && state.turnLimits[turnLimitKey]) return { ok: false, reason: 'once-per-turn' };
+
+  // Every check before paying: a free zone for it (the rule's own cost can't free one — it pays with
+  // hand/Cementerio cards or sacrifices, which do, so only refuse when nothing could).
+  const blocked = corrodedSlots(pl, 'monsters');
+  const freeNow = pl.field.monsters.some((m, i) => m === null && !blocked.includes(i));
+  const sacrifices = rule.cost && ['sacrificeFiltered', 'tributeMonster', 'sacrificeControlled', 'destroyOwnMonster', 'exileFiltered'].includes(rule.cost.fn);
+  if (!freeNow && !sacrifices) return { ok: false, reason: 'no-field-space' };
+
+  const snap = snapshot(state);
+  if (rule.cost) {
+    // Rulebook: a cost never picks for the player (see costs.js pendingCostChoice) — with more
+    // legal payers than it needs and nothing chosen yet, ask instead of silently taking one.
+    const costChoice = pendingCostChoice(ctx, rule.cost, targets);
+    if (costChoice) return { ok: false, reason: 'choose-target', options: [...costChoice], prompt: costChoice.prompt };
+    const paid = payCost(ctx, rule.cost, targets);
+    if (!paid) {
+      restore(state, snap);
+      return { ok: false, reason: 'cannot-pay-special-summon-cost' };
+    }
+  }
+
+  // The rule's own actions place it (the `specialSummon` action puts the source on the field,
+  // attack position) — reusing the same dispatch every other effect resolves through.
+  resolveActions(ctx, rule, []);
+  if (!findInstanceLocation(state, instanceId) || findInstanceLocation(state, instanceId).zone !== 'field:monster') {
+    restore(state, snap);
+    return { ok: false, reason: 'no-field-space' };
+  }
+  if (turnLimitKey) {
+    state.turnLimits = state.turnLimits || {};
+    state.turnLimits[turnLimitKey] = true;
+  }
+  // "Una vez por duelo" (Perro Esqueleto) is used up once it has actually happened.
+  markDuelLimitUsed(state, controllerIndex, rule.conditions);
+
+  log(state, `${pl.userId} invoca especial a ${card.name}.`);
+  announceSummon(state, controllerIndex, instanceId, card, false);
+  recomputeContinuous(state);
+  return { ok: true };
+}
+
+// Tells the board a monster was summoned: its own 'onSummon' effects fire, then the controller's
+// other cards get 'allySummoned' (a face-down Set isn't a summon). A summon made by a card's effect
+// (`by`: { byEffect, bySourceInstanceId, bySourceCardId }) also fires the summoned card's own
+// "cuando es invocado por el efecto de un Licano" effects.
+function announceSummon(state, controllerIndex, instanceId, card, faceDown = false, by = {}) {
+  const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown, ...by };
+  if (!faceDown) fireTrigger(state, 'onSummon', event);
+  fireTrigger(state, 'allySummoned', event);
+  if (by.byEffect && !faceDown) {
+    fireTrigger(state, 'summonedByEffect', event);
+    fireTrigger(state, 'summonedByCardEffect', event);
+  }
+}
+
+// A card's own summon_rule can trigger off something OTHER than the player choosing to special
+// summon it — Avispa Mutante: "Si es añadida a tu Mano desde el Mazo o Cementerio, invocarlo
+// inmediatamente de forma especial." Called wherever a card can land in hand that way (a search,
+// or a card-effect draw — never the turn's own draw, which is what `exceptPhase: 'draw'` on the
+// rule is for).
+function fireHandTrigger(state, eventName, instanceId, controllerIndex) {
+  const card = getCard(cardIdFromInstance(instanceId));
+  if (card.category !== 'monster') return;
+  const rule = (card.effectCodes || []).find((id) => {
+    const e = getEffect(id);
+    return e && e.type === 'summon_rule' && e.trigger && e.trigger.fn === eventName;
+  });
+  if (!rule) return;
+  const effect = getEffect(rule);
+  if (effect.trigger.args && effect.trigger.args.exceptPhase === state.phase) return;
+  if (effect.oncePerTurn) {
+    state.turnLimits = state.turnLimits || {};
+    const key = `${state.turnNumber}:${effect._id}:${instanceId}`;
+    if (state.turnLimits[key]) return;
+    state.turnLimits[key] = true;
+  }
+  const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect };
+  if (!checkConditions(ctx, effect.conditions)) return;
+  if (effect.cost) {
+    const paid = payCost(ctx, effect.cost, []);
+    if (!paid) return;
+  }
+  // Rulebook: the player picks where on the board a card lands, even when the summon itself is
+  // automatic — with more than one legal monster zone, defer it until they answer through
+  // RESOLVE_TRIGGER_CHOICE (effectEngine.resolveTriggerChoice → finishHandTrigger).
+  const slots = freeMonsterSlots(state, controllerIndex);
+  if (slots.length > 1 && (effect.actions || []).some((a) => a.fn === 'specialSummon')) {
+    state.pendingTriggerChoices = state.pendingTriggerChoices || [];
+    state.pendingTriggerChoices.push({ kind: 'slot', zone: 'monster', controllerIndex, effectId: effect._id, sourceInstanceId: instanceId, slots });
+    log(state, `${card.name} espera que elijas dónde invocarla.`);
+    return;
+  }
+  finishHandTrigger(state, controllerIndex, instanceId, effect, null);
+}
+
+// Monster zones a card could land in right now: empty and not blocked by corrosion.
+function freeMonsterSlots(state, controllerIndex) {
+  const pl = player(state, controllerIndex);
+  const blocked = corrodedSlots(pl, 'monsters');
+  return pl.field.monsters.reduce((acc, m, i) => (m === null && !blocked.includes(i) ? [...acc, i] : acc), []);
+}
+
+// Runs a hand trigger's summon (see fireHandTrigger) into `slot`, or the first free zone when null.
+function finishHandTrigger(state, controllerIndex, instanceId, effect, slot) {
+  const card = getCard(cardIdFromInstance(instanceId));
+  const ctx = { state, controllerIndex, sourceInstanceId: instanceId, effect, slot };
+  resolveActions(ctx, effect, []);
+  if (!findInstanceLocation(state, instanceId) || findInstanceLocation(state, instanceId).zone !== 'field:monster') return;
+  log(state, `${player(state, controllerIndex).userId} invoca especial a ${card.name}.`);
+  announceSummon(state, controllerIndex, instanceId, card, false);
+  recomputeContinuous(state);
+}
+
 // True when `loc` is a zone the controller actually owns and that satisfies `req.zone` (a
 // string or array of "hand" | "field" | "graveyard"; materials with no `zone` default to
-// "hand", matching a classic fusion that discards component monsters from your hand).
+// "field" only — Compilación is meant to be harder to pull off than just discarding cards from
+// hand — unless the card's own recipe names a different zone, e.g. Héroe Fénix's "en Campo" or
+// Gigante Elemental's "de tu Campo o Cementerio").
 function materialLocationSatisfies(loc, controllerIndex, req) {
   if (!loc || loc.ownerIndex !== controllerIndex) return false;
-  const allowed = req.zone ? (Array.isArray(req.zone) ? req.zone : [req.zone]) : ['hand'];
+  const allowed = req.zone ? (Array.isArray(req.zone) ? req.zone : [req.zone]) : ['field'];
   return allowed.some((z) => {
     if (z === 'hand') return loc.zone === 'hand';
     if (z === 'graveyard') return loc.zone === 'graveyard';
@@ -56,13 +210,14 @@ function materialLocationSatisfies(loc, controllerIndex, req) {
 
 // Fusion/compilado summon. `materialInstanceIds` must satisfy every requirement in
 // card.activationCost.args.materials (see backend game docs / compilate_costs.json).
-function compileSummon(state, controllerIndex, compiladoInstanceId, materialInstanceIds) {
+function compileSummon(state, controllerIndex, compiladoInstanceId, materialInstanceIds, slot = null) {
   const pl = player(state, controllerIndex);
   const zonesWithCompilado = [...pl.hand, ...pl.extra];
   if (!zonesWithCompilado.includes(compiladoInstanceId)) return { ok: false, reason: 'not-available' };
 
   const cardId = cardIdFromInstance(compiladoInstanceId);
   const card = getCard(cardId);
+  if (violatesUnique(state, controllerIndex, card)) return { ok: false, reason: 'unique-card' };
   const materials = (card.activationCost && card.activationCost.args && card.activationCost.args.materials) || [];
 
   const pool = new Set(materialInstanceIds);
@@ -85,15 +240,23 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
   }
 
   // Check there will be a free zone before touching anything: materials on the field free theirs.
+  // Rulebook: the player chooses where the compiled monster lands, same as any other summon.
   const blocked = corrodedSlots(pl, 'monsters');
-  const hasRoom = pl.field.monsters.some((m, i) => !blocked.includes(i) && (m === null || usedIds.has(m.instanceId)));
-  if (!hasRoom) return { ok: false, reason: 'no-field-space' };
+  const isFreeOnceMaterialsLeave = (i) => !blocked.includes(i) && (pl.field.monsters[i] === null || usedIds.has(pl.field.monsters[i].instanceId));
+  if (slot !== null) {
+    if (slot < 0 || slot >= pl.field.monsters.length || !isFreeOnceMaterialsLeave(slot)) return { ok: false, reason: 'no-field-space' };
+  } else if (!pl.field.monsters.some((m, i) => isFreeOnceMaterialsLeave(i))) {
+    return { ok: false, reason: 'no-field-space' };
+  }
 
   // Rulebook: the materials are stacked under the compiled monster (not sent to the graveyard) and
   // follow it wherever it goes; they can be summoned back by decompiling it.
   const used = [...usedIds];
+  // Counters a material had on the field (Engranajes) — some pass them on to the compiled monster.
+  const materialCounters = {};
   used.forEach((id) => {
     const loc = findInstanceLocation(state, id);
+    if (loc.zone === 'field:monster') materialCounters[id] = { ...(pl.field.monsters[loc.slot].counters || {}) };
     if (loc.zone === 'field:monster') {
       // A compiled monster used as material sends the materials under it to the graveyard.
       releaseMaterials(state, pl.field.monsters[loc.slot], controllerIndex, 'graveyard');
@@ -101,13 +264,13 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
     }
     removeFromZone(state, id, loc);
   });
-  placeMonster(state, compiladoInstanceId, controllerIndex, { position: 'attack' });
+  placeMonster(state, compiladoInstanceId, controllerIndex, { position: 'attack', slot });
   const entry = pl.field.monsters.find((m) => m && m.instanceId === compiladoInstanceId);
   entry.materials = used;
 
   log(state, `${pl.userId} compila a ${card.name}.`);
-  fireMaterialTriggers(state, controllerIndex, used, compiladoInstanceId);
-  fireTrigger(state, 'onSummon', { breed: card.breed });
+  fireMaterialTriggers(state, controllerIndex, used, compiladoInstanceId, materialCounters);
+  announceSummon(state, controllerIndex, compiladoInstanceId, card);
   recomputeContinuous(state);
   return { ok: true };
 }
@@ -146,12 +309,12 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   materials.forEach((id) => {
     placeMonster(state, id, controllerIndex, { position: 'attack' });
     const back = pl.field.monsters.find((m) => m && m.instanceId === id);
-    if (back) back.hasAttacked = true; // decompiling happens as the Battle Phase ends
+    if (back) back.attackLockTurn = state.turnNumber; // decompiling happens as the Battle Phase ends
   });
   log(state, `${pl.userId} descompila a ${card.name}.`);
-  materials.forEach((id) => fireTrigger(state, 'onSummon', { breed: getCard(cardIdFromInstance(id)).breed }));
+  materials.forEach((id) => announceSummon(state, controllerIndex, id, getCard(cardIdFromInstance(id))));
   recomputeContinuous(state);
   return { ok: true };
 }
 
-module.exports = { normalSummon, compileSummon, decompile };
+module.exports = { normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };

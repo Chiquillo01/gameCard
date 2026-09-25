@@ -287,4 +287,67 @@ describe('Store Controller TEST', () => {
       expect(response.status).toBe(403);
     });
   });
+
+  describe('POST /store/products/:productId/buy-currency', () => {
+    const balanceOf = async (token) => (await fakeRequest.get('/user/me').set('Authorization', `Bearer ${token}`)).body;
+
+    it('never hands out a euro-priced pixelgem pack for free', async () => {
+      const pack = await new StoreProduct({
+        name: 'Euro Pack',
+        description: 'Real money pack',
+        price: { euros: 0.99 },
+        reward: { pixelgems: 10 },
+        imageUrl: 'gems.png',
+        category: 'pixelgems',
+      }).save();
+      const before = await balanceOf(userToken);
+
+      const response = await fakeRequest
+        .post(`/store/products/${pack._id}/buy-currency`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ quantity: 10 });
+
+      expect(response.status).toBe(402);
+      const after = await balanceOf(userToken);
+      expect(after.pixelgems).toBe(before.pixelgems);
+    });
+
+    it('charges an in-game-priced pack before crediting the pixelgems', async () => {
+      const pack = await new StoreProduct({
+        name: 'Coin Pack',
+        description: 'Pixelgems bought with pixelcoins',
+        price: { pixelcoins: 50 },
+        reward: { pixelgems: 5 },
+        imageUrl: 'gems.png',
+        category: 'pixelgems',
+      }).save();
+      const before = await balanceOf(userToken);
+
+      const response = await fakeRequest
+        .post(`/store/products/${pack._id}/buy-currency`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ paymentMethod: 'pixelcoins', quantity: 2 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.newBalance).toEqual({ pixelcoins: before.pixelcoins - 100, pixelgems: before.pixelgems + 10 });
+    });
+
+    it('refuses an in-game-priced pack the user cannot afford', async () => {
+      const pack = await new StoreProduct({
+        name: 'Pricey Pack',
+        description: 'Too expensive',
+        price: { pixelcoins: 1000000 },
+        reward: { pixelgems: 5 },
+        imageUrl: 'gems.png',
+        category: 'pixelgems',
+      }).save();
+
+      const response = await fakeRequest
+        .post(`/store/products/${pack._id}/buy-currency`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ paymentMethod: 'pixelcoins' });
+
+      expect(response.status).toBe(410);
+    });
+  });
 });

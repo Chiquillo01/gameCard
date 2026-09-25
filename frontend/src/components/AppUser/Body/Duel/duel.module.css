@@ -281,6 +281,14 @@
   box-shadow: 0 0 12px 2px rgba(255, 215, 106, 0.7);
 }
 
+/* An empty zone the player can click to choose where a card lands. */
+.slot.pickable {
+  cursor: pointer;
+  outline: 3px dashed #6fdc8c;
+  outline-offset: -3px;
+  background: rgba(111, 220, 140, 0.15);
+}
+
 .faceDown {
   width: 88%;
   height: 88%;
@@ -467,6 +475,27 @@
   font-size: 1.0625rem;
 }
 
+/* Rulebook, "Apilar": shown while a Pila is open — a highlighted border since it blocks
+   everything else until it clears. */
+.chainBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.625rem 1rem;
+  background: linear-gradient(180deg, #4a2a10 0%, #3a2010 100%);
+  border: 3px solid #ffd76a;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.35), 0 0 10px 1px rgba(255, 215, 106, 0.4);
+  padding: 0.5rem 0.875rem;
+  color: #ffd76a;
+  font-size: 1.0625rem;
+}
+
+.chainLinks {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .choiceInfo {
   display: flex;
   align-items: center;
@@ -535,6 +564,17 @@
   border-color: #ffd76a;
 }
 
+/* Effects usable straight from the hand (Kraken, the baby Dragones) sit over the card's bottom
+   edge — the card clips anything outside it. */
+.handCard {
+  position: relative;
+}
+
+.handCard .effectButtons {
+  top: auto;
+  bottom: 0;
+}
+
 .handCard img {
   width: 100%;
   height: 100%;
@@ -544,7 +584,6 @@
 
 /* --- Log --- */
 
-/* The log hangs off the right side of the two fields and is exactly as tall as them. */
 .fieldsRow {
   position: relative;
   display: flex;
@@ -574,13 +613,45 @@
   border: 3px dashed rgba(232, 211, 160, 0.3);
 }
 
+/* Holds the log and, once one is open, the action panel right below it — stacked in normal flow
+   on narrow screens, moved beside the fields (not stretching the page taller) on wide ones. */
+.sidePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+
+@media (min-width: 1421px) {
+  /* Room enough beside the board: the log hangs off the right, exactly as tall as both fields,
+     and the action panel sits under it, level with the hand — nothing adds to the page height. */
+  .sidePanel {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 100%;
+    margin: 0 0 0 1rem;
+    width: min(440px, calc((100vw - 700px) / 2 - 2rem));
+  }
+
+  .sidePanel .log {
+    height: 100%;
+  }
+
+  .actionSlot {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 2.5rem;
+  }
+}
+
 .log {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 100%;
-  margin-left: 1rem;
-  width: 300px;
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  height: 260px;
   background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
   border: 3px solid #4a2a10;
   box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.35);
@@ -592,17 +663,6 @@
   inset: 0;
   overflow-y: auto;
   padding: 0.625rem 0.875rem;
-}
-
-@media (max-width: 1420px) {
-  /* Not enough room beside the board: the log drops under the fields. */
-  .log {
-    position: relative;
-    left: auto;
-    margin: 0.5rem 0 0;
-    width: auto;
-    height: 150px;
-  }
 }
 
 .logLine {
@@ -637,6 +697,17 @@
   color: #ffd76a;
   text-shadow: 3px 3px 0 #7a2f0f;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.gameOverActions {
+  display: flex;
+  gap: 0.75rem;
+  font-family: 'VT323', monospace;
+  font-size: 1.0625rem;
 }
 
 @media (max-width: 768px) {

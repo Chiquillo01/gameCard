@@ -1,19 +1,18 @@
 const { randomUUID } = require('crypto');
 const { Deck } = require('../data/Schema/deck');
-const { Card } = require('../data/Schema/card');
 const { User } = require('../data/Schema/user');
-const { createMatch, applyAction, viewFor, runBotTurn, matchStore } = require('../game');
+const { createMatch, applyAction, viewFor, coinTossFirstPlayer, runBotTurn, matchStore } = require('../game');
 const { isDeckPlayable } = require('../game/deckRules');
 const { getIo } = require('../socket/socketServer');
 
 const UNPLAYABLE_DECK_ERROR = 'Este mazo no cumple el tamaño mínimo (40-50 cartas, máx. 10 de fusión) para poder jugar.';
 
-async function buildBotDeck() {
-  const monsters = await Card.find({ category: 'monster' }).limit(20).lean();
-  const support = await Card.find({ category: 'support' }).limit(10).lean();
+// For now the bot plays a mirror of the player's own deck: always a legal deck (it passed the
+// same checks), and a fair match-up while the bot has no deck of its own.
+function buildBotDeck(playerDeck) {
   return {
-    cards: [...monsters, ...support].map((c) => ({ card: c._id, amount: 2 })),
-    fusionCards: [],
+    cards: (playerDeck.cards || []).map((c) => ({ card: c.card, amount: c.amount })),
+    fusionCards: (playerDeck.fusionCards || []).map((c) => ({ card: c.card, amount: c.amount })),
   };
 }
 
@@ -31,7 +30,13 @@ function broadcastState(matchId) {
 function maybeRunBot(state) {
   if (!state.vsBot || state.status !== 'active') return;
   const botIndex = state.players.findIndex((p) => p.userId === 'BOT');
-  if (botIndex === -1 || state.turnPlayer !== botIndex) return;
+  if (botIndex === -1) return;
+  // Either it's genuinely the bot's turn, or the human just activated something during their own
+  // turn and opened a Pila the bot now has to respond to (or pass), or a trigger on the bot's own
+  // card needs a pick — any of which the bot must resolve before anything else can continue.
+  const botHasChainPriority = state.chain.length > 0 && state.priorityPlayer === botIndex;
+  const botHasPendingChoice = state.pendingTriggerChoices && state.pendingTriggerChoices[0] && state.pendingTriggerChoices[0].controllerIndex === botIndex;
+  if (state.turnPlayer !== botIndex && !botHasChainPriority && !botHasPendingChoice) return;
   runBotTurn(state, botIndex);
 }
 
@@ -43,16 +48,18 @@ const startPve = async (req, res) => {
     if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
     if (!isDeckPlayable(deck)) return res.status(400).json({ error: UNPLAYABLE_DECK_ERROR });
 
-    const botDeck = await buildBotDeck();
     const matchId = randomUUID();
     const state = await createMatch({
       matchId,
       playerA: userId,
       deckA: deck,
       playerB: 'BOT',
-      deckB: botDeck,
+      deckB: buildBotDeck(deck),
       vsBot: true,
+      ...coinTossFirstPlayer(),
     });
+    // The bot may have won the toss: it plays its first turn before the player gets the board.
+    maybeRunBot(state);
     matchStore.save(state);
     res.status(201).json(viewFor(state, 0));
   } catch (error) {
@@ -113,6 +120,7 @@ const acceptChallenge = async (req, res) => {
       playerB: userId,
       deckB: opponentDeck,
       vsBot: false,
+      ...coinTossFirstPlayer(),
     });
     matchStore.save(state);
     matchStore.removePending(matchId);

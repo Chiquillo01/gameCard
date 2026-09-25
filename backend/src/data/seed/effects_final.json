@@ -1,29 +1,5 @@
 [
   {
-    "_id": "TOQUE_DE_MUERTE",
-    "type": "keyword",
-    "oncePerTurn": false,
-    "conditions": [],
-    "actions": [
-      {
-        "fn": "deathTouch"
-      }
-    ],
-    "source": "Efecto(monster)"
-  },
-  {
-    "_id": "VOLAR",
-    "type": "keyword",
-    "oncePerTurn": false,
-    "conditions": [],
-    "actions": [
-      {
-        "fn": "flying"
-      }
-    ],
-    "source": "Efecto(monster)"
-  },
-  {
     "_id": "JINETE_DRAGON_BUFF",
     "type": "continuous",
     "oncePerTurn": false,
@@ -77,8 +53,9 @@
         "fn": "modifyStatPerCreature",
         "args": {
           "player": "self",
-          "atk": 10,
-          "breed": "Hada"
+          "atk": 1,
+          "breed": "Hada",
+          "target": "self"
         }
       }
     ],
@@ -200,7 +177,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 50
+          "amount": 3
         }
       }
     ],
@@ -242,7 +219,7 @@
   },
   {
     "_id": "DEVA_RESURRECT",
-    "type": "trigger",
+    "type": "triggered",
     "oncePerTurn": false,
     "conditions": [],
     "actions": [
@@ -256,7 +233,10 @@
         }
       }
     ],
-    "source": "Efecto(monster)"
+    "source": "Efecto(monster)",
+    "trigger": {
+      "fn": "onSummon"
+    }
   },
   {
     "_id": "FAIRY_LEAVE_DRAW_PIXELS",
@@ -278,7 +258,7 @@
   {
     "_id": "PEZ_LEVIATAN_DISCARD",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onMonsterDestroyed",
       "args": {
@@ -333,24 +313,47 @@
   {
     "_id": "RAKSHASA_NEGATE",
     "type": "quick",
-    "oncePerTurn": true,
-    "conditions": [],
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "effectIncludes",
+        "args": {
+          "effects": [
+            "addFromDeckToHand",
+            "summonFromDeck",
+            "sendFromDeckToGraveyard",
+            "banishFromDeck"
+          ]
+        }
+      }
+    ],
     "cost": {
       "fn": "discardSelf"
     },
     "actions": [
       {
-        "fn": "negateEffect"
+        "fn": "negateActivation"
       }
     ],
-    "source": "Efecto(monster)"
+    "source": "Efecto(monster)",
+    "trigger": {
+      "fn": "card_effect_activated",
+      "args": {
+        "phase": "main",
+        "source": "any",
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "ONI_NEGATE",
     "type": "quick",
     "oncePerTurn": true,
     "trigger": {
-      "fn": "chainResponse"
+      "fn": "chainResponse",
+      "args": {
+        "from": "hand"
+      }
     },
     "conditions": [],
     "cost": {
@@ -383,11 +386,13 @@
   {
     "_id": "KRAKEN_NEGATE",
     "type": "quick",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
-      "fn": "phase",
+      "fn": "card_effect_activated",
       "args": {
-        "timing": "mainPhase"
+        "phase": "main",
+        "source": "any",
+        "from": "hand"
       }
     },
     "conditions": [
@@ -408,7 +413,7 @@
     },
     "actions": [
       {
-        "fn": "negateEffect"
+        "fn": "negateActivation"
       }
     ],
     "source": "Efecto(monster)"
@@ -416,7 +421,7 @@
   {
     "_id": "MASTER_DRAGONS_SEARCH",
     "type": "ignition",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "conditions": [],
     "cost": {
       "fn": "discardSelf"
@@ -429,7 +434,13 @@
         }
       }
     ],
-    "source": "Efecto(monster)"
+    "source": "Efecto(monster)",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "MIMETO_FLIP_SUPPORT",
@@ -468,7 +479,15 @@
     "_id": "BALOR_INFLICT_BURN",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Bálor",
+          "max": 1
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "applyStatus",
@@ -485,7 +504,15 @@
     "_id": "BALOR_EXTRA_ATTACK",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Bálor",
+          "max": 1
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "grantExtraAttack",
@@ -530,13 +557,14 @@
   {
     "_id": "PEGASO",
     "type": "ignition",
-    "oncePerTurn": false,
+    "oncePerTurn": true,
     "conditions": [],
     "actions": [
       {
         "fn": "changeBeed",
         "args": {
-          "breed": "Hada"
+          "breed": "Hada",
+          "target": "selected"
         }
       }
     ],
@@ -551,8 +579,11 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "family": "Aqua",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "attribute": "Agua",
+            "category": "monster"
+          }
         }
       }
     ],
@@ -571,6 +602,9 @@
             "graveyard"
           ]
         }
+      },
+      {
+        "fn": "waterMonsterDestroyedThisTurn"
       }
     ],
     "actions": [
@@ -587,7 +621,7 @@
   {
     "_id": "WASP_SWARM_GRAVE",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -610,7 +644,7 @@
   {
     "_id": "WASP_SWARM_SEARCH",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -625,7 +659,8 @@
         "fn": "addCardToHandFromDeck",
         "args": {
           "filter": {
-            "name": "Avispa"
+            "nameContains": "Avispa",
+            "category": "monster"
           },
           "count": 1
         }
@@ -724,10 +759,14 @@
     },
     "conditions": [
       {
-        "fn": "noCardsControlled"
-      },
-      {
-        "fn": "canActivateOnOpponentTurn"
+        "fn": "canActivateOnOpponentTurn",
+        "args": {
+          "requires": [
+            {
+              "fn": "noCardsControlled"
+            }
+          ]
+        }
       }
     ],
     "requiresTarget": false,
@@ -931,7 +970,7 @@
         "fn": "negateAttack"
       },
       {
-        "fn": "endTurn"
+        "fn": "endBattlePhase"
       }
     ],
     "source": "EfectoBD(activated)"
@@ -999,10 +1038,7 @@
     "targetSelector": "triggeredEffect",
     "actions": [
       {
-        "fn": "negateEffect",
-        "args": {
-          "sendCard": false
-        }
+        "fn": "negateActivation"
       }
     ],
     "source": "EfectoBD(activated)"
@@ -1040,11 +1076,12 @@
   {
     "_id": "RELICARIO_EFFECT_NEGATE",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
-        "phase": "main"
+        "phase": "main",
+        "from": "field"
       }
     },
     "conditions": [
@@ -1068,7 +1105,8 @@
       {
         "fn": "negateEffect",
         "args": {
-          "target": "fieldCard"
+          "target": "fieldCard",
+          "destroyIfControls": "Enano Constructor"
         }
       }
     ],
@@ -1077,11 +1115,12 @@
   {
     "_id": "RELICARIO_EFFECT_BUFF_DEF",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
-        "phase": "main"
+        "phase": "main",
+        "from": "field"
       }
     },
     "conditions": [
@@ -1105,11 +1144,12 @@
       {
         "fn": "grantBuff",
         "args": {
-          "atribute": "Metal",
+          "attribute": "Metal",
           "buff": {
-            "def": 30
+            "atk": 2
           },
-          "duration": "endOfTurn"
+          "duration": "endOfTurn",
+          "scope": "field"
         }
       }
     ],
@@ -1118,11 +1158,12 @@
   {
     "_id": "RELICARIO_EFFECT_DEF_ATTACK",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
-        "phase": "main"
+        "phase": "main",
+        "from": "field"
       }
     },
     "conditions": [
@@ -1189,25 +1230,18 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
-    },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
+      "fn": "whileEquipped",
+      "args": {
+        "attribute": "Fuego"
       }
-    ],
+    },
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 30
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "atk": 2
           }
         }
       }
@@ -1219,13 +1253,10 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
+      "fn": "whileEquipped",
+      "args": {}
     },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "enableDirectAttack",
@@ -1246,13 +1277,12 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
-    },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
+      "fn": "whileEquipped",
+      "args": {
+        "side": "opponent"
       }
-    ],
+    },
+    "conditions": [],
     "actions": [
       {
         "fn": "disableEffects",
@@ -1273,26 +1303,16 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
+      "fn": "whileEquipped",
+      "args": {}
     },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "modifyStatsPerMonsterOnField",
         "args": {
-          "buff": {
-            "atk": 10
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "atk": 1,
+          "scope": "field"
         }
       }
     ],
@@ -1303,25 +1323,16 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
+      "fn": "whileEquipped",
+      "args": {}
     },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "def": 20
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "def": 1
           }
         }
       }
@@ -1333,25 +1344,16 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
+      "fn": "whileEquipped",
+      "args": {}
     },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 20
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "atk": 1
           }
         }
       }
@@ -1363,25 +1365,18 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
-    },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
+      "fn": "whileEquipped",
+      "args": {
+        "attribute": "Agua"
       }
-    ],
+    },
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "def": 30
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "def": 3
           }
         }
       }
@@ -1393,25 +1388,18 @@
     "type": "continuous",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileEquipped"
-    },
-    "conditions": [
-      {
-        "fn": "isEquippedToRace"
+      "fn": "whileEquipped",
+      "args": {
+        "family": "Insecto"
       }
-    ],
+    },
+    "conditions": [],
     "actions": [
       {
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 30
-          },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
+            "atk": 3
           }
         }
       }
@@ -1420,10 +1408,13 @@
   },
   {
     "_id": "PASTO_RESURRECCION",
-    "type": "continuous",
+    "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "whileOnField"
+      "fn": "phase",
+      "args": {
+        "timing": "standbyPhase"
+      }
     },
     "conditions": [],
     "actions": [
@@ -1433,18 +1424,11 @@
           "count": 1,
           "filter": {
             "breed": "Zombi",
-            "level": 3,
+            "maxLevel": 3,
             "zone": [
               "graveyard",
               "banished"
             ]
-          },
-          "phase": "espera",
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
           }
         }
       }
@@ -1468,15 +1452,10 @@
             "breed": "Demonio"
           },
           "buff": {
-            "atk": 35,
-            "def": 35
+            "atk": 5,
+            "def": 5
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1495,18 +1474,13 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "breed": "Heroe"
+            "breed": "Héroe"
           },
           "buff": {
-            "atk": 30
+            "atk": 3
           },
           "phase": "batalla",
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1525,19 +1499,13 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "breed": "Dragon"
+            "breed": "Dragón"
           },
           "buff": {
-            "atk": 20,
-            "abilities": "VOLAR"
+            "atk": 1,
+            "def": 1
           },
-          "phase": "batalla",
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1559,15 +1527,10 @@
             "attribute": "Agua"
           },
           "buff": {
-            "atk": 20,
-            "def": 20
+            "atk": 1,
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1586,18 +1549,13 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "attribute": "Planta"
+            "family": "Planta"
           },
           "buff": {
-            "atk": 20,
-            "def": 20
+            "atk": 1,
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1668,15 +1626,10 @@
             "breed": "Hada"
           },
           "buff": {
-            "atk": 20,
-            "def": 20
+            "atk": 1,
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1721,14 +1674,9 @@
             "attribute": "Tierra"
           },
           "buff": {
-            "def": 20
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1820,8 +1768,11 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "breed": "Himenóptero",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "nameContains": "Avispa",
+            "category": "monster"
+          }
         }
       }
     ]
@@ -1833,7 +1784,7 @@
     "trigger": {
       "fn": "usedAsCompileMaterial",
       "args": {
-        "family": "Insectoide"
+        "family": "Insecto"
       }
     },
     "conditions": [],
@@ -1887,14 +1838,20 @@
         "fn": "summonFromDeck",
         "args": {
           "filter": {
-            "name": "Dragón de Tierra"
+            "nameContains": "Dragón de Tierra",
+            "minLevel": 3
           },
-          "exclude": "self",
           "destination": "field",
           "sendCard": false
         }
       }
-    ]
+    ],
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "SERPIENTE_MUELLE_BOUNCE",
@@ -1928,7 +1885,7 @@
       {
         "fn": "applyStatus",
         "args": {
-          "target": "attacker",
+          "target": "selected",
           "status": "Veneno",
           "count": 1
         }
@@ -1936,9 +1893,9 @@
       {
         "fn": "grantBuff",
         "args": {
-          "target": "attacker",
+          "target": "selected",
           "buff": {
-            "atk": -40
+            "atk": -2
           },
           "duration": "whileStatus",
           "status": "Veneno"
@@ -1947,7 +1904,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 30
+          "amount": 2
         }
       }
     ]
@@ -1968,14 +1925,9 @@
             "attribute": "Tierra"
           },
           "buff": {
-            "def": 10
+            "def": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ]
@@ -2086,26 +2038,11 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 60
+            "atk": 2
           },
           "condition": {
             "costCardBreed": "Orco"
-          }
-        }
-      }
-    ]
-  },
-  {
-    "_id": "INVISIBILIDAD",
-    "type": "keyword",
-    "oncePerTurn": false,
-    "conditions": [],
-    "requiresTarget": false,
-    "actions": [
-      {
-        "fn": "grantAbility",
-        "args": {
-          "ability": "invisibilidad",
+          },
           "target": "self"
         }
       }
@@ -2140,7 +2077,7 @@
   {
     "_id": "ACECHADOR_INVISIBLE_ATK_BOOST",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "battleDamageDealt",
       "args": {
@@ -2154,7 +2091,7 @@
         "args": {
           "target": "self",
           "buff": {
-            "atk": 20
+            "atk": 2
           }
         }
       }
@@ -2261,7 +2198,7 @@
   {
     "_id": "LICANTROPO_MAGO_TRANSFORM",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByEffect",
       "args": {
@@ -2290,7 +2227,7 @@
   {
     "_id": "LICANTROPO_MAGO_RETURN_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -2318,7 +2255,7 @@
   {
     "_id": "LICANTROPO_HIELO_DESTROY",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByEffect",
       "args": {
@@ -2329,9 +2266,10 @@
     "requiresTarget": true,
     "actions": [
       {
-        "fn": "destroy",
+        "fn": "applyStatus",
         "args": {
-          "target": "selected"
+          "target": "selected",
+          "status": "Congelado"
         }
       }
     ]
@@ -2339,7 +2277,7 @@
   {
     "_id": "LICANTROPO_HIELO_RETURN_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -2360,39 +2298,6 @@
           "exclude": "self",
           "destination": "field",
           "sendCard": false
-        }
-      }
-    ]
-  },
-  {
-    "_id": "BLOQUEO",
-    "type": "keyword",
-    "oncePerTurn": false,
-    "conditions": [],
-    "requiresTarget": false,
-    "actions": [
-      {
-        "fn": "grantAbility",
-        "args": {
-          "ability": "bloqueo",
-          "target": "self"
-        }
-      }
-    ]
-  },
-  {
-    "_id": "DAMARCO_DESTROY_TWO",
-    "type": "ignition",
-    "oncePerTurn": true,
-    "conditions": [],
-    "requiresTarget": true,
-    "actions": [
-      {
-        "fn": "destroy",
-        "args": {
-          "target": "selected",
-          "count": 2,
-          "zone": "field"
         }
       }
     ]
@@ -2475,8 +2380,15 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "breed": "Roca",
-          "count": 1
+          "count": 1,
+          "scope": [
+            "deck",
+            "graveyard"
+          ],
+          "filter": {
+            "breed": "Roca",
+            "category": "monster"
+          }
         }
       }
     ]
@@ -2485,7 +2397,15 @@
     "_id": "TRITURADORA_BURN",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Trituradora de Batalla",
+          "max": 1
+        }
+      }
+    ],
     "cost": {
       "fn": "spendCounter",
       "args": {
@@ -2497,7 +2417,7 @@
       {
         "fn": "damageOpponent",
         "args": {
-          "amount": 40
+          "amount": 2
         }
       }
     ]
@@ -2506,7 +2426,15 @@
     "_id": "TRITURADORA_REVIVE_MACHINE",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Trituradora de Batalla",
+          "max": 1
+        }
+      }
+    ],
     "cost": {
       "fn": "spendCounter",
       "args": {
@@ -2530,7 +2458,7 @@
   {
     "_id": "HEROE_FENIX_REVIVE",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "sentToGraveyard"
     },
@@ -2608,7 +2536,7 @@
     "requiresTarget": true,
     "actions": [
       {
-        "fn": "negateEffect"
+        "fn": "negateActivation"
       }
     ]
   },
@@ -2642,7 +2570,7 @@
   {
     "_id": "APOYO_HEROE_REVIVE",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation"
     },
@@ -2681,7 +2609,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 150
+          "amount": 10
         }
       }
     ]
@@ -2689,7 +2617,7 @@
   {
     "_id": "TORMENTA_RELAMPAGOS_DESTROY_ALL",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation"
     },
@@ -2735,7 +2663,7 @@
         "fn": "damageOpponent",
         "args": {
           "basis": "targetAtk",
-          "multiplier": 0.5
+          "multiplier": 1
         }
       }
     ]
@@ -2771,7 +2699,7 @@
         "fn": "buffPerEquip",
         "args": {
           "target": "self",
-          "atk": 20
+          "atk": 1
         }
       },
       {
@@ -2822,12 +2750,18 @@
         "fn": "specialSummonFromDeck",
         "args": {
           "filter": {
-            "name": "Dragón de Viento"
-          },
-          "exclude": "Dragón de Viento Bebé"
+            "nameContains": "Dragón de Viento",
+            "minLevel": 3
+          }
         }
       }
-    ]
+    ],
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "SHADOW_DRAGON_ONSUMMON_ADD",
@@ -3011,7 +2945,7 @@
   {
     "_id": "HEROE_ESCARCHA_ONSUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -3062,7 +2996,7 @@
             "breed": "Orco"
           },
           "buff": {
-            "atk": 30
+            "atk": 2
           },
           "target": "selected"
         }
@@ -3098,8 +3032,8 @@
       {
         "fn": "debuffColumn",
         "args": {
-          "atk": -50,
-          "def": -50
+          "atk": -2,
+          "def": -2
         }
       }
     ]
@@ -3131,10 +3065,9 @@
       {
         "fn": "buffAtkPerMonster",
         "args": {
-          "atk": 10,
-          "filter": {
-            "name": "Arpía"
-          }
+          "nameContains": "Arpía",
+          "atk": 1,
+          "target": "self"
         }
       }
     ]
@@ -3208,7 +3141,7 @@
   {
     "_id": "LICANTROPO_GEVAUDAN_ONSUMMON_SEARCH",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon",
       "args": {
@@ -3238,7 +3171,7 @@
   {
     "_id": "LICANTROPO_GEVAUDAN_ENDBATTLE_SWAP",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -3272,7 +3205,7 @@
   {
     "_id": "LICANTROPO_GIGANTE_ONSUMMON_DESTROY",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon",
       "args": {
@@ -3297,7 +3230,7 @@
   {
     "_id": "LICANTROPO_GIGANTE_ENDBATTLE_SWAP",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -3411,9 +3344,13 @@
   },
   {
     "_id": "HEROE_ESPERANZA_PROTECTION",
-    "type": "rule",
+    "type": "continuous",
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
     "requiresTarget": false,
     "actions": [
       {
@@ -3428,7 +3365,7 @@
   {
     "_id": "HEROE_ESPERANZA_ONSUMMON_DESTROY",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -3443,11 +3380,12 @@
             "breed": "Héroe",
             "uniqueNames": true,
             "scope": "field"
-          }
+          },
+          "upTo": true
         }
       },
       {
-        "fn": "generatePixelsPerCardDestroyed",
+        "fn": "drawCardsPerDestroyed",
         "args": {
           "amount": 1
         }
@@ -3457,7 +3395,7 @@
   {
     "_id": "HEROE_ESPERANZA_BATTLE_DESTROY",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "involvedInBattle",
       "args": {
@@ -3484,29 +3422,27 @@
     "type": "ignition",
     "oncePerTurn": true,
     "conditions": [],
-    "requiresTarget": true,
+    "requiresTarget": false,
     "actions": [
       {
-        "fn": "chooseEffect",
+        "fn": "burnOpponent",
         "args": {
-          "options": [
-            {
-              "fn": "burnOpponent",
-              "args": {
-                "amount": 20
-              }
-            },
-            {
-              "fn": "damageMonster",
-              "args": {
-                "amount": 50,
-                "target": "selected"
-              }
-            }
-          ]
+          "amount": 1
+        }
+      },
+      {
+        "fn": "destroy",
+        "args": {
+          "side": "any",
+          "zone": "monster",
+          "faceUp": true,
+          "maxDef": 3,
+          "pick": "random",
+          "count": 1
         }
       }
-    ]
+    ],
+    "choice": true
   },
   {
     "_id": "ORCO_GIGANTE_EXILE",
@@ -3538,17 +3474,12 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "nameIncludes": "Arpía"
+            "nameContains": "Arpía"
           },
           "buff": {
-            "atk": 20
+            "atk": 1
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ]
@@ -3589,10 +3520,12 @@
       {
         "fn": "buffPerCount",
         "args": {
-          "family": "Insectoide",
-          "atk": 20,
-          "def": 20,
-          "scope": "field"
+          "family": "Insecto",
+          "atk": 1,
+          "def": 1,
+          "scope": "field",
+          "target": "self",
+          "excludeSelf": true
         }
       }
     ]
@@ -3600,7 +3533,7 @@
   {
     "_id": "CHATARRA_SEARCH",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -3625,7 +3558,7 @@
   {
     "_id": "CHATARRA_GY_GEAR",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -3646,7 +3579,7 @@
         "fn": "addCounter",
         "args": {
           "counter": "gear",
-          "amount": 1,
+          "amount": 2,
           "target": "selected"
         }
       }
@@ -3655,7 +3588,7 @@
   {
     "_id": "SACRIFICIO_INNECESARIO_GAIN_PIXELS",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation"
     },
@@ -3665,10 +3598,13 @@
       {
         "fn": "generatePixels",
         "args": {
-          "amount": 2
+          "amount": 3
         }
       }
-    ]
+    ],
+    "cost": {
+      "fn": "destroyOwnMonster"
+    }
   },
   {
     "_id": "MONEDA_FORTUNA_COINFLIP",
@@ -3686,13 +3622,13 @@
           "heads": {
             "fn": "gainVP",
             "args": {
-              "amount": 100
+              "amount": 3
             }
           },
           "tails": {
             "fn": "damageSelf",
             "args": {
-              "amount": 50
+              "amount": 3
             }
           }
         }
@@ -3771,7 +3707,7 @@
   {
     "_id": "INFERNO_DRAGON_DESTROY_ON_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -3827,7 +3763,7 @@
   {
     "_id": "ROCO_DRAGON_SEARCH_ON_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -3901,15 +3837,20 @@
         "fn": "summonFromDeck",
         "args": {
           "filter": {
-            "breed": "Dragón",
-            "attribute": "Oscuridad"
+            "nameContains": "Dragón de Oscuridad",
+            "minLevel": 3
           },
-          "exclude": "Dragón Oscuro Bebé",
           "destination": "field",
           "sendCard": false
         }
       }
-    ]
+    ],
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "AVISPA_GIGANTE_BUFF",
@@ -3943,7 +3884,7 @@
     "trigger": {
       "fn": "usedAsMaterial",
       "args": {
-        "compiledType": "Insectoide"
+        "family": "Insecto"
       }
     },
     "conditions": [],
@@ -4098,7 +4039,7 @@
         "args": {
           "target": "self",
           "buff": {
-            "atk": 20
+            "atk": 2
           }
         }
       }
@@ -4107,7 +4048,7 @@
   {
     "_id": "HEROE_MONTADO_GY_SEARCH",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "sentToGraveyard"
     },
@@ -4139,9 +4080,9 @@
           "target": "selected",
           "status": "Veneno",
           "debuff": {
-            "atk": -30
+            "atk": -2
           },
-          "burnOpponent": 20
+          "burnOpponent": 1
         }
       }
     ]
@@ -4158,9 +4099,10 @@
     "requiresTarget": false,
     "actions": [
       {
-        "fn": "setSummonCost",
+        "fn": "specialSummon",
         "args": {
-          "amount": 0
+          "card": "self",
+          "zone": "field"
         }
       }
     ]
@@ -4173,14 +4115,10 @@
     "requiresTarget": false,
     "actions": [
       {
-        "fn": "grantBuff",
+        "fn": "debuffColumn",
         "args": {
-          "scope": "column",
-          "relativeTo": "self",
-          "buff": {
-            "atk": -40,
-            "def": -40
-          }
+          "atk": -2,
+          "def": -2
         }
       }
     ]
@@ -4216,10 +4154,9 @@
       {
         "fn": "buffPerCount",
         "args": {
-          "atk": -20,
-          "def": -20,
-          "scope": "opponentField",
-          "countScope": "opponentField"
+          "atk": -1,
+          "def": -1,
+          "scope": "opponentField"
         }
       }
     ]
@@ -4234,7 +4171,7 @@
       {
         "fn": "gainVP",
         "args": {
-          "amount": 20,
+          "amount": 1,
           "perCount": {
             "breed": "Hada",
             "scope": "self"
@@ -4338,7 +4275,7 @@
   {
     "_id": "LICANTROPO_ZOMBIE_SEARCH",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByCardEffect",
       "args": {
@@ -4347,11 +4284,9 @@
     },
     "conditions": [],
     "cost": {
-      "fn": "discardCards",
+      "fn": "discart",
       "args": {
-        "count": 1,
-        "breed": "Licano",
-        "zone": "hand"
+        "count": 1
       }
     },
     "requiresTarget": false,
@@ -4361,9 +4296,15 @@
         "args": {
           "count": 1,
           "filter": {
-            "breed": "Licano"
+            "nameContains": "Licántropo",
+            "category": "Monstruo"
           },
-          "excludeAttributeOf": "discardedCard"
+          "excludeAttributesOf": {
+            "zone": "graveyard",
+            "filter": {
+              "nameContains": "Licántropo"
+            }
+          }
         }
       }
     ]
@@ -4371,7 +4312,7 @@
   {
     "_id": "LICANTROPO_ZOMBIE_ENDPHASE_RETURN_SUMMON",
     "type": "trigger",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -4467,10 +4408,12 @@
       {
         "fn": "buffPerCount",
         "args": {
-          "family": "Insectoide",
-          "atk": 20,
-          "def": 20,
-          "scope": "field"
+          "family": "Insecto",
+          "atk": 1,
+          "def": 0,
+          "scope": "field",
+          "target": "self",
+          "excludeSelf": true
         }
       }
     ]
@@ -4493,7 +4436,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 50
+          "amount": 3
         }
       }
     ]
@@ -4517,7 +4460,7 @@
         "fn": "damageMonster",
         "args": {
           "target": "selected",
-          "amount": 100
+          "amount": 8
         }
       }
     ]
@@ -4532,7 +4475,7 @@
       {
         "fn": "debuffAllByMaterialsAtk",
         "args": {
-          "scope": "allMonsters",
+          "scope": "opponentMonsters",
           "statSource": "fusionMaterials"
         }
       }
@@ -4541,7 +4484,7 @@
   {
     "_id": "HEROE_BERSERKER_MATERIAL_REVIVE",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "usedAsMaterial"
     },
@@ -4625,18 +4568,13 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "family": "Aqua"
+            "family": "Marino"
           },
           "buff": {
-            "atk": 30,
-            "def": 30
+            "atk": 3,
+            "def": 3
           },
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ]
@@ -4644,7 +4582,7 @@
   {
     "_id": "AMOOTH_SUMMON_DISCARD",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -4670,11 +4608,7 @@
         "from": "hand"
       }
     },
-    "conditions": [
-      {
-        "fn": "noMonstersControlled"
-      }
-    ],
+    "conditions": [],
     "requiresTarget": false,
     "actions": [
       {
@@ -4705,7 +4639,7 @@
       {
         "fn": "ownVPBelowOrEqual",
         "args": {
-          "amount": 400
+          "amount": 40
         }
       }
     ],
@@ -4732,7 +4666,7 @@
   {
     "_id": "SACRIFICIO_MEMORABLE_EXILE_GAIN",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -4741,23 +4675,20 @@
       }
     },
     "conditions": [],
-    "requiresTarget": true,
+    "requiresTarget": false,
     "actions": [
       {
-        "fn": "exileTarget",
+        "fn": "destroy",
         "args": {
-          "target": "opponentMonster",
-          "duration": "endOfTurn",
-          "player": "opponent"
-        }
-      },
-      {
-        "fn": "gainVP",
-        "args": {
-          "source": "exiledMonsterAtk"
+          "side": "opponent",
+          "zone": "monster",
+          "count": 1
         }
       }
-    ]
+    ],
+    "cost": {
+      "fn": "destroyOwnMonster"
+    }
   },
   {
     "_id": "OLLA_USURA_DRAW",
@@ -4878,19 +4809,25 @@
         "fn": "summonFromDeck",
         "args": {
           "filter": {
-            "name": "Dragón de Fuego"
+            "nameContains": "Dragón de Fuego",
+            "minLevel": 3
           },
-          "exclude": "Dragón de Fuego Bebe",
           "sendCard": false,
           "destination": "field"
         }
       }
-    ]
+    ],
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    }
   },
   {
     "_id": "SKY_DRAGON_VIENTO_ONSUMMON_SEARCH",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -5010,7 +4947,8 @@
           "count": 1
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "_id": "HEROE_VIENTO_MATERIAL_DRAW",
@@ -5046,8 +4984,8 @@
           "player": "self",
           "target": "self",
           "breed": "Héroe",
-          "atk": -20,
-          "def": -20
+          "atk": -1,
+          "def": -1
         }
       },
       {
@@ -5079,8 +5017,7 @@
           "filter": {
             "name": "Matón",
             "zone": [
-              "deck",
-              "graveyard"
+              "deck"
             ]
           }
         }
@@ -5118,7 +5055,7 @@
         "args": {
           "target": "opponent",
           "cost": {
-            "vp": 80
+            "vp": 5
           },
           "scope": "cardEffects"
         }
@@ -5134,8 +5071,11 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "breed": "Planta",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "family": "Planta",
+            "category": "monster"
+          }
         }
       }
     ]
@@ -5159,7 +5099,7 @@
           "target": "enemyMonster",
           "count": 1,
           "buff": {
-            "atk": -60
+            "atk": -3
           }
         }
       }
@@ -5182,7 +5122,7 @@
         "args": {
           "target": "allEnemyMonsters",
           "buff": {
-            "atk": -40
+            "atk": -2
           }
         }
       }
@@ -5191,7 +5131,7 @@
   {
     "_id": "LICANTROPO_ALFA_CHAIN_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByEffect",
       "args": {
@@ -5217,7 +5157,7 @@
   {
     "_id": "LICANTROPO_ALFA_BOUNCE_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -5246,7 +5186,7 @@
   {
     "_id": "LICANTROPO_CAZADOR_CHAIN_ATK",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "summonedByEffect",
       "args": {
@@ -5259,8 +5199,8 @@
         "fn": "setAtk",
         "args": {
           "target": "self",
-          "value": 100,
-          "duration": "endOfTurn"
+          "value": 10,
+          "duration": "endOfNextTurn"
         }
       }
     ]
@@ -5268,7 +5208,7 @@
   {
     "_id": "LICANTROPO_CAZADOR_BOUNCE_SUMMON",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "phase",
       "args": {
@@ -5298,7 +5238,7 @@
   {
     "_id": "LICANTROPO_ROUGAROU_NEGATE",
     "type": "quick",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "card_effect_activated",
       "args": {
@@ -5320,7 +5260,7 @@
     },
     "actions": [
       {
-        "fn": "negateEffect"
+        "fn": "negateActivation"
       }
     ]
   },
@@ -5433,7 +5373,7 @@
     "cost": {
       "fn": "payVP",
       "args": {
-        "amount": 40
+        "amount": 10
       }
     },
     "choice": true,
@@ -5496,7 +5436,7 @@
         "fn": "buffPerCount",
         "args": {
           "scope": "equippedToSelf",
-          "atk": 40
+          "atk": 4
         }
       },
       {
@@ -5524,7 +5464,7 @@
   {
     "_id": "REFUERZOS_SEARCH",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -5549,7 +5489,7 @@
   {
     "_id": "REFUERZOS_GY_SHUFFLE_DRAW",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation",
       "args": {
@@ -5590,7 +5530,7 @@
   {
     "_id": "RELAMPAGO_DESTROY",
     "type": "activated",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onActivation"
     },
@@ -5663,6 +5603,1009 @@
             ],
             "differentAttributeFromFieldMonsters": true
           }
+        }
+      }
+    ]
+  },
+  {
+    "_id": "NIDO_AVISPAS_FIRST_SUMMON",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "allySummoned",
+      "args": {
+        "filter": {
+          "nameContains": "Avispa",
+          "category": "monster"
+        }
+      }
+    },
+    "conditions": [
+      {
+        "fn": "oncePerCardOnField"
+      }
+    ],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Avispa",
+            "category": "monster"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "source": "authored",
+    "_id": "HIPOCAMPO_MATERIAL_DRAW",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "usedAsCompileMaterial",
+      "args": {
+        "attribute": "Agua"
+      }
+    },
+    "conditions": [],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1
+        }
+      }
+    ]
+  },
+  {
+    "source": "authored",
+    "_id": "PEGASO_MATERIAL_DRAW",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "usedAsCompileMaterial",
+      "args": {
+        "breed": "Hada"
+      }
+    },
+    "conditions": [],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1
+        }
+      }
+    ]
+  },
+  {
+    "source": "authored",
+    "_id": "MOTOR_ENGRANAJES_SUMMON_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Engranaje",
+            "category": "support"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "source": "authored",
+    "_id": "OSCURO_DRAGON_DESTROY_FACEDOWN",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "zone": "field",
+          "filter": {
+            "faceDown": true
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "INTERCAMBIO_GY_SUMMON",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "banishSelf",
+        "args": {
+          "from": "graveyard"
+        }
+      },
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "player": "self",
+          "levelOrLower": 1,
+          "scope": "ownGY"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "PRIMER_GINETE_GY_RECOVER",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard"
+    },
+    "actions": [
+      {
+        "fn": "recoverCardsToHand",
+        "args": {
+          "count": 2,
+          "scope": [
+            "graveyard",
+            "banished"
+          ],
+          "filter": {
+            "breed": "Dragón"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "PRIMER_GINETE_DRAGON_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "filter": {
+            "breed": "Dragón"
+          },
+          "atk": 1,
+          "scope": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "ANCIANO_DRAGON_ONSUMMON_SEARCH",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Templo del Dragón"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "requiresTarget": true,
+    "source": "authored",
+    "_id": "CAPITAN_BANDIDO_STEAL",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "takeControl",
+        "args": {
+          "changeBreed": "Ladrón",
+          "destroyOthers": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "CAPITAN_BANDIDO_BATTLE_IMMUNE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "CAPITAN_BANDIDO_MATON_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "name": "Matón"
+          },
+          "buff": {
+            "atk": 4,
+            "def": 4
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Enano Constructor"
+        }
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "GOLPEADOR_ONSUMMON_GEARS",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCounter",
+        "args": {
+          "counter": "gear",
+          "amount": 3
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Enano Constructor"
+        }
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "MACHACADOR_ONSUMMON_DESTROY",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "side": "opponent",
+          "zone": "any",
+          "count": 1
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "REY_DEMONIO_DESTROY_DEMON",
+    "type": "quick",
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "side": "any",
+          "zone": "monster",
+          "filter": {
+            "breed": "Demonio"
+          },
+          "count": 1
+        }
+      },
+      {
+        "fn": "growSelf",
+        "args": {
+          "atk": 2,
+          "def": 2,
+          "ifPreviousSucceeded": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "requiresTarget": false,
+    "source": "authored",
+    "_id": "REY_DEMONIO_PROTECTION",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "cannotBeDestroyedByOpponentEffects",
+        "args": {}
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "AVISPA_GIGANTE_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "family": "Insecto",
+        "count": 1
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "attribute": "Agua",
+          "count": 2
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "CANGREJO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "MURCIELAGO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "payVP",
+      "args": {
+        "amount": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Hada",
+          "count": 1
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "PEGASO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DRAGON_0_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "breed": "Dragón",
+        "count": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DRAGON_1_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "breed": "Dragón",
+        "count": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DRAGON_2_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "breed": "Dragón",
+        "count": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DRAGON_3_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "discardFromHand",
+      "args": {
+        "breed": "Dragón",
+        "count": 2
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "name": "Matón",
+          "count": 3
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "CAPITAN_BANDIDO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Héroe"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "HEROE_SILENCIOSO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Héroe"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "HEROE_CORRUPTO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Enano Constructor"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "GOLPEADOR_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Enano Constructor"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "MACHACADOR_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Goblin",
+          "count": 2
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DUENDE_ASTUTO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "FIRE_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Fuego"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "LIGHTNING_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Electricidad"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "STONE_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Tierra"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "CLOUD_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Viento"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "FROST_GIANT_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Hielo"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Demonio"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "REY_DEMONIO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "BALOR_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "attribute": "Fuego"
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "VAMPIRO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "payVP",
+      "args": {
+        "amount": 5
+      }
+    }
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Súcubo"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "INCUBO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Íncubo"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "SUCUBO_SPECIAL_SUMMON",
+    "type": "summon_rule"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "VAMPIRESA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "cost": {
+      "fn": "payVP",
+      "args": {
+        "amount": 4
+      }
+    }
+  },
+  {
+    "_id": "LICH_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "cost": {
+      "fn": "exileFiltered",
+      "args": {
+        "family": "NoMuerto",
+        "count": 5
+      }
+    },
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "DAMARCO_EXTRA_ATTACKS",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "grantExtraAttack",
+        "args": {
+          "perMaterial": true
         }
       }
     ]

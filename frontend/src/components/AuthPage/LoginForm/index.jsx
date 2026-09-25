@@ -21,10 +21,10 @@ const LoginForm = ({ onSwitchMode }) => {
       navigate('/');
     },
     onError: (e) => {
-      if (e.status === 400) {
+      if (e.status === 401 || e.status === 400) {
         errorToast('Correo o contraseña incorrectos');
-      } else if (e.status === 410) {
-        errorToast('Usuario no encontrado');
+      } else if (e.status === 429) {
+        errorToast(e.response?.data?.error || 'Demasiados intentos fallidos. Espera unos minutos.');
       } else {
         errorToast('Error Interno del Servidor');
       }

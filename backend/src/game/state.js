@@ -23,18 +23,25 @@ function makePlayer(userId, deckDoc, ownerIndex) {
   };
 }
 
-function createMatchState({ matchId, playerA, deckA, playerB, deckB, vsBot = false }) {
+// `firstPlayer`: who takes turn 1 (0 = playerA) — decided by the coin toss the duel controller does.
+function createMatchState({ matchId, playerA, deckA, playerB, deckB, vsBot = false, firstPlayer = 0 }) {
   return {
     id: matchId,
     status: 'active',
     vsBot,
     turnNumber: 1,
-    turnPlayer: 0,
+    turnPlayer: firstPlayer,
     phase: 'draw', // still goes through draw/standby on turn 1 — only the draw itself is skipped
     firstTurn: true,
-    priorityPlayer: 0,
+    priorityPlayer: firstPlayer,
     chain: [],
     pendingActivation: null, // { effectId, sourceInstanceId, controllerIndex } awaiting target selection
+    // Automatic triggers with an ambiguous search (more than one legal card) wait here for the
+    // player's pick instead of grabbing one at random — see effectEngine.fireTrigger.
+    pendingTriggerChoices: [],
+    // Event-based special-summon windows (Aboleth: "al destruir un monstruo Agua") — the turn
+    // number the event last happened, so the window stays open through the rest of that turn.
+    specialSummonWindows: {},
     winnerIndex: null,
     log: [],
     players: [makePlayer(playerA, deckA, 0), makePlayer(playerB, deckB, 1)],

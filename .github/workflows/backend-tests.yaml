@@ -1,15 +1,17 @@
-name: Backend Tests
+name: Tests
 
+# Every push, on any branch (work happens on feature branches long before anything reaches main),
+# plus pull requests into main.
 on:
   push:
     branches:
-      - main
+      - '**'
   pull_request:
     branches:
       - main
 
 jobs:
-  test:
+  backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,3 +28,21 @@ jobs:
         env:
           JWT_SECRET_KEY: ci-test-secret
         run: npm test --workspace=backend
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies (npm workspaces)
+        run: npm ci
+
+      - name: Build the frontend
+        env:
+          VITE_BACKEND_API_URL: http://localhost:3001
+        run: npm run build --workspace=frontend
