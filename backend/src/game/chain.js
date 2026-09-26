@@ -74,7 +74,9 @@ function addAttackLink(state, { controllerIndex, attackerInstanceId, targetInsta
   state.chain.push({ kind: 'attack', controllerIndex, sourceInstanceId: attackerInstanceId, attackerInstanceId, targetInstanceId, cardName, effects: [], targets: [], speed: 1 });
   state.priorityPlayer = opponentIndex(controllerIndex);
   state.chainLastActionWasPass = true;
-  log(state, `${player(state, controllerIndex).userId} declara un ataque (el rival puede responder).`);
+  const target = targetInstanceId && require('./zones').getFieldMonster(state, targetInstanceId);
+  const targetName = !targetInstanceId ? 'directamente a sus VP' : target && !target.faceDown ? `a ${target.isToken ? target.tokenDef.name : require('./cardIndex').getCard(target.cardId).name}` : 'a un monstruo boca abajo';
+  log(state, `${player(state, controllerIndex).userId} declara un ataque: ${cardName.replace(/^Ataque de /, '')} ataca ${targetName} (el rival puede responder).`);
 }
 
 // The priority holder declines to add anything. Two passes back to back — nobody having added a

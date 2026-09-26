@@ -10,17 +10,10 @@ import { fetchCards } from '../../../../lib/utils/apiCard';
 import CardFace from '../CreateNewDeck/CardModal/CardFace';
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import { isDeckPlayable } from '../../../../lib/utils/deckRules';
+import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
 
 const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
-
-const PHASE_LABELS = {
-  draw: 'Robo',
-  standby: 'Espera',
-  main1: 'Principal 1',
-  battle: 'Batalla',
-  main2: 'Principal 2',
-  end: 'Final',
-};
+const STARTING_VP = 80;
 
 const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', extra: 'Mazo-C' };
 
@@ -80,12 +73,31 @@ const DuelPage = () => {
       .catch(() => {});
   }, []);
   const logRef = useRef(null);
-  const logLength = view ? view.log.length : 0;
+  const lastLogAt = view && view.log.length ? view.log[view.log.length - 1].at : 0;
 
   // Keep the newest log line in sight.
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-  }, [logLength]);
+  }, [lastLogAt]);
+
+  // Atk/Vida and VP changes between two updates float over the card/badge for a moment
+  // ("+2 Atk", "-3 VP"), so a buff, a debuff or a hit is seen as it happens.
+  const flashes = useStatFlashes(view);
+
+  // A short banner when the turn passes from one player to the other.
+  const [turnBanner, setTurnBanner] = useState(null);
+  const turnKey = view ? `${view.turnNumber}:${view.turnPlayer}` : null;
+  const prevTurnKey = useRef(null);
+  useEffect(() => {
+    if (!view || view.status !== 'active') return undefined;
+    const first = prevTurnKey.current === null;
+    prevTurnKey.current = turnKey;
+    if (first) return undefined;
+    setTurnBanner(view.turnPlayer === view.you ? `Turno ${view.turnNumber} · ¡Tu turno!` : `Turno ${view.turnNumber} · Turno de ${view.players[view.turnPlayer].name}`);
+    const t = setTimeout(() => setTurnBanner(null), 1600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turnKey]);
 
   useEffect(() => {
     if (matchId) return;
@@ -458,19 +470,22 @@ const DuelPage = () => {
     if (!card.availableEffects || !card.availableEffects.length) return null;
     return (
       <div className={inline ? styles.effectButtonsInline : styles.effectButtons}>
-        {card.availableEffects.map((effectId) => (
-          <button
-            key={effectId}
-            className={styles.effectButton}
-            onClick={(e) => {
-              e.stopPropagation();
-              activateEffect(effectId, card.instanceId);
-            }}
-            title={`Activar ${formatEffectId(effectId)}`}
-          >
-            {formatEffectId(effectId)}
-          </button>
-        ))}
+        {card.availableEffects.map((effectId) => {
+          const label = (card.effectLabels && card.effectLabels[effectId]) || formatEffectId(effectId);
+          return (
+            <button
+              key={effectId}
+              className={styles.effectButton}
+              onClick={(e) => {
+                e.stopPropagation();
+                activateEffect(effectId, card.instanceId);
+              }}
+              title={`Activar: ${label}`}
+            >
+              ⚡ {label}
+            </button>
+          );
+        })}
       </div>
     );
   };
@@ -548,6 +563,15 @@ const DuelPage = () => {
 
   const isFusionMaterialCandidate = (card) => !!fusion && card.instanceId !== fusion.instanceId && card.category === 'monster';
 
+  const names = view.players.map((p, idx) => (idx === you ? 'Tú' : p.name));
+  const guide = guideFor({ view, me, enemy, isMyTurn, attacker: attackerView, canAttackDirectly, choicePending: !!pendingChoice || !!view.pendingTriggerChoice });
+  // While an attacker is picked, resting the cursor on a rival monster previews the battle.
+  const forecast =
+    attackerView && !view.chain && hovered && hovered.owner === 'enemy' && hovered.kind === 'monster' && hovered.entry
+      ? forecastBattle(attackerView, hovered.entry, cardsById)
+      : null;
+  const isMyBattle = isMyTurn && view.phase === 'battle';
+
   return (
     <div className={styles.duelPage}>
       {view.status === 'finished' && (
@@ -614,16 +638,14 @@ const DuelPage = () => {
         <Link to='/' className={styles.backLink}>
           ← Volver a la taberna
         </Link>
-        <span className={styles.turnInfo}>
-          Turno {view.turnNumber} · {isMyTurn ? 'Tu turno' : 'Turno del rival'} · Fase: {PHASE_LABELS[view.phase] || view.phase}
-        </span>
+        <PhaseTracker phase={view.phase} isMyTurn={isMyTurn} turnNumber={view.turnNumber} turnPlayerName={view.players[view.turnPlayer].name} />
         <div className={styles.topBarActions}>
           <button
             className={styles.actionButton}
             disabled={!isMyTurn || view.status !== 'active' || !!view.chain}
             onClick={() => act({ type: 'ADVANCE_PHASE' })}
           >
-            Avanzar fase
+            {advanceLabel(view.phase, view.turnNumber)}
           </button>
           <button className={styles.surrenderButton} onClick={() => act({ type: 'SURRENDER' })}>
             Rendirse
@@ -631,32 +653,26 @@ const DuelPage = () => {
         </div>
       </div>
 
-      {view.chain && (
-        <div className={styles.chainBar}>
-          <span className={styles.chainLinks}>
-            🔗 {view.chain.links.map((l) => l.cardName).join(' → ')}
-          </span>
-          <span>{view.chain.priorityPlayer === you ? 'Responde o pasa' : 'Esperando al rival...'}</span>
-          {view.chain.priorityPlayer === you && (
-            <button className={styles.actionButton} onClick={() => act({ type: 'PASS_CHAIN' })}>
-              Pasar
-            </button>
-          )}
-        </div>
-      )}
+      {turnBanner && <div className={styles.turnBanner}>{turnBanner}</div>}
+
+      {view.chain && <ChainBar chain={view.chain} you={you} names={names} onPass={() => act({ type: 'PASS_CHAIN' })} />}
+
+      <GuideBar guide={guide} forecast={forecast} />
 
       <div className={styles.board}>
         <div className={styles.playerHeader}>
+          <span className={styles.playerName}>{enemy.name}</span>
           {/* A direct attack hits the rival's VP, so their VP is where the player clicks for it —
               lit up only while the selected attacker can legally attack directly. */}
-          {canAttackDirectly ? (
-            <button className={`${styles.vpBadge} ${styles.directTarget}`} onClick={onDirectAttack} title='Atacar directamente a los VP del rival'>
-              ⚔ VP: {enemy.vp}
-            </button>
-          ) : (
-            <span className={styles.vpBadge}>VP: {enemy.vp}</span>
+          <VpBadge vp={enemy.vp} flash={flashes[`vp${opp}`]} onDirectAttack={canAttackDirectly ? onDirectAttack : null} />
+          <span className={styles.handCountBadge} title='Cartas en la Mano del rival'>✋ {enemy.handCount}</span>
+          <span className={styles.handCountBadge} title='Cartas en su Mazo'>🂠 {enemy.deckCount}</span>
+          <span className={styles.handCountBadge} title='Píxeles del rival'>
+            <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {enemy.pixelcoins}
+          </span>
+          {view.turnPlayer === opp && (
+            <span className={`${styles.handCountBadge} ${enemy.normalSummonUsed ? styles.badgeMuted : ''}`}>{enemy.normalSummonUsed ? 'Invocación normal usada' : 'Invocación normal disponible'}</span>
           )}
-          <span className={styles.handCountBadge}>Mano: {enemy.handCount}</span>
         </div>
         <div className={styles.fieldsRow}>
         <CardPreview card={previewCard} />
@@ -670,6 +686,8 @@ const DuelPage = () => {
           onOpenPile={(zone) => setOpenPile({ side: 'enemy', zone })}
           renderEffectButtons={renderEffectButtons}
           onHover={setHovered}
+          flashes={flashes}
+          attackTargetMode={!!attackerView && !view.chain}
         />
 
         <div className={styles.divider} />
@@ -689,14 +707,22 @@ const DuelPage = () => {
           onHover={setHovered}
           slotPicker={boardSlotPicker}
           onPickSlot={pickBoardSlot}
+          flashes={flashes}
+          isMyBattle={isMyBattle && !view.chain}
         />
 
         <div className={styles.sidePanel}>
+          <DetailsPanel hovered={hovered} isMyBattle={isMyBattle} />
+          <LastBattlePanel battle={view.lastBattle} you={you} names={names} />
           <div className={styles.log}>
+            <span className={styles.logTitle}>Registro</span>
             <div className={styles.logScroll} ref={logRef}>
               {view.log.map((l, i) => (
-                <div key={i} className={styles.logLine}>
-                  [T{l.turn} {PHASE_LABELS[l.phase] || l.phase}] {l.message}
+                <div key={`${l.at}-${i}`}>
+                  {(i === 0 || view.log[i - 1].turn !== l.turn) && <div className={styles.logTurn}>── Turno {l.turn} ──</div>}
+                  <div className={`${styles.logLine} ${l.actor === you ? styles.logMine : l.actor === opp ? styles.logRival : ''}`}>
+                    <span className={styles.logPhase}>{PHASE_LABELS[l.phase] || l.phase}</span> {l.message}
+                  </div>
                 </div>
               ))}
             </div>
@@ -710,10 +736,15 @@ const DuelPage = () => {
         </div>
 
         <div className={styles.playerHeader}>
-          <span className={styles.vpBadge}>VP: {me.vp}</span>
-          <span className={styles.pixelBadge}>
+          <span className={styles.playerName}>{me.name} (tú)</span>
+          <VpBadge vp={me.vp} flash={flashes[`vp${you}`]} />
+          <span className={styles.pixelBadge} title='Tus píxeles: pagan invocaciones y efectos'>
             <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {me.pixelcoins}
           </span>
+          <span className={styles.handCountBadge} title='Cartas en tu Mazo'>🂠 {me.deckCount}</span>
+          {isMyTurn && (
+            <span className={`${styles.handCountBadge} ${me.normalSummonUsed ? styles.badgeMuted : ''}`}>{me.normalSummonUsed ? 'Invocación normal usada' : 'Invocación normal disponible'}</span>
+          )}
         </div>
 
         <div className={styles.hand}>
@@ -726,7 +757,7 @@ const DuelPage = () => {
                   : ''
               }`}
               onClick={() => onHandCardClick(card)}
-              onMouseEnter={() => setHovered({ cardId: card.cardId })}
+              onMouseEnter={() => setHovered({ cardId: card.cardId, owner: 'me', kind: 'hand' })}
               title={card.name}
             >
               <img src={card.image} alt={card.name} />
@@ -746,8 +777,16 @@ const DuelPage = () => {
 //   row 3: (—) x6, Mazo
 // `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
 // next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
-function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick, slotPicker, onPickSlot }) {
+function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick, slotPicker, onPickSlot, flashes, isMyBattle, attackTargetMode }) {
   const row = (r) => (flipped ? 3 - r : r);
+  // In your Battle Phase your monsters that can still attack glow and the spent ones fade; once an
+  // attacker is picked, the rival's monsters are marked as targets.
+  const attackStateClass = (m) => {
+    if (!m) return '';
+    if (!isOwner) return attackTargetMode ? styles.attackTarget : '';
+    if (!isMyBattle || m.faceDown) return '';
+    return m.attacksLeft > 0 && m.position === 'attack' ? styles.canAttack : styles.spent;
+  };
   // A zone the player can click to place the card they're summoning/compiling/setting — either
   // empty, or one of a Compilación's own field materials that's about to vacate it.
   // `slots`, when the server sent them, is the exact legal list (it already skips corroded zones).
@@ -762,16 +801,29 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
           style={{ gridRow: row(1), gridColumn: i + 1 }}
           className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''} ${
             m && (m.instanceId === selectedAttacker || (fusion && isOwner && fusion.materials.has(m.instanceId))) ? styles.selected : ''
-          } ${isPickable('monster', m, i) ? styles.pickable : ''}`}
+          } ${isPickable('monster', m, i) ? styles.pickable : ''} ${attackStateClass(m)}`}
           onClick={() => (isPickable('monster', m, i) ? onPickSlot(i) : m && onMonsterClick(m))}
-          onMouseEnter={() => m && (m.isToken ? onHover({ isToken: true, name: m.name, atk: m.atk, def: m.def }) : m.cardId && onHover({ cardId: m.cardId, atk: m.faceDown ? null : m.atk, def: m.faceDown ? null : m.def }))}
+          onMouseEnter={() =>
+            m &&
+            onHover({
+              cardId: m.cardId,
+              isToken: m.isToken,
+              name: m.name,
+              atk: m.atk,
+              def: m.def,
+              entry: m,
+              owner: isOwner ? 'me' : 'enemy',
+              kind: 'monster',
+            })
+          }
         >
+          {m && (flashes || {})[m.instanceId] && <FlashDelta flash={flashes[m.instanceId]} />}
+          {m && m.faceDown && isOwner && m.atk != null && <StatBar m={m} />}
           {m && !m.faceDown && (
             <>
-              <img src={m.image} alt={m.name} title={m.name} />
-              <span className={styles.statBadge}>
-                {m.atk} / {m.def}
-              </span>
+              {m.isToken ? <div className={styles.tokenFace}>{m.name}</div> : <img src={m.image} alt={m.name} title={m.name} />}
+              <StatBar m={m} />
+              <SlotTags m={m} />
               {m.statuses && m.statuses.length > 0 && (
                 <span className={styles.statusBadges}>
                   {m.statuses.map((st) => (
@@ -815,7 +867,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
         onClick={() => onOpenPile('banished')}
       />
 
-      <div style={{ gridRow: row(2), gridColumn: 1 }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio' onMouseEnter={() => player.field.territory && onHover({ cardId: player.field.territory.cardId })}>
+      <div style={{ gridRow: row(2), gridColumn: 1 }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio' onMouseEnter={() => player.field.territory && onHover({ cardId: player.field.territory.cardId, entry: player.field.territory, owner: isOwner ? 'me' : 'enemy', kind: 'support' })}>
         {player.field.territory && (
           <>
             <img src={player.field.territory.image} alt={player.field.territory.name} title={player.field.territory.name} />
@@ -831,10 +883,15 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
           className={`${styles.slot} ${isPickable('support', s, i) ? styles.pickable : ''}`}
           title='Soporte'
           onClick={() => (isPickable('support', s, i) ? onPickSlot(i) : s && isOwner && onSupportClick && onSupportClick(s))}
-          onMouseEnter={() => s && s.cardId && onHover({ cardId: s.cardId })}
+          onMouseEnter={() => s && onHover({ cardId: s.cardId, entry: s, owner: isOwner ? 'me' : 'enemy', kind: 'support' })}
         >
           {s && !s.faceDown && <img src={s.image} alt={s.name} title={s.name} />}
           {s && s.faceDown && <div className={styles.faceDown} />}
+          {s && s.equippedToName && (
+            <span className={styles.slotTag} title={`Equipada a ${s.equippedToName}`}>
+              ✚
+            </span>
+          )}
           {s && isOwner && renderEffectButtons(s)}
         </div>
       ))}
@@ -852,6 +909,75 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
 
       <PileSlot style={{ gridRow: row(2), gridColumn: 6 }} label='Mazo' count={player.deckCount} />
     </div>
+  );
+}
+
+// VP with a bar out of the starting 80 and the last change floating over it. For the rival, while
+// a direct attack is possible, it is also the button for that attack.
+function VpBadge({ vp, flash, onDirectAttack }) {
+  const pct = Math.max(0, Math.min(100, (vp / STARTING_VP) * 100));
+  const content = (
+    <>
+      <span>
+        {onDirectAttack ? '⚔ ' : ''}VP {vp}
+      </span>
+      <span className={styles.vpBar}>
+        <span className={`${styles.vpFill} ${pct <= 25 ? styles.vpLow : ''}`} style={{ width: `${pct}%` }} />
+      </span>
+      <FlashDelta flash={flash} />
+    </>
+  );
+  if (onDirectAttack) {
+    return (
+      <button className={`${styles.vpBadge} ${styles.directTarget}`} onClick={onDirectAttack} title='Atacar directamente a los VP del rival'>
+        {content}
+      </button>
+    );
+  }
+  return (
+    <span className={styles.vpBadge} title='Puntos de victoria: pierde quien llega a 0 o quien se queda con un tercio o menos de los VP del rival'>
+      {content}
+    </span>
+  );
+}
+
+// Small markers on a monster's top-left corner: equips, materials and counters on it.
+function SlotTags({ m }) {
+  const tags = [];
+  if (m.equips && m.equips.length) tags.push({ text: `✚${m.equips.length}`, title: `Equipos: ${m.equips.join(', ')}` });
+  if (m.materialCount) tags.push({ text: `◆${m.materialCount}`, title: `Compilado con ${m.materialCount} material(es)` });
+  Object.entries(m.counters || {}).forEach(([k, v]) => {
+    if (v > 0) tags.push({ text: `⚙${v}`, title: `${k === 'gear' ? 'Engranajes' : k}: ${v}` });
+  });
+  if (!tags.length) return null;
+  return (
+    <span className={styles.slotTags}>
+      {tags.map((t) => (
+        <span key={t.text} className={styles.slotTag} title={t.title}>
+          {t.text}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+// "⚔ 5 ▲" — Atk and Vida on the card, green when above the printed value, red when below.
+function StatBar({ m }) {
+  const atkTrend = trend(m.atk, m.printedAtk);
+  const defTrend = trend(m.def, m.printedDef);
+  const cls = (t) => (t === 'up' ? styles.statUp : t === 'down' ? styles.statDown : '');
+  const arrow = (t) => (t === 'up' ? '▲' : t === 'down' ? '▼' : '');
+  return (
+    <span className={`${styles.statBadge} ${m.position === 'defense' ? styles.statBadgeDefense : ''}`}>
+      <span className={`${cls(atkTrend)} ${m.position === 'attack' ? styles.statActive : ''}`} title={`Atk ${m.atk}${atkTrend !== 'same' ? ` (impreso ${m.printedAtk})` : ''}`}>
+        ⚔{m.atk}
+        {arrow(atkTrend)}
+      </span>
+      <span className={`${cls(defTrend)} ${m.position === 'defense' ? styles.statActive : ''}`} title={`Vida ${m.def}${defTrend !== 'same' ? ` (impresa ${m.printedDef})` : ''}`}>
+        ♥{m.def}
+        {arrow(defTrend)}
+      </span>
+    </span>
   );
 }
 
@@ -962,7 +1088,70 @@ function CardPreview({ card }) {
   );
 }
 
-const STATUS_ICONS = { Congelado: '❄', Quemadura: '🔥', Veneno: '☠' };
+// Compares every field monster's Atk/Vida and each player's VP with the previous view and keeps the
+// differences for a couple of seconds: { [instanceId | 'vp0' | 'vp1']: { atk?, def?, vp?, stamp } }.
+function useStatFlashes(view) {
+  const prevRef = useRef(null);
+  const [flashes, setFlashes] = useState({});
+  useEffect(() => {
+    if (!view) return;
+    const current = {};
+    view.players.forEach((p, idx) => {
+      current[`vp${idx}`] = { vp: p.vp };
+      p.field.monsters.forEach((m) => {
+        if (m && m.atk != null) current[m.instanceId] = { atk: m.atk, def: m.def };
+      });
+    });
+    const prev = prevRef.current;
+    prevRef.current = current;
+    if (!prev) return;
+    const stamp = Date.now();
+    const changed = {};
+    Object.entries(current).forEach(([key, now]) => {
+      const before = prev[key];
+      if (!before) return;
+      const diff = {};
+      Object.keys(now).forEach((stat) => {
+        if (before[stat] != null && now[stat] !== before[stat]) diff[stat] = now[stat] - before[stat];
+      });
+      if (Object.keys(diff).length) changed[key] = { ...diff, stamp };
+    });
+    const keys = Object.keys(changed);
+    if (!keys.length) return;
+    setFlashes((f) => ({ ...f, ...changed }));
+    setTimeout(() => {
+      setFlashes((f) => {
+        const next = { ...f };
+        keys.forEach((k) => {
+          if (next[k] && next[k].stamp === stamp) delete next[k];
+        });
+        return next;
+      });
+    }, 2600);
+  }, [view]);
+  return flashes;
+}
+
+const signed = (n) => (n > 0 ? `+${n}` : `${n}`);
+
+// "+2 Atk", "-1 Vida", "-3 VP" floating over the card or badge that just changed.
+function FlashDelta({ flash }) {
+  if (!flash) return null;
+  const parts = [
+    flash.atk ? { text: `${signed(flash.atk)} Atk`, up: flash.atk > 0 } : null,
+    flash.def ? { text: `${signed(flash.def)} Vida`, up: flash.def > 0 } : null,
+    flash.vp ? { text: `${signed(flash.vp)} VP`, up: flash.vp > 0 } : null,
+  ].filter(Boolean);
+  return (
+    <span className={styles.flashDelta} key={flash.stamp}>
+      {parts.map((p) => (
+        <span key={p.text} className={p.up ? styles.flashUp : styles.flashDown}>
+          {p.text}
+        </span>
+      ))}
+    </span>
+  );
+}
 
 function humanizeReason(reason) {
   const map = {

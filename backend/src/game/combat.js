@@ -85,15 +85,18 @@ function performBattle(state, link) {
     log(state, 'El monstruo atacante ya no está en el Campo: no hay batalla.');
     return;
   }
-  const attackerName = attacker.isToken ? attacker.tokenDef.name : getCard(attacker.cardId).name;
+  const attackerName = monsterName(attacker);
 
   if (!link.targetInstanceId) {
     // "Antes de la fase de daño" (Serpiente de Muelle) for a direct attack too.
     fireTrigger(state, 'beforeDamageCalculation', { instanceId: attacker.instanceId, attackerInstanceId: attacker.instanceId, defenderInstanceId: null });
     if (!getFieldMonster(state, attacker.instanceId)) return;
     const atk = getEffectiveStats(attacker).atk;
+    const before = oppPl.vp;
     oppPl.vp = Math.max(0, oppPl.vp - atk);
-    log(state, `${attackerPl.userId} ataca directamente con ${attackerName}: ${atk} de daño (VP: ${oppPl.vp}).`);
+    startBattleRecord(state, controllerIndex, { name: attackerName, atk }, null);
+    battleStep(state, `${attackerPl.userId} ataca directamente con ${attackerName} (Atk ${atk}).`);
+    battleStep(state, `${oppPl.userId} pierde ${before - oppPl.vp} VP (${before} → ${oppPl.vp}).`);
     if (atk > 0) damageEvents(state, attacker, controllerIndex, true);
     recomputeContinuous(state);
     checkWin(state);
@@ -121,15 +124,22 @@ function performBattle(state, link) {
   if (wasFaceDown) defender.faceDown = false;
   const attackerStats = getEffectiveStats(attacker);
   const defenderStats = getEffectiveStats(defender);
+  const defenderName = monsterName(defender);
+  const inAttack = defender.position === 'attack';
+  const defenderValue = inAttack ? defenderStats.atk : defenderStats.def;
+  startBattleRecord(state, controllerIndex, { name: attackerName, atk: attackerStats.atk }, { name: defenderName, position: defender.position, stat: inAttack ? 'atk' : 'def', value: defenderValue, wasFaceDown });
+  battleStep(state, `${attackerPl.userId} ataca con ${attackerName} (Atk ${attackerStats.atk}) a ${defenderName} (${inAttack ? `en Ataque, Atk ${defenderValue}` : `en Defensa, Vida ${defenderValue}`}).`);
+  if (wasFaceDown) battleStep(state, `${defenderName} estaba boca abajo: se revela.`);
 
   // Rulebook, Congelado: a frozen monster fighting a water monster (either way round) is destroyed
   // before the damage step, so no damage is dealt.
   const attackerFrozen = hasStatus(state, attacker.instanceId, FREEZE);
   const defenderFrozen = hasStatus(state, defender.instanceId, FREEZE);
   if ((attackerFrozen && isWater(defender)) || (defenderFrozen && isWater(attacker))) {
+    const frozenName = attackerFrozen && isWater(defender) ? attackerName : defenderName;
     if (attackerFrozen && isWater(defender)) destroyInBattle(state, controllerIndex, attacker, defender);
     else destroyInBattle(state, oppIdx, defender, attacker);
-    log(state, 'Un monstruo congelado es destruido por el agua.');
+    battleStep(state, `${frozenName} está Congelado y lucha contra un monstruo de Agua: es destruido sin daño.`);
     if (wasFaceDown && getFieldMonster(state, defender.instanceId)) fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
     recomputeContinuous(state);
     checkWin(state);
@@ -165,9 +175,26 @@ function performBattle(state, link) {
     }
   }
 
-  if (defender.cannotBeDestroyedByBattle) destroyedDefender = false;
-  if (attacker.cannotBeDestroyedByBattle) destroyedAttacker = false;
-  log(state, `${attackerPl.userId} ataca con ${attackerName}.`);
+  battleStep(state, `Se compara Atk ${attackerStats.atk} con ${inAttack ? 'Atk' : 'Vida'} ${defenderValue}.`);
+  if (destroyedDefender && defender.cannotBeDestroyedByBattle) {
+    battleStep(state, `${defenderName} no puede ser destruido en batalla.`);
+    destroyedDefender = false;
+  }
+  if (destroyedAttacker && attacker.cannotBeDestroyedByBattle) {
+    battleStep(state, `${attackerName} no puede ser destruido en batalla.`);
+    destroyedAttacker = false;
+  }
+  if (destroyedDefender) battleStep(state, `${defenderName} es destruido.`);
+  if (destroyedAttacker) battleStep(state, `${attackerName} es destruido.`);
+  if (!destroyedDefender && !destroyedAttacker) battleStep(state, 'Ningún monstruo es destruido.');
+  const vpStep = (pl, lost, involved) => {
+    if (!lost) return;
+    const burn = burnMultiplier(involved) > 1 ? ' (doble por Quemadura)' : '';
+    battleStep(state, `${pl.userId} pierde ${lost} VP${burn} (queda con ${pl.vp}).`);
+  };
+  vpStep(oppPl, damageToDefenderSide, defender);
+  vpStep(attackerPl, damageToAttackerSide, attacker);
+  if (!damageToDefenderSide && !damageToAttackerSide) battleStep(state, 'Nadie pierde VP.');
   if (destroyedDefender) destroyInBattle(state, oppIdx, defender, attacker);
   if (destroyedAttacker) destroyInBattle(state, controllerIndex, attacker, defender);
   if (wasFaceDown && !destroyedDefender && getFieldMonster(state, defender.instanceId)) fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
@@ -181,6 +208,21 @@ function performBattle(state, link) {
   recomputeContinuous(state);
   checkWin(state);
   return { destroyedAttacker, destroyedDefender };
+}
+
+function monsterName(m) {
+  return m.isToken ? m.tokenDef.name : getCard(m.cardId).name;
+}
+
+// The last battle, kept on the state so the board can show it step by step; every step also goes
+// to the log.
+function startBattleRecord(state, controllerIndex, attacker, defender) {
+  state.lastBattle = { turn: state.turnNumber, controllerIndex, attacker, defender, steps: [] };
+}
+
+function battleStep(state, text) {
+  if (state.lastBattle) state.lastBattle.steps.push(text);
+  log(state, text);
 }
 
 // Battle damage `dealer` (controlled by `controllerIndex`) just dealt to the rival.

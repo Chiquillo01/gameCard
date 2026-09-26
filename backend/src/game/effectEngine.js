@@ -11,6 +11,7 @@ const { speedOf, linkBlockReason, addLink, responseWindowOpen } = require('./cha
 const { isNegated } = require('./negation');
 const { assignPicks, pendingEffectChoice, pendingOptionalChoice, declined, isToken, hasNoLegalTarget, activeSteps } = require('./targets');
 const { snapshot, restore } = require('./stateSnapshot');
+const { addTempMod, resetTempMods } = require('./statMods');
 
 function makeCtx(state, controllerIndex, effect, sourceInstanceId) {
   return { state, controllerIndex, sourceInstanceId, effect };
@@ -337,7 +338,8 @@ function recomputeContinuous(state) {
     pl.cantWin = false;
     pl.activationTax = 0;
     pl.field.monsters.filter(Boolean).forEach((m) => {
-      m.tempBuff = poisonDebuff(state, m.instanceId);
+      resetTempMods(m);
+      addTempMod(m, poisonDebuff(state, m.instanceId), 'Veneno', 'status');
       m.cannotBeDestroyedByBattle = false;
       m.immuneToOpponentEffects = false;
       m.negatedByContinuous = false;
@@ -369,7 +371,9 @@ function recomputeContinuous(state) {
   });
   // "El Atk de esta carta se convierte en X hasta el final del turno" wins over every other change.
   state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => {
-    if (m.atkOverride) m.tempBuff.atk = m.atkOverride.value - m.baseAtk;
+    if (!m.atkOverride) return;
+    m.tempBuff.atk = m.atkOverride.value - m.baseAtk;
+    m.statMods.push({ source: m.atkOverride.source || 'Efecto', atk: 0, def: 0, kind: 'set', value: m.atkOverride.value });
   }));
   const { canStillAttack } = require('./combat');
   state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => { m.hasAttacked = !canStillAttack(state, m); }));
@@ -377,11 +381,9 @@ function recomputeContinuous(state) {
 
 // "Hasta el final del turno" buffs, kept on the state and dropped when that turn is over.
 function applyTimedBuffs(state) {
-  (state.timedBuffs || []).forEach(({ ids, buff }) => {
+  (state.timedBuffs || []).forEach(({ ids, buff, source }) => {
     state.players.flatMap((p) => p.field.monsters).filter((m) => m && ids.includes(m.instanceId)).forEach((m) => {
-      m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
-      m.tempBuff.atk += buff.atk || 0;
-      m.tempBuff.def += buff.def || 0;
+      addTempMod(m, buff, source || 'Efecto', 'turn');
     });
   });
 }

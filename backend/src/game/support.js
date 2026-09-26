@@ -138,6 +138,7 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   }
   if (pl.hand.includes(instanceId)) pl.hand = pl.hand.filter((id) => id !== instanceId);
   log(state, `${pl.userId} coloca ${card.name} en el Campo.`);
+  if (card.subtype === 'equipment' && equipTarget) log(state, `${card.name} se equipa a ${require('./statMods').sourceName(state, equipTarget)}.`);
 
   const oneShot = card.subtype === 'normal' || card.subtype === 'instant' || card.subtype === 'counter';
   if (!runningEffects.length) {

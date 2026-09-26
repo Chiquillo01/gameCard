@@ -4,12 +4,13 @@ const { normalSummon, specialSummon, compileSummon, decompile } = require('./sum
 const { canBeNormalSummoned, cannotBeSummoned } = require('./summonRules');
 const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport, activateSetSupport } = require('./support');
-const { declareAttack, attackBlockReason } = require('./combat');
+const { declareAttack, attackBlockReason, allowedAttacks } = require('./combat');
 const { changePosition } = require('./position');
-const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand } = require('./effectEngine');
+const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand, getEffectiveStats } = require('./effectEngine');
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
 const { checkConditions } = require('./effects/conditions');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
+const { describeEffect } = require('./effectLabels');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
 
 // Player-initiated effect types (as opposed to 'triggered'/'trigger', which fire automatically,
@@ -44,12 +45,19 @@ function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
   });
 }
 
+// The effect ids a card can activate now, plus a readable label for each button.
+function effectsFor(state, ownerIndex, instanceId, cardId) {
+  const availableEffects = computeAvailableEffects(state, ownerIndex, instanceId, cardId);
+  const effectLabels = Object.fromEntries(availableEffects.map((id) => [id, describeEffect(getEffect(id))]).filter(([, label]) => label));
+  return { availableEffects, effectLabels };
+}
+
 async function createMatch(opts) {
   await loadCardIndex();
   const state = createMatchState(opts);
   if (opts.coinToss) {
     const { log } = require('./zones');
-    log(state, `Sorteo: sale ${opts.coinToss}. Empieza ${state.players[state.turnPlayer].userId === 'BOT' ? 'el BOT' : state.players[state.turnPlayer].userId}.`);
+    log(state, `Sorteo: sale ${opts.coinToss}. Empieza ${state.players[state.turnPlayer].userId}.`);
   }
   runPhaseEntry(state); // processes turn 1's draw phase (no draw/income, per the rulebook) and marks it played
   return state;
@@ -146,10 +154,12 @@ function applyAction(state, playerIndex, action) {
 // A trimmed view safe to send to a given player: hides the opponent's hand/deck contents,
 // keeps counts only.
 function viewFor(state, viewerIndex) {
+  const names = state.players.map(displayName);
   const redactPlayer = (pl, idx) => {
     const isViewer = idx === viewerIndex;
     return {
       userId: pl.userId,
+      name: names[idx],
       vp: pl.vp,
       pixelcoins: pl.pixelcoins,
       normalSummonUsed: pl.normalSummonUsed,
@@ -177,7 +187,9 @@ function viewFor(state, viewerIndex) {
     winnerIndex: state.winnerIndex,
     you: viewerIndex,
     players: state.players.map(redactPlayer),
-    log: state.log.slice(-30),
+    log: state.log.slice(-80).map((line) => readableLogLine(state, line, names)),
+    // The last battle, step by step (who attacked what, the numbers compared, what happened).
+    lastBattle: state.lastBattle ? { ...state.lastBattle, steps: state.lastBattle.steps.map((text) => readableLogLine(state, { message: text }, names).message) } : null,
     // Rulebook, "Apilar": null once the Pila is empty; while it isn't, nothing else can happen
     // except the priority holder adding a faster response or passing.
     chain: state.chain.length
@@ -191,6 +203,25 @@ function viewFor(state, viewerIndex) {
     // other player, who has nothing to do about it.
     pendingTriggerChoice: describePendingTriggerChoice(state, viewerIndex),
   };
+}
+
+// The name a player goes by on the board: their user name, or "Bot".
+function displayName(pl) {
+  if (pl.userId === 'BOT') return 'Bot';
+  return pl.name || 'Jugador';
+}
+
+// The engine logs players by user id; the board shows their names instead, and which player the
+// line is about (`actor`) so it can be coloured as "yours" or "the rival's".
+function readableLogLine(state, line, names) {
+  let message = line.message;
+  let actor = null;
+  state.players.forEach((pl, idx) => {
+    if (!message.includes(pl.userId)) return;
+    if (actor === null) actor = idx;
+    message = message.split(pl.userId).join(names[idx]);
+  });
+  return { ...line, message, actor };
 }
 
 function describePendingTriggerChoice(state, viewerIndex) {
@@ -237,7 +268,7 @@ function describeInstance(state, instanceId, ownerIndex, isViewerOwner) {
     base.specialSummonAvailable = isViewerOwner && specialSummonAvailable(state, ownerIndex, instanceId, card);
   }
   if (!isViewerOwner) return base;
-  return { ...base, availableEffects: computeAvailableEffects(state, ownerIndex, instanceId, cardId) };
+  return { ...base, ...effectsFor(state, ownerIndex, instanceId, cardId) };
 }
 
 function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
@@ -256,22 +287,46 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
     // VP as a target only then (empty board, only untargetable monsters, or "puede atacar directamente").
     canAttackDirectly: isViewerOwner && !attackBlockReason(state, ownerIndex, m, null),
   };
-  if (m.isToken) return { ...base, isToken: true, name: m.tokenDef.name, atk: m.baseAtk, def: m.baseDef };
+  if (m.isToken) return { ...base, isToken: true, name: m.tokenDef.name, ...describeStats(state, m, m.tokenDef) };
   // The owner knows which card their face-down monster is (for the hover preview); the rival doesn't.
-  if (m.faceDown) return isViewerOwner ? { ...base, cardId: m.cardId, availableEffects: [] } : base;
+  if (m.faceDown) return isViewerOwner ? { ...base, cardId: m.cardId, name: getCard(m.cardId).name, ...describeStats(state, m, getCard(m.cardId)), availableEffects: [] } : base;
   const card = getCard(m.cardId);
-  const buff = m.tempBuff || { atk: 0, def: 0 };
-  const described = { ...base, cardId: m.cardId, name: card.name, image: card.image, atk: card.atk + buff.atk, def: card.def + buff.def };
+  const described = { ...base, cardId: m.cardId, name: card.name, image: card.image, ...describeStats(state, m, card) };
   if (!isViewerOwner) return described;
-  return { ...described, availableEffects: computeAvailableEffects(state, ownerIndex, m.instanceId, m.cardId) };
+  return { ...described, ...effectsFor(state, ownerIndex, m.instanceId, m.cardId) };
+}
+
+// What the board shows about a monster's numbers: the current Atk/Vida (what battles use), the
+// printed ones, and every change in between with the card it came from.
+function describeStats(state, m, printed) {
+  const { atk, def } = getEffectiveStats(m);
+  return {
+    atk,
+    def,
+    printedAtk: printed.atk || 0,
+    printedDef: printed.def || 0,
+    statMods: [...(m.permanentMods || []), ...(m.statMods || [])],
+    equips: state.players.flatMap((p) => p.field.support).filter((s) => s && !s.faceDown && s.equippedTo === m.instanceId).map((s) => getCard(s.cardId).name),
+    statusInfo: statusDetails(state, m.instanceId),
+    attacksLeft: m.attackLockTurn === state.turnNumber ? 0 : Math.max(0, allowedAttacks(state, m) - (m.attacksThisTurn || 0)),
+  };
+}
+
+// Each status with how long it lasts ("hasta el final del turno" / "del próximo turno").
+function statusDetails(state, instanceId) {
+  return ((state.statuses && state.statuses[instanceId]) || []).map((s) => ({
+    type: s.type,
+    until: s.expiresTurn > state.turnNumber ? 'nextTurn' : 'endOfTurn',
+  }));
 }
 
 function describeFieldSupport(state, s, ownerIndex, isViewerOwner) {
   if (s.faceDown && !isViewerOwner) return { instanceId: s.instanceId, faceDown: true };
   const card = getCard(s.cardId);
-  const described = { instanceId: s.instanceId, faceDown: s.faceDown, cardId: s.cardId, name: card.name, image: card.image, subtype: card.subtype };
+  const equippedTo = s.equippedTo && require('./zones').getFieldMonster(state, s.equippedTo);
+  const described = { instanceId: s.instanceId, faceDown: s.faceDown, cardId: s.cardId, name: card.name, image: card.image, subtype: card.subtype, equippedToName: equippedTo ? (equippedTo.isToken ? equippedTo.tokenDef.name : getCard(equippedTo.cardId).name) : null, counters: s.counters };
   if (!isViewerOwner) return described;
-  return { ...described, availableEffects: computeAvailableEffects(state, ownerIndex, s.instanceId, s.cardId) };
+  return { ...described, ...effectsFor(state, ownerIndex, s.instanceId, s.cardId) };
 }
 
 module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer };

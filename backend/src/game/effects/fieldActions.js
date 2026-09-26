@@ -6,6 +6,7 @@ const { getCard } = require('../cardIndex');
 const { player, opponentIndex, moveToZone, placeMonster, removeFromZone, findEmptySlot, corrodedSlots, log } = require('../zones');
 const { matchesFilter, matchesCardFilter } = require('../filters');
 const { cardIdFromInstance } = require('../deckUtils');
+const { logStatChange, ctxSource, addPermanentMod } = require('../statMods');
 
 // A protected card ignores destroy/exile effects that come from the opponent's cards, and nothing
 // can affect a card that is immune to the effect's source (targets.js canAffect).
@@ -108,9 +109,9 @@ function growSelf(ctx, args) {
   if (args.ifPreviousSucceeded && !(ctx.destroyedCount > 0)) return;
   const entry = player(ctx.state, ctx.controllerIndex).field.monsters.find((m) => m && m.instanceId === ctx.sourceInstanceId);
   if (!entry) return;
-  entry.baseAtk += args.atk || 0;
-  entry.baseDef += args.def || 0;
-  log(ctx.state, `${getCard(entry.cardId).name} gana +${args.atk || 0} Atk y +${args.def || 0} Vida.`);
+  const delta = { atk: args.atk || 0, def: args.def || 0 };
+  addPermanentMod(entry, delta, ctxSource(ctx));
+  logStatChange(ctx, entry.instanceId, delta);
 }
 
 // Takes control of an opponent's monster (the picked one, else the strongest), optionally changing
@@ -266,7 +267,8 @@ function protectFromOpponentEffects(ctx) {
 // effectEngine.recomputeContinuous until that turn ends.
 function grantTimedBuff(ctx, ids, buff, expiresTurn) {
   ctx.state.timedBuffs = ctx.state.timedBuffs || [];
-  ctx.state.timedBuffs.push({ ids, buff, expiresTurn });
+  ctx.state.timedBuffs.push({ ids, buff, expiresTurn, source: ctxSource(ctx) });
+  ids.forEach((id) => logStatChange(ctx, id, buff, ' hasta el final del turno'));
 }
 
 module.exports = {

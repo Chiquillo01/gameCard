@@ -122,13 +122,6 @@
   color: #ffd76a;
 }
 
-.turnInfo {
-  font-size: 1.1875rem;
-  color: #ffd76a;
-  flex: 1;
-  min-width: 0;
-}
-
 .topBarActions {
   display: flex;
   margin-left: auto;
@@ -516,11 +509,6 @@
   font-size: 1.0625rem;
 }
 
-.chainLinks {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
 .choiceInfo {
   display: flex;
   align-items: center;
@@ -660,7 +648,9 @@
   }
 
   .sidePanel .log {
-    height: 100%;
+    flex: 1 1 0;
+    min-height: 140px;
+    height: auto;
   }
 
   .actionSlot {
@@ -769,4 +759,516 @@
 
 .statusVeneno {
   border-color: #8bd450;
+}
+
+/* --- Turn and phase tracker --- */
+
+.phaseTracker {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+}
+
+.turnTag {
+  font-size: 1.1875rem;
+  padding: 0.125rem 0.5rem;
+  border: 2px solid #241305;
+  white-space: nowrap;
+}
+
+.turnTagMine {
+  background: #2c6b46;
+  color: #fbf3de;
+}
+
+.turnTagRival {
+  background: #9c2e20;
+  color: #fbf3de;
+}
+
+.phaseSteps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phaseStep {
+  font-size: 0.9375rem;
+  padding: 0.0625rem 0.4375rem;
+  border: 2px solid #241305;
+  background: rgba(18, 9, 2, 0.45);
+  color: rgba(232, 211, 160, 0.75);
+}
+
+.phaseDone {
+  color: rgba(232, 211, 160, 0.4);
+  text-decoration: line-through;
+}
+
+.phaseCurrent {
+  background: #ffd76a;
+  color: #241305;
+  box-shadow: 0 0 8px 1px rgba(255, 215, 106, 0.6);
+}
+
+.turnBanner {
+  position: fixed;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 900;
+  pointer-events: none;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1rem;
+  color: #ffd76a;
+  text-shadow: 3px 3px 0 #7a2f0f;
+  background: linear-gradient(160deg, #3a1f0d 0%, #241305 55%, #180b02 100%);
+  border: 5px solid #120902;
+  box-shadow: 0 0 0 3px #ffd76a, 6px 6px 0 0 rgba(0, 0, 0, 0.5);
+  padding: 1rem 1.5rem;
+  animation: bannerIn 1.6s steps(8, end) forwards;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  text-align: center;
+}
+
+@keyframes bannerIn {
+  0% { opacity: 0; }
+  15% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* --- What to do now --- */
+
+.guideBar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: flex-start;
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 3px solid #4a2a10;
+  border-left-width: 8px;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.35);
+  padding: 0.4375rem 0.75rem;
+  color: #4a2a10;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.guide_action {
+  border-left-color: #c0392b;
+}
+
+.guide_info {
+  border-left-color: #2c6b46;
+}
+
+.guide_wait {
+  border-left-color: #8a7a5c;
+}
+
+.guideText {
+  flex: 1 1 320px;
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.2;
+}
+
+.guideIcon {
+  margin-right: 0.375rem;
+}
+
+.forecast {
+  flex: 1 1 280px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(74, 42, 16, 0.12);
+  border: 2px dashed #4a2a10;
+  padding: 0.25rem 0.5rem;
+  font-size: 1.0625rem;
+}
+
+.forecastTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5625rem;
+  color: #9c2e20;
+  margin-bottom: 0.125rem;
+}
+
+.forecastNote {
+  font-size: 0.875rem;
+  color: #6b3d16;
+}
+
+/* --- Pila --- */
+
+.chainInfo {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.chainTitle {
+  font-size: 1rem;
+}
+
+.chainList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chainLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.0625rem 0.375rem;
+  border: 2px solid #241305;
+  color: #fbf3de;
+  font-size: 1rem;
+}
+
+.chainMine {
+  background: #2c6b46;
+}
+
+.chainRival {
+  background: #9c2e20;
+}
+
+.chainTop {
+  outline: 2px solid #ffd76a;
+}
+
+.chainIndex {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+}
+
+.chainSpeed,
+.chainNext {
+  font-size: 0.8125rem;
+  color: #ffd76a;
+}
+
+.chainActions {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+/* --- Players --- */
+
+.playerName {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.625rem;
+  color: #ffd76a;
+  align-self: center;
+  margin-right: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.badgeMuted {
+  opacity: 0.6;
+}
+
+.vpBadge {
+  position: relative;
+}
+
+.vpBar {
+  display: inline-block;
+  width: 56px;
+  height: 8px;
+  background: #4a2a10;
+  border: 1px solid #241305;
+}
+
+.vpFill {
+  display: block;
+  height: 100%;
+  background: #2c6b46;
+}
+
+.vpLow {
+  background: #c0392b;
+}
+
+/* A change that just happened: floats up over the card or badge and fades. */
+.flashDelta {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  transform: translateX(-50%);
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  pointer-events: none;
+  animation: flashRise 2.5s steps(10, end) forwards;
+}
+
+.flashDelta span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5625rem;
+  padding: 2px 4px;
+  border: 2px solid #120902;
+  white-space: nowrap;
+}
+
+.flashUp {
+  background: #2c6b46;
+  color: #d9ffe4;
+}
+
+.flashDown {
+  background: #9c2e20;
+  color: #ffe1db;
+}
+
+@keyframes flashRise {
+  0% { opacity: 0; transform: translate(-50%, 6px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  75% { opacity: 1; transform: translate(-50%, -10px); }
+  100% { opacity: 0; transform: translate(-50%, -16px); }
+}
+
+/* --- Monster slots --- */
+
+.statBadge {
+  display: flex;
+  justify-content: space-around;
+  gap: 2px;
+  z-index: 3;
+}
+
+.statBadge > span {
+  opacity: 0.7;
+}
+
+/* The value that counts in battle for this position is the bright one. */
+.statBadge > span.statActive {
+  opacity: 1;
+  font-weight: bold;
+}
+
+.statUp {
+  color: #6fdc8c;
+}
+
+.statDown {
+  color: #ff6b5a;
+}
+
+.statPrinted {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.tokenFace {
+  width: 88%;
+  height: 88%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.8125rem;
+  color: #241305;
+  background: repeating-linear-gradient(45deg, #ddc48c 0 6px, #e8d3a0 6px 12px);
+  border: 2px dashed #6b3d16;
+}
+
+.slotTags {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  z-index: 3;
+}
+
+.slotTag {
+  position: relative;
+  font-size: 0.75rem;
+  line-height: 1;
+  padding: 1px 2px;
+  background: rgba(18, 9, 2, 0.85);
+  border: 1px solid #6b3d16;
+  color: #ffd76a;
+}
+
+.slot > .slotTag {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  z-index: 3;
+}
+
+.slot.canAttack {
+  box-shadow: 0 0 0 2px #6fdc8c, 0 0 10px 1px rgba(111, 220, 140, 0.55);
+}
+
+.slot.spent img {
+  filter: grayscale(0.7) brightness(0.75);
+}
+
+.slot.attackTarget {
+  outline: 3px dashed #ff6b5a;
+  outline-offset: -3px;
+}
+
+.slot.attackTarget:hover {
+  box-shadow: 0 0 12px 2px rgba(255, 107, 90, 0.7);
+}
+
+/* --- Side panel: details, last battle, log --- */
+
+.detailsPanel,
+.battlePanel {
+  box-sizing: border-box;
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 3px solid #4a2a10;
+  box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.35);
+  color: #4a2a10;
+  padding: 0.375rem 0.625rem;
+  font-size: 1rem;
+  line-height: 1.15;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.detailsPanel {
+  max-height: 46%;
+}
+
+.battlePanel {
+  max-height: 28%;
+}
+
+.panelTitle {
+  display: block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5625rem;
+  color: #9c2e20;
+  margin-bottom: 0.25rem;
+  cursor: default;
+}
+
+.battlePanel summary {
+  cursor: pointer;
+}
+
+.detailsOwner {
+  color: #6b3d16;
+}
+
+.detailsEmpty,
+.detailsMuted {
+  margin: 0;
+  color: #6b3d16;
+}
+
+.detailsLine {
+  margin: 0.125rem 0;
+}
+
+.detailStat {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 1.0625rem;
+}
+
+.detailStat .statUp {
+  color: #1f7a45;
+}
+
+.detailStat .statDown {
+  color: #b3261e;
+}
+
+.modList {
+  margin: 0.25rem 0;
+  padding-left: 1rem;
+}
+
+.modUp strong {
+  color: #1f7a45;
+}
+
+.modDown strong {
+  color: #b3261e;
+}
+
+.modSet {
+  color: #6b3d16;
+  font-weight: bold;
+}
+
+.modKind {
+  color: #6b3d16;
+  font-size: 0.875rem;
+}
+
+.battleHeadline {
+  margin: 0 0 0.125rem;
+  font-weight: bold;
+}
+
+.battleSteps {
+  margin: 0;
+  padding-left: 1.125rem;
+}
+
+.logTitle {
+  position: absolute;
+  top: -0.625rem;
+  left: 0.5rem;
+  z-index: 1;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.5rem;
+  color: #ffd76a;
+  background: #4a2a10;
+  padding: 2px 6px;
+}
+
+.logTurn {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #9c2e20;
+  margin: 0.25rem 0 0.125rem;
+}
+
+.logMine {
+  border-left: 4px solid #2c6b46;
+  padding-left: 0.375rem;
+}
+
+.logRival {
+  border-left: 4px solid #c0392b;
+  padding-left: 0.375rem;
+}
+
+.logPhase {
+  font-size: 0.8125rem;
+  color: #6b3d16;
 }

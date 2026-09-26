@@ -1,11 +1,12 @@
 const { buildInstances } = require('./deckUtils');
 const { STARTING_VP, STARTING_HAND_SIZE, STARTING_PIXELS, MONSTER_ZONES, SUPPORT_ZONES } = require('./constants');
 
-function makePlayer(userId, deckDoc, ownerIndex) {
+function makePlayer(userId, deckDoc, ownerIndex, name = null) {
   const { deck, extra } = buildInstances(deckDoc, ownerIndex);
   const hand = deck.splice(0, STARTING_HAND_SIZE);
   return {
     userId: userId.toString(),
+    name, // shown on the board and in the log instead of the id
     vp: STARTING_VP,
     pixelcoins: STARTING_PIXELS,
     normalSummonUsed: false,
@@ -24,7 +25,7 @@ function makePlayer(userId, deckDoc, ownerIndex) {
 }
 
 // `firstPlayer`: who takes turn 1 (0 = playerA) — decided by the coin toss the duel controller does.
-function createMatchState({ matchId, playerA, deckA, playerB, deckB, vsBot = false, firstPlayer = 0 }) {
+function createMatchState({ matchId, playerA, deckA, playerB, deckB, vsBot = false, firstPlayer = 0, nameA = null, nameB = null }) {
   return {
     id: matchId,
     status: 'active',
@@ -44,7 +45,7 @@ function createMatchState({ matchId, playerA, deckA, playerB, deckB, vsBot = fal
     specialSummonWindows: {},
     winnerIndex: null,
     log: [],
-    players: [makePlayer(playerA, deckA, 0), makePlayer(playerB, deckB, 1)],
+    players: [makePlayer(playerA, deckA, 0, nameA), makePlayer(playerB, deckB, 1, nameB)],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
