@@ -28,32 +28,41 @@ function canStillAttack(state, m) {
 // Declaring an attack doesn't resolve it on the spot: it opens a response window (the attack is
 // the bottom link of the Pila, see chain.js) so the defender can answer with a Speed 2+ card —
 // Trampa de Madera "cuando un monstruo declara un ataque directo" — or pass, and then it happens.
-function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanceId /* null = direct */) {
-  if (state.phase !== 'battle') return { ok: false, reason: 'not-battle-phase' };
-  if (state.turnPlayer !== controllerIndex) return { ok: false, reason: 'not-your-turn' };
+// Why `attacker` can't attack `targetInstanceId` (null = directly) right now, or null if it can.
+// The duel view also asks it, so the board only offers the direct attack when it's legal.
+function attackBlockReason(state, controllerIndex, attacker, targetInstanceId) {
+  if (state.phase !== 'battle') return 'not-battle-phase';
+  if (state.turnPlayer !== controllerIndex) return 'not-your-turn';
   // Paseo Temporal: "no puedes atacar este turno".
-  if (state.attackBans && state.attackBans[controllerIndex] === state.turnNumber) return { ok: false, reason: 'attacks-disabled' };
-
-  const attackerPl = player(state, controllerIndex);
-  const attacker = attackerPl.field.monsters.find((m) => m && m.instanceId === attackerInstanceId);
-  if (!attacker) return { ok: false, reason: 'attacker-not-found' };
-  if (!canStillAttack(state, attacker)) return { ok: false, reason: 'already-attacked' };
+  if (state.attackBans && state.attackBans[controllerIndex] === state.turnNumber) return 'attacks-disabled';
+  if (!canStillAttack(state, attacker)) return 'already-attacked';
   // Relicario de Engranaje: "pueden atacar este turno en Posición de Defensa boca arriba".
   const canAttackFromDefense = attacker.position === 'defense' && !attacker.faceDown && hasAbility(attacker, 'attackInDefense');
-  if (attacker.position !== 'attack' && !canAttackFromDefense) return { ok: false, reason: 'not-in-attack-position' };
+  if (attacker.position !== 'attack' && !canAttackFromDefense) return 'not-in-attack-position';
 
-  const oppIdx = opponentIndex(controllerIndex);
-  const oppPl = player(state, oppIdx);
+  const oppPl = player(state, opponentIndex(controllerIndex));
   if (!targetInstanceId) {
     // Motor de Engranaje "no puede ser objetivo de ataques": a board of only those doesn't stop a
     // direct attack. Homúnculo/Acechador Invisible "puede atacar directamente" ignore the board.
     const attackable = oppPl.field.monsters.some((m) => m && !m.untargetable);
-    if (attackable && !attacker.canAttackDirectly) return { ok: false, reason: 'must-target-a-monster' };
+    if (attackable && !attacker.canAttackDirectly) return 'must-target-a-monster';
   } else {
     const defender = oppPl.field.monsters.find((m) => m && m.instanceId === targetInstanceId);
-    if (!defender) return { ok: false, reason: 'defender-not-found' };
-    if (defender.untargetable) return { ok: false, reason: 'cannot-be-targeted' };
+    if (!defender) return 'defender-not-found';
+    if (defender.untargetable) return 'cannot-be-targeted';
   }
+  return null;
+}
+
+function declareAttack(state, controllerIndex, attackerInstanceId, targetInstanceId /* null = direct */) {
+  if (state.phase !== 'battle') return { ok: false, reason: 'not-battle-phase' };
+  if (state.turnPlayer !== controllerIndex) return { ok: false, reason: 'not-your-turn' };
+
+  const attackerPl = player(state, controllerIndex);
+  const attacker = attackerPl.field.monsters.find((m) => m && m.instanceId === attackerInstanceId);
+  if (!attacker) return { ok: false, reason: 'attacker-not-found' };
+  const reason = attackBlockReason(state, controllerIndex, attacker, targetInstanceId);
+  if (reason) return { ok: false, reason };
 
   attacker.attacksThisTurn = (attacker.attacksThisTurn || 0) + 1;
   attacker.hasAttacked = !canStillAttack(state, attacker);
@@ -205,4 +214,4 @@ function destroyInBattle(state, ownerIndex, victim, destroyer) {
   }
 }
 
-module.exports = { declareAttack, performBattle, canStillAttack, allowedAttacks };
+module.exports = { declareAttack, attackBlockReason, performBattle, canStillAttack, allowedAttacks };

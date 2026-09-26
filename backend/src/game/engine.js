@@ -4,7 +4,7 @@ const { normalSummon, specialSummon, compileSummon, decompile } = require('./sum
 const { canBeNormalSummoned, cannotBeSummoned } = require('./summonRules');
 const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport, activateSetSupport } = require('./support');
-const { declareAttack } = require('./combat');
+const { declareAttack, attackBlockReason } = require('./combat');
 const { changePosition } = require('./position');
 const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand } = require('./effectEngine');
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
@@ -252,6 +252,9 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
     // Only a compiled monster from an earlier turn can be decompiled from the UI (Pez dorado's
     // same-turn exception is left to the server to accept or reject).
     canDecompile: (m.materials || []).length > 0,
+    // Whether its owner can attack the rival's VP with it right now — the board offers the rival's
+    // VP as a target only then (empty board, only untargetable monsters, or "puede atacar directamente").
+    canAttackDirectly: isViewerOwner && !attackBlockReason(state, ownerIndex, m, null),
   };
   if (m.isToken) return { ...base, isToken: true, name: m.tokenDef.name, atk: m.baseAtk, def: m.baseDef };
   // The owner knows which card their face-down monster is (for the hover preview); the rival doesn't.

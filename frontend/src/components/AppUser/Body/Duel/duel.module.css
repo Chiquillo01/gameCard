@@ -234,6 +234,31 @@
   color: #4a2a10;
 }
 
+/* The rival's VP while the selected attacker can attack them directly: click to attack. */
+.vpBadge.directTarget {
+  font-family: 'VT323', monospace;
+  cursor: pointer;
+  background: linear-gradient(180deg, #e05a45 0%, #c0392b 55%, #9c2e20 100%);
+  color: #fbf3de;
+  outline: 3px dashed #ffd76a;
+  outline-offset: 2px;
+  animation: directTargetPulse 0.9s steps(2, end) infinite;
+}
+
+.vpBadge.directTarget:hover {
+  background: linear-gradient(180deg, #f06a55, #d0493b 55%, #ac3e30 100%);
+}
+
+.vpBadge.directTarget:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+@keyframes directTargetPulse {
+  from { box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.35), 0 0 0 0 rgba(255, 215, 106, 0.8); }
+  to { box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.35), 0 0 12px 4px rgba(255, 215, 106, 0.8); }
+}
+
 .pixelIcon {
   width: 1.125rem;
   height: 1.125rem;

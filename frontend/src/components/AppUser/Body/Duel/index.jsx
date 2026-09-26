@@ -449,6 +449,8 @@ const DuelPage = () => {
   const isMyTurn = view.turnPlayer === you;
   const me = view.players[you];
   const enemy = view.players[opp];
+  const attackerView = selectedAttacker && me.field.monsters.find((m) => m && m.instanceId === selectedAttacker);
+  const canAttackDirectly = !!attackerView && attackerView.canAttackDirectly && !view.chain;
 
   // `inline` renders plain buttons in a row (for the pile modal's list); the default is a small
   // dropdown that pops up above the card (for a slot out on the field).
@@ -623,11 +625,6 @@ const DuelPage = () => {
           >
             Avanzar fase
           </button>
-          {selectedAttacker && enemy.field.monsters.every((m) => !m) && (
-            <button className={styles.directAttackButton} onClick={onDirectAttack}>
-              Ataque directo
-            </button>
-          )}
           <button className={styles.surrenderButton} onClick={() => act({ type: 'SURRENDER' })}>
             Rendirse
           </button>
@@ -650,7 +647,15 @@ const DuelPage = () => {
 
       <div className={styles.board}>
         <div className={styles.playerHeader}>
-          <span className={styles.vpBadge}>VP: {enemy.vp}</span>
+          {/* A direct attack hits the rival's VP, so their VP is where the player clicks for it —
+              lit up only while the selected attacker can legally attack directly. */}
+          {canAttackDirectly ? (
+            <button className={`${styles.vpBadge} ${styles.directTarget}`} onClick={onDirectAttack} title='Atacar directamente a los VP del rival'>
+              ⚔ VP: {enemy.vp}
+            </button>
+          ) : (
+            <span className={styles.vpBadge}>VP: {enemy.vp}</span>
+          )}
           <span className={styles.handCountBadge}>Mano: {enemy.handCount}</span>
         </div>
         <div className={styles.fieldsRow}>
