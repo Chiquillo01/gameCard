@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import io from 'socket.io-client';
 import { toast } from 'react-toastify';
@@ -83,6 +83,11 @@ const DuelPage = () => {
   // Atk/Vida and VP changes between two updates float over the card/badge for a moment
   // ("+2 Atk", "-3 VP"), so a buff, a debuff or a hit is seen as it happens.
   const flashes = useStatFlashes(view);
+
+  const boardRef = useRef(null);
+  const fieldsRef = useRef(null);
+  const handCount = view ? view.players[view.you].hand.length : 0;
+  const boardWidth = useBoardWidth(boardRef, fieldsRef, [!!view, handCount]);
 
   // A short banner when the turn passes from one player to the other.
   const [turnBanner, setTurnBanner] = useState(null);
@@ -573,7 +578,7 @@ const DuelPage = () => {
   const isMyBattle = isMyTurn && view.phase === 'battle';
 
   return (
-    <div className={styles.duelPage}>
+    <div className={styles.duelPage} style={{ "--board-w": `${boardWidth}px` }}>
       {view.status === 'finished' && (
         <div className={styles.gameOverOverlay}>
           <div className={styles.gameOverPlaque}>
@@ -655,27 +660,27 @@ const DuelPage = () => {
 
       {turnBanner && <div className={styles.turnBanner}>{turnBanner}</div>}
 
-      {view.chain && <ChainBar chain={view.chain} you={you} names={names} onPass={() => act({ type: 'PASS_CHAIN' })} />}
+      {/* On wide screens these two move into the column beside the board (sidePanel), leaving the
+          height above the board to the board itself. */}
+      {view.chain && <ChainBar className={styles.topOnly} chain={view.chain} you={you} names={names} onPass={() => act({ type: 'PASS_CHAIN' })} />}
+      <GuideBar className={styles.topOnly} guide={guide} forecast={forecast} />
 
-      <GuideBar guide={guide} forecast={forecast} />
-
-      <div className={styles.board}>
+      <div className={styles.board} ref={boardRef}>
         <div className={styles.playerHeader}>
           <span className={styles.playerName}>{enemy.name}</span>
           {/* A direct attack hits the rival's VP, so their VP is where the player clicks for it —
               lit up only while the selected attacker can legally attack directly. */}
           <VpBadge vp={enemy.vp} flash={flashes[`vp${opp}`]} onDirectAttack={canAttackDirectly ? onDirectAttack : null} />
           <span className={styles.handCountBadge} title='Cartas en la Mano del rival'>✋ {enemy.handCount}</span>
-          <span className={styles.handCountBadge} title='Cartas en su Mazo'>🂠 {enemy.deckCount}</span>
-          <span className={styles.handCountBadge} title='Píxeles del rival'>
+          <span className={styles.handCountBadge} title='Píxeles del rival: sirven para pagar las activaciones de los apoyos'>
             <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {enemy.pixelcoins}
           </span>
           {view.turnPlayer === opp && (
             <span className={`${styles.handCountBadge} ${enemy.normalSummonUsed ? styles.badgeMuted : ''}`}>{enemy.normalSummonUsed ? 'Invocación normal usada' : 'Invocación normal disponible'}</span>
           )}
         </div>
-        <div className={styles.fieldsRow}>
-        <CardPreview card={previewCard} />
+        <div className={styles.fieldsRow} ref={fieldsRef}>
+        <CardPreview card={previewCard} boardWidth={boardWidth} />
         <PlayerField
           player={enemy}
           isOwner={false}
@@ -712,6 +717,8 @@ const DuelPage = () => {
         />
 
         <div className={styles.sidePanel}>
+          {view.chain && <ChainBar className={styles.sideOnly} chain={view.chain} you={you} names={names} onPass={() => act({ type: 'PASS_CHAIN' })} />}
+          <GuideBar className={styles.sideOnly} guide={guide} forecast={forecast} />
           <DetailsPanel hovered={hovered} isMyBattle={isMyBattle} />
           <LastBattlePanel battle={view.lastBattle} you={you} names={names} />
           <div className={styles.log}>
@@ -738,10 +745,9 @@ const DuelPage = () => {
         <div className={styles.playerHeader}>
           <span className={styles.playerName}>{me.name} (tú)</span>
           <VpBadge vp={me.vp} flash={flashes[`vp${you}`]} />
-          <span className={styles.pixelBadge} title='Tus píxeles: pagan invocaciones y efectos'>
+          <span className={styles.pixelBadge} title='Sirven para pagar las activaciones de los apoyos'>
             <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {me.pixelcoins}
           </span>
-          <span className={styles.handCountBadge} title='Cartas en tu Mazo'>🂠 {me.deckCount}</span>
           {isMyTurn && (
             <span className={`${styles.handCountBadge} ${me.normalSummonUsed ? styles.badgeMuted : ''}`}>{me.normalSummonUsed ? 'Invocación normal usada' : 'Invocación normal disponible'}</span>
           )}
@@ -1051,29 +1057,68 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
   );
 }
 
+// Wide screens (the preview and the log hang beside the board): the board grows into the room the
+// window leaves — as wide as fits between the two side columns and as tall as fits without
+// scrolling (the two fields are ~0.85 times as tall as the board is wide). Narrower: 700px, as before.
+const WIDE_LAYOUT = 1421; // keep in sync with the media query in duel.module.css
+const BASE_BOARD = 700;
+const MAX_BOARD = 1100;
+const SIDE_COLUMN_MIN = 320;
+
+function useBoardWidth(boardRef, fieldsRef, deps) {
+  const [width, setWidth] = useState(BASE_BOARD);
+  useLayoutEffect(() => {
+    const fit = () => {
+      const board = boardRef.current;
+      const fields = fieldsRef.current;
+      if (!board || !fields) return;
+      if (window.innerWidth < WIDE_LAYOUT) {
+        setWidth(BASE_BOARD);
+        return;
+      }
+      const b = board.getBoundingClientRect();
+      const f = fields.getBoundingClientRect();
+      const ratio = f.height / b.width;
+      // Everything on the page that isn't the two fields: above them, and below them to the page end.
+      const pagePadding = parseFloat(getComputedStyle(board.parentElement).paddingBottom) || 0;
+      const other = f.top + window.scrollY + (b.bottom - f.bottom) + pagePadding;
+      const byHeight = (window.innerHeight - other) / ratio;
+      const byWidth = window.innerWidth - 2 * (SIDE_COLUMN_MIN + 48);
+      const next = Math.round(Math.max(BASE_BOARD, Math.min(byHeight, byWidth, MAX_BOARD)));
+      setWidth((w) => (Math.abs(w - next) > 4 ? next : w));
+    };
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+  return width;
+}
+
 // The card face is drawn at its natural 480x700 and scaled down (never up) to whatever room the
-// viewport leaves to the left of the board — the board is at most 900px wide and centered.
+// viewport leaves to the left of the board.
 const FACE_WIDTH = 480;
 const FACE_HEIGHT = 700;
-const BOARD_WIDTH = 700;
 
-function usePreviewScale() {
+function usePreviewScale(boardWidth) {
   const compute = () => {
-    const room = (window.innerWidth - BOARD_WIDTH) / 2 - 20 - 16; // page padding + gap to the board
+    const room = (window.innerWidth - boardWidth) / 2 - 20 - 16; // page padding + gap to the board
     return Math.max(0, Math.min(1, room / FACE_WIDTH, (window.innerHeight - 150) / FACE_HEIGHT));
   };
   const [scale, setScale] = useState(compute);
   useEffect(() => {
     const onResize = () => setScale(compute());
+    onResize();
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boardWidth]);
   return scale;
 }
 
 // Enlarged card shown to the left of the board for whatever the cursor last rested on.
-function CardPreview({ card }) {
-  const scale = usePreviewScale();
+function CardPreview({ card, boardWidth }) {
+  const scale = usePreviewScale(boardWidth);
   if (scale < 0.45) return null; // not enough room at this window size
   return (
     <div className={styles.cardPreview} style={{ width: FACE_WIDTH * scale, height: FACE_HEIGHT * scale }}>

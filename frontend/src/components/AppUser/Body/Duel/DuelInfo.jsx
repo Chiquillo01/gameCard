@@ -126,10 +126,10 @@ export function guideFor({ view, me, enemy, isMyTurn, attacker, canAttackDirectl
   }
 }
 
-export function GuideBar({ guide, forecast }) {
+export function GuideBar({ guide, forecast, className = '' }) {
   if (!guide && !forecast) return null;
   return (
-    <div className={`${styles.guideBar} ${guide ? styles['guide_' + guide.tone] : ''}`}>
+    <div className={`${styles.guideBar} ${guide ? styles['guide_' + guide.tone] : ''} ${className}`}>
       {guide && (
         <p className={styles.guideText}>
           <span className={styles.guideIcon}>{guide.tone === 'wait' ? '⌛' : guide.tone === 'action' ? '👉' : 'ℹ'}</span>
@@ -184,10 +184,10 @@ export function forecastBattle(attacker, defender, cardsById) {
   return { lines };
 }
 
-export function ChainBar({ chain, you, names, onPass }) {
+export function ChainBar({ chain, you, names, onPass, className = '' }) {
   const myPriority = chain.priorityPlayer === you;
   return (
-    <div className={styles.chainBar}>
+    <div className={`${styles.chainBar} ${className}`}>
       <div className={styles.chainInfo}>
         <span className={styles.chainTitle}>🔗 Pila abierta — se resuelve de la última a la primera</span>
         <ol className={styles.chainList}>
