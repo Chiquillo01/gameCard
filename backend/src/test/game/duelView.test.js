@@ -32,12 +32,12 @@ describe('Duel view: Atk/Vida changes', () => {
       statMods: [{ source: 'Armadura del poder', atk: 1, def: 0, kind: 'continuous' }],
     });
 
-    // Another Orco Guerrero's '+2 Atk' is a one-off: it stays (permanent) and gets a log line.
+    // Its own "+2 Atk" ("selecciona un Orco en Campo", itself included) is a one-off: it stays
+    // (permanent) and gets a log line.
     toPhase(state, 'main1', 0);
     const own = fieldView(state, 0, orco);
     expect(own.effectLabels.ORCO_GUERRERO_BUFF).toBe('+2 Atk');
-    const source = await onField(state, 0, 'Orco Guerrero');
-    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ORCO_GUERRERO_BUFF', sourceInstanceId: source, targets: [orco] }).ok).toBe(true);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ORCO_GUERRERO_BUFF', sourceInstanceId: orco, targets: [orco] }).ok).toBe(true);
     passAll(state);
 
     const rivalSees = fieldView(state, 1, orco);
