@@ -49,9 +49,11 @@ const startPve = async (req, res) => {
     if (!isDeckPlayable(deck)) return res.status(400).json({ error: UNPLAYABLE_DECK_ERROR });
 
     const matchId = randomUUID();
+    const user = await User.findById(userId).select('userName');
     const state = await createMatch({
       matchId,
       playerA: userId,
+      nameA: user && user.userName,
       deckA: deck,
       playerB: 'BOT',
       deckB: buildBotDeck(deck),
@@ -113,11 +115,14 @@ const acceptChallenge = async (req, res) => {
       return res.status(400).json({ error: UNPLAYABLE_DECK_ERROR });
     }
 
+    const [challenger, opponent] = await Promise.all([User.findById(pending.challengerId).select('userName'), User.findById(userId).select('userName')]);
     const state = await createMatch({
       matchId,
       playerA: pending.challengerId,
+      nameA: challenger && challenger.userName,
       deckA: challengerDeck,
       playerB: userId,
+      nameB: opponent && opponent.userName,
       deckB: opponentDeck,
       vsBot: false,
       ...coinTossFirstPlayer(),

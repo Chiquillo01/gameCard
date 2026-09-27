@@ -2998,7 +2998,8 @@
           "buff": {
             "atk": 2
           },
-          "target": "selected"
+          "target": "selected",
+          "excludeSelf": false
         }
       }
     ]

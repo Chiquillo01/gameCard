@@ -186,11 +186,18 @@ describe('Flags effects set are honored', () => {
     const orco = await onField(state, 0, 'Orco Gladiador');
     await onField(state, 1, 'Slime');
     toPhase(state, 'battle', 0);
+    // The board only offers the rival's VP as a target when the direct attack is legal.
+    const orcoView = () => viewFor(state, 0).players[0].field.monsters.find((m) => m && m.instanceId === orco);
+    expect(orcoView().canAttackDirectly).toBe(false);
     expect(attack(state, 0, orco)).toMatchObject({ ok: false, reason: 'must-target-a-monster' });
     const homunculo = placeSupport(state, await instance(0, 'Homúnculo'), 0, { faceDown: false });
     homunculo.equippedTo = orco;
     recomputeContinuous(state);
+    expect(orcoView().canAttackDirectly).toBe(true);
+    // The rival never sees it.
+    expect(viewFor(state, 1).players[0].field.monsters.find((m) => m && m.instanceId === orco).canAttackDirectly).toBe(false);
     expect(attack(state, 0, orco)).toMatchObject({ ok: true });
+    expect(orcoView().canAttackDirectly).toBe(false); // its one attack is spent
     expect(state.players[1].vp).toBe(80 - 3);
   });
 

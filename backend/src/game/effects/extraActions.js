@@ -4,6 +4,7 @@
 const { getCard } = require('../cardIndex');
 const { player, opponentIndex, log, getFieldMonster, findInstanceLocation, removeFromZone, findEmptySlot, corrodedSlots } = require('../zones');
 const { cardIdFromInstance } = require('../deckUtils');
+const { addTempMod, ctxSource } = require('../statMods');
 
 const isContinuous = (ctx) => !!(ctx.effect && ctx.effect.type === 'continuous');
 const allMonsters = (state) => state.players.flatMap((p) => p.field.monsters).filter(Boolean);
@@ -94,9 +95,7 @@ function buffPerEquip(ctx, args) {
   const self = getFieldMonster(ctx.state, ctx.sourceInstanceId);
   if (!self) return;
   const count = lazy().equipsOn(ctx.state, ctx.sourceInstanceId).length;
-  self.tempBuff = self.tempBuff || { atk: 0, def: 0 };
-  self.tempBuff.atk += (args.atk || 0) * count;
-  self.tempBuff.def += (args.def || 0) * count;
+  addTempMod(self, { atk: (args.atk || 0) * count, def: (args.def || 0) * count }, `${count} equipo(s)`);
 }
 
 // How many monsters it can have equipped at once (1 for Carnívora Come Hombres, 2 for Bestia-Moss).
@@ -125,19 +124,20 @@ function countersFor(ctx, args) {
 function statFromCounterCount(ctx, args) {
   const self = getFieldMonster(ctx.state, ctx.sourceInstanceId);
   if (!self) return;
-  const amount = countersFor(ctx, args) * (args.multiplier || 1);
-  self.tempBuff = self.tempBuff || { atk: 0, def: 0 };
-  (args.stats || ['atk']).forEach((s) => { self.tempBuff[s] += amount; });
+  const count = countersFor(ctx, args);
+  const amount = count * (args.multiplier || 1);
+  const stats = args.stats || ['atk'];
+  addTempMod(self, { atk: stats.includes('atk') ? amount : 0, def: stats.includes('def') ? amount : 0 }, `${count} contador(es)`);
 }
 
 // "Su Atk/Vida es igual a X por cada Engranaje" (continuous) — overrides the printed value.
 function setStatsByCounters(ctx, args) {
   const self = getFieldMonster(ctx.state, ctx.sourceInstanceId);
   if (!self) return;
-  const value = countersFor(ctx, args) * (args.multiplier || 1);
-  self.tempBuff = self.tempBuff || { atk: 0, def: 0 };
-  if ((args.stats || []).includes('atk')) self.tempBuff.atk += value - self.baseAtk;
-  if ((args.stats || []).includes('def')) self.tempBuff.def += value - self.baseDef;
+  const count = countersFor(ctx, args);
+  const value = count * (args.multiplier || 1);
+  const stats = args.stats || [];
+  addTempMod(self, { atk: stats.includes('atk') ? value - self.baseAtk : 0, def: stats.includes('def') ? value - self.baseDef : 0 }, `${count} contador(es)`);
 }
 
 // "Si es usado como material, sus Engranajes pasan al monstruo compilado".
@@ -158,11 +158,7 @@ function damageOpponentByDiceRoll(ctx, args) {
 
 // Íncubo: "Los monstruos que estén en la misma columna que esta carta pierden -2 Atk/Vida".
 function debuffColumn(ctx, args) {
-  lazy().columnMonsters(ctx.state, ctx.sourceInstanceId).forEach((m) => {
-    m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
-    m.tempBuff.atk += args.atk || 0;
-    m.tempBuff.def += args.def || 0;
-  });
+  lazy().columnMonsters(ctx.state, ctx.sourceInstanceId).forEach((m) => addTempMod(m, { atk: args.atk, def: args.def }, ctxSource(ctx)));
 }
 
 // Héroe de la Esperanza: destroys the picked rival cards, up to the number of Héroe monsters with
@@ -196,10 +192,7 @@ function debuffAllByMaterialsAtk(ctx) {
   if (!self) return;
   const total = (self.materials || []).reduce((sum, id) => sum + (getCard(cardIdFromInstance(id)).atk || 0), 0);
   if (!total) return;
-  player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean).forEach((m) => {
-    m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
-    m.tempBuff.atk -= total;
-  });
+  player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean).forEach((m) => addTempMod(m, { atk: -total }, ctxSource(ctx)));
 }
 
 // Gigante Elemental: "Inmune a los efectos de los monstruos cuyos atributos se hayan utilizado para
@@ -215,11 +208,7 @@ function immuneToEffectsFromMaterialsAttributes(ctx) {
 function mirrorStatToOpponent(ctx) {
   const change = ctx.lastScaledBuff;
   if (!change) return;
-  player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean).forEach((m) => {
-    m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
-    m.tempBuff.atk += change.atk;
-    m.tempBuff.def += change.def;
-  });
+  player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean).forEach((m) => addTempMod(m, change, ctxSource(ctx)));
 }
 
 // Lich: "Tu oponente pierde 5 VP cada vez que activa un efecto" — continuous; chain.addLink charges it.

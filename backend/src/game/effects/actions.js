@@ -5,6 +5,7 @@ const { matchesFilter } = require('../filters');
 const { cardIdFromInstance } = require('../deckUtils');
 const { checkWin, declareWin } = require('../outcome');
 const { negateCard, END_OF_TURN } = require('../negation');
+const { addTempMod, addPermanentMod, ctxSource, sourceName, logStatChange } = require('../statMods');
 
 // ctx = { state, controllerIndex, sourceInstanceId, effect, event?, costPaid? }
 // `targets` = the picks resolveActions handed this step (targets.js decides which are its own).
@@ -280,14 +281,13 @@ function grantBuff(ctx, args, targets) {
   } else if (!isContinuous(ctx) && !(ctx.effect && ctx.effect.trigger && ctx.effect.trigger.fn === 'whileEquipped')) {
     // A one-off "gana +X" (Acechador Invisible, Orco Gladiador) stays with the card while it's on
     // the field, instead of vanishing at the next board recompute.
-    matched.forEach((m) => { m.baseAtk += buff.atk || 0; m.baseDef += buff.def || 0; });
+    matched.forEach((m) => {
+      addPermanentMod(m, buff, ctxSource(ctx));
+      logStatChange(ctx, m.instanceId, buff);
+    });
     return;
   }
-  matched.forEach((m) => {
-    m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
-    m.tempBuff.atk += buff.atk || 0;
-    m.tempBuff.def += buff.def || 0;
-  });
+  matched.forEach((m) => addTempMod(m, buff, ctxSource(ctx)));
 }
 
 // "en la fase de batalla" buffs only count during that phase.
@@ -451,11 +451,7 @@ function applyScaledBuff(ctx, args, targets) {
     else if (args.scope === 'opponentField') targetSet = enemyMonsters;
   }
   ctx.lastScaledBuff = { atk: perUnit.atk * scaleBy, def: perUnit.def * scaleBy };
-  targetSet.forEach((m) => {
-    m.tempBuff = m.tempBuff || { atk: 0, def: 0 };
-    m.tempBuff.atk += perUnit.atk * scaleBy;
-    m.tempBuff.def += perUnit.def * scaleBy;
-  });
+  targetSet.forEach((m) => addTempMod(m, ctx.lastScaledBuff, ctxSource(ctx)));
 }
 
 // Cards equipped to a field entry (Equipo supports, and monsters equipped as an Equipo).
@@ -631,9 +627,11 @@ function setAtk(ctx, args, targets) {
     const m = getFieldMonster(ctx.state, id);
     if (!m) return;
     if (args.duration === 'endOfTurn' || args.duration === 'endOfNextTurn') {
-      m.atkOverride = { value, expiresTurn: ctx.state.turnNumber + (args.duration === 'endOfNextTurn' ? 1 : 0) };
+      m.atkOverride = { value, expiresTurn: ctx.state.turnNumber + (args.duration === 'endOfNextTurn' ? 1 : 0), source: ctxSource(ctx) };
+      log(ctx.state, `${sourceName(ctx.state, id)}: su Atk pasa a ser ${value} hasta el final del ${args.duration === 'endOfNextTurn' ? 'próximo turno' : 'turno'} (por ${ctxSource(ctx)}).`);
     } else {
-      m.baseAtk = value;
+      addPermanentMod(m, { atk: value - m.baseAtk }, ctxSource(ctx));
+      log(ctx.state, `${sourceName(ctx.state, id)}: su Atk pasa a ser ${value} (por ${ctxSource(ctx)}).`);
     }
   });
 }
@@ -645,7 +643,10 @@ function setStatValue(ctx, args, targets) {
 function damageMonster(ctx, args, targets) {
   (targets || []).forEach((id) => {
     const m = getFieldMonster(ctx.state, id);
-    if (m) m.baseDef = Math.max(0, m.baseDef - (args.amount || 0));
+    if (!m) return;
+    const lost = Math.min(m.baseDef, args.amount || 0);
+    addPermanentMod(m, { def: -lost }, ctxSource(ctx));
+    logStatChange(ctx, id, { def: -lost });
   });
 }
 
