@@ -378,3 +378,36 @@ describe('Espora Venenosa', () => {
     expect(state.log.some((l) => l.message === 'Orco Guerrero queda en estado Veneno (por Espora Venenosa).')).toBe(true);
   });
 });
+
+describe('Exiled "hasta la Fase Final"', () => {
+  it('Traición de Vida: only a rival monster; gains VP equal to its Atk; it comes back in the Fase Final', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const traicion = await toHand(state, 0, 'Traición de Vida');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: traicion })).toMatchObject({ ok: false, reason: 'no-legal-target' });
+
+    await onField(state, 0, 'Orco Guerrero'); // the player's own monster is never offered
+    const cactus = await onField(state, 1, 'Cactus Violento', { position: 'defense' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: traicion }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[1].banished).toContain(cactus);
+    expect(state.players[0].vp).toBe(STARTING_VP + 4); // Cactus Violento's Atk
+
+    toPhase(state, 'end', 0);
+    expect(state.players[1].banished).not.toContain(cactus);
+    expect(monster(state, cactus)).toMatchObject({ position: 'defense', faceDown: false });
+    expect(state.log.some((l) => l.message === 'Cactus Violento vuelve del Exilio al Campo.')).toBe(true);
+  });
+
+  it('Orco Gigante: the monster it exiles comes back at the end of the turn', async () => {
+    const state = await makeDuel();
+    const gigante = await onField(state, 0, 'Orco Gigante');
+    const cactus = await onField(state, 1, 'Cactus Violento');
+    toPhase(state, 'main1', 0);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ORCO_GIGANTE_EXILE', sourceInstanceId: gigante, targets: [cactus] }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[1].banished).toContain(cactus);
+    toPhase(state, 'end', 0);
+    expect(monster(state, cactus)).toBeTruthy();
+  });
+});

@@ -924,10 +924,17 @@
     "requiresTarget": false,
     "actions": [
       {
-        "fn": "exileTarget"
+        "fn": "exileTarget",
+        "args": {
+          "target": "enemyMonster",
+          "duration": "endOfTurn"
+        }
       },
       {
-        "fn": "gainVP"
+        "fn": "gainVP",
+        "args": {
+          "amountFrom": "previousTargetsAtk"
+        }
       }
     ],
     "source": "EfectoBD(activated)"
@@ -3455,7 +3462,7 @@
       {
         "fn": "exileTarget",
         "args": {
-          "target": "selected",
+          "target": "Monstruo",
           "duration": "endOfTurn"
         }
       }

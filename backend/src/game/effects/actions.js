@@ -1,5 +1,5 @@
 const { getCard } = require('../cardIndex');
-const { player, opponentIndex, moveToZone, log, findInstanceLocation, removeFromZone, findEmptySlot, corrodedSlots, releaseEquipment, getFieldMonster } = require('../zones');
+const { player, opponentIndex, moveToZone, log, findInstanceLocation, removeFromZone, findEmptySlot, corrodedSlots, releaseEquipment, getFieldMonster, ownerOfInstance } = require('../zones');
 const { addStatus, setStatusDebuff, FREEZE, BURN, POISON } = require('../statuses');
 const { matchesFilter } = require('../filters');
 const { cardIdFromInstance } = require('../deckUtils');
@@ -43,7 +43,8 @@ function damageSelf(ctx, args) {
 function gainVP(ctx, args) {
   const idx = resolvePlayerIndex(ctx, args.player);
   const pl = player(ctx.state, idx);
-  const amount = args.amount || 0;
+  // "Gana VP igual a su Atk": the Atk of what the step before exiled.
+  const amount = args.amountFrom === 'previousTargetsAtk' ? ctx.lastTargetsAtk || 0 : args.amount || 0;
   pl.vp += amount;
   log(ctx.state, `${pl.userId} gana ${amount} VP (VP: ${pl.vp}).`);
   // Anillo de Boda: "si tu oponente gana VP, tú también lo harás".
@@ -100,15 +101,28 @@ function discardRandomCard(ctx, args) {
 }
 
 // "Exilia esa carta" — the picked cards (targets.js pools them), never a protected one.
+// "Exilia ...". With `duration: 'endOfTurn'` ("hasta la Fase Final" / "hasta el final del turno")
+// a monster comes back to its owner's field in this turn's Fase Final (turns.js returnExiled).
+// `ctx.lastTargetsAtk` keeps the Atk the exiled monsters had, for a following "gana VP igual a su
+// Atk" (Traición de Vida).
 function exileTarget(ctx, args, targets) {
   const { canAffect } = require('../targets');
+  const { getEffectiveStats } = require('../effectEngine');
+  const temporary = END_OF_TURN.includes(args.duration);
+  ctx.lastTargetsAtk = 0;
   (targets || []).forEach((instanceId) => {
     const loc = findInstanceLocation(ctx.state, instanceId);
     if (!loc) return;
     const entry = loc.zone.startsWith('field:') ? [...ctx.state.players[loc.ownerIndex].field.monsters, ...ctx.state.players[loc.ownerIndex].field.support, ctx.state.players[loc.ownerIndex].field.territory].find((e) => e && e.instanceId === instanceId) : null;
     if (entry && (!canAffect(ctx, entry) || (entry.immuneToOpponentEffects && loc.ownerIndex !== ctx.controllerIndex))) return;
+    const isMonster = loc.zone === 'field:monster';
+    if (isMonster) ctx.lastTargetsAtk += getEffectiveStats(entry).atk;
     moveToZone(ctx.state, instanceId, 'banished');
-    log(ctx.state, `${getCard(cardIdFromInstance(instanceId)).name} es exiliada.`);
+    if (temporary && isMonster && !String(instanceId).startsWith('token:')) {
+      ctx.state.returnAtEndPhase = ctx.state.returnAtEndPhase || [];
+      ctx.state.returnAtEndPhase.push({ instanceId, ownerIndex: ownerOfInstance(instanceId) ?? loc.ownerIndex, position: entry.position });
+    }
+    log(ctx.state, `${sourceName(ctx.state, instanceId)} es exiliada${temporary && isMonster ? ' hasta la Fase Final' : ''} (por ${ctxSource(ctx)}).`);
   });
 }
 

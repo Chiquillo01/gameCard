@@ -1,5 +1,7 @@
 const { PHASES, MAX_HAND_SIZE, PIXEL_INCOME_PER_TURN, PIXEL_CAP } = require('./constants');
-const { player, opponentIndex, log } = require('./zones');
+const { player, opponentIndex, log, placeMonster, moveToZone } = require('./zones');
+const { getCard } = require('./cardIndex');
+const { cardIdFromInstance } = require('./deckUtils');
 const { fireTrigger, recomputeContinuous, expireTimedBuffs } = require('./effectEngine');
 const { checkWin } = require('./outcome');
 const { burningMonsters, expireStatuses, BURN_END_OF_TURN_DAMAGE } = require('./statuses');
@@ -61,6 +63,7 @@ function runPhaseEntry(state) {
 
   if (state.phase === 'end') {
     fireTrigger(state, 'phase', { timing: 'endPhase' });
+    returnExiled(state);
     payTerritoryUpkeep(state);
     applyBurnDamage(state);
     // Book contradicts itself on the exact number and destination (7-to-exile vs 8-to-graveyard
@@ -75,6 +78,25 @@ function runPhaseEntry(state) {
 
   recomputeContinuous(state);
   checkWin(state);
+}
+
+// Monsters exiled "hasta la Fase Final" (Traición de Vida, Orco Gigante) come back to their owner's
+// field now, in the position they left in. With no free zone they go to the Cementerio instead;
+// one that already left the Exilio some other way stays wherever it is.
+function returnExiled(state) {
+  const due = state.returnAtEndPhase || [];
+  state.returnAtEndPhase = [];
+  due.forEach(({ instanceId, ownerIndex, position }) => {
+    const owner = player(state, ownerIndex);
+    if (!owner.banished.includes(instanceId)) return;
+    const name = getCard(cardIdFromInstance(instanceId)).name;
+    if (placeMonster(state, instanceId, ownerIndex, { position: position || 'attack' })) {
+      log(state, `${name} vuelve del Exilio al Campo.`);
+    } else {
+      moveToZone(state, instanceId, 'graveyard');
+      log(state, `${name} no cabe en el Campo al volver del Exilio: va al Cementerio.`);
+    }
+  });
 }
 
 // Rulebook: "Si existen dos Territorios en juego ambos jugadores tendrán que pagar 1 pixel al
