@@ -779,14 +779,15 @@ const DuelPage = () => {
   );
 };
 
-// Renders one player's side of the board as the rulebook's 7-column grid:
+// Renders one player's side of the board as a 7-column grid, from its owner's point of view:
 //   row 1: 5 Monster zones, Cementerio, Exilio
-//   row 2: Territorio, 4 Apoyo zones, (—), Mazo-C
-//   row 3: (—) x6, Mazo
-// `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
-// next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
+//   row 2: Territorio, 4 Apoyo zones, Mazo, Mazo-C
+// `flipped` (the opponent) turns it 180°, as if they sat across the table: rows and columns
+// both reversed, so their monsters sit next to the battle line and their Mazo is on THEIR right
+// (our left), like ours is on ours.
 function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick, slotPicker, onPickSlot, flashes, isMyBattle, attackTargetMode }) {
   const row = (r) => (flipped ? 3 - r : r);
+  const col = (c) => (flipped ? 8 - c : c);
   // In your Battle Phase your monsters that can still attack glow and the spent ones fade; once an
   // attacker is picked, the rival's monsters are marked as targets.
   const attackStateClass = (m) => {
@@ -806,7 +807,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       {player.field.monsters.map((m, i) => (
         <div
           key={`m${i}`}
-          style={{ gridRow: row(1), gridColumn: i + 1 }}
+          style={{ gridRow: row(1), gridColumn: col(i + 1) }}
           className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''} ${
             m && (m.instanceId === selectedAttacker || (fusion && isOwner && fusion.materials.has(m.instanceId))) ? styles.selected : ''
           } ${isPickable('monster', m, i) ? styles.pickable : ''} ${attackStateClass(m)}`}
@@ -863,19 +864,19 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       ))}
 
       <PileSlot
-        style={{ gridRow: row(1), gridColumn: 6 }}
+        style={{ gridRow: row(1), gridColumn: col(6) }}
         label='Cementerio'
         count={player.graveyard.length}
         onClick={() => onOpenPile('graveyard')}
       />
       <PileSlot
-        style={{ gridRow: row(1), gridColumn: 7 }}
+        style={{ gridRow: row(1), gridColumn: col(7) }}
         label='Exilio'
         count={player.banished.length}
         onClick={() => onOpenPile('banished')}
       />
 
-      <div style={{ gridRow: row(2), gridColumn: 1 }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio' onMouseEnter={() => player.field.territory && onHover({ cardId: player.field.territory.cardId, entry: player.field.territory, owner: isOwner ? 'me' : 'enemy', kind: 'support' })}>
+      <div style={{ gridRow: row(2), gridColumn: col(1) }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio' onMouseEnter={() => player.field.territory && onHover({ cardId: player.field.territory.cardId, entry: player.field.territory, owner: isOwner ? 'me' : 'enemy', kind: 'support' })}>
         {player.field.territory && (
           <>
             <img src={player.field.territory.image} alt={player.field.territory.name} title={player.field.territory.name} />
@@ -887,7 +888,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       {player.field.support.map((s, i) => (
         <div
           key={`s${i}`}
-          style={{ gridRow: row(2), gridColumn: i + 2 }}
+          style={{ gridRow: row(2), gridColumn: col(i + 2) }}
           className={`${styles.slot} ${isPickable('support', s, i) ? styles.pickable : ''}`}
           title='Soporte'
           onClick={() => (isPickable('support', s, i) ? onPickSlot(i) : s && isOwner && onSupportClick && onSupportClick(s))}
@@ -906,16 +907,16 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
 
       {isOwner ? (
         <PileSlot
-          style={{ gridRow: row(2), gridColumn: 7 }}
+          style={{ gridRow: row(2), gridColumn: col(7) }}
           label='Mazo-C'
           count={player.extra ? player.extra.length : player.extraCount}
           onClick={() => onOpenPile('extra')}
         />
       ) : (
-        <PileSlot style={{ gridRow: row(2), gridColumn: 7 }} label='Mazo-C' count={player.extraCount} />
+        <PileSlot style={{ gridRow: row(2), gridColumn: col(7) }} label='Mazo-C' count={player.extraCount} />
       )}
 
-      <PileSlot style={{ gridRow: row(2), gridColumn: 6 }} label='Mazo' count={player.deckCount} />
+      <PileSlot style={{ gridRow: row(2), gridColumn: col(6) }} label='Mazo' count={player.deckCount} />
     </div>
   );
 }
