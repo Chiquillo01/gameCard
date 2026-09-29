@@ -154,7 +154,8 @@ function applyStatus(ctx, args, targets) {
       fromCompiled: sourceIsCompiled(ctx),
       debuff: args.debuff || null,
     });
-    log(ctx.state, `Un monstruo queda en estado ${args.status}.`);
+    const target = m.faceDown ? 'Un monstruo boca abajo' : sourceName(ctx.state, instanceId);
+    log(ctx.state, `${target} queda en estado ${args.status} (por ${ctxSource(ctx)}).`);
   });
   if (args.burnOpponent) damageOpponent(ctx, { amount: args.burnOpponent });
 }

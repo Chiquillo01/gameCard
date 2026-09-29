@@ -356,3 +356,25 @@ describe('Keywords and "monstruo sin efecto"', () => {
     expect(matchesCardFilter(getCard(await idOf('Doppelganger')), { effectless: false })).toBe(true);
   });
 });
+
+describe('Espora Venenosa', () => {
+  it('turned face-up: one pick poisons that monster, which also loses 2 Atk, and the rival takes 2', async () => {
+    const state = await makeDuel();
+    const espora = await onField(state, 0, 'Espora Venenosa', { position: 'defense', faceDown: true });
+    const orco = await onField(state, 1, 'Orco Guerrero');
+    await onField(state, 1, 'Orco Gladiador');
+    monster(state, espora).summonedTurn = 0; // set on an earlier turn
+    toPhase(state, 'main1', 0);
+
+    expect(applyAction(state, 0, { type: 'CHANGE_POSITION', instanceId: espora, position: 'attack' })).toMatchObject({ ok: true, flipped: true });
+    expect(viewFor(state, 0).pendingTriggerChoice).toMatchObject({ kind: 'effect' });
+    // A single pick: the Atk loss goes to the monster just poisoned, nothing more is asked.
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [orco] }).ok).toBe(true);
+    expect(viewFor(state, 0).pendingTriggerChoice).toBeNull();
+
+    const poisoned = viewFor(state, 0).players[1].field.monsters.find((m) => m && m.instanceId === orco);
+    expect(poisoned).toMatchObject({ statuses: ['Veneno'], atk: 1, printedAtk: 3 });
+    expect(state.players[1].vp).toBe(STARTING_VP - 2);
+    expect(state.log.some((l) => l.message === 'Orco Guerrero queda en estado Veneno (por Espora Venenosa).')).toBe(true);
+  });
+});

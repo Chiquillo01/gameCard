@@ -169,7 +169,7 @@ describe('Nido de Avispas (first "Avispa" summoned while it is on the field)', (
     // -1 summoned, +1 searched: one of the two Avispas left the deck.
     expect(state.players[0].hand.length).toBe(handBefore);
     expect(state.players[0].deck.length).toBe(1);
-    const nidoFires = () => state.log.filter((l) => l.message.includes('NIDO_AVISPAS_FIRST_SUMMON')).length;
+    const nidoFires = () => state.log.filter((l) => l.message === 'Se activa el efecto de Nido de Avispas.').length;
     expect(nidoFires()).toBe(1);
 
     // A second Avispa summoned later does not fire the Nido again. Whichever wasp is still in the

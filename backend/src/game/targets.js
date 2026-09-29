@@ -94,6 +94,8 @@ function summonZonePool(ctx, zones, args) {
 // The pool of one action step, or null when that step doesn't involve a choice.
 function stepPool(ctx, step) {
   const args = step.args || {};
+  // Acts on what the step before it picked (effectEngine.resolveActions): nothing to ask for.
+  if (args.target === 'previous') return null;
   const { searchCandidates, SEARCH_FNS } = require('./effects/fieldActions');
   if (SEARCH_FNS.includes(step.fn)) return searchCandidates(ctx.state, ctx.controllerIndex, step.fn, args, ctx);
   switch (step.fn) {

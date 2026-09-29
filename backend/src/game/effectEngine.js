@@ -146,9 +146,17 @@ function resolveActions(ctx, effect, targets = []) {
   const exclude = ctx.costPaid || [];
   const assigned = assignPicks(ctx, effect, list, exclude);
   const byIndex = new Map(assigned.map((a) => [a.index, a]));
+  // What the last step that picked something acted on — for a step whose data says
+  // `target: 'previous'` ("el monstruo envenenado por este efecto pierde -2 Atk").
+  let previousTargets = [];
   activeSteps(effect, list).forEach(({ step, index }) => {
     const a = byIndex.get(index);
     let stepTargets;
+    if (step.args && step.args.target === 'previous') {
+      if (!previousTargets.length) return;
+      runAction(ctx, step, previousTargets);
+      return;
+    }
     if (a && a.pool) {
       // Pools are re-read right before each step runs: an earlier step may have moved cards.
       const { stepPool, stepCount } = require('./targets');
@@ -161,6 +169,7 @@ function resolveActions(ctx, effect, targets = []) {
         if (step.fn === 'destroy' || step.fn === 'destroyUpToHeroCount') ctx.destroyedCount = 0;
         return;
       }
+      previousTargets = stepTargets;
     } else {
       stepTargets = list.filter((t) => !exclude.includes(t) && !isToken(t));
     }
@@ -269,8 +278,8 @@ function runTriggered(state, ctx, effect, card, targets) {
     log(state, `No se puede pagar el coste de ${card.name}.`);
     return false;
   }
+  log(state, `Se activa el efecto de ${card.name}.`);
   resolveActions({ ...ctx, costPaid: ctx.paidCards || [] }, effect, targets.filter((t) => !costTaken.includes(t)));
-  log(state, `Efecto disparado: ${effect._id} (${card.name}).`);
   return true;
 }
 
