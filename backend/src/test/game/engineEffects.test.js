@@ -12,6 +12,7 @@ const { canAffect } = require('../../game/targets');
 const effects = require('../../data/seed/effects_final.json');
 const { seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster, instance, idOf } = require('./engineHelpers');
 const { STARTING_VP } = require('../../game/constants');
+const { placePending } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -272,11 +273,13 @@ describe('Actions and flags that used to do nothing', () => {
     const cazador = await toDeckTop(state, 0, 'Licántropo Cazador');
     const { summonByEffect } = require('../../game/effects/fieldActions');
     summonByEffect({ state, controllerIndex: 0, sourceInstanceId: alfa }, cazador);
+    placePending(state);
     recomputeContinuous(state);
     expect(monster(state, cazador).tempBuff.atk + monster(state, cazador).baseAtk).toBe(10);
     const beta = await toDeckTop(state, 0, 'Licántropo Beta');
     applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // battle
     applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // end of the Battle Phase
+    placePending(state);
     expect(monster(state, cazador)).toBeUndefined();
     expect(state.players[0].deck).toContain(cazador);
     expect(monster(state, beta)).toBeDefined();
@@ -435,6 +438,7 @@ describe('Cards that pick their target', () => {
     toPhase(state, 'main1', 0);
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: capitan, targets: [weak] }).ok).toBe(true);
     passAll(state);
+    placePending(state);
     expect(state.players[0].field.monsters.some((m) => m && m.instanceId === weak)).toBe(true);
   });
 

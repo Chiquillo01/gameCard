@@ -352,25 +352,18 @@ function allOwnedMonsters(state, controllerIndex) {
 }
 
 function summonTokenEntry(ctx, tokenDef) {
-  const pl = player(ctx.state, ctx.controllerIndex);
-  const slot = findEmptySlot(pl.field.monsters, corrodedSlots(pl, 'monsters'));
-  if (slot === -1) return;
-  const instanceId = `token:${tokenDef.name}:${Date.now()}:${Math.random().toString(36).slice(2, 6)}`;
-  pl.field.monsters[slot] = {
-    instanceId,
-    cardId: null,
-    isToken: true,
+  const { requestPlacement, freeMonsterSlots } = require('../placement');
+  if (!freeMonsterSlots(ctx.state, ctx.controllerIndex).length) {
+    log(ctx.state, `No hay espacio para la ficha ${tokenDef.name}.`);
+    return;
+  }
+  requestPlacement(ctx.state, {
+    purpose: 'token',
+    controllerIndex: ctx.controllerIndex,
     tokenDef,
-    position: 'attack',
-    faceDown: false,
-    baseAtk: tokenDef.atk || 0,
-    baseDef: tokenDef.def || 0,
-    summonedTurn: ctx.state.turnNumber,
-    hasAttacked: false,
-    attacksThisTurn: 0,
-    equips: [],
-    counters: {},
-  };
+    sourceInstanceId: ctx.sourceInstanceId,
+    prompt: `Elige dónde colocas la ficha ${tokenDef.name}`,
+  });
 }
 
 function summonTokens(ctx, args) {

@@ -6,6 +6,7 @@ const { applyAction, viewFor } = require('../../game/engine');
 const { payCost } = require('../../game/effects/costs');
 const { checkConditions } = require('../../game/effects/conditions');
 const { seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
+const { placePending } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -51,6 +52,7 @@ describe('Costs the data uses', () => {
     expect(state.players[0].graveyard).toEqual(expect.arrayContaining([bebe, wind]));
     expect(state.players[0].hand).toContain(fire);
     passAll(state);
+    placePending(state);
     expect(monster(state, roco)).toBeDefined();
   });
 

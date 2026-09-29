@@ -119,26 +119,26 @@ function growSelf(ctx, args) {
 function takeControl(ctx, args, targets) {
   const oppIdx = opponentIndex(ctx.controllerIndex);
   const opp = player(ctx.state, oppIdx);
-  const me = player(ctx.state, ctx.controllerIndex);
-  const candidates = opp.field.monsters.filter(Boolean).filter((m) => !m.faceDown || true);
+  const candidates = opp.field.monsters.filter(Boolean);
   const chosen = (targets && targets.length && candidates.find((m) => targets.includes(m.instanceId)))
     || pickRows(candidates.map((entry) => ({ entry })), { pick: 'strongest', count: 1 }).map((r) => r.entry)[0];
   if (!chosen) return;
-  const slot = findEmptySlot(me.field.monsters, corrodedSlots(me, 'monsters'));
-  if (slot === -1) {
+  const { requestPlacement, freeMonsterSlots } = require('../placement');
+  if (!freeMonsterSlots(ctx.state, ctx.controllerIndex).length) {
     log(ctx.state, 'No hay espacio para tomar el control del monstruo.');
     return;
   }
-  // Through removeFromZone, not a bare null assignment, so this also releases any Equipo cards
-  // that were on the stolen monster (per the rulebook, they don't follow it to the new controller).
-  removeFromZone(ctx.state, chosen.instanceId, { zone: 'field:monster', ownerIndex: oppIdx, slot: opp.field.monsters.indexOf(chosen) });
-  chosen.attackLockTurn = ctx.state.turnNumber;
-  if (args.changeBreed) chosen.breedOverride = args.changeBreed;
-  me.field.monsters[slot] = chosen;
-  log(ctx.state, `${me.userId} toma el control de ${getCard(chosen.cardId).name}.`);
-  if (args.destroyOthers) {
-    opp.field.monsters.filter(Boolean).forEach((m) => sendToGraveyard(ctx, { entry: m, ownerIndex: oppIdx }));
-  }
+  // The player picks the zone it goes to (placement.js moves it, turns it into a Ladrón and
+  // destroys the rest of that side once it's there).
+  requestPlacement(ctx.state, {
+    purpose: 'takeControl',
+    controllerIndex: ctx.controllerIndex,
+    instanceId: chosen.instanceId,
+    sourceInstanceId: chosen.instanceId,
+    changeBreed: args.changeBreed || null,
+    destroyOthers: !!args.destroyOthers,
+    prompt: `Elige dónde colocas ${getCard(chosen.cardId).name}`,
+  });
 }
 
 // --- Search actions: "añade a tu Mano X del Mazo/Cementerio/Exilio" --------------------------
@@ -222,15 +222,23 @@ const SEARCH_FNS = ['addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck',
 // announces the summon like any other — so its "en invocación" effects fire — and marks it as a
 // summon *by an effect*, which "cuando es invocado por el efecto de un Licano" cards react to.
 function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx.controllerIndex } = {}) {
-  if (!placeMonster(ctx.state, instanceId, ownerIndex, { position })) {
+  const { requestPlacement, freeMonsterSlots } = require('../placement');
+  if (!freeMonsterSlots(ctx.state, ownerIndex).length) {
     log(ctx.state, 'No hay espacio en el Campo para invocar.');
     return false;
   }
-  const card = getCard(cardIdFromInstance(instanceId));
-  log(ctx.state, `${player(ctx.state, ownerIndex).userId} invoca a ${card.name} por un efecto.`);
-  const { announceSummon } = require('../summon');
+  // The player picks the zone (placement.js places it and announces the summon, so its "en
+  // invocación" effects and "cuando es invocado por un efecto" reactions still fire).
   const by = ctx.sourceInstanceId && !String(ctx.sourceInstanceId).startsWith('token:') ? ctx.sourceInstanceId : null;
-  announceSummon(ctx.state, ownerIndex, instanceId, card, false, { byEffect: true, bySourceInstanceId: by, bySourceCardId: by ? cardIdFromInstance(by) : null });
+  requestPlacement(ctx.state, {
+    purpose: 'effectSummon',
+    controllerIndex: ownerIndex,
+    instanceId,
+    sourceInstanceId: instanceId,
+    position,
+    bySourceInstanceId: by,
+    prompt: `Elige dónde invocas ${getCard(cardIdFromInstance(instanceId)).name}`,
+  });
   return true;
 }
 

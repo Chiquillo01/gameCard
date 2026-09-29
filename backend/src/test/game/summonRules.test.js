@@ -6,7 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
-const { passChain } = require('./chainHelpers');
+const { passChain, placePending } = require('./chainHelpers');
 const { getCard } = require('../../game/cardIndex');
 const { placeMonster } = require('../../game/zones');
 const { STARTING_VP } = require('../../game/constants');
@@ -318,6 +318,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     placeMonster(state, b, 1, { position: 'attack' });
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: cap, targets: [a] }).ok).toBe(true);
     passChain(state);
+    placePending(state);
     expect(state.players[1].field.monsters.some(Boolean)).toBe(false);
     const stolen = [a, b].map((id) => onField(state, 0, id)).find(Boolean);
     expect(stolen.breedOverride).toBe('Ladrón');

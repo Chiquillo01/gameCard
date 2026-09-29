@@ -306,13 +306,16 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   const materials = entry.materials;
   entry.materials = []; // keep them out of the release-to-Mazo path in moveToZone
   moveToZone(state, instanceId, 'extra', controllerIndex);
-  materials.forEach((id) => {
-    placeMonster(state, id, controllerIndex, { position: 'attack' });
-    const back = pl.field.monsters.find((m) => m && m.instanceId === id);
-    if (back) back.attackLockTurn = state.turnNumber; // decompiling happens as the Battle Phase ends
-  });
   log(state, `${pl.userId} descompila a ${card.name}.`);
-  materials.forEach((id) => announceSummon(state, controllerIndex, id, getCard(cardIdFromInstance(id))));
+  // Each material back on the field where the player says, one at a time (placement.js).
+  const { requestPlacement } = require('./placement');
+  materials.forEach((id) => requestPlacement(state, {
+    purpose: 'decompile',
+    controllerIndex,
+    instanceId: id,
+    sourceInstanceId: id,
+    prompt: `Elige dónde vuelve ${getCard(cardIdFromInstance(id)).name}`,
+  }));
   recomputeContinuous(state);
   return { ok: true };
 }

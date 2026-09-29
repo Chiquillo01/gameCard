@@ -299,9 +299,11 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     state.pendingTriggerChoices.shift();
     if (pending.purpose === 'relocate') require('./effects/actions').relocateSelfFromChoice(state, pending, slot);
     else if (pending.purpose === 'equip') require('./effects/extraActions').equipFromChoice(state, pending, slot);
+    else if (require('./placement').isPlacement(pending)) require('./placement').finishPlacement(state, pending, slot);
     else require('./summon').finishHandTrigger(state, pending.controllerIndex, pending.sourceInstanceId, getEffect(pending.effectId), slot);
     recomputeContinuous(state);
     checkWin(state);
+    require('./placement').settlePlacements(state);
     require('./combat').resumeBattle(state);
     return { ok: true };
   }
@@ -315,6 +317,7 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     chosen.slice(0, need).forEach((id) => require('./zones').moveToZone(state, id, 'graveyard'));
     log(state, `${pl.userId} descarta ${need} carta(s).`);
     recomputeContinuous(state);
+    require('./placement').settlePlacements(state);
     require('./combat').resumeBattle(state);
     return { ok: true };
   }
@@ -331,6 +334,7 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
   recomputeContinuous(state);
   checkWin(state);
   // A battle a flip effect's pick had paused goes on to its damage step.
+  require('./placement').settlePlacements(state);
   require('./combat').resumeBattle(state);
   return { ok: true };
 }

@@ -6,7 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
-const { attackAndResolve } = require('./chainHelpers');
+const { attackAndResolve, placePending } = require('./chainHelpers');
 const { placeMonster, moveToZone, findInstanceLocation } = require('../../game/zones');
 const { addStatus, hasStatus, FREEZE, BURN, POISON } = require('../../game/statuses');
 const { recomputeContinuous } = require('../../game/effectEngine');
@@ -146,12 +146,30 @@ describe('Decompiling', () => {
   it('sends the compiled monster to the Mazo-C and summons the materials back on a later turn', async () => {
     const { state, fusionId, mats } = await compiled();
     advanceUntil(state, 3, 'battle');
-    const res = applyAction(state, 0, { type: 'DECOMPILE', instanceId: fusionId });;
+    const res = applyAction(state, 0, { type: 'DECOMPILE', instanceId: fusionId });
     expect(res.ok).toBe(true);
+    placePending(state); // where each material goes back
     expect(state.players[0].extra).toContain(fusionId);
     expect(monsterOf(state, 0, fusionId)).toBeUndefined();
     mats.forEach((id) => expect(monsterOf(state, 0, id)).toBeDefined());
     expect(state.players[0].deck).not.toEqual(expect.arrayContaining(mats));
+  });
+
+  it('the player puts each material back where they choose, one at a time', async () => {
+    const { state, fusionId, mats } = await compiled();
+    advanceUntil(state, 3, 'battle');
+    expect(applyAction(state, 0, { type: 'DECOMPILE', instanceId: fusionId }).ok).toBe(true);
+    const first = viewFor(state, 0).pendingTriggerChoice;
+    expect(first).toMatchObject({ kind: 'slot', zone: 'monster', card: { instanceId: mats[0] } });
+    expect(first.slots.length).toBeGreaterThan(1);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: 4 }).ok).toBe(true);
+    expect(state.players[0].field.monsters[4]).toMatchObject({ instanceId: mats[0] });
+    // The next one is asked with the zones still free (4 is taken now).
+    const second = viewFor(state, 0).pendingTriggerChoice;
+    expect(second).toMatchObject({ card: { instanceId: mats[1] } });
+    expect(second.slots).not.toContain(4);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: second.slots[0] }).ok).toBe(true);
+    expect(viewFor(state, 0).pendingTriggerChoice).toBeNull();
   });
 
   it('is refused when the materials would not fit on the field', async () => {

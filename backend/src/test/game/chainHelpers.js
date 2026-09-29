@@ -20,4 +20,16 @@ function attackAndResolve(state, playerIndex, attackerInstanceId, targetInstance
   return res;
 }
 
-module.exports = { passChain, attackAndResolve };
+// Answers every queued "where does it go" choice (a card an effect puts on the field) with the
+// first free zone — for tests that aren't about where it lands.
+function placePending(state) {
+  let guard = 0;
+  while (guard++ < 20) {
+    const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
+    if (!pending || pending.kind !== 'slot') return;
+    const res = applyAction(state, pending.controllerIndex, { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] });
+    if (!res.ok) throw new Error('placePending: unexpected result ' + JSON.stringify(res));
+  }
+}
+
+module.exports = { passChain, attackAndResolve, placePending };
