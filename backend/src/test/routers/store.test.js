@@ -34,6 +34,13 @@ const makeCard = (overrides) =>
     ...overrides,
   });
 
+// 3 commons, 2 rare-or-epic, 1 epic-or-legendary: 6 cards, like the real chests.
+const TEST_DROP_TABLE = [
+  { count: 3, odds: { common: 1 } },
+  { count: 2, odds: { rare: 0.8, epic: 0.2 } },
+  { count: 1, odds: { epic: 0.9, legendary: 0.1 } },
+];
+
 describe('Store Controller TEST', () => {
   let userToken;
   let adminToken;
@@ -61,6 +68,7 @@ describe('Store Controller TEST', () => {
       imageUrl: 'chest.png',
       expansion: 'ChestExpansion',
       category: 'chest',
+      dropTable: TEST_DROP_TABLE,
     });
     await chest.save();
     chestId = chest._id.toString();
@@ -132,6 +140,71 @@ describe('Store Controller TEST', () => {
     });
   });
 
+  describe('Chests: what they give and when they charge', () => {
+    const { UserCollection } = require('../../data/Schema/userCollection');
+    let token;
+    let userId;
+
+    const register = async (name) => {
+      const email = `${name.toLowerCase()}@gmail.com`;
+      await fakeRequest.post('/auth/register').send({ userName: name, email, password: '123456Ab' });
+      const login = await fakeRequest.post('/auth/login').send({ email, password: '123456Ab' });
+      const user = await User.findOne({ email });
+      return { token: login.body.token, userId: user._id };
+    };
+    const collectionSize = async (id) => {
+      const col = await UserCollection.findOne({ userId: id });
+      return col ? col.cards.reduce((s, c) => s + c.amount, 0) : 0;
+    };
+    const buy = (id, body, t = token) => fakeRequest.post(`/store/products/${id}/buy-chest`).set('Authorization', `Bearer ${t}`).send(body);
+
+    beforeAll(async () => {
+      ({ token, userId } = await register('ChestChecker'));
+    });
+
+    it('a chest from an expansion with no cards gives nothing and charges nothing', async () => {
+      const empty = await new StoreProduct({ name: 'Empty Chest', description: 'x', price: { pixelcoins: 100 }, reward: { cards: 6 }, imageUrl: 'e.png', expansion: 'NoSuchExpansion', category: 'chest', dropTable: TEST_DROP_TABLE }).save();
+      const response = await buy(empty._id, { paymentMethod: 'pixelcoins' });
+      expect(response.status).toBe(404);
+      expect((await User.findById(userId)).pixelcoins).toBe(1000);
+      expect(await collectionSize(userId)).toBe(0);
+    });
+
+    it('fills a slot with the nearest rarity the expansion has, and gives the drop table\'s count', async () => {
+      await Promise.all([makeCard({ name: 'Only Common A', rarity: 'common', expansion: 'CommonsOnly' }).save(), makeCard({ name: 'Only Common B', rarity: 'common', expansion: 'CommonsOnly' }).save()]);
+      const commons = await new StoreProduct({ name: 'Commons Chest', description: 'x', price: { pixelcoins: 100 }, reward: { cards: 5 }, imageUrl: 'c.png', expansion: 'CommonsOnly', category: 'spEdition', dropTable: [{ count: 2, odds: { common: 1 } }, { count: 3, odds: { rare: 1 } }] }).save();
+      const response = await buy(commons._id, { paymentMethod: 'pixelcoins' });
+      expect(response.status).toBe(200);
+      expect(response.body.obtainedCards).toHaveLength(5);
+      expect(response.body.obtainedCards.every((c) => c.rarity === 'common' && c.name.startsWith('Only Common'))).toBe(true);
+      expect(await collectionSize(userId)).toBe(5);
+    });
+
+    it('refuses to open a product that is not a chest', async () => {
+      const before = (await User.findById(userId)).pixelcoins;
+      const response = await buy(structureDeckId, { paymentMethod: 'pixelcoins' });
+      expect(response.status).toBe(400);
+      expect((await User.findById(userId)).pixelcoins).toBe(before);
+    });
+
+    it('two purchases at the same time can only spend the coins once', async () => {
+      const racer = await register('Racer');
+      await User.updateOne({ _id: racer.userId }, { pixelcoins: 100 });
+      const results = await Promise.all([buy(chestId, { paymentMethod: 'pixelcoins' }, racer.token), buy(chestId, { paymentMethod: 'pixelcoins' }, racer.token)]);
+      expect(results.map((r) => r.status).sort()).toEqual([200, 410]);
+      expect((await User.findById(racer.userId)).pixelcoins).toBe(0);
+      expect(await collectionSize(racer.userId)).toBe(6);
+    });
+
+    it('every chest in the store data has a drop table that adds up to its card count', () => {
+      const products = require('../../data/seed/store_products_final.json');
+      products.filter((p) => ['chest', 'spEdition'].includes(p.category)).forEach((p) => {
+        const total = (p.dropTable || []).reduce((s, slot) => s + slot.count, 0);
+        expect({ name: p.name, total }).toEqual({ name: p.name, total: p.reward.cards });
+      });
+    });
+  });
+
   describe('POST /store/products/:productId/buy-chest with `quantity` (bulk purchase)', () => {
     let bulkBuyerToken;
     let cheapChestId;
@@ -156,6 +229,7 @@ describe('Store Controller TEST', () => {
         imageUrl: 'chest3.png',
         expansion: 'ChestExpansion',
         category: 'chest',
+        dropTable: TEST_DROP_TABLE,
       });
       await cheapChest.save();
       cheapChestId = cheapChest._id.toString();

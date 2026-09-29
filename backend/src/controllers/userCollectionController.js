@@ -1,5 +1,4 @@
 const { UserCollection } = require('../data/Schema/userCollection');
-const { Card } = require('../data/Schema/card');
 
 const getUserCollection = async (req, res) => {
   try {
@@ -41,59 +40,7 @@ const cardForUserDeleteById = async (req, res) => {
   }
 };
 
-const cardsObtainedFromChests = async (userId, chestData) => {
-  const allCards = await Card.find();
-  const chestCards = allCards.filter((card) => card.expansion === chestData.expansion);
-  const cardsRarityInChest = {
-    common: chestCards.filter((card) => card.rarity === 'common'),
-    rare: chestCards.filter((card) => card.rarity === 'rare'),
-    epic: chestCards.filter((card) => card.rarity === 'epic'),
-    legendary: chestCards.filter((card) => card.rarity === 'legendary'),
-  };
-
-  const getRandomCard = (cardList) => {
-    if (cardList.length === 0) return null;
-    const selectedCard = cardList[Math.floor(Math.random() * cardList.length)];
-    return { cardId: selectedCard._id, name: selectedCard.name };
-  };
-
-  let selectedCards = [];
-
-  for (let i = 0; i < 3; i++) {
-    selectedCards.push({ ...getRandomCard(cardsRarityInChest.common), rarity: 'common' });
-  }
-
-  for (let i = 0; i < 2; i++) {
-    let rarity = Math.random() < 0.2 ? 'epic' : 'rare';
-    selectedCards.push({ ...getRandomCard(cardsRarityInChest[rarity]), rarity });
-  }
-
-  let finalRarity = Math.random() < 0.1 ? 'legendary' : 'epic';
-  selectedCards.push({ ...getRandomCard(cardsRarityInChest[finalRarity]), rarity: finalRarity });
-  selectedCards = selectedCards.filter((card) => card.cardId !== undefined);
-
-  let userCollection = await UserCollection.findOne({ userId });
-  if (!userCollection) {
-    userCollection = new UserCollection({ userId, cards: [] });
-  }
-
-  selectedCards.forEach(({ cardId }) => {
-    const existingCard = userCollection.cards.find((card) => card.cardId.toString() === cardId.toString());
-
-    if (existingCard) {
-      existingCard.amount += 1;
-    } else {
-      userCollection.cards.push({ cardId, amount: 1 });
-    }
-  });
-
-  userCollection.markModified('cards');
-  await userCollection.save();
-  return selectedCards;
-};
-
 module.exports = {
   getUserCollection,
   cardForUserDeleteById,
-  cardsObtainedFromChests,
 };

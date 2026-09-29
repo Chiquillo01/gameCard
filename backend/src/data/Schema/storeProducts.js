@@ -19,6 +19,24 @@ const StoreProductSchema = new Schema({
     required: true,
     enum: ['chest', 'structure', 'pixelgems', 'spEdition'],
   },
+  // What a chest (category 'chest'/'spEdition') gives, slot by slot: `count` cards each, with the
+  // relative odds of each rarity. The cards themselves are drawn from the product's expansion
+  // (services/storeRewards.js); `reward.cards` must add up to the same total.
+  dropTable: {
+    type: [
+      {
+        _id: false,
+        count: { type: Number, required: true, min: 1 },
+        odds: {
+          common: { type: Number, default: 0 },
+          rare: { type: Number, default: 0 },
+          epic: { type: Number, default: 0 },
+          legendary: { type: Number, default: 0 },
+        },
+      },
+    ],
+    default: [],
+  },
   // Exact cards making up a structure deck (category:'structure'); the buyer gets exactly
   // these, unlike chests which draw randomly from an expansion. `amount` lets a deck include
   // several copies of the same card (e.g. 3x "Arboleda") without relying on repeated names,

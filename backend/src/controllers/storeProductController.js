@@ -2,8 +2,7 @@ const { StoreProduct } = require('../data/Schema/storeProducts');
 const { User } = require('../data/Schema/user');
 const { Order } = require('../data/Schema/order');
 const { Card } = require('../data/Schema/card');
-const { UserCollection } = require('../data/Schema/userCollection');
-const { cardsObtainedFromChests } = require('./userCollectionController');
+const { drawChest, addCardsToCollection, charge, refund } = require('../services/storeRewards');
 
 const PAYMENT_METHODS = ['pixelcoins', 'pixelgems'];
 // Upper bound on a single bulk purchase, so a crafted request can't ask for an absurd quantity.
@@ -25,12 +24,6 @@ const canAfford = (user, product, paymentMethod, quantity = 1) => {
   const unitCost = product.price[paymentMethod];
   if (!unitCost) return false;
   return user[paymentMethod] >= unitCost * quantity;
-};
-
-// Charges `product.price[paymentMethod] * quantity` to `user[paymentMethod]`, mutating `user` in
-// place. Only call once `canAfford` has already confirmed the purchase is valid.
-const chargeUser = (user, product, paymentMethod, quantity = 1) => {
-  user[paymentMethod] -= product.price[paymentMethod] * quantity;
 };
 
 const getProducts = async (req, res) => {
@@ -99,212 +92,162 @@ const updateProduct = async (req, res) => {
   }
 };
 
+// Every purchase: checks first (product, category, payment method, balance), then the atomic
+// charge, then handing out what was bought — refunded if that part fails, so nothing is ever
+// given without being paid or paid without being given.
+
+const orderFor = (user, product, quantity, balanceBefore) =>
+  new Order({
+    userId: user._id,
+    products: Array(quantity).fill({
+      productId: product._id,
+      name: product.name,
+      price: product.price,
+      reward: product.reward,
+    }),
+    totalPrice: {
+      pixelcoins: (product.price.pixelcoins || 0) * quantity,
+      pixelgems: (product.price.pixelgems || 0) * quantity,
+      euros: (product.price.euros || 0) * quantity,
+    },
+    previousBalance: balanceBefore,
+    newBalance: { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems },
+    status: 'completada',
+  });
+
+const balanceOf = (user) => ({ pixelcoins: user.pixelcoins, pixelgems: user.pixelgems });
+
+// The balance before a charge, from the updated user and what the charge changed.
+const balanceBefore = (user, paymentMethod, cost, credit = {}) => {
+  const before = balanceOf(user);
+  before[paymentMethod] += cost;
+  Object.entries(credit).forEach(([k, v]) => { before[k] -= v; });
+  return before;
+};
+
+// The product for a purchase route, only if it is of one of `categories`.
+const productFor = async (req, categories) => {
+  const product = await StoreProduct.findById(req.params.productId);
+  if (!product) return { status: 404, error: 'Producto no encontrado' };
+  if (!categories.includes(product.category)) return { status: 400, error: 'Este producto no se compra así.' };
+  return { product };
+};
+
+const CHEST_CATEGORIES = ['chest', 'spEdition'];
+
 const buyChest = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
-    const { productId, paymentMethod } = req.body;
+    const { paymentMethod } = req.body;
     const quantity = parseQuantity(req.body.quantity);
-    if (quantity === null) return res.status(400).send();
+    if (quantity === null) return res.status(400).json({ error: 'Cantidad inválida.' });
+
+    const { product, status, error } = await productFor(req, CHEST_CATEGORIES);
+    if (!product) return res.status(status).json({ error });
 
     const user = await User.findById(userId);
-    if (!user) return res.status(404).send();
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (!canAfford(user, product, paymentMethod, quantity)) return res.status(410).json({ error: 'Saldo insuficiente' });
 
-    const chestData = await StoreProduct.findOne({ _id: productId });
-    if (!chestData) return res.status(404).send();
-
-    if (!canAfford(user, chestData, paymentMethod, quantity)) return res.status(410).send();
-
-    const previousBalance = { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems };
-
-    // Each chest is drawn and saved to the collection independently, in sequence, so a card
-    // pulled by one chest is already reflected before the next chest's own draw. The user isn't
-    // charged until every chest in the batch has drawn successfully.
+    // Every chest is drawn before anything is charged or handed out.
     let obtainedCards = [];
     for (let i = 0; i < quantity; i++) {
       // eslint-disable-next-line no-await-in-loop
-      const cardsFromOneChest = await cardsObtainedFromChests(userId, chestData);
-      if (cardsFromOneChest.length !== chestData.reward.cards) return res.status(404).send();
-      obtainedCards = obtainedCards.concat(cardsFromOneChest);
+      const cards = await drawChest(product);
+      if (!cards) return res.status(404).json({ error: 'Este cofre aún no tiene cartas.' });
+      obtainedCards = obtainedCards.concat(cards);
     }
 
-    chargeUser(user, chestData, paymentMethod, quantity);
-    await user.save();
+    const cost = product.price[paymentMethod] * quantity;
+    const charged = await charge(userId, paymentMethod, cost);
+    if (!charged) return res.status(410).json({ error: 'Saldo insuficiente' });
+    try {
+      await addCardsToCollection(userId, obtainedCards);
+    } catch (e) {
+      await refund(userId, paymentMethod, cost);
+      throw e;
+    }
 
-    const newBalance = {
-      pixelcoins: user.pixelcoins,
-      pixelgems: user.pixelgems,
-    };
-
-    const newOrder = new Order({
-      userId: user._id,
-      products: Array(quantity).fill({
-        productId: chestData._id,
-        name: chestData.name,
-        price: chestData.price,
-        reward: chestData.reward,
-      }),
-      totalPrice: {
-        pixelcoins: (chestData.price.pixelcoins || 0) * quantity,
-        pixelgems: (chestData.price.pixelgems || 0) * quantity,
-        euros: (chestData.price.euros || 0) * quantity,
-      },
-      previousBalance,
-      newBalance,
-      status: 'completada',
-    });
-
-    await newOrder.save();
-    res.status(200).json({
-      obtainedCards,
-      newBalance,
-    });
+    await orderFor(charged, product, quantity, balanceBefore(charged, paymentMethod, cost)).save();
+    res.status(200).json({ obtainedCards, newBalance: balanceOf(charged) });
   } catch (e) {
-    res.status(500).send();
+    res.status(500).json({ error: 'Error al comprar el cofre' });
   }
 };
 
 const buyStructureDeck = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
-    const { productId, paymentMethod } = req.body;
+    const { paymentMethod } = req.body;
     const quantity = parseQuantity(req.body.quantity);
-    if (quantity === null) return res.status(400).send();
+    if (quantity === null) return res.status(400).json({ error: 'Cantidad inválida.' });
 
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).send();
-
-    const product = await StoreProduct.findOne({ _id: productId, category: 'structure' });
-    if (!product) return res.status(404).send();
+    const { product, status, error } = await productFor(req, ['structure']);
+    if (!product) return res.status(status).json({ error });
 
     const cardNames = product.structureCards.map((sc) => sc.name);
-    const cardDocsByName = new Map(
-      (await Card.find({ name: { $in: cardNames } })).map((c) => [c.name, c]),
-    );
-    if (cardDocsByName.size !== cardNames.length) return res.status(404).send();
+    const cardDocsByName = new Map((await Card.find({ name: { $in: cardNames } })).map((c) => [c.name, c]));
+    if (cardDocsByName.size !== cardNames.length) return res.status(404).json({ error: 'Este mazo tiene cartas que ya no existen.' });
 
-    if (!canAfford(user, product, paymentMethod, quantity)) return res.status(410).send();
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (!canAfford(user, product, paymentMethod, quantity)) return res.status(410).json({ error: 'Saldo insuficiente' });
 
-    const previousBalance = { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems };
-    chargeUser(user, product, paymentMethod, quantity);
-    await user.save();
-
-    let userCollection = await UserCollection.findOne({ userId });
-    if (!userCollection) {
-      userCollection = new UserCollection({ userId, cards: [] });
-    }
-
-    // Expand each { name, amount } entry into that many individual copies, times how many decks
-    // were bought, so the response (and the collection update below) reflect exactly the cards
-    // the purchase promises.
+    // Each { name, amount } entry as that many copies, times how many decks were bought.
     const obtainedCards = product.structureCards.flatMap(({ name, amount }) => {
       const card = cardDocsByName.get(name);
-      return Array(amount * quantity).fill({ cardId: card._id, name: card.name });
-    });
-    obtainedCards.forEach(({ cardId }) => {
-      const existingCard = userCollection.cards.find((card) => card.cardId.toString() === cardId.toString());
-      if (existingCard) {
-        existingCard.amount += 1;
-      } else {
-        userCollection.cards.push({ cardId, amount: 1 });
-      }
+      return Array(amount * quantity).fill({ cardId: card._id, name: card.name, image: card.image, rarity: card.rarity });
     });
 
-    userCollection.markModified('cards');
-    await userCollection.save();
+    const cost = product.price[paymentMethod] * quantity;
+    const charged = await charge(userId, paymentMethod, cost);
+    if (!charged) return res.status(410).json({ error: 'Saldo insuficiente' });
+    try {
+      await addCardsToCollection(userId, obtainedCards);
+    } catch (e) {
+      await refund(userId, paymentMethod, cost);
+      throw e;
+    }
 
-    const newBalance = {
-      pixelcoins: user.pixelcoins,
-      pixelgems: user.pixelgems,
-    };
-
-    const newOrder = new Order({
-      userId: user._id,
-      products: Array(quantity).fill({
-        productId: product._id,
-        name: product.name,
-        price: product.price,
-        reward: product.reward,
-      }),
-      totalPrice: {
-        pixelcoins: (product.price.pixelcoins || 0) * quantity,
-        pixelgems: (product.price.pixelgems || 0) * quantity,
-        euros: (product.price.euros || 0) * quantity,
-      },
-      previousBalance,
-      newBalance,
-      status: 'completada',
-    });
-
-    await newOrder.save();
-    res.status(200).json({
-      obtainedCards,
-      newBalance,
-    });
+    await orderFor(charged, product, quantity, balanceBefore(charged, paymentMethod, cost)).save();
+    res.status(200).json({ obtainedCards, newBalance: balanceOf(charged) });
   } catch (e) {
-    res.status(500).send();
+    res.status(500).json({ error: 'Error al comprar el mazo' });
   }
 };
 
 const buyCurrency = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
-    const { productId } = req.params;
+    const { paymentMethod } = req.body;
     const quantity = parseQuantity(req.body.quantity);
     if (quantity === null) return res.status(400).json({ error: 'Cantidad inválida.' });
 
-    const { paymentMethod } = req.body;
-
-    const product = await StoreProduct.findById(productId);
-    if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
-
+    const { product, status, error } = await productFor(req, ['pixelgems']);
+    if (!product) return res.status(status).json({ error });
     if (!product.reward.pixelgems || product.reward.pixelgems <= 0) {
       return res.status(400).json({ error: 'Este producto no es un pack de pixelgems válido.' });
     }
 
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-
     // A pack is only handed out once it's actually been paid for. Packs priced in in-game currency
     // are charged like any other product; packs priced in euros need a real payment provider that
-    // confirms the charge server-side, and there isn't one yet — so they can't be bought at all,
-    // instead of being given away for free as before.
+    // confirms the charge server-side, and there isn't one yet — so they can't be bought at all.
     if (!PAYMENT_METHODS.includes(paymentMethod) || !product.price[paymentMethod]) {
       return res.status(402).json({ error: 'Los pagos con dinero real aún no están disponibles.' });
     }
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
     if (!canAfford(user, product, paymentMethod, quantity)) return res.status(410).json({ error: 'Saldo insuficiente' });
 
-    const previousBalance = { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems };
+    const cost = product.price[paymentMethod] * quantity;
+    const credit = { pixelgems: product.reward.pixelgems * quantity };
+    const charged = await charge(userId, paymentMethod, cost, credit);
+    if (!charged) return res.status(410).json({ error: 'Saldo insuficiente' });
 
-    chargeUser(user, product, paymentMethod, quantity);
-    user.pixelgems += product.reward.pixelgems * quantity;
-
-    await user.save();
-
-    const newOrder = new Order({
-      userId: user._id,
-      products: Array(quantity).fill({
-        productId: product._id,
-        name: product.name,
-        price: product.price,
-        reward: product.reward,
-      }),
-      totalPrice: {
-        pixelcoins: (product.price.pixelcoins || 0) * quantity,
-        pixelgems: (product.price.pixelgems || 0) * quantity,
-        euros: (product.price.euros || 0) * quantity,
-      },
-      previousBalance,
-      newBalance: { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems },
-      status: 'completada',
-    });
-
-    await newOrder.save();
-
-    res.status(200).json({
-      message: 'Compra de pixelgems realizada con éxito',
-      newBalance: { pixelcoins: user.pixelcoins, pixelgems: user.pixelgems },
-      order: newOrder,
-    });
+    const order = orderFor(charged, product, quantity, balanceBefore(charged, paymentMethod, cost, credit));
+    await order.save();
+    res.status(200).json({ message: 'Compra de pixelgems realizada con éxito', newBalance: balanceOf(charged), order });
   } catch (error) {
     res.status(500).json({ error: 'Error al procesar la compra de pixelgems' });
   }

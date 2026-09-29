@@ -29,6 +29,8 @@ const Store = () => {
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
   const [obtainedCards, setObtainedCards] = useState([]);
   const [openedProductImage, setOpenedProductImage] = useState(null);
+  // 'loading' until the catalog arrives, then 'ready' — or 'error' if it couldn't be fetched.
+  const [loadState, setLoadState] = useState('loading');
 
   // Fetch the catalog once on mount — GET /store/products is public and doesn't need the user
   // to be loaded first. Gating this behind the user query (as before) meant that on a fresh
@@ -37,7 +39,12 @@ const Store = () => {
   useEffect(() => {
     const fetchStoreData = async () => {
       const fetchedProducts = await getProducts();
+      if (!fetchedProducts) {
+        setLoadState('error');
+        return;
+      }
       setProducts(fetchedProducts.filter(hasRealImage));
+      setLoadState('ready');
     };
 
     fetchStoreData();
@@ -124,6 +131,7 @@ const Store = () => {
           <div className={styles.productsContainer}>
             <ProductList
               products={filteredProducts}
+              loadState={loadState}
               onBuy={(product, paymentMethod, quantity, closeModal) =>
                 handleBuyProduct(product, paymentMethod, quantity, getBuyFunction(product.category), closeModal)
               }

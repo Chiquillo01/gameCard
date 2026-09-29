@@ -40,6 +40,16 @@ sirve de referencia:
 - No existe comprar.
 - Retirar una carta de la venta no la devuelve a la colección, así que se pierde.
 
+## Tienda
+
+- **Cómo se consiguen monedas y gemas:** se empieza con 1000 monedas y 0 gemas, las partidas no
+  dan recompensa y los packs de gemas son con euros (aún sin pasarela de pago). Se implementará más
+  adelante.
+- **Cofres de expansiones sin cartas:** Sombras del Bosque Encantado, Perdición del Arrecife Oculto
+  y Nacimiento de la Magia (SBE, PAO, NDM) no tienen cartas todavía; comprarlos da error sin cobrar.
+- **Precio en gemas de Tiempo Primitivo:** 400 gemas, cuando la relación de los cofres (100
+  monedas = 10 gemas) daría 40. Por decidir.
+
 ## Antes de la beta
 
 - **URLs fijas en el código:** los sockets apuntan a `http://localhost:3001` (Duelo y Amigos) y el
@@ -51,8 +61,6 @@ sirve de referencia:
   (Redis). Detrás de un proxy (Koyeb) hay que poner `TRUST_PROXY=1` en el `.env` para que cuente
   por la IP real del cliente.
 - **CORS de la API abierto a cualquier origen** (`cors()` sin opciones).
-- **Carrera en las compras de la tienda:** dos compras a la vez pueden cobrar solo una; y si un
-  cofre falla a mitad, las cartas ya dadas no se cobran. Hacerlo con operaciones atómicas.
 - **Mongoose 6** está desfasado (actual: 8).
 - **5 avisos moderados de `npm audit`** en las herramientas de test del frontend (vitest 3);
   arreglarlos exige saltar a vitest 5.
