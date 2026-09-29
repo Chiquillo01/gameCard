@@ -52,6 +52,50 @@ describe('Duel view: Atk/Vida changes', () => {
   });
 });
 
+describe('Duel view: why the duel ended', () => {
+  it('says so when a player is left with no VP', async () => {
+    const state = await makeDuel();
+    state.players[1].name = 'Luis';
+    state.players[1].vp = 0;
+    require('../../game/outcome').checkWin(state);
+    const view = viewFor(state, 0);
+    expect(view).toMatchObject({ status: 'finished', winnerIndex: 0, endReason: 'Luis se queda sin VP y pierde la partida.' });
+    expect(view.log[view.log.length - 1].message).toBe(view.endReason);
+  });
+
+  it('keeps playing however far ahead a player is (no win for triple VP)', async () => {
+    const state = await makeDuel();
+    state.players[0].vp = 58;
+    state.players[1].vp = 14;
+    require('../../game/outcome').checkWin(state);
+    expect(state.status).toBe('active');
+  });
+
+  it('says who surrendered', async () => {
+    const state = await makeDuel();
+    state.players[1].name = 'Luis';
+    expect(applyAction(state, 1, { type: 'SURRENDER' }).ok).toBe(true);
+    expect(viewFor(state, 0)).toMatchObject({ winnerIndex: 0, endReason: 'Luis se rinde.' });
+  });
+});
+
+describe('Espíritu de batalla', () => {
+  it('gives +1 Atk per monster the rival controls, not per monster on the whole field', async () => {
+    const state = await makeDuel();
+    const orco = await onField(state, 0, 'Orco Guerrero');
+    await onField(state, 0, 'Slime');
+    await onField(state, 1, 'Slime');
+    await onField(state, 1, 'Valkiria');
+    const espiritu = placeSupport(state, await instance(0, 'Espíritu de batalla'), 0, { faceDown: false });
+    espiritu.equippedTo = orco;
+    recomputeContinuous(state);
+    expect(fieldView(state, 0, orco)).toMatchObject({
+      atk: 3 + 2,
+      statMods: [{ source: 'Espíritu de batalla', atk: 2, def: 0, kind: 'continuous' }],
+    });
+  });
+});
+
 describe('Duel view: battles and log', () => {
   it('keeps the last battle step by step and shows player names instead of ids', async () => {
     const state = await makeDuel();

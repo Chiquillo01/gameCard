@@ -10,6 +10,7 @@ const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone,
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
 const { checkConditions } = require('./effects/conditions');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
+const { STARTING_VP } = require('./constants');
 const { describeEffect } = require('./effectLabels');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
 
@@ -141,8 +142,7 @@ function applyAction(state, playerIndex, action) {
       return resolveTriggerChoice(state, playerIndex, action.targets || [], action.slot ?? null);
 
     case 'SURRENDER': {
-      state.winnerIndex = opponentIndex(playerIndex);
-      state.status = 'finished';
+      require('./outcome').surrender(state, playerIndex);
       return { ok: true };
     }
 
@@ -185,6 +185,9 @@ function viewFor(state, viewerIndex) {
     turnPlayer: state.turnPlayer,
     phase: state.phase,
     winnerIndex: state.winnerIndex,
+    startingVp: STARTING_VP, // what the VP bars are measured against
+    // Why the duel ended ("se queda sin VP", "se rinde"...), once it has.
+    endReason: state.endReason ? readableLogLine(state, { message: state.endReason }, names).message : null,
     you: viewerIndex,
     players: state.players.map(redactPlayer),
     log: state.log.slice(-80).map((line) => readableLogLine(state, line, names)),

@@ -11,6 +11,7 @@ const { registry } = require('../../game/effects/actions');
 const { canAffect } = require('../../game/targets');
 const effects = require('../../data/seed/effects_final.json');
 const { seedCatalog, makeDuel, toHand, toDeckTop, onField, toPhase, passAll, monster, instance, idOf } = require('./engineHelpers');
+const { STARTING_VP } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -127,7 +128,7 @@ describe('Choices and picks', () => {
     expect(activate(state, 0, 'DRACULA_CHOICE', dracula, ['choice:1', valkiria]).ok).toBe(true);
     passAll(state);
     expect(monster(state, valkiria)).toBeUndefined();
-    expect(state.players[0].vp).toBe(80 - 10 + 11); // paid 10 VP, recovered Valkiria's 11 Atk
+    expect(state.players[0].vp).toBe(STARTING_VP - 10 + 11); // paid 10 VP, recovered Valkiria's 11 Atk
     expect(state.players[0].pixelcoins).toBe(12); // the other option didn't run
   });
 
@@ -198,7 +199,7 @@ describe('Actions and flags that used to do nothing', () => {
     recomputeContinuous(state);
     toPhase(state, 'main1', 1);
     expect(activate(state, 1, 'CUBO_GELATINOSO_NEGATE', cubo).ok || activate(state, 1, 'CUBO_GELATINOSO_NEGATE', cubo, [state.players[0].field.monsters.find(Boolean).instanceId]).ok).toBe(true);
-    expect(state.players[1].vp).toBe(80 - 5);
+    expect(state.players[1].vp).toBe(STARTING_VP - 5);
   });
 
   it('Héroe Corrupto: the rival\'s monsters lose the same as it does', async () => {
@@ -252,13 +253,13 @@ describe('Actions and flags that used to do nothing', () => {
     registry.drawCards({ state, controllerIndex: 1 }, { amount: 2 });
     registry.gainVP({ state, controllerIndex: 1 }, { amount: 4 });
     expect(state.players[0].hand.length).toBe(hand + 2);
-    expect(state.players[0].vp).toBe(84);
+    expect(state.players[0].vp).toBe(STARTING_VP + 4);
   });
 
   it('Moneda de la Fortuna runs the step the coin picks', async () => {
     const state = await makeDuel();
     registry.coinFlip({ state, controllerIndex: 0 }, getEffect('MONEDA_FORTUNA_COINFLIP').actions[0].args);
-    expect(state.players[0].vp).toBe(state.lastCoinFlip ? 83 : 77);
+    expect(state.players[0].vp).toBe(state.lastCoinFlip ? STARTING_VP + 3 : STARTING_VP - 3);
   });
 
   it('Licántropo Cazador summoned by a Licano\'s effect: Atk 10 until the end of the next turn, and back to the Mazo at the end of the Battle Phase, bringing out another Licano', async () => {

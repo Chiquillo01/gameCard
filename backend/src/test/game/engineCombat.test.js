@@ -6,6 +6,7 @@ const { recomputeContinuous } = require('../../game/effectEngine');
 const { placeSupport } = require('../../game/zones');
 const { checkWin } = require('../../game/outcome');
 const { seedCatalog, makeDuel, toHand, toDeckTop, onField, toPhase, passAll, monster, instance } = require('./engineHelpers');
+const { STARTING_VP } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -39,7 +40,7 @@ describe('Responding to an attack', () => {
 
     expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: trampa }).ok).toBe(true);
     passAll(state);
-    expect(state.players[1].vp).toBe(80);
+    expect(state.players[1].vp).toBe(STARTING_VP);
     expect(state.players[1].graveyard).toContain(trampa);
     expect(state.phase).toBe('main2');
   });
@@ -58,11 +59,11 @@ describe('Responding to an attack', () => {
     expect(declare(state, 0, attacker)).toMatchObject({ ok: true, responseWindow: true });
     expect(state.chain).toHaveLength(1);
     expect(state.priorityPlayer).toBe(1);
-    expect(state.players[1].vp).toBe(80);
+    expect(state.players[1].vp).toBe(STARTING_VP);
     // Declaring already counts as the attacker's pass: one pass from the defender resolves it.
     expect(applyAction(state, 1, { type: 'PASS_CHAIN' }).ok).toBe(true);
     expect(state.chain).toHaveLength(0);
-    expect(state.players[1].vp).toBe(80 - 3);
+    expect(state.players[1].vp).toBe(STARTING_VP - 3);
   });
 });
 
@@ -107,7 +108,7 @@ describe('Battle events', () => {
     await onField(state, 1, 'Slime');
     toPhase(state, 'battle', 0);
     expect(attack(state, 0, acechador)).toMatchObject({ ok: true });
-    expect(state.players[1].vp).toBe(80 - 1);
+    expect(state.players[1].vp).toBe(STARTING_VP - 1);
     expect(monster(state, acechador).baseAtk).toBe(1 + 2);
   });
 
@@ -133,7 +134,7 @@ describe('Battle events', () => {
     attack(state, 0, serpiente, slime);
     expect(state.players[0].hand).toContain(serpiente);
     expect(state.players[1].hand).toContain(slime);
-    expect(state.players[1].vp).toBe(80);
+    expect(state.players[1].vp).toBe(STARTING_VP);
   });
 
   it('Relicario de Engranaje gains an Engranaje when a TIERRA monster of yours deals direct damage', async () => {
@@ -169,7 +170,7 @@ describe('Flags effects set are honored', () => {
     expect(attack(state, 0, balor).ok).toBe(true);
     expect(attack(state, 0, balor)).toMatchObject({ ok: false, reason: 'already-attacked' });
     // Two direct hits of 11, plus its own "En cada fase de espera: inflige 3 VP" in turns 1-3.
-    expect(state.players[1].vp).toBe(80 - 3 * 3 - 22);
+    expect(state.players[1].vp).toBe(STARTING_VP - 3 * 3 - 22);
   });
 
   it('Damarco attacks once more per material under it', async () => {
@@ -198,7 +199,7 @@ describe('Flags effects set are honored', () => {
     expect(viewFor(state, 1).players[0].field.monsters.find((m) => m && m.instanceId === orco).canAttackDirectly).toBe(false);
     expect(attack(state, 0, orco)).toMatchObject({ ok: true });
     expect(orcoView().canAttackDirectly).toBe(false); // its one attack is spent
-    expect(state.players[1].vp).toBe(80 - 3);
+    expect(state.players[1].vp).toBe(STARTING_VP - 3);
   });
 
   it('Motor de Engranaje with an Engranaje cannot be attacked', async () => {

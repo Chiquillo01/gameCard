@@ -7,14 +7,9 @@ import { useState, useEffect } from 'react';
 import { useUser } from '../../../../context/userContext';
 import { getProducts, buyChest, buyStructureDeck, buyCurrency } from '../../../../lib/utils/apiStore';
 import { successToast, errorToast } from '../../../../lib/toastify/toast';
-import { BULK_QUANTITY } from '../../../../lib/utils/storeConstants';
+import { BULK_QUANTITY, STORE_CATEGORIES } from '../../../../lib/utils/storeConstants';
 
-const productTranslations = {
-  all: 'Todos los productos',
-  chest: 'Cofres',
-  structure: 'Mazos de Estructura',
-  pixelgems: 'Packs de Pixelgems',
-};
+const productTranslations = Object.fromEntries(STORE_CATEGORIES.map(({ id, label }) => [id, label]));
 
 // Temporary: hide products that don't have real art yet (they still use the generic card
 // placeholder) instead of showing an empty/placeholder image in the store. Remove this filter
@@ -29,6 +24,8 @@ const Store = () => {
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
   const [obtainedCards, setObtainedCards] = useState([]);
   const [openedProductImage, setOpenedProductImage] = useState(null);
+  // 'loading' until the catalog arrives, then 'ready' — or 'error' if it couldn't be fetched.
+  const [loadState, setLoadState] = useState('loading');
 
   // Fetch the catalog once on mount — GET /store/products is public and doesn't need the user
   // to be loaded first. Gating this behind the user query (as before) meant that on a fresh
@@ -37,7 +34,12 @@ const Store = () => {
   useEffect(() => {
     const fetchStoreData = async () => {
       const fetchedProducts = await getProducts();
+      if (!fetchedProducts) {
+        setLoadState('error');
+        return;
+      }
       setProducts(fetchedProducts.filter(hasRealImage));
+      setLoadState('ready');
     };
 
     fetchStoreData();
@@ -124,6 +126,7 @@ const Store = () => {
           <div className={styles.productsContainer}>
             <ProductList
               products={filteredProducts}
+              loadState={loadState}
               onBuy={(product, paymentMethod, quantity, closeModal) =>
                 handleBuyProduct(product, paymentMethod, quantity, getBuyFunction(product.category), closeModal)
               }

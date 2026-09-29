@@ -6,7 +6,7 @@ const { checkWin } = require('./outcome');
 const { matchesFilter } = require('./filters');
 const { speedOf, linkBlockReason, addLink, responseWindowOpen, isResponseEffect } = require('./chain');
 const { recomputeContinuous, requiredZoneFor, violatesUnique } = require('./effectEngine');
-const { pendingEffectChoice } = require('./targets');
+const { pendingEffectChoice, hasNoLegalTarget } = require('./targets');
 const { cardIdFromInstance } = require('./deckUtils');
 const { snapshot, restore } = require('./stateSnapshot');
 
@@ -100,6 +100,9 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   // un ataque directo") can't be used when that isn't what's happening.
   if (allOnPlay.length && allOnPlay.every(isResponseEffect) && !runningEffects.length) return { ok: false, reason: 'no-response-window' };
   if (allOnPlay.length && !runningEffects.length && allOnPlay.every((e) => e.conditions && e.conditions.length)) return { ok: false, reason: 'conditions-not-met' };
+  // Refuerzos with no face-up monster to match an attribute with: nothing to add, so it can't be
+  // activated (and nothing is paid for it).
+  if (runningEffects.length && runningEffects.every((effect) => hasNoLegalTarget({ ...ctx, effect }, effect))) return { ok: false, reason: 'no-legal-target' };
 
   // Rulebook: the player picks what pays the costs first, then what the effects act on.
   const cost = card.activationCost;

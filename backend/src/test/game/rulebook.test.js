@@ -7,6 +7,7 @@ const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { passChain } = require('./chainHelpers');
+const { STARTING_PIXELS } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -87,7 +88,7 @@ describe('Territorio upkeep', () => {
 
     // Only player 0 has a Territorio, so the "both players have one" upkeep never applies.
     expect(state.players[0].pixelcoins).toBe(before - 1); // -1 just for activation cost, not upkeep
-    expect(state.players[1].pixelcoins).toBe(6);
+    expect(state.players[1].pixelcoins).toBe(STARTING_PIXELS);
   });
 
   it('charges 1 pixel to each player at end phase once both control a Territorio', async () => {
@@ -140,11 +141,18 @@ describe('Territorio upkeep', () => {
   });
 });
 
+// Enjambre de Avispas searches for an Avispa: one on top of the deck so it has something to find.
+async function avispaOnDeckTop(state) {
+  const avispa = await Card.findOne({ name: 'Avispa Rosa' }).lean();
+  state.players[0].deck.unshift(`0:${avispa._id}:deck-avispa`);
+}
+
 describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
   it('lets a card activate its graveyard-only effect once it is actually in the graveyard', async () => {
     const state = await makeMatchWithHands(['Enjambre de Avispas'], []);
     const card = await Card.findOne({ name: 'Enjambre de Avispas' }).lean();
     const instanceId = state.players[0].hand.find((id) => id.split(':')[1] === card._id.toString());
+    await avispaOnDeckTop(state);
 
     // Rejected before the card has ever been in the graveyard.
     const tooEarly = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: instanceId });
@@ -182,6 +190,7 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
     const state = await makeMatchWithHands(['Enjambre de Avispas'], []);
     const card = await Card.findOne({ name: 'Enjambre de Avispas' }).lean();
     const instanceId = state.players[0].hand.find((id) => id.split(':')[1] === card._id.toString());
+    await avispaOnDeckTop(state);
 
     const activate = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId });
     expect(activate.ok).toBe(true);

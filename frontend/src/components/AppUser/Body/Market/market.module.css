@@ -1,0 +1,365 @@
+/* The market, in the tavern's 16-bit look (same palette as the Tienda). */
+
+.marketPage {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #241509 0%, #2c1c11 40%, #3a2517 100%);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 4px, transparent 4px 64px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 40px);
+  font-family: 'VT323', monospace;
+  color: #4a2a10;
+  padding-bottom: 3rem;
+}
+
+.titleBanner {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem 1rem 0.5rem;
+}
+
+.titlePlaque {
+  background: linear-gradient(160deg, #3a1f0d 0%, #241305 55%, #180b02 100%);
+  border: 6px solid #120902;
+  box-shadow: 0 0 0 4px #6b3d16, 8px 8px 0 0 rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.08);
+  padding: 0.875rem 1.75rem;
+}
+
+.titleText {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.125rem;
+  color: #ffd76a;
+  letter-spacing: 0.0625rem;
+  text-shadow: 3px 3px 0 #7a2f0f;
+  text-align: center;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.topRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tabButton {
+  padding: 0.5rem 1rem;
+  background: linear-gradient(160deg, #8a5a30, #7a4a24 60%, #5f3a1a 100%);
+  color: #f1ddab;
+  border: 3px solid #241305;
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  font-size: 1.25rem;
+}
+
+.tabActive {
+  background: radial-gradient(circle at 35% 30%, #ffd76a, #e0a83f 90%);
+  color: #241305;
+}
+
+.balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 3px solid #241305;
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.35);
+  padding: 0.25rem 0.75rem;
+  font-size: 1.25rem;
+}
+
+.coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.coinIcon {
+  width: 1.125rem;
+  height: 1.125rem;
+  image-rendering: pixelated;
+}
+
+.panel {
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 5px solid #4a2a10;
+  box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hint {
+  margin: 0;
+  font-size: 1.125rem;
+  color: #6b4a28;
+}
+
+.muted {
+  color: #6b4a28;
+}
+
+.empty {
+  margin: 1rem 0;
+  text-align: center;
+  font-size: 1.375rem;
+  color: #6b4a28;
+}
+
+.search {
+  padding: 0.5rem 0.625rem;
+  border: 3px solid #4a2a10;
+  background: #fbf3de;
+  color: #4a2a10;
+  font-family: 'VT323', monospace;
+  font-size: 1.125rem;
+  max-width: 360px;
+}
+
+.cardGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 1rem;
+}
+
+.cardTile {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  background: rgba(255, 255, 255, 0.3);
+  border: 3px solid #b89860;
+  padding: 0.625rem;
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  color: #4a2a10;
+  transition: transform 0.12s ease;
+}
+
+.cardTile:hover {
+  transform: translateY(-3px);
+  border-color: #4a2a10;
+}
+
+.tileName {
+  font-size: 1.1875rem;
+  text-align: center;
+}
+
+.tileInfo {
+  font-size: 1rem;
+  color: #6b4a28;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.miniCard {
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+  background: rgba(255, 255, 255, 0.3);
+  border: 3px solid #b89860;
+  padding: 0.5rem 0.75rem;
+}
+
+.rowInfo {
+  flex: 1 1 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 1.125rem;
+}
+
+.rowName {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.sellForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.sellForm label {
+  display: flex;
+  flex-direction: column;
+  font-size: 1rem;
+}
+
+.sellForm input,
+.listingBuy input {
+  width: 6rem;
+  padding: 0.25rem 0.375rem;
+  border: 2px solid #4a2a10;
+  background: #fbf3de;
+  color: #4a2a10;
+  font-family: 'VT323', monospace;
+  font-size: 1.125rem;
+}
+
+.actionButton,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border: 3px solid #241305;
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 0.375rem 0.75rem;
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  font-size: 1.125rem;
+  color: #fbf3de;
+}
+
+.actionButton {
+  background: linear-gradient(180deg, #e05a45 0%, #c0392b 55%, #9c2e20 100%);
+}
+
+.actionButton:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f06a52 0%, #d0432f 55%, #a83322 100%);
+}
+
+.secondaryButton {
+  background: linear-gradient(180deg, #6b3d16 0%, #4a2a10 55%, #2f1a0a 100%);
+}
+
+.actionButton:disabled,
+.secondaryButton:disabled {
+  background: linear-gradient(180deg, #a89a86, #7a6d5c);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.actionButton:active:not(:disabled),
+.secondaryButton:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 rgba(0, 0, 0, 0.4);
+}
+
+/* --- Buy modal --- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 6, 2, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 6px solid #4a2a10;
+  box-shadow: 8px 8px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 1.25rem;
+  width: min(820px, 100%);
+  max-height: 92vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  font-family: 'VT323', monospace;
+  color: #4a2a10;
+  outline: none;
+}
+
+.modalBody {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  justify-content: center;
+}
+
+.modalListings {
+  flex: 1 1 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.modalTitle {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.listingList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.listing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.875rem;
+  background: rgba(255, 255, 255, 0.35);
+  border: 2px solid #b89860;
+  padding: 0.375rem 0.625rem;
+  font-size: 1.125rem;
+}
+
+.listingSeller {
+  font-weight: bold;
+  min-width: 5rem;
+}
+
+.listingBuy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-left: auto;
+}
+
+.listingBuy input {
+  width: 4rem;
+}

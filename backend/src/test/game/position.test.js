@@ -7,6 +7,7 @@ const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction } = require('../../game/engine');
 const { attackAndResolve } = require('./chainHelpers');
+const { STARTING_VP } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -103,7 +104,7 @@ describe('Attacking a monster in defense position (rulebook)', () => {
     expect(monsterOf(state, 1, defenderId)).toBeDefined();
     expect(monsterOf(state, 0, attackerId)).toBeDefined();
     expect(state.players[0].vp).toBe(before - 5);
-    expect(state.players[1].vp).toBe(80);
+    expect(state.players[1].vp).toBe(STARTING_VP);
   });
 
   it('turns a face-down defender face-up when it is attacked', async () => {

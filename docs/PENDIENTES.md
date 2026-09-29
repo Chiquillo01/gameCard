@@ -34,11 +34,34 @@ sirve de referencia:
 - El listener de invitaciones se limpia con el nombre equivocado (`'ping'`), así que se acumula.
 - La amistad no se comprueba al desafiar a un duelo.
 
-## Mercado (rama propia)
+## Mercado
 
-- La ruta `/market` muestra "Próximamente".
-- No existe comprar.
-- Retirar una carta de la venta no la devuelve a la colección, así que se pierde.
+- El vendedor no recibe ningún aviso cuando le compran una carta (se ve en "Mis ventas").
+- **Brillo (foil):** se implementará más adelante. Hoy la colección no distingue copias con brillo,
+  así que el Mercado no lo pide. Para hacerlo hará falta:
+  - Guardar el brillo de cada copia en la colección (por ejemplo, las cantidades por tipo: normal,
+    superRara, secreta, collector, que eran los valores del esquema antiguo).
+  - Decidir cómo se obtienen las copias con brillo (cofres, mazos de estructura…).
+  - Que el Mercado venda y compre por carta y brillo, y mostrarlo en la carta.
+
+## Tienda
+
+- **Cómo se consiguen monedas y gemas:** se empieza con 1000 monedas y 0 gemas, las partidas no
+  dan recompensa y los packs de gemas son con euros (aún sin pasarela de pago). Se implementará más
+  adelante.
+- **Cofres de expansiones sin cartas:** Sombras del Bosque Encantado, Perdición del Arrecife Oculto
+  y Nacimiento de la Magia (SBE, PAO, NDM) no tienen cartas todavía; comprarlos da error sin cobrar.
+- **Tiempo Primitivo:**
+  - Usa como imagen temporal la ilustración de Licántropo Alfa; falta su imagen propia.
+  - Cuesta 400 gemas, cuando la relación de los cofres (100 monedas = 10 gemas) daría 40. Por
+    decidir.
+- **Ediciones Especiales:** el filtro ya existe, pero muestra "¡Próximamente!" porque sus dos
+  productos (Ganancia por Honor y Ediocion Espacial Tokens) siguen ocultos hasta tener imagen
+  propia (la tienda esconde los que usan la imagen provisional).
+  - Ganancia por Honor lleva una tabla de premios provisional (2 comunes, 2 épicas y 1 épica con un
+    10% de ser legendaria): su expansión no tiene raras. Revisarla al ponerle imagen.
+  - El nombre "Ediocion Espacial Tokens" tiene erratas; como la semilla busca los productos por
+    nombre, cambiarlo crearía uno nuevo en vez de renombrar este.
 
 ## Antes de la beta
 
@@ -51,8 +74,6 @@ sirve de referencia:
   (Redis). Detrás de un proxy (Koyeb) hay que poner `TRUST_PROXY=1` en el `.env` para que cuente
   por la IP real del cliente.
 - **CORS de la API abierto a cualquier origen** (`cors()` sin opciones).
-- **Carrera en las compras de la tienda:** dos compras a la vez pueden cobrar solo una; y si un
-  cofre falla a mitad, las cartas ya dadas no se cobran. Hacerlo con operaciones atómicas.
 - **Mongoose 6** está desfasado (actual: 8).
 - **5 avisos moderados de `npm audit`** en las herramientas de test del frontend (vitest 3);
   arreglarlos exige saltar a vitest 5.
