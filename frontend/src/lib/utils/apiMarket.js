@@ -5,41 +5,21 @@ const API = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_API_URL + '/market',
 });
 
-export const getMarketProducts = async (cardId) => {
-  const token = getUserToken();
+const auth = () => ({ headers: { Authorization: `Bearer ${getUserToken()}` } });
 
-  try {
-    const response = await API.get(`/${cardId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
-};
+// Cards on sale, one row per card: { card, copies, listings, minPrice }.
+export const getMarketSummary = async () => (await API.get('/summary', auth())).data;
 
-export const createNewProductMarket = async (newCard) => {
-  const token = getUserToken();
+// Active listings of one card, cheapest first.
+export const getCardListings = async (cardId) => (await API.get('/listings', { ...auth(), params: { cardId } })).data;
 
-  const response = await API.post(
-    '/create',
-    { newCard },
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  );
-  return response;
-};
+// The player's own listings (active and past) and the spare copies they could sell.
+export const getMyListings = async () => (await API.get('/mine', auth())).data;
+export const getSellableCards = async () => (await API.get('/sellable', auth())).data;
 
-export const deleteProductMarket = async (productId) => {
-  const token = getUserToken();
+export const createListing = async ({ cardId, amount, price }) => (await API.post('/listings', { cardId, amount, price }, auth())).data;
+export const withdrawListing = async (listingId) => (await API.delete(`/listings/${listingId}`, auth())).data;
+export const buyListing = async (listingId, amount) => (await API.post(`/listings/${listingId}/buy`, { amount }, auth())).data;
 
-  const response = await API.delete(`/delete/${productId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
-};
+// The server's own explanation of a refused market action, or a generic one.
+export const marketError = (error) => error?.response?.data?.error || 'No se ha podido completar la operación.';

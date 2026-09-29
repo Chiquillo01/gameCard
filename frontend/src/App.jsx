@@ -11,7 +11,7 @@ import User from './components/AppUser/Body/UserPage';
 import UserCollection from './components/AppUser/Body/UserCollectionPage';
 import CreateNewDeck from './components/AppUser/Body/CreateNewDeck';
 import Store from './components/AppUser/Body/Store';
-import CardDetailPage from './components/AppUser/Body/Market/CardDetailPage';
+import MarketPage from './components/AppUser/Body/Market';
 import DuelPage from './components/AppUser/Body/Duel';
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
@@ -59,10 +59,9 @@ const App = () => {
             <Route path='deck' element={<Deck />} />
             <Route path='controldeck' element={<CreateNewDeck />} />
             <Route path='/deck/:deckId' element={<CreateNewDeck />} />
-            <Route path='card-detail/:id' element={<CardDetailPage />} />
             <Route path='collection' element={<UserCollection />} />
             <Route path='store' element={<Store />} />
-            <Route path='market' element={<CommingSoon />} />
+            <Route path='market' element={<MarketPage />} />
             <Route path='user' element={<User />} />
             <Route path='profile' element={<ProfileEditForm />} />
             <Route path='purchase-history' element={<PurchaseHistory />} />

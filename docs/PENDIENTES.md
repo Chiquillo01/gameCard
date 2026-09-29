@@ -34,11 +34,9 @@ sirve de referencia:
 - El listener de invitaciones se limpia con el nombre equivocado (`'ping'`), así que se acumula.
 - La amistad no se comprueba al desafiar a un duelo.
 
-## Mercado (rama propia)
+## Mercado
 
-- La ruta `/market` muestra "Próximamente".
-- No existe comprar.
-- Retirar una carta de la venta no la devuelve a la colección, así que se pierde.
+- El vendedor no recibe ningún aviso cuando le compran una carta (se ve en "Mis ventas").
 
 ## Tienda
 
