@@ -26,7 +26,6 @@ const formatEffectId = (id) =>
 
 const showToast = (type, message) =>
   toast[type](message, {
-    position: 'top-right',
     autoClose: 2500,
     hideProgressBar: true,
     closeOnClick: true,

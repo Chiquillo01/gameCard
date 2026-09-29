@@ -13,7 +13,6 @@ import TokenSelector from './TokenSelector';
 import { MIN_DECK_SIZE, MAX_DECK_SIZE, MAX_FUSION_CARDS } from '../../../../lib/utils/deckRules';
 
 const TOAST_OPTIONS = {
-  position: 'top-right',
   autoClose: 3000,
   hideProgressBar: false,
   closeOnClick: true,

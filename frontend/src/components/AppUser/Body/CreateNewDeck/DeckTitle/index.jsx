@@ -14,7 +14,6 @@ function DeckTitle({ value, onTitleChange }) {
     const newTitle = event.target.value;
     if (newTitle.length > 20) {
       toast.error('El título no puede superar los 20 caracteres.', {
-        position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
         closeOnClick: true,
@@ -31,7 +30,6 @@ function DeckTitle({ value, onTitleChange }) {
   const handleSave = () => {
     if (title.trim() === '') {
       toast.error('El título no puede estar vacío.', {
-        position: 'top-right',
         autoClose: 3000,
         hideProgressBar: false,
         closeOnClick: true,
@@ -45,7 +43,6 @@ function DeckTitle({ value, onTitleChange }) {
     onTitleChange(title.trim());
     setIsEditing(false);
     toast.success('Título guardado con éxito.', {
-      position: 'top-right',
       autoClose: 3000,
       hideProgressBar: false,
       closeOnClick: true,
