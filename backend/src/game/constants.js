@@ -1,8 +1,5 @@
 // Values sourced from Rulebook.pdf, confirmed with the designer.
-// NOTE: card ATK/Vida(DEF) values in the current seed data run up to 230, well above this 80
-// starting VP — the designer confirmed those numbers are outdated and due for a rebalance
-// alongside the DEF -> "Vida" rename, so matches can look lopsided until the card data catches up.
-const STARTING_VP = 80;
+const STARTING_VP = 60; // balance pass: was 80
 const STARTING_HAND_SIZE = 6;
 const MONSTER_ZONES = 5;
 const SUPPORT_ZONES = 4; // Territorio (Reino) is a separate 5th zone, not part of this

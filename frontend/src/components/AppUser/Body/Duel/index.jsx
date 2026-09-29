@@ -13,7 +13,6 @@ import { isDeckPlayable } from '../../../../lib/utils/deckRules';
 import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
 
 const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
-const STARTING_VP = 80;
 
 const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', extra: 'Mazo-C' };
 
@@ -670,7 +669,7 @@ const DuelPage = () => {
           <span className={styles.playerName}>{enemy.name}</span>
           {/* A direct attack hits the rival's VP, so their VP is where the player clicks for it —
               lit up only while the selected attacker can legally attack directly. */}
-          <VpBadge vp={enemy.vp} flash={flashes[`vp${opp}`]} onDirectAttack={canAttackDirectly ? onDirectAttack : null} />
+          <VpBadge vp={enemy.vp} max={view.startingVp} flash={flashes[`vp${opp}`]} onDirectAttack={canAttackDirectly ? onDirectAttack : null} />
           <span className={styles.handCountBadge} title='Cartas en la Mano del rival'>✋ {enemy.handCount}</span>
           <span className={styles.handCountBadge} title='Píxeles del rival: sirven para pagar las activaciones de los apoyos'>
             <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {enemy.pixelcoins}
@@ -744,7 +743,7 @@ const DuelPage = () => {
 
         <div className={styles.playerHeader}>
           <span className={styles.playerName}>{me.name} (tú)</span>
-          <VpBadge vp={me.vp} flash={flashes[`vp${you}`]} />
+          <VpBadge vp={me.vp} max={view.startingVp} flash={flashes[`vp${you}`]} />
           <span className={styles.pixelBadge} title='Sirven para pagar las activaciones de los apoyos'>
             <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {me.pixelcoins}
           </span>
@@ -918,10 +917,10 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
   );
 }
 
-// VP with a bar out of the starting 80 and the last change floating over it. For the rival, while
+// VP with a bar out of the starting VP (the server says how many) and the last change floating over it. For the rival, while
 // a direct attack is possible, it is also the button for that attack.
-function VpBadge({ vp, flash, onDirectAttack }) {
-  const pct = Math.max(0, Math.min(100, (vp / STARTING_VP) * 100));
+function VpBadge({ vp, max, flash, onDirectAttack }) {
+  const pct = Math.max(0, Math.min(100, (vp / max) * 100));
   const content = (
     <>
       <span>

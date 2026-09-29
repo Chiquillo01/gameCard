@@ -1312,7 +1312,7 @@
         "fn": "modifyStatsPerMonsterOnField",
         "args": {
           "atk": 1,
-          "scope": "field"
+          "scope": "opponentField"
         }
       }
     ],

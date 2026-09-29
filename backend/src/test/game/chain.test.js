@@ -10,6 +10,7 @@ const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { placeSupport } = require('../../game/zones');
 const { passChain } = require('./chainHelpers');
+const { STARTING_VP } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -60,7 +61,7 @@ describe('Activating a card opens a chain instead of resolving right away', () =
     expect(res.ok).toBe(true);
     expect(state.players[0].field.support.some((s) => s && s.instanceId === id)).toBe(true);
     expect(state.players[0].graveyard).not.toContain(id);
-    expect(state.players[1].vp).toBe(80); // burnOpponent hasn't resolved yet
+    expect(state.players[1].vp).toBe(STARTING_VP); // burnOpponent hasn't resolved yet
     expect(state.priorityPlayer).toBe(1);
 
     const view = viewFor(state, 1);
@@ -85,7 +86,7 @@ describe('Activating a card opens a chain instead of resolving right away', () =
     applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: id });
 
     passChain(state);
-    expect(state.players[1].vp).toBe(70);
+    expect(state.players[1].vp).toBe(STARTING_VP - 10); // Chispa: 10 de daño
     expect(state.players[0].field.support.some((s) => s && s.instanceId === id)).toBe(false);
     expect(state.players[0].graveyard).toContain(id);
     expect(state.chain).toEqual([]);

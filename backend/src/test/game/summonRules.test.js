@@ -9,6 +9,7 @@ const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { passChain } = require('./chainHelpers');
 const { getCard } = require('../../game/cardIndex');
 const { placeMonster } = require('../../game/zones');
+const { STARTING_VP } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -240,7 +241,7 @@ describe('Phase-timed effects', () => {
     const { placeMonster } = require('../../game/zones');
     placeMonster(state, inHand('Bálor'), 0, { position: 'attack' });
     while (state.turnNumber === 1 && state.phase !== 'end') applyAction(state, 0, { type: 'ADVANCE_PHASE' });
-    expect(state.players[1].vp).toBe(77);
+    expect(state.players[1].vp).toBe(STARTING_VP - 3);
   });
 
 });

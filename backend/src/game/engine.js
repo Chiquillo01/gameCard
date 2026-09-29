@@ -10,6 +10,7 @@ const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone,
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
 const { checkConditions } = require('./effects/conditions');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
+const { STARTING_VP } = require('./constants');
 const { describeEffect } = require('./effectLabels');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
 
@@ -185,6 +186,7 @@ function viewFor(state, viewerIndex) {
     turnPlayer: state.turnPlayer,
     phase: state.phase,
     winnerIndex: state.winnerIndex,
+    startingVp: STARTING_VP, // what the VP bars are measured against
     you: viewerIndex,
     players: state.players.map(redactPlayer),
     log: state.log.slice(-80).map((line) => readableLogLine(state, line, names)),

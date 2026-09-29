@@ -10,6 +10,7 @@ const { attackAndResolve } = require('./chainHelpers');
 const { placeMonster, moveToZone, findInstanceLocation } = require('../../game/zones');
 const { addStatus, hasStatus, FREEZE, BURN, POISON } = require('../../game/statuses');
 const { recomputeContinuous } = require('../../game/effectEngine');
+const { STARTING_VP } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -210,7 +211,7 @@ describe('Quemadura', () => {
     const res = attackAndResolve(state, 0, aId, bId);
     expect(res.ok).toBe(true);
     expect(monsterOf(state, 1, bId)).toBeUndefined();
-    expect(state.players[1].vp).toBe(80 - 8); // (6 - 2) x 2
+    expect(state.players[1].vp).toBe(STARTING_VP - 8); // (6 - 2) x 2
   });
 
   it('stops burning when the monster is destroyed', async () => {

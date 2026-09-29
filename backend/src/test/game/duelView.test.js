@@ -52,6 +52,23 @@ describe('Duel view: Atk/Vida changes', () => {
   });
 });
 
+describe('Espíritu de batalla', () => {
+  it('gives +1 Atk per monster the rival controls, not per monster on the whole field', async () => {
+    const state = await makeDuel();
+    const orco = await onField(state, 0, 'Orco Guerrero');
+    await onField(state, 0, 'Slime');
+    await onField(state, 1, 'Slime');
+    await onField(state, 1, 'Valkiria');
+    const espiritu = placeSupport(state, await instance(0, 'Espíritu de batalla'), 0, { faceDown: false });
+    espiritu.equippedTo = orco;
+    recomputeContinuous(state);
+    expect(fieldView(state, 0, orco)).toMatchObject({
+      atk: 3 + 2,
+      statMods: [{ source: 'Espíritu de batalla', atk: 2, def: 0, kind: 'continuous' }],
+    });
+  });
+});
+
 describe('Duel view: battles and log', () => {
   it('keeps the last battle step by step and shows player names instead of ids', async () => {
     const state = await makeDuel();
