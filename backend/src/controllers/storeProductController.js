@@ -196,7 +196,7 @@ const buyStructureDeck = async (req, res) => {
     // Each { name, amount } entry as that many copies, times how many decks were bought.
     const obtainedCards = product.structureCards.flatMap(({ name, amount }) => {
       const card = cardDocsByName.get(name);
-      return Array(amount * quantity).fill({ cardId: card._id, name: card.name, image: card.image, rarity: card.rarity });
+      return Array(amount * quantity).fill({ ...card.toObject(), cardId: card._id });
     });
 
     const cost = product.price[paymentMethod] * quantity;

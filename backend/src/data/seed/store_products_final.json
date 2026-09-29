@@ -283,7 +283,7 @@
   {
     "name": "Tiempo Primitivo",
     "description": "Mazo de estructura con 30 cartas de Licántropos: un pack económico para empezar a jugar con una sola compra.",
-    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738924646/licantropoalfatcg_oqsaaf.png",
     "price": {
       "pixelcoins": 400,
       "pixelgems": 400

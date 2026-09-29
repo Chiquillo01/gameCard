@@ -36,13 +36,14 @@ function rollRarity(odds, available, random) {
   return null;
 }
 
-// The cards one chest gives: [{ cardId, name, image, rarity }], or null when it can't be filled
+// The cards one chest gives — each card's full data plus `cardId`, so the opening can show the
+// whole card — or null when it can't be filled
 // (its expansion has no cards at all, or the product has no drop table).
 async function drawChest(productDoc, random = Math.random) {
   const product = productDoc.toObject ? productDoc.toObject() : productDoc;
   const size = dropTableSize(product.dropTable);
   if (!size) return null;
-  const cards = await Card.find({ expansion: product.expansion }).select('name image rarity').lean();
+  const cards = await Card.find({ expansion: product.expansion }).lean();
   const byRarity = new Map();
   cards.forEach((card) => {
     if (!byRarity.has(card.rarity)) byRarity.set(card.rarity, []);
@@ -56,7 +57,7 @@ async function drawChest(productDoc, random = Math.random) {
       if (!rarity) return null;
       const pool = byRarity.get(rarity);
       const card = pool[Math.floor(random() * pool.length)];
-      drawn.push({ cardId: card._id, name: card.name, image: card.image, rarity });
+      drawn.push({ ...card, cardId: card._id });
     }
   }
   return drawn;

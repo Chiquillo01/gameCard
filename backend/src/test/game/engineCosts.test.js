@@ -112,7 +112,8 @@ describe('Costs the data uses', () => {
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos, targets: [slime, avispa] }).ok).toBe(true);
     passAll(state);
     expect(state.players[0].graveyard).toEqual([valkiria]);
-    expect(state.players[0].deck).toEqual(expect.arrayContaining([slime, avispa]));
+    // Shuffled into the Mazo — and the draw that follows may already have picked one of them up.
+    expect([...state.players[0].deck, ...state.players[0].hand]).toEqual(expect.arrayContaining([slime, avispa]));
     expect(state.log.some((l) => l.message.includes('devuelve al Mazo Slime y Avispa Rosa y lo baraja'))).toBe(true);
   });
 
