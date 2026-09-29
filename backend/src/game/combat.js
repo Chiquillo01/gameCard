@@ -118,10 +118,43 @@ function performBattle(state, link) {
   }
   defender = getFieldMonster(state, defender.instanceId);
 
-  // Rulebook: a face-down defender is turned face-up during the damage step so its Vida can be
-  // read; its Rotación effects trigger after damage, if it's still on the field.
-  const wasFaceDown = defender.faceDown;
-  if (wasFaceDown) defender.faceDown = false;
+  // Rulebook, Rotación: a face-down defender is turned face-up so its Vida can be read, and its
+  // "al ser girada" effects resolve right then, before the damage is calculated. What they do
+  // stays even if the monster is destroyed in this same battle (Espora Venenosa's poison).
+  if (defender.faceDown) {
+    defender.faceDown = false;
+    link.revealed = true;
+    log(state, `${monsterName(defender)} estaba boca abajo: se gira para el combate.`);
+    fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
+    recomputeContinuous(state);
+    // An effect waiting on a pick ("selecciona un monstruo en el Campo") holds the battle until
+    // it's answered; resolveTriggerChoice then carries on with resumeBattle.
+    if (state.pendingTriggerChoices && state.pendingTriggerChoices.length) {
+      state.pausedBattle = link;
+      log(state, 'El combate espera a que se resuelva ese efecto.');
+      return;
+    }
+  }
+  return damageStep(state, link);
+}
+
+// The damage step of a battle between two monsters (after any face-down defender was turned over
+// and its effects resolved).
+function damageStep(state, link) {
+  const controllerIndex = link.controllerIndex;
+  const attackerPl = player(state, controllerIndex);
+  const oppIdx = opponentIndex(controllerIndex);
+  const oppPl = player(state, oppIdx);
+  const attacker = getFieldMonster(state, link.attackerInstanceId);
+  const defender = getFieldMonster(state, link.targetInstanceId);
+  if (!attacker || !defender || !attackerPl.field.monsters.includes(attacker) || !oppPl.field.monsters.includes(defender)) {
+    log(state, 'Uno de los monstruos dejó el Campo antes del daño: no hay batalla.');
+    recomputeContinuous(state);
+    checkWin(state);
+    return;
+  }
+  const attackerName = monsterName(attacker);
+  const wasFaceDown = !!link.revealed;
   const attackerStats = getEffectiveStats(attacker);
   const defenderStats = getEffectiveStats(defender);
   const defenderName = monsterName(defender);
@@ -129,7 +162,7 @@ function performBattle(state, link) {
   const defenderValue = inAttack ? defenderStats.atk : defenderStats.def;
   startBattleRecord(state, controllerIndex, { name: attackerName, atk: attackerStats.atk }, { name: defenderName, position: defender.position, stat: inAttack ? 'atk' : 'def', value: defenderValue, wasFaceDown });
   battleStep(state, `${attackerPl.userId} ataca con ${attackerName} (Atk ${attackerStats.atk}) a ${defenderName} (${inAttack ? `en Ataque, Atk ${defenderValue}` : `en Defensa, Vida ${defenderValue}`}).`);
-  if (wasFaceDown) battleStep(state, `${defenderName} estaba boca abajo: se revela.`);
+  if (wasFaceDown && state.lastBattle) state.lastBattle.steps.push(`${defenderName} estaba boca abajo: se giró para el combate.`);
 
   // Rulebook, Congelado: a frozen monster fighting a water monster (either way round) is destroyed
   // before the damage step, so no damage is dealt.
@@ -140,7 +173,6 @@ function performBattle(state, link) {
     if (attackerFrozen && isWater(defender)) destroyInBattle(state, controllerIndex, attacker, defender);
     else destroyInBattle(state, oppIdx, defender, attacker);
     battleStep(state, `${frozenName} está Congelado y lucha contra un monstruo de Agua: es destruido sin daño.`);
-    if (wasFaceDown && getFieldMonster(state, defender.instanceId)) fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
     recomputeContinuous(state);
     checkWin(state);
     return;
@@ -197,7 +229,6 @@ function performBattle(state, link) {
   if (!damageToDefenderSide && !damageToAttackerSide) battleStep(state, 'Nadie pierde VP.');
   if (destroyedDefender) destroyInBattle(state, oppIdx, defender, attacker);
   if (destroyedAttacker) destroyInBattle(state, controllerIndex, attacker, defender);
-  if (wasFaceDown && !destroyedDefender && getFieldMonster(state, defender.instanceId)) fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
 
   // "Si inflige daño de batalla" (Acechador Invisible) / "si esta carta hace daño a tu oponente"
   // (Esqueleto de relámpago): whichever monster's side made the other player lose VP.
@@ -208,6 +239,15 @@ function performBattle(state, link) {
   recomputeContinuous(state);
   checkWin(state);
   return { destroyedAttacker, destroyedDefender };
+}
+
+// Carries on a battle a flip effect's pick had paused, once nothing is left to answer.
+function resumeBattle(state) {
+  if (!state.pausedBattle || (state.pendingTriggerChoices && state.pendingTriggerChoices.length)) return;
+  const link = state.pausedBattle;
+  delete state.pausedBattle;
+  if (state.status !== 'active') return;
+  damageStep(state, link);
 }
 
 function monsterName(m) {
@@ -256,4 +296,4 @@ function destroyInBattle(state, ownerIndex, victim, destroyer) {
   }
 }
 
-module.exports = { declareAttack, attackBlockReason, performBattle, canStillAttack, allowedAttacks };
+module.exports = { declareAttack, attackBlockReason, performBattle, resumeBattle, canStillAttack, allowedAttacks };

@@ -157,7 +157,7 @@ export function forecastBattle(attacker, defender, cardsById) {
   const hit = (amount, m) => (burn(m) ? amount * 2 : amount);
   const lines = [];
   if (defender.faceDown || defender.def == null) {
-    lines.push(`${attacker.name} (Atk ${a}) contra un monstruo boca abajo: se revelará y su Vida decidirá el resultado.`);
+    lines.push(`${attacker.name} (Atk ${a}) contra un monstruo boca abajo: se girará, su efecto al ser girado (si tiene) se aplicará antes del daño y su Vida decidirá el resultado.`);
     return { lines };
   }
   const water = (m) => cardsById[m.cardId]?.attribute === 'Agua';
@@ -286,7 +286,7 @@ export function DetailsPanel({ hovered, isMyBattle }) {
         <span className={styles.panelTitle}>
           Monstruo boca abajo <span className={styles.detailsOwner}>{owner}</span>
         </span>
-        <p className={styles.detailsLine}>En Defensa. Si lo atacas se revela y su Vida decide el combate.</p>
+        <p className={styles.detailsLine}>En Defensa. Si lo atacas se gira: primero se aplica su efecto al ser girado (si tiene) y luego su Vida decide el combate.</p>
       </div>
     );
   }

@@ -301,6 +301,7 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     else require('./summon').finishHandTrigger(state, pending.controllerIndex, pending.sourceInstanceId, getEffect(pending.effectId), slot);
     recomputeContinuous(state);
     checkWin(state);
+    require('./combat').resumeBattle(state);
     return { ok: true };
   }
 
@@ -313,6 +314,7 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     chosen.slice(0, need).forEach((id) => require('./zones').moveToZone(state, id, 'graveyard'));
     log(state, `${pl.userId} descarta ${need} carta(s).`);
     recomputeContinuous(state);
+    require('./combat').resumeBattle(state);
     return { ok: true };
   }
 
@@ -327,6 +329,8 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
   runTriggered(state, ctx, effect, card, picks);
   recomputeContinuous(state);
   checkWin(state);
+  // A battle a flip effect's pick had paused goes on to its damage step.
+  require('./combat').resumeBattle(state);
   return { ok: true };
 }
 

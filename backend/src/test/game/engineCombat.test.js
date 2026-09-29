@@ -254,3 +254,41 @@ describe('Timing', () => {
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CUBO_GELATINOSO_NEGATE', sourceInstanceId: mine })).toMatchObject({ ok: false, reason: 'not-main-phase' });
   });
 });
+
+describe('A face-down defender is turned over before the damage step', () => {
+  const setUp = async () => {
+    const state = await makeDuel();
+    const attacker = await onField(state, 0, 'Orco Guerrero');
+    const bystander = await onField(state, 0, 'Orco Gladiador');
+    const espora = await onField(state, 1, 'Espora Venenosa', { position: 'defense', faceDown: true });
+    toPhase(state, 'battle', 0);
+    expect(declare(state, 0, attacker, espora).ok).toBe(true);
+    passAll(state);
+    return { state, attacker, bystander, espora };
+  };
+
+  it('its "al ser girada" effect resolves first, and stays after it is destroyed', async () => {
+    const { state, bystander, espora } = await setUp();
+    // Turned face-up, waiting on its owner's pick: no damage yet.
+    expect(monster(state, espora)).toMatchObject({ faceDown: false });
+    expect(viewFor(state, 1).pendingTriggerChoice).toMatchObject({ kind: 'effect' });
+    expect(state.players[1].graveyard).not.toContain(espora);
+
+    expect(applyAction(state, 1, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [bystander] }).ok).toBe(true);
+    // Then the battle carries on: Orco Guerrero (Atk 3) beats Espora's Vida 1.
+    expect(state.players[1].graveyard).toContain(espora);
+    expect(state.pausedBattle).toBeUndefined();
+    const poisoned = viewFor(state, 0).players[0].field.monsters.find((m) => m && m.instanceId === bystander);
+    expect(poisoned).toMatchObject({ statuses: ['Veneno'], atk: 1 });
+    expect(state.players[0].vp).toBe(STARTING_VP - 2);
+  });
+
+  it('poisoning the attacker changes the damage it deals', async () => {
+    const { state, attacker, espora } = await setUp();
+    expect(applyAction(state, 1, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [attacker] }).ok).toBe(true);
+    // Atk 3 - 2 = 1 against Vida 1: nothing is destroyed.
+    expect(monster(state, espora)).toBeTruthy();
+    expect(monster(state, attacker)).toBeTruthy();
+    expect(state.lastBattle.steps).toEqual(expect.arrayContaining(['Espora Venenosa estaba boca abajo: se giró para el combate.', 'Se compara Atk 1 con Vida 1.']));
+  });
+});
