@@ -10,7 +10,7 @@ function makePlayer(userId, deckDoc, ownerIndex, name = null) {
     vp: STARTING_VP,
     pixelcoins: STARTING_PIXELS,
     normalSummonUsed: false,
-    turnsPlayed: 0, // rulebook: no automatic +6 pixel income on a player's own first turn
+    turnsPlayed: 0, // rulebook: no automatic pixel income on a player's own first turn
     hand,
     deck,
     extra,

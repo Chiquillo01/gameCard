@@ -7,6 +7,7 @@ const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { passChain } = require('./chainHelpers');
+const { STARTING_PIXELS } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -87,7 +88,7 @@ describe('Territorio upkeep', () => {
 
     // Only player 0 has a Territorio, so the "both players have one" upkeep never applies.
     expect(state.players[0].pixelcoins).toBe(before - 1); // -1 just for activation cost, not upkeep
-    expect(state.players[1].pixelcoins).toBe(6);
+    expect(state.players[1].pixelcoins).toBe(STARTING_PIXELS);
   });
 
   it('charges 1 pixel to each player at end phase once both control a Territorio', async () => {

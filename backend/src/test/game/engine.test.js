@@ -8,6 +8,7 @@ const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { attackAndResolve } = require('./chainHelpers');
 const { runBotTurn } = require('../../game/botAI');
+const { STARTING_PIXELS, PIXEL_INCOME_PER_TURN } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -96,17 +97,17 @@ describe('Game engine', () => {
     expect(state.phase).toBe('draw');
   });
 
-  it('gives no pixels on turn 1 (a player\'s own first turn) but 6 on their next turn', async () => {
+  it('gives no pixels on turn 1 (a player\'s own first turn) but the turn income on their next one', async () => {
     const state = await makeTestMatch();
-    expect(state.players[0].pixelcoins).toBe(6); // starting pixels only, no turn-1 income
+    expect(state.players[0].pixelcoins).toBe(STARTING_PIXELS); // starting pixels only, no turn-1 income
     advanceUntil(state, 3, 'draw'); // turn 1 (P0) -> turn 2 (P1) -> turn 3 (P0), draw phase already processed
-    expect(state.players[0].pixelcoins).toBe(12); // 6 starting + 6 income on their second turn
+    expect(state.players[0].pixelcoins).toBe(STARTING_PIXELS + PIXEL_INCOME_PER_TURN); // income on their second turn
   });
 
   it('caps pixels at 12 — income never pushes a player past it', async () => {
     const state = await makeTestMatch();
     state.players[0].pixelcoins = 10;
-    advanceUntil(state, 3, 'draw'); // P0's second turn: 10 + 6 would be 16, must stop at 12
+    advanceUntil(state, 3, 'draw'); // P0's second turn: 10 + the income would pass 12, must stop there
     expect(state.players[0].pixelcoins).toBe(12);
   });
 

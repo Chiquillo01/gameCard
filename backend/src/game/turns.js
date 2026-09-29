@@ -41,7 +41,7 @@ function runPhaseEntry(state) {
       if (state.status !== 'active') return;
     }
 
-    // Rulebook: 6 pixels/turn automatically, capped at 12 — except a player's own first turn.
+    // Rulebook: PIXEL_INCOME_PER_TURN pixels/turn automatically, capped at PIXEL_CAP — except a player's own first turn.
     const isPlayersFirstTurn = pl.turnsPlayed === 0;
     if (!isPlayersFirstTurn) {
       const before = pl.pixelcoins;
