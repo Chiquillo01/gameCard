@@ -993,7 +993,7 @@
     "def": 5,
     "level": 6,
     "effect": "Una vez por turno, selecciona un monstruo en el Campo que este en posición de ataque: \n• Equipa el monstruo seleccionado a esta carta.\nPor cada carta equipada a ella gana +4 Atk y puede tener hasta dos equipos al mismo tiempo.",
-    "invocationText": "Compilación - \"Carnívora Come-Humanos\" + 1 Planta",
+    "invocationText": "Compilación - \"Carnivora Come Hombres\" + 1 Planta",
     "state": 3,
     "number": 41,
     "effectCodes": [
@@ -1005,7 +1005,7 @@
       "args": {
         "materials": [
           {
-            "name": "Carnívora Come-Humanos",
+            "name": "Carnivora Come Hombres",
             "count": 1
           },
           {
