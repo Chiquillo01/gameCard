@@ -10,7 +10,7 @@ const { getCard, getEffect, effectCodesOf } = require('../../game/cardIndex');
 const { registry } = require('../../game/effects/actions');
 const { canAffect } = require('../../game/targets');
 const effects = require('../../data/seed/effects_final.json');
-const { seedCatalog, makeDuel, toHand, toDeckTop, onField, toPhase, passAll, monster, instance, idOf } = require('./engineHelpers');
+const { seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster, instance, idOf } = require('./engineHelpers');
 const { STARTING_VP } = require('../../game/constants');
 
 beforeAll(async () => {
@@ -409,5 +409,43 @@ describe('Exiled "hasta la Fase Final"', () => {
     expect(state.players[1].banished).toContain(cactus);
     toPhase(state, 'end', 0);
     expect(monster(state, cactus)).toBeTruthy();
+  });
+});
+
+describe('Cards that pick their target', () => {
+  it('Hechizo de volteo: the picked face-up monster goes to defense face-down', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const orco = await onField(state, 1, 'Orco Guerrero');
+    await onField(state, 1, 'Orco Gladiador');
+    const hechizo = await toHand(state, 0, 'Hechizo de volteo');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: hechizo });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige el monstruo que pasa a defensa boca abajo' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: hechizo, targets: [orco] }).ok).toBe(true);
+    passAll(state);
+    expect(monster(state, orco)).toMatchObject({ position: 'defense', faceDown: true });
+  });
+
+  it('Capitán Bandido: takes control of the monster the player picks, not the strongest', async () => {
+    const state = await makeDuel();
+    const capitan = await onField(state, 0, 'Capitán Bandido');
+    const weak = await onField(state, 1, 'Slime');
+    await onField(state, 1, 'Orco Gladiador');
+    toPhase(state, 'main1', 0);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: capitan, targets: [weak] }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].field.monsters.some((m) => m && m.instanceId === weak)).toBe(true);
+  });
+
+  it('Gato del Destino: shuffles the Licántropos picked from the Cementerio, not itself', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const lics = await Promise.all(['Licántropo Beta', 'Licántropo Cazador', 'Licántropo de Hielo', 'Licántropo Gigante'].map((n) => toGraveyard(state, 0, n)));
+    const gato = await toHand(state, 0, 'Gato del Destino');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: gato })).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: gato, targets: lics.slice(0, 3) }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].deck).toEqual(expect.arrayContaining(lics.slice(0, 3)));
+    expect(state.players[0].graveyard).toEqual(expect.arrayContaining([lics[3], gato]));
   });
 });

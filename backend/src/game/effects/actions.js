@@ -131,6 +131,7 @@ function changePosition(ctx, args, targets) {
     const m = ctx.state.players.flatMap((p) => p.field.monsters).find((x) => x && x.instanceId === instanceId);
     if (!m) return;
     if (args.position === 'defenseDown') {
+      log(ctx.state, `${sourceName(ctx.state, instanceId)} pasa a defensa boca abajo (por ${ctxSource(ctx)}).`);
       m.position = 'defense';
       m.faceDown = true;
       releaseEquipment(ctx.state, instanceId); // "volteado boca abajo" also releases its Equipo cards
@@ -550,6 +551,16 @@ function returnFromGraveyardToDeck(ctx, args, targets) {
 
 // "Regresa esta carta / la carta al Mazo".
 function returnToDeck(ctx, args, targets) {
+  // "Selecciona N ... del Cementerio: barájalos al Mazo" (Gato del Destino): the picked cards, never
+  // the card itself.
+  if (args.from === 'graveyard') {
+    const pl = player(ctx.state, ctx.controllerIndex);
+    const picked = (targets || []).filter((id) => pl.graveyard.includes(id));
+    picked.forEach((id) => moveToZone(ctx.state, id, 'deck', undefined, { deckPosition: 'shuffle' }));
+    if (picked.length) log(ctx.state, `${pl.userId} baraja en el Mazo ${picked.map((id) => sourceName(ctx.state, id)).join(', ')}.`);
+    ctx.previousSucceeded = picked.length === (args.count || 1);
+    return;
+  }
   const list = args.target === 'self' || !(targets && targets.length) ? [ctx.sourceInstanceId] : targets;
   list.forEach((id) => moveToZone(ctx.state, id, 'deck', undefined, { deckPosition: 'shuffle' }));
 }

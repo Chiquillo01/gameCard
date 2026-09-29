@@ -99,6 +99,16 @@ function stepPool(ctx, step) {
   const { searchCandidates, SEARCH_FNS } = require('./effects/fieldActions');
   if (SEARCH_FNS.includes(step.fn)) return searchCandidates(ctx.state, ctx.controllerIndex, step.fn, args, ctx);
   switch (step.fn) {
+    // Hechizo de volteo: "selecciona un monstruo en el Campo: pásalo a defensa boca abajo".
+    case 'changePosition':
+      return isSelect(args) ? ids(faceUpMonsters(selectRows(ctx, args))) : null;
+    // Capitán Bandido: "selecciona un monstruo en el Campo de tu oponente: toma el control".
+    case 'takeControl':
+      return ids(selectRows(ctx, { ...args, side: 'opponent', zone: 'monster', target: 'selected' }));
+    // Gato del Destino: "selecciona 3 Licántropo del Cementerio: barájalos al Mazo".
+    case 'returnToDeck':
+      if (args.from !== 'graveyard') return null;
+      return player(ctx.state, ctx.controllerIndex).graveyard.filter((id) => id !== ctx.sourceInstanceId && matchesCardFilter(cardOf(id), args.filter || {}));
     case 'returnFromGraveyardToDeck':
       return require('./effects/actions').graveyardMonstersToReturn(ctx.state, ctx.controllerIndex, ctx.sourceInstanceId);
     case 'sendFromDeckToGY': {
@@ -259,6 +269,9 @@ const STEP_PROMPTS = {
   equipMonsterToSelf: 'Elige el monstruo que se equipa',
   returnCardToHand: 'Elige la carta que vuelve a la mano',
   returnFromGraveyardToDeck: 'Elige los monstruos que vuelven al Mazo',
+  returnToDeck: 'Elige las cartas que vuelven al Mazo',
+  changePosition: 'Elige el monstruo que pasa a defensa boca abajo',
+  takeControl: 'Elige el monstruo del que tomas el control',
   bounceToHand: 'Elige la carta que vuelve a la mano',
   addCounter: 'Elige la carta que recibe los contadores',
   corrodeZone: 'Elige la zona que se corroe',

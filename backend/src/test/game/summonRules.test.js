@@ -316,7 +316,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     const [a, b] = state.players[1].hand;
     placeMonster(state, a, 1, { position: 'attack' });
     placeMonster(state, b, 1, { position: 'attack' });
-    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: cap }).ok).toBe(true);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: cap, targets: [a] }).ok).toBe(true);
     passChain(state);
     expect(state.players[1].field.monsters.some(Boolean)).toBe(false);
     const stolen = [a, b].map((id) => onField(state, 0, id)).find(Boolean);
