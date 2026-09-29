@@ -225,4 +225,41 @@ describe('Deck Controller TEST', () => {
       expect(getResponse.status).toBe(404);
     });
   });
+
+  describe('POST /deck/delete-many', () => {
+    const makeDeck = async (token, title) =>
+      (await fakeRequest.post('/deck').set('Authorization', `Bearer ${token}`).send({ deckTitle: title, cards: [], fusionCards: [] })).body._id;
+    const deleteMany = (token, ids) => fakeRequest.post('/deck/delete-many').set('Authorization', `Bearer ${token}`).send({ ids });
+    const titles = async (token) => (await fakeRequest.get('/deck/user').set('Authorization', `Bearer ${token}`)).body.map((d) => d.deckTitle);
+
+    it('requires a token', async () => {
+      expect((await fakeRequest.post('/deck/delete-many').send({ ids: [] })).status).toBe(401);
+    });
+
+    it('deletes several of the owner\'s decks at once and keeps the rest', async () => {
+      const a = await makeDeck(ownerToken, 'Bulk A');
+      const b = await makeDeck(ownerToken, 'Bulk B');
+      await makeDeck(ownerToken, 'Bulk C');
+      const response = await deleteMany(ownerToken, [a, b]);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ deleted: 2 });
+      const left = await titles(ownerToken);
+      expect(left).toContain('Bulk C');
+      expect(left).not.toContain('Bulk A');
+      expect(left).not.toContain('Bulk B');
+    });
+
+    it('deletes nothing when any of the decks belongs to someone else', async () => {
+      const mine = await makeDeck(ownerToken, 'Mine to keep');
+      const theirs = await makeDeck(otherToken, 'Not yours');
+      expect((await deleteMany(ownerToken, [mine, theirs])).status).toBe(403);
+      expect(await titles(ownerToken)).toContain('Mine to keep');
+      expect(await titles(otherToken)).toContain('Not yours');
+    });
+
+    it('rejects an empty or malformed list', async () => {
+      expect((await deleteMany(ownerToken, [])).status).toBe(400);
+      expect((await deleteMany(ownerToken, ['not-an-id'])).status).toBe(400);
+    });
+  });
 });

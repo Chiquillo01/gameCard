@@ -1,142 +1,260 @@
-.deckPageContainer {
-  height: 90vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* The deck list, in the tavern's 16-bit look (same palette as the Tienda and the Mercado). */
+
+.deckPage {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #241509 0%, #2c1c11 40%, #3a2517 100%);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.12) 0 4px, transparent 4px 64px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.02) 0 2px, transparent 2px 40px);
+  font-family: 'VT323', monospace;
+  color: #4a2a10;
+  padding-bottom: 3rem;
 }
 
-.deckPageDeck {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-start;
-  align-items: center;
-  width: 80%;
-  margin: 1rem;
-  padding: 20px;
-  border-radius: 20px;
-  background-color: #f8edd3;
-}
-
-.plusContainer {
-  all: unset;
+.titleBanner {
   display: flex;
   justify-content: center;
+  /* Clears the "Volver a la taberna" button pinned to the top-left corner. */
+  padding: 3.25rem 1rem 0.5rem;
+}
+
+.titlePlaque {
+  background: linear-gradient(160deg, #3a1f0d 0%, #241305 55%, #180b02 100%);
+  border: 6px solid #120902;
+  box-shadow: 0 0 0 4px #6b3d16, 8px 8px 0 0 rgba(0, 0, 0, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.08);
+  padding: 0.875rem 1.75rem;
+}
+
+.titleText {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.125rem;
+  color: #ffd76a;
+  letter-spacing: 0.0625rem;
+  text-shadow: 3px 3px 0 #7a2f0f;
+  text-align: center;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 0.625rem;
+}
+
+.selectionInfo {
+  flex: 1 1 200px;
+  color: #ffd76a;
+  font-size: 1.25rem;
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+  border: 3px solid #241305;
+  box-shadow: 3px 3px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 0.5rem 0.875rem;
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  font-size: 1.25rem;
+  color: #fbf3de;
+}
+
+.primaryButton {
+  background: linear-gradient(180deg, #3d8b5f 0%, #2c6b46 55%, #1f5033 100%);
+}
+
+.secondaryButton {
+  background: linear-gradient(180deg, #6b3d16 0%, #4a2a10 55%, #2f1a0a 100%);
+}
+
+.dangerButton {
+  background: linear-gradient(180deg, #e05a45 0%, #c0392b 55%, #9c2e20 100%);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled {
+  background: linear-gradient(180deg, #a89a86, #7a6d5c);
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.primaryButton:active:not(:disabled),
+.secondaryButton:active:not(:disabled),
+.dangerButton:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 rgba(0, 0, 0, 0.4);
+}
+
+.panel {
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 5px solid #4a2a10;
+  box-shadow: 6px 6px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 1rem;
+}
+
+.empty {
+  margin: 1rem 0;
+  text-align: center;
+  font-size: 1.375rem;
+  color: #6b4a28;
+}
+
+.deckGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+}
+
+.deckTile {
+  position: relative;
   width: 100%;
-  cursor: pointer;
-}
-
-.plus {
-  font-size: 6rem;
-  color: #a87304;
-  cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    color 0.3s ease;
-}
-
-.plus:hover {
-  color: #dab971;
-  transform: scale(1.1);
-}
-
-.plus:active {
-  color: #a87304;
-  transform: scale(1.05);
-  animation: shake 0.3s ease-in-out;
-}
-
-@keyframes shake {
-  0% {
-    transform: translateX(0);
-  }
-
-  25% {
-    transform: translateX(-2px);
-  }
-
-  50% {
-    transform: translateX(2px);
-  }
-
-  75% {
-    transform: translateX(-2px);
-  }
-
-  100% {
-    transform: translateX(0);
-  }
-}
-
-.deckContainer {
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 18%;
-  transition:
-    transform 0.2s ease,
-    opacity 0.3s ease;
-  text-decoration: none;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.3);
+  border: 3px solid #b89860;
+  padding: 0.75rem 0.5rem;
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  color: #4a2a10;
+  transition: transform 0.12s ease;
 }
 
-.deckContainer:hover {
-  transform: scale(1.05);
+.deckTile:hover {
+  transform: translateY(-3px);
+  border-color: #4a2a10;
 }
 
-.deckContainer img {
+.deckTileSelecting .deckImage {
+  opacity: 0.75;
+}
+
+.deckTileSelected {
+  border-color: #c0392b;
+  background: rgba(224, 90, 69, 0.18);
+  box-shadow: 0 0 0 3px #c0392b;
+}
+
+.deckTileSelected .deckImage {
+  opacity: 1;
+}
+
+.checkbox {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fbf3de;
+  border: 3px solid #241305;
+  color: #c0392b;
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.deckImage {
   width: 100%;
-  max-width: 12rem;
+  max-width: 120px;
   height: auto;
+  image-rendering: pixelated;
 }
 
 .deckTitle {
-  margin-top: 8px;
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #333;
-  font-family: 'Metamorphous', sans-serif;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6875rem;
+  line-height: 1.4;
   text-align: center;
-  transition: color 0.3s ease;
+  overflow-wrap: anywhere;
 }
 
-.deckContainer:hover .deckTitle {
-  color: #a87304;
+.deckCount {
+  font-size: 1rem;
+  color: #6b4a28;
 }
 
-@media (max-width: 1024px) {
-  .deckPageDeck {
-    justify-content: center;
-  }
-
-  .deckContainer {
-    width: 30%;
-  }
+.statusOk,
+.statusWarn {
+  font-size: 0.9375rem;
+  padding: 0 0.375rem;
+  border: 2px solid #241305;
+  color: #fbf3de;
 }
 
-@media (max-width: 768px) {
-  .deckPageDeck {
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-  }
-
-  .deckPlusContainer,
-  .deckContainer {
-    width: 30%;
-  }
-
-  .plus {
-    font-size: 6rem;
-  }
+.statusOk {
+  background: #2c6b46;
 }
 
-@media (max-width: 480px) {
-  .deckPlusContainer,
-  .deckContainer {
-    width: 50%;
-  }
+.statusWarn {
+  background: #9c6b20;
+}
 
-  .plus {
-    font-size: 3rem;
-  }
+/* --- Confirmation --- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(13, 6, 2, 0.75);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: linear-gradient(155deg, #f1ddab 0%, #e8d3a0 45%, #ddc48c 100%);
+  border: 6px solid #4a2a10;
+  box-shadow: 8px 8px 0 0 rgba(0, 0, 0, 0.4);
+  padding: 1.25rem;
+  width: min(460px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  font-family: 'VT323', monospace;
+  color: #4a2a10;
+  outline: none;
+}
+
+.modalTitle {
+  margin: 0 0 0.75rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.modalList {
+  margin: 0 0 0.75rem;
+  padding-left: 1.25rem;
+  font-size: 1.25rem;
+}
+
+.modalNote {
+  margin: 0 0 1rem;
+  color: #6b4a28;
+  font-size: 1.125rem;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.625rem;
+  flex-wrap: wrap;
 }

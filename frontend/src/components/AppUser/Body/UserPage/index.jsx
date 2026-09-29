@@ -1,7 +1,7 @@
 import '@fontsource/metamorphous';
 import styles from './userPage.module.css';
 import { useState, useEffect, useMemo } from 'react';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import { fetchUsers, createUser, deleteUser } from '../../../../lib/utils/apiUser';
 import { useUser } from '../../../../context/userContext';
 import PageTitle from '../Generic/PageTitle';
@@ -125,7 +125,6 @@ const UserPage = () => {
         <CreateUser form={form} setForm={setForm} handleSubmit={handleSubmit} onClose={() => setIsModalOpen(false)} />
       )}
 
-      <ToastContainer position='top-right' autoClose={3000} hideProgressBar={false} closeOnClick pauseOnHover />
     </>
   );
 };

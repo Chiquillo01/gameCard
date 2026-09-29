@@ -1,6 +1,6 @@
 import styles from './createnewdeck.module.css';
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DeckTitle from './DeckTitle';
@@ -27,6 +27,9 @@ const showToast = (type, message) => toast[type](message, TOAST_OPTIONS);
 
 const CreateNewDeck = () => {
   const { deckId } = useParams();
+  const navigate = useNavigate();
+  // True while a save is on its way: a second click can't send another one (and create a copy).
+  const [saving, setSaving] = useState(false);
   const [deckTitle, setDeckTitle] = useState('');
   const [selectedCards, setSelectedCards] = useState([]);
   const [selectedFusionCards, setSelectedFusionCards] = useState([]);
@@ -160,11 +163,18 @@ const CreateNewDeck = () => {
       return;
     }
 
+    if (saving) return;
+    setSaving(true);
     try {
       const savedDeck = deckId ? await updateDeck(deckId, formattedDeck) : await createDeck(formattedDeck);
       showToast('success', `Mazo "${savedDeck.deckTitle}" ${deckId ? 'actualizado' : 'guardado'} con éxito.`);
+      // A new deck now has its own page: saving again from here updates it instead of creating
+      // another copy (which is how duplicate decks appeared).
+      if (!deckId && savedDeck?._id) navigate(`/deck/${savedDeck._id}`, { replace: true });
     } catch (error) {
       showToast('error', 'Error al guardar el mazo. Inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -202,10 +212,10 @@ const CreateNewDeck = () => {
               hard ceilings (max deck size, max fusion cards) block saving outright. */}
           <button
             className={styles.saveDeckButton}
-            disabled={deckTitle.trim() === '' || totalMainCards > MAX_DECK_SIZE || totalFusionCards > MAX_FUSION_CARDS}
+            disabled={saving || deckTitle.trim() === '' || totalMainCards > MAX_DECK_SIZE || totalFusionCards > MAX_FUSION_CARDS}
             onClick={handleSaveDeck}
           >
-            {deckId ? 'Actualizar Mazo' : 'Guardar Mazo'}
+            {saving ? 'Guardando...' : deckId ? 'Actualizar Mazo' : 'Guardar Mazo'}
           </button>
         </>
       )}

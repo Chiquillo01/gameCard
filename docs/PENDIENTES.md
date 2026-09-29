@@ -75,6 +75,9 @@ sirve de referencia:
   por la IP real del cliente.
 - **CORS de la API abierto a cualquier origen** (`cors()` sin opciones).
 - **Mongoose 6** está desfasado (actual: 8).
+- **Los tests del frontend no arrancan:** `jest.setup.js` importa
+  `@testing-library/jest-dom/extend-expect`, que ya no existe en la versión instalada (ahora es
+  `@testing-library/jest-dom`). La CI solo compila el frontend, así que no lo detecta.
 - **5 avisos moderados de `npm audit`** en las herramientas de test del frontend (vitest 3);
   arreglarlos exige saltar a vitest 5.
 - **Validación de contraseña distinta** en el frontend (exige carácter especial) y en el backend

@@ -217,10 +217,37 @@ const deleteDeck = async (req, res) => {
   }
 };
 
+// Deletes several of the player's decks at once ({ ids: [...] }). All or nothing: if any id isn't
+// one of their own decks, none is deleted.
+const MAX_BULK_DELETE = 100;
+
+const deleteDecks = async (req, res) => {
+  const userId = req.jwtPayload?.id;
+  const ids = Array.isArray(req.body?.ids) ? [...new Set(req.body.ids.map(String))] : [];
+  if (!ids.length || ids.length > MAX_BULK_DELETE) {
+    return res.status(400).json({ error: 'Indica qué mazos quieres eliminar.' });
+  }
+  if (!ids.every((id) => mongoose.isValidObjectId(id))) {
+    return res.status(400).json({ error: 'Alguno de los mazos no es válido.' });
+  }
+
+  try {
+    const owned = await Deck.countDocuments({ _id: { $in: ids }, owner: userId });
+    if (owned !== ids.length) {
+      return res.status(403).json({ error: 'Solo puedes eliminar tus propios mazos.' });
+    }
+    const { deletedCount } = await Deck.deleteMany({ _id: { $in: ids }, owner: userId });
+    res.status(200).json({ deleted: deletedCount });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al eliminar los mazos' });
+  }
+};
+
 module.exports = {
   getDecksUser,
   getDeckById,
   createDeck,
   updateDeck,
   deleteDeck,
+  deleteDecks,
 };

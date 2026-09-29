@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import styles from './decktitle.module.css';
 
 function DeckTitle({ value, onTitleChange }) {
@@ -64,7 +64,6 @@ function DeckTitle({ value, onTitleChange }) {
 
   return (
     <div className={styles.deckTitle}>
-      <ToastContainer theme='dark' />
       {isEditing ? (
         <input
           type='text'
