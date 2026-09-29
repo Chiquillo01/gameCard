@@ -71,15 +71,46 @@ function equipTo(ctx, holderId, targets) {
     }
     const row = fieldRowOf(ctx.state, id);
     if (!row || row.kind !== 'monster' || row.entry.isToken || id === holderId) return;
-    const slot = findEmptySlot(pl.field.support, corrodedSlots(pl, 'support'));
-    if (slot === -1) {
+    const blocked = corrodedSlots(pl, 'support');
+    const free = pl.field.support.map((s, i) => (s === null && !blocked.includes(i) ? i : -1)).filter((i) => i >= 0);
+    if (!free.length) {
       log(ctx.state, 'No hay espacio en la zona de Apoyo para equiparlo.');
       return;
     }
-    removeFromZone(ctx.state, id, findInstanceLocation(ctx.state, id));
-    pl.field.support[slot] = { instanceId: id, cardId: cardIdFromInstance(id), faceDown: false, equippedTo: holderId, isMonsterEquip: true };
-    log(ctx.state, `${getCard(cardIdFromInstance(id)).name} queda equipado a ${getCard(holder.cardId).name}.`);
+    if (free.length === 1) {
+      equipIntoSlot(ctx.state, ctx.controllerIndex, id, holderId, free[0]);
+      return;
+    }
+    // Rulebook: the player picks where a card lands — the monster stays where it is until they do
+    // (effectEngine.resolveTriggerChoice → equipFromChoice).
+    ctx.state.pendingTriggerChoices = ctx.state.pendingTriggerChoices || [];
+    ctx.state.pendingTriggerChoices.push({
+      kind: 'slot',
+      purpose: 'equip',
+      zone: 'support',
+      controllerIndex: ctx.controllerIndex,
+      sourceInstanceId: id,
+      holderId,
+      slots: free,
+      prompt: `Elige en qué zona de Apoyo colocas ${getCard(cardIdFromInstance(id)).name}`,
+    });
   });
+}
+
+// Puts monster `id` in `slot` of the controller's support zone as an Equipo of `holderId`.
+function equipIntoSlot(state, controllerIndex, id, holderId, slot) {
+  const pl = player(state, controllerIndex);
+  const holder = getFieldMonster(state, holderId);
+  const loc = findInstanceLocation(state, id);
+  if (!holder || !loc || loc.zone !== 'field:monster' || pl.field.support[slot] !== null) return false;
+  removeFromZone(state, id, loc);
+  pl.field.support[slot] = { instanceId: id, cardId: cardIdFromInstance(id), faceDown: false, equippedTo: holderId, isMonsterEquip: true };
+  log(state, `${getCard(cardIdFromInstance(id)).name} queda equipado a ${getCard(holder.cardId).name}.`);
+  return true;
+}
+
+function equipFromChoice(state, pending, slot) {
+  return equipIntoSlot(state, pending.controllerIndex, pending.sourceInstanceId, pending.holderId, slot);
 }
 
 function equipMonster(ctx, args, targets) {
@@ -276,3 +307,7 @@ module.exports = {
   addExtraTurn,
   disableAttacks,
 };
+
+// Not a card action (every enumerable export here is registered as one): resolveTriggerChoice
+// calls it once the player has picked the support zone for a monster being equipped.
+Object.defineProperty(module.exports, 'equipFromChoice', { value: equipFromChoice, enumerable: false });

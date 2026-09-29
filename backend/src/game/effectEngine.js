@@ -298,6 +298,7 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     if (!pending.slots.includes(slot)) return { ok: false, reason: 'no-field-space' };
     state.pendingTriggerChoices.shift();
     if (pending.purpose === 'relocate') require('./effects/actions').relocateSelfFromChoice(state, pending, slot);
+    else if (pending.purpose === 'equip') require('./effects/extraActions').equipFromChoice(state, pending, slot);
     else require('./summon').finishHandTrigger(state, pending.controllerIndex, pending.sourceInstanceId, getEffect(pending.effectId), slot);
     recomputeContinuous(state);
     checkWin(state);

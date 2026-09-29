@@ -182,6 +182,7 @@ describe('Choices and picks', () => {
     const slime = await onField(state, 1, 'Slime');
     expect(activate(state, 0, 'CARNIVORA_STEAL_EQUIP', carnivora, [slime]).ok).toBe(true);
     passAll(state);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: 0 }).ok).toBe(true); // which support zone
     expect(monster(state, slime)).toBeUndefined();
     expect(state.players[0].field.support.find((s) => s && s.instanceId === slime)).toMatchObject({ equippedTo: carnivora });
     expect(monster(state, carnivora).tempBuff.atk).toBe(1);
@@ -447,5 +448,22 @@ describe('Cards that pick their target', () => {
     passAll(state);
     expect(state.players[0].deck).toEqual(expect.arrayContaining(lics.slice(0, 3)));
     expect(state.players[0].graveyard).toEqual(expect.arrayContaining([lics[3], gato]));
+  });
+});
+
+describe('Equipping a monster as an Equipo', () => {
+  it('the player picks which support zone it goes to', async () => {
+    const state = await makeDuel();
+    const carnivora = await onField(state, 0, 'Carnivora Come Hombres');
+    const victim = await onField(state, 1, 'Orco Guerrero');
+    toPhase(state, 'main1', 0);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CARNIVORA_STEAL_EQUIP', sourceInstanceId: carnivora, targets: [victim] }).ok).toBe(true);
+    passAll(state);
+    // Four free support zones: it waits for the pick, the monster still where it was.
+    expect(viewFor(state, 0).pendingTriggerChoice).toMatchObject({ kind: 'slot', zone: 'support', slots: [0, 1, 2, 3] });
+    expect(monster(state, victim)).toBeTruthy();
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: 2 }).ok).toBe(true);
+    expect(state.players[0].field.support[2]).toMatchObject({ instanceId: victim, equippedTo: carnivora, isMonsterEquip: true });
+    expect(monster(state, victim)).toBeFalsy();
   });
 });
