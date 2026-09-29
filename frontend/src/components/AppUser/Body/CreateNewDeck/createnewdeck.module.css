@@ -61,6 +61,22 @@
   color: #a33a2e;
 }
 
+.limitWarning {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: #f8edd3;
+  border: 2px solid #a33a2e;
+  color: #a33a2e;
+  font-family: 'Metamorphous', sans-serif;
+  font-size: 0.9rem;
+}
+
+.limitWarning ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
 .saveDeckButton {
   position: fixed;
   bottom: 10px;

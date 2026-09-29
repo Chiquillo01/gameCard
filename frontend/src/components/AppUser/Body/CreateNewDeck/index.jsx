@@ -44,6 +44,17 @@ const CreateNewDeck = () => {
   const totalMainCards = selectedCards.reduce((sum, c) => sum + c.amount, 0);
   const totalFusionCards = selectedFusionCards.reduce((sum, c) => sum + c.amount, 0);
 
+  // Cards the deck holds more of than it may: over the card's own limit (`state`, its banlist
+  // value — it can change after a deck was built), or over the copies the player owns. The server
+  // refuses to save such a deck, so it's flagged here with what to remove.
+  const overLimit = [...selectedCards, ...selectedFusionCards]
+    .map((c) => {
+      const owned = userCards.length ? userCards.find((u) => u.id === c.id)?.amount ?? 0 : Infinity;
+      const max = Math.min(c.state ?? 3, owned);
+      return c.amount > max ? { name: c.name, amount: c.amount, max, byOwned: owned < (c.state ?? 3) } : null;
+    })
+    .filter(Boolean);
+
   useEffect(() => {
     const getUserCards = async () => {
       const response = await fetchUserCollection();
@@ -172,7 +183,7 @@ const CreateNewDeck = () => {
       // another copy (which is how duplicate decks appeared).
       if (!deckId && savedDeck?._id) navigate(`/deck/${savedDeck._id}`, { replace: true });
     } catch (error) {
-      showToast('error', 'Error al guardar el mazo. Inténtalo de nuevo.');
+      showToast('error', error.message || 'Error al guardar el mazo. Inténtalo de nuevo.');
     } finally {
       setSaving(false);
     }
@@ -194,6 +205,19 @@ const CreateNewDeck = () => {
             </div>
             <TokenSelector availableTokens={ownedTokens} selectedTokens={selectedTokens} onToggleToken={handleToggleToken} />
           </div>
+          {overLimit.length > 0 && (
+            <div className={styles.limitWarning} role='alert'>
+              <strong>No se puede guardar hasta quitar estas copias:</strong>
+              <ul>
+                {overLimit.map((c) => (
+                  <li key={c.name}>
+                    {c.name}: tienes {c.amount} en el mazo y el máximo es {c.max}
+                    {c.byOwned ? ' (las que tienes en tu colección)' : ''} — quita {c.amount - c.max}.
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className={styles.deckContent}>
             <div className={styles.cardsSelectedWrapper}>
               <CardsSelectedDisplay
@@ -212,7 +236,8 @@ const CreateNewDeck = () => {
               hard ceilings (max deck size, max fusion cards) block saving outright. */}
           <button
             className={styles.saveDeckButton}
-            disabled={saving || deckTitle.trim() === '' || totalMainCards > MAX_DECK_SIZE || totalFusionCards > MAX_FUSION_CARDS}
+            disabled={saving || overLimit.length > 0 || deckTitle.trim() === '' || totalMainCards > MAX_DECK_SIZE || totalFusionCards > MAX_FUSION_CARDS}
+            title={overLimit.length > 0 ? 'Quita las copias que sobran (ver el aviso de arriba)' : undefined}
             onClick={handleSaveDeck}
           >
             {saving ? 'Guardando...' : deckId ? 'Actualizar Mazo' : 'Guardar Mazo'}
