@@ -53,16 +53,22 @@ describe('Duel view: Atk/Vida changes', () => {
 });
 
 describe('Duel view: why the duel ended', () => {
-  it('says so when a player wins by reaching triple the rival\'s VP', async () => {
+  it('says so when a player is left with no VP', async () => {
     const state = await makeDuel();
-    state.players[0].name = 'Ana';
-    state.players[0].vp = 42;
+    state.players[1].name = 'Luis';
+    state.players[1].vp = 0;
+    require('../../game/outcome').checkWin(state);
+    const view = viewFor(state, 0);
+    expect(view).toMatchObject({ status: 'finished', winnerIndex: 0, endReason: 'Luis se queda sin VP y pierde la partida.' });
+    expect(view.log[view.log.length - 1].message).toBe(view.endReason);
+  });
+
+  it('keeps playing however far ahead a player is (no win for triple VP)', async () => {
+    const state = await makeDuel();
+    state.players[0].vp = 58;
     state.players[1].vp = 14;
     require('../../game/outcome').checkWin(state);
-    const view = viewFor(state, 1);
-    expect(view).toMatchObject({ status: 'finished', winnerIndex: 0 });
-    expect(view.endReason).toBe('Ana gana la partida: tiene 42 VP, el triple o más de los 14 de Jugador.');
-    expect(view.log[view.log.length - 1].message).toBe(view.endReason);
+    expect(state.status).toBe('active');
   });
 
   it('says who surrendered', async () => {

@@ -944,7 +944,7 @@ function VpBadge({ vp, max, flash, onDirectAttack }) {
     );
   }
   return (
-    <span className={styles.vpBadge} title='Puntos de victoria: pierde quien llega a 0 o quien se queda con un tercio o menos de los VP del rival'>
+    <span className={styles.vpBadge} title='Puntos de victoria: pierde quien llega a 0'>
       {content}
     </span>
   );

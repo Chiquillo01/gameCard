@@ -1,7 +1,6 @@
 // How a duel ends, in one place, so "Tú no puedes perder y tu oponente no puede ganar" (Ángel de
 // Platino — the `cantLose`/`cantWin` flags recomputeContinuous keeps on each player) applies to every
-// way of losing: 0 VP, the rival reaching triple VP, running out of cards, or a card that wins
-// outright (Gigante Elemental).
+// way of losing: 0 VP, running out of cards, or a card that wins outright (Gigante Elemental).
 const { log } = require('./zones');
 
 const other = (idx) => (idx === 0 ? 1 : 0);
@@ -26,14 +25,11 @@ function declareWin(state, winnerIndex, message) {
 
 function checkWin(state) {
   if (state.winnerIndex !== null) return;
+  // The rulebook's "triple your rival's VP" win was dropped (balance pass): a duel is won by
+  // taking the rival to 0 VP.
   state.players.forEach((p, i) => {
     if (state.winnerIndex !== null) return;
-    const opp = state.players[other(i)];
     if (p.vp <= 0) declareLoss(state, i, `${p.userId} se queda sin VP y pierde la partida.`);
-    // Rulebook win condition: reach triple your opponent's VP.
-    else if (opp.vp > 0 && p.vp >= opp.vp * 3) {
-      declareWin(state, i, `${p.userId} gana la partida: tiene ${p.vp} VP, el triple o más de los ${opp.vp} de ${opp.userId}.`);
-    }
   });
 }
 
