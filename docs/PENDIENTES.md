@@ -37,6 +37,12 @@ sirve de referencia:
 ## Mercado
 
 - El vendedor no recibe ningún aviso cuando le compran una carta (se ve en "Mis ventas").
+- **Brillo (foil):** se implementará más adelante. Hoy la colección no distingue copias con brillo,
+  así que el Mercado no lo pide. Para hacerlo hará falta:
+  - Guardar el brillo de cada copia en la colección (por ejemplo, las cantidades por tipo: normal,
+    superRara, secreta, collector, que eran los valores del esquema antiguo).
+  - Decidir cómo se obtienen las copias con brillo (cofres, mazos de estructura…).
+  - Que el Mercado venda y compre por carta y brillo, y mostrarlo en la carta.
 
 ## Tienda
 
