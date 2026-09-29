@@ -47,8 +47,17 @@ sirve de referencia:
   adelante.
 - **Cofres de expansiones sin cartas:** Sombras del Bosque Encantado, Perdición del Arrecife Oculto
   y Nacimiento de la Magia (SBE, PAO, NDM) no tienen cartas todavía; comprarlos da error sin cobrar.
-- **Precio en gemas de Tiempo Primitivo:** 400 gemas, cuando la relación de los cofres (100
-  monedas = 10 gemas) daría 40. Por decidir.
+- **Tiempo Primitivo:**
+  - Usa como imagen temporal la ilustración de Licántropo Alfa; falta su imagen propia.
+  - Cuesta 400 gemas, cuando la relación de los cofres (100 monedas = 10 gemas) daría 40. Por
+    decidir.
+- **Ediciones Especiales:** el filtro ya existe, pero muestra "¡Próximamente!" porque sus dos
+  productos (Ganancia por Honor y Ediocion Espacial Tokens) siguen ocultos hasta tener imagen
+  propia (la tienda esconde los que usan la imagen provisional).
+  - Ganancia por Honor lleva una tabla de premios provisional (2 comunes, 2 épicas y 1 épica con un
+    10% de ser legendaria): su expansión no tiene raras. Revisarla al ponerle imagen.
+  - El nombre "Ediocion Espacial Tokens" tiene erratas; como la semilla busca los productos por
+    nombre, cambiarlo crearía uno nuevo en vez de renombrar este.
 
 ## Antes de la beta
 
