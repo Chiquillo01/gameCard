@@ -78,6 +78,9 @@ describe('Costs the data uses', () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const refuerzos = await toHand(state, 0, 'Refuerzos');
+    // Something for its on-play search to find: a Viento monster to match the one on the field.
+    await onField(state, 0, 'Avispa gigante');
+    await toDeckTop(state, 0, 'Avispa Rosa');
     await toGraveyard(state, 0, 'Slime');
     await toGraveyard(state, 0, 'Valkiria');
     // Played and resolved: it reaches the Cementerio this turn.
@@ -93,6 +96,36 @@ describe('Costs the data uses', () => {
     expect(state.players[0].banished).toContain(refuerzos);
     passAll(state);
     expect(state.players[0].hand.length).toBe(hand + 1);
+  });
+
+  it('Refuerzos: the player picks which 2 Cementerio monsters go back to the Mazo', async () => {
+    const state = await makeDuel();
+    const refuerzos = await toGraveyard(state, 0, 'Refuerzos');
+    const slime = await toGraveyard(state, 0, 'Slime');
+    const valkiria = await toGraveyard(state, 0, 'Valkiria');
+    const avispa = await toGraveyard(state, 0, 'Avispa Rosa');
+    state.turnNumber = 3; // it reached the Cementerio on an earlier turn
+    toPhase(state, 'main1', 0);
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige los monstruos que vuelven al Mazo' });
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([slime, valkiria, avispa].sort());
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos, targets: [slime, avispa] }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].graveyard).toEqual([valkiria]);
+    expect(state.players[0].deck).toEqual(expect.arrayContaining([slime, avispa]));
+    expect(state.log.some((l) => l.message.includes('devuelve al Mazo Slime y Avispa Rosa y lo baraja'))).toBe(true);
+  });
+
+  it('Refuerzos: with no face-up monster to match an attribute with, it cannot be activated and costs nothing', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    await onField(state, 0, 'Avispa gigante', { position: 'defense', faceDown: true });
+    await toDeckTop(state, 0, 'Avispa Rosa');
+    const refuerzos = await toHand(state, 0, 'Refuerzos');
+    const pixels = state.players[0].pixelcoins;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: refuerzos })).toMatchObject({ ok: false, reason: 'no-legal-target' });
+    expect(state.players[0].pixelcoins).toBe(pixels);
+    expect(state.players[0].hand).toContain(refuerzos);
   });
 
   it('Perro Esqueleto: its "once per duel" revival works once, then never again', async () => {

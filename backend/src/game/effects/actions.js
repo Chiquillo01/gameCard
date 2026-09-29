@@ -516,12 +516,20 @@ function setWinLoseLock(ctx, args) {
 
 // "Baraja al Mazo N monstruos del Cementerio" (Refuerzos) — records how many for a following
 // "y si lo haces" step.
-function returnFromGraveyardToDeck(ctx, args) {
+// Refuerzos: "Baraja al Mazo 2 monstruos del Cementerio" — the ones the player picked (targets.js
+// offers them), or, with nothing to choose between, the ones there are.
+function graveyardMonstersToReturn(state, controllerIndex, sourceInstanceId) {
+  return player(state, controllerIndex).graveyard.filter((id) => ['monster', 'fusion'].includes(getCard(cardIdFromInstance(id)).category) && id !== sourceInstanceId);
+}
+
+function returnFromGraveyardToDeck(ctx, args, targets) {
   const pl = player(ctx.state, ctx.controllerIndex);
   const amount = args.count || 1;
-  const monsters = pl.graveyard.filter((id) => ['monster', 'fusion'].includes(getCard(cardIdFromInstance(id)).category) && id !== ctx.sourceInstanceId);
-  const moved = monsters.slice(-amount);
+  const monsters = graveyardMonstersToReturn(ctx.state, ctx.controllerIndex, ctx.sourceInstanceId);
+  const picked = (targets || []).filter((id) => monsters.includes(id));
+  const moved = (picked.length ? picked : monsters).slice(-amount);
   moved.forEach((id) => moveToZone(ctx.state, id, 'deck', undefined, { deckPosition: args.shuffled ? 'shuffle' : 'top' }));
+  if (moved.length) log(ctx.state, `${pl.userId} devuelve al Mazo ${moved.map((id) => sourceName(ctx.state, id)).join(' y ')}${args.shuffled ? ' y lo baraja' : ''}.`);
   ctx.previousSucceeded = moved.length === amount;
 }
 
@@ -764,4 +772,4 @@ function runAction(ctx, step, targets) {
   impl(ctx, step.args || {}, targets);
 }
 
-module.exports = { runAction, registry, checkWin, requestDiscard, relocateSelfFromChoice, equipsOn, columnMonsters, allFieldMonsters, fieldEntry };
+module.exports = { runAction, registry, checkWin, requestDiscard, relocateSelfFromChoice, equipsOn, columnMonsters, allFieldMonsters, fieldEntry, graveyardMonstersToReturn };

@@ -77,12 +77,16 @@ describe('"Una vez por turno" is tracked per card copy, not per card name', () =
     const { state, inHand } = await makeMatch(['Enjambre de Avispas', 'Enjambre de Avispas', 'Kraken']);
     toMain1(state);
     state.players[0].pixelcoins = 6;
+    // Something for each copy's search to find.
+    const avispa = await Card.findOne({ name: 'Avispa Rosa' }).lean();
+    const [a1, a2] = [`0:${avispa._id}:a1`, `0:${avispa._id}:a2`];
+    state.players[0].deck.unshift(a1, a2);
     const [first, second] = state.players[0].hand.filter((id) => id.split(':')[1] === inHand('Enjambre de Avispas').split(':')[1]);
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: first })).toMatchObject({ ok: true });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: first, targets: [a1] })).toMatchObject({ ok: true });
     // Speed 1 can't chain onto itself (Enjambre is a Apoyo Normal) — the first has to fully
     // resolve before the second can be activated as a fresh Pila.
     passChain(state);
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: second })).toMatchObject({ ok: true });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: second, targets: [a2] })).toMatchObject({ ok: true });
     passChain(state);
     expect(state.players[0].pixelcoins).toBe(6 - 4);
   });

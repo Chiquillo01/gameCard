@@ -97,6 +97,8 @@ function stepPool(ctx, step) {
   const { searchCandidates, SEARCH_FNS } = require('./effects/fieldActions');
   if (SEARCH_FNS.includes(step.fn)) return searchCandidates(ctx.state, ctx.controllerIndex, step.fn, args, ctx);
   switch (step.fn) {
+    case 'returnFromGraveyardToDeck':
+      return require('./effects/actions').graveyardMonstersToReturn(ctx.state, ctx.controllerIndex, ctx.sourceInstanceId);
     case 'sendFromDeckToGY': {
       const pl = player(ctx.state, ctx.controllerIndex);
       return pl.deck.filter((id) => matchesCardFilter(cardOf(id), args.filter || { breed: args.breed, family: args.family }));
@@ -254,6 +256,7 @@ const STEP_PROMPTS = {
   equipMonster: 'Elige el monstruo que se equipa',
   equipMonsterToSelf: 'Elige el monstruo que se equipa',
   returnCardToHand: 'Elige la carta que vuelve a la mano',
+  returnFromGraveyardToDeck: 'Elige los monstruos que vuelven al Mazo',
   bounceToHand: 'Elige la carta que vuelve a la mano',
   addCounter: 'Elige la carta que recibe los contadores',
   corrodeZone: 'Elige la zona que se corroe',
@@ -306,10 +309,16 @@ function pendingEffectChoice(ctx, effect, targets = [], exclude = []) {
   return null;
 }
 
-// Every effect of `effectIds` that needs targets — used to refuse activating something that has
-// nothing to act on ("Solo si hay un objetivo válido").
+// Refuses activating something that has nothing to act on ("Solo si hay un objetivo válido"):
+// a step that always needs a target, or the effect's first step — what the card is about ("Agrega
+// a tu mano un monstruo...", "Destruye una carta...") — with nothing it could pick. Later steps
+// aren't judged up front: an earlier step may be what gives them something to pick. An "hasta N"
+// step can pick none, so it never blocks.
 function hasNoLegalTarget(ctx, effect) {
-  return assignPicks(ctx, effect, [], []).some(({ step, pool }) => pool && pool.length === 0 && TARGET_REQUIRED.has(step.fn));
+  const steps = assignPicks(ctx, effect, [], []);
+  const empty = ({ pool, upTo }) => pool && pool.length === 0 && !upTo;
+  if (steps.some((s) => empty(s) && TARGET_REQUIRED.has(s.step.fn))) return true;
+  return steps.length > 0 && steps[0].index === 0 && empty(steps[0]);
 }
 const TARGET_REQUIRED = new Set(['negateEffect', 'negateEffects', 'target', 'changeBeed', 'equipMonster', 'equipMonsterToSelf', 'destroyAndCopyEffect', 'destroyAndGainVP']);
 
