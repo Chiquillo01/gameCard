@@ -721,7 +721,7 @@
     "def": 1,
     "level": 4,
     "effect": "Una vez por turno, selecciona un Soporte en el Campo:\n• Destrúyelo.",
-    "state": 2,
+    "state": 3,
     "number": 29,
     "effectCodes": [
       "CACTUS_VIOLENTO_DESTROY_SUPPORT"
