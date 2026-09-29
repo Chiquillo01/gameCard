@@ -142,8 +142,7 @@ function applyAction(state, playerIndex, action) {
       return resolveTriggerChoice(state, playerIndex, action.targets || [], action.slot ?? null);
 
     case 'SURRENDER': {
-      state.winnerIndex = opponentIndex(playerIndex);
-      state.status = 'finished';
+      require('./outcome').surrender(state, playerIndex);
       return { ok: true };
     }
 
@@ -187,6 +186,8 @@ function viewFor(state, viewerIndex) {
     phase: state.phase,
     winnerIndex: state.winnerIndex,
     startingVp: STARTING_VP, // what the VP bars are measured against
+    // Why the duel ended ("tiene el triple de VP", "se queda sin VP", "se rinde"...), once it has.
+    endReason: state.endReason ? readableLogLine(state, { message: state.endReason }, names).message : null,
     you: viewerIndex,
     players: state.players.map(redactPlayer),
     log: state.log.slice(-80).map((line) => readableLogLine(state, line, names)),

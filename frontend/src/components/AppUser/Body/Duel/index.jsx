@@ -582,6 +582,10 @@ const DuelPage = () => {
         <div className={styles.gameOverOverlay}>
           <div className={styles.gameOverPlaque}>
             <div>{view.winnerIndex === you ? '¡Victoria!' : view.winnerIndex === opp ? 'Derrota' : 'Partida terminada'}</div>
+            {view.endReason && <p className={styles.gameOverReason}>{view.endReason}</p>}
+            <p className={styles.gameOverScore}>
+              VP finales — {me.name}: {me.vp} · {enemy.name}: {enemy.vp}
+            </p>
             <div className={styles.gameOverActions}>
               <button className={styles.actionButton} onClick={() => navigate('/duel')}>
                 Jugar de nuevo

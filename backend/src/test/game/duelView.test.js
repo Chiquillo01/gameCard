@@ -52,6 +52,27 @@ describe('Duel view: Atk/Vida changes', () => {
   });
 });
 
+describe('Duel view: why the duel ended', () => {
+  it('says so when a player wins by reaching triple the rival\'s VP', async () => {
+    const state = await makeDuel();
+    state.players[0].name = 'Ana';
+    state.players[0].vp = 42;
+    state.players[1].vp = 14;
+    require('../../game/outcome').checkWin(state);
+    const view = viewFor(state, 1);
+    expect(view).toMatchObject({ status: 'finished', winnerIndex: 0 });
+    expect(view.endReason).toBe('Ana gana la partida: tiene 42 VP, el triple o más de los 14 de Jugador.');
+    expect(view.log[view.log.length - 1].message).toBe(view.endReason);
+  });
+
+  it('says who surrendered', async () => {
+    const state = await makeDuel();
+    state.players[1].name = 'Luis';
+    expect(applyAction(state, 1, { type: 'SURRENDER' }).ok).toBe(true);
+    expect(viewFor(state, 0)).toMatchObject({ winnerIndex: 0, endReason: 'Luis se rinde.' });
+  });
+});
+
 describe('Espíritu de batalla', () => {
   it('gives +1 Atk per monster the rival controls, not per monster on the whole field', async () => {
     const state = await makeDuel();

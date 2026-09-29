@@ -719,6 +719,22 @@
   gap: 1.25rem;
 }
 
+.gameOverReason,
+.gameOverScore {
+  margin: 0;
+  max-width: 28rem;
+  font-family: 'VT323', monospace;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  color: #fbf3de;
+  text-shadow: none;
+}
+
+.gameOverScore {
+  color: #e8d3a0;
+  font-size: 1.0625rem;
+}
+
 .gameOverActions {
   display: flex;
   gap: 0.75rem;
