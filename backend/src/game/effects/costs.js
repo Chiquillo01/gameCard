@@ -168,9 +168,9 @@ function millSpecific(ctx, args, picks) {
   return payFromPool(ctx, deckPool(ctx, args), args.count || 1, picks, args.destination === 'banished' ? 'banished' : 'graveyard');
 }
 
-// "Destruye un monstruo en tu Campo:" — never the card paying.
+// "Destruye un monstruo [filter] en tu Campo:" — never the card paying (Aboleth: a monstruo Agua).
 function destroyOwnMonster(ctx, args, picks) {
-  return payFromPool(ctx, ownMonsterPool(ctx, {}), 1, picks, 'graveyard');
+  return payFromPool(ctx, ownMonsterPool(ctx, args), 1, picks, 'graveyard');
 }
 
 function sacrificeControlled(ctx, args, picks) {
@@ -249,7 +249,7 @@ const CHOICE_COST_POOLS = {
   tributeMonster: (ctx, args) => ownMonsterPool(ctx, args),
   sacrificeControlled: (ctx) => ownMonsterPool(ctx, {}),
   destroyMonster: (ctx) => ownMonsterPool(ctx, {}),
-  destroyOwnMonster: (ctx) => ownMonsterPool(ctx, {}),
+  destroyOwnMonster: (ctx, args) => ownMonsterPool(ctx, args),
   exileFiltered: (ctx, args) => exilePool(ctx, args),
   millSpecific: (ctx, args) => deckPool(ctx, args),
 };

@@ -270,7 +270,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     const { state, inHand } = await makeMatch(['Sacrificio memorable', 'Kraken']);
     toMain1(state);
     state.players[0].pixelcoins = 6;
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') })).toMatchObject({ ok: false, reason: 'cannot-pay-cost' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') })).toMatchObject({ ok: false, reason: 'no-legal-target' });
   });
 
   it('El Primer Ginete brings back 2 Dragones when it is destroyed', async () => {

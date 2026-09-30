@@ -145,27 +145,38 @@ describe('SPECIAL_SUMMON', () => {
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: inHand('Lich') })).toMatchObject({ ok: false, reason: 'cannot-pay-special-summon-cost' });
   });
 
-  it('Aboleth: only special-summonable the turn a water monster was destroyed, from hand or Cementerio', async () => {
+  it('Aboleth: the player picks a monstruo Agua of their own to destroy, from hand or Cementerio', async () => {
     const { state, inHand } = await makeMatch(['Aboleth', 'Kraken']);
     const hipocampo = await Card.findOne({ name: 'HipoCampo' }).lean();
+    const slime = await Card.findOne({ name: 'Slime' }).lean();
     const water1 = `0:${hipocampo._id}:w1`;
     const water2 = `0:${hipocampo._id}:w2`;
-    placeMonster(state, water1, 0, { position: 'attack' });
-    placeMonster(state, water2, 0, { position: 'attack' });
+    const dry = `0:${slime._id}:s1`;
     toMain1(state);
 
     const aboleth = inHand('Aboleth');
-    // No water monster destroyed yet this turn: the window is closed.
+    // No monstruo Agua to destroy: not available.
+    placeMonster(state, dry, 0, { position: 'attack' });
+    expect(viewFor(state, 0).players[0].hand.find((h) => h.instanceId === aboleth).specialSummonAvailable).toBe(false);
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
 
-    moveToZone(state, water1, 'graveyard');
-    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth })).toMatchObject({ ok: true });
+    placeMonster(state, water1, 0, { position: 'attack' });
+    placeMonster(state, water2, 0, { position: 'attack' });
+    expect(viewFor(state, 0).players[0].hand.find((h) => h.instanceId === aboleth).specialSummonAvailable).toBe(true);
+    // Two candidates: the player is asked which one, and only monstruos Agua are offered.
+    const ask = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([water1, water2].sort());
+
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth, targets: [water2] })).toMatchObject({ ok: true });
+    expect(state.players[0].graveyard).toContain(water2);
+    expect(monsterOf(state, 0, water1)).toBeDefined();
     expect(monsterOf(state, 0, aboleth)).toBeDefined();
 
-    // Send Aboleth itself to the graveyard and special-summon it from there in the same window.
+    // From the Cementerio too, paying with the other one.
     moveToZone(state, aboleth, 'graveyard');
-    moveToZone(state, water2, 'graveyard');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth })).toMatchObject({ ok: true });
+    expect(state.players[0].graveyard).toContain(water1);
     expect(monsterOf(state, 0, aboleth)).toBeDefined();
   });
 

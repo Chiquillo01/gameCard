@@ -103,7 +103,7 @@ describe('Equipo cards must name a target to activate', () => {
 
     const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Armadura de Insecto'), targets: [insect] });
     expect(res.ok).toBe(true);
-    expect(monsterOf(state, 0, insect).tempBuff.atk).toBe(3);
+    expect(monsterOf(state, 0, insect).tempBuff.atk).toBe(2);
     expect(monsterOf(state, 0, other).tempBuff.atk).toBe(0);
   });
 

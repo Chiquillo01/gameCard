@@ -604,7 +604,11 @@
         }
       },
       {
-        "fn": "waterMonsterDestroyedThisTurn"
+        "fn": "controlsMonster",
+        "args": {
+          "attribute": "Agua",
+          "count": 1
+        }
       }
     ],
     "actions": [
@@ -616,7 +620,13 @@
         }
       }
     ],
-    "source": "Efecto(monster_summon)"
+    "source": "Efecto(monster_summon)",
+    "cost": {
+      "fn": "destroyOwnMonster",
+      "args": {
+        "attribute": "Agua"
+      }
+    }
   },
   {
     "_id": "WASP_SWARM_GRAVE",
@@ -1384,7 +1394,7 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "def": 3
+            "def": 2
           }
         }
       }
@@ -1407,7 +1417,7 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 3
+            "atk": 2
           }
         }
       }
@@ -4682,20 +4692,27 @@
       }
     },
     "conditions": [],
-    "requiresTarget": false,
+    "requiresTarget": true,
     "actions": [
       {
         "fn": "destroy",
         "args": {
+          "target": "Monstruo",
+          "side": "self",
+          "required": true,
+          "prompt": "Elige el monstruo de tu Campo que se destruye"
+        }
+      },
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "Monstruo",
           "side": "opponent",
-          "zone": "monster",
-          "count": 1
+          "required": true,
+          "prompt": "Elige el monstruo del oponente que se destruye"
         }
       }
-    ],
-    "cost": {
-      "fn": "destroyOwnMonster"
-    }
+    ]
   },
   {
     "_id": "OLLA_USURA_DRAW",

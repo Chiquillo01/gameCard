@@ -460,6 +460,29 @@ describe('Cards that pick their target', () => {
     expect(state.players[0].deck).toEqual(expect.arrayContaining(lics.slice(0, 3)));
     expect(state.players[0].graveyard).toEqual(expect.arrayContaining([lics[3], gato]));
   });
+
+  it('Sacrificio memorable: one monster picked on each side, both destroyed; needs one on each', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const sacrificio = await toHand(state, 0, 'Sacrificio memorable');
+    const mine = await onField(state, 0, 'Orco Guerrero');
+    const keep = await onField(state, 0, 'Slime');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sacrificio })).toMatchObject({ ok: false, reason: 'no-legal-target' });
+
+    const theirs = await onField(state, 1, 'Orco Gladiador');
+    const spared = await onField(state, 1, 'Cactus Violento');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sacrificio });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige el monstruo de tu Campo que se destruye' });
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([mine, keep].sort());
+    const next = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sacrificio, targets: [mine] });
+    expect(next).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige el monstruo del oponente que se destruye' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sacrificio, targets: [mine, theirs] }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].graveyard).toContain(mine);
+    expect(state.players[1].graveyard).toContain(theirs);
+    expect(monster(state, keep)).toBeDefined();
+    expect(monster(state, spared)).toBeDefined();
+  });
 });
 
 describe('Equipping a monster as an Equipo', () => {

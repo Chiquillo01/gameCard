@@ -311,13 +311,13 @@ function pendingEffectChoice(ctx, effect, targets = [], exclude = []) {
       // "Hasta N": always the player's call — one pick at a time, until they say that's all.
       if (done || remaining.length === 0) continue;
       return {
-        prompt: `${STEP_PROMPTS[step.fn] || 'Elige un objetivo'} (hasta ${count}; llevas ${picks.length})`,
+        prompt: `${(step.args && step.args.prompt) || STEP_PROMPTS[step.fn] || 'Elige un objetivo'} (hasta ${count}; llevas ${picks.length})`,
         options: [...remaining.map((id) => describeCandidate(ctx.state, id)), { instanceId: `done:${index}`, name: picks.length ? 'Terminar' : 'No elegir ninguna', image: null }],
       };
     }
     if (pool.length <= count || remaining.length === 0) continue; // nothing to choose between
     return {
-      prompt: STEP_PROMPTS[step.fn] || 'Elige un objetivo',
+      prompt: (step.args && step.args.prompt) || STEP_PROMPTS[step.fn] || 'Elige un objetivo',
       options: remaining.map((id) => describeCandidate(ctx.state, id)),
     };
   }
@@ -332,7 +332,9 @@ function pendingEffectChoice(ctx, effect, targets = [], exclude = []) {
 function hasNoLegalTarget(ctx, effect) {
   const steps = assignPicks(ctx, effect, [], []);
   const empty = ({ pool, upTo }) => pool && pool.length === 0 && !upTo;
-  if (steps.some((s) => empty(s) && TARGET_REQUIRED.has(s.step.fn))) return true;
+  // `required` on a step: the card can't be activated without something for it (Sacrificio memorable
+  // needs a monster on each side).
+  if (steps.some((s) => empty(s) && (TARGET_REQUIRED.has(s.step.fn) || (s.step.args && s.step.args.required)))) return true;
   return steps.length > 0 && steps[0].index === 0 && empty(steps[0]);
 }
 const TARGET_REQUIRED = new Set(['negateEffect', 'negateEffects', 'target', 'changeBeed', 'equipMonster', 'equipMonsterToSelf', 'destroyAndCopyEffect', 'destroyAndGainVP']);
