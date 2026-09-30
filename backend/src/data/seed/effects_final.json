@@ -1904,9 +1904,7 @@
           "target": "previous",
           "buff": {
             "atk": -2
-          },
-          "duration": "whileStatus",
-          "status": "Veneno"
+          }
         }
       },
       {

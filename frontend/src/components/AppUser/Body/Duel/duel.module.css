@@ -291,7 +291,7 @@
 }
 
 .slot.defense img {
-  transform: rotate(90deg) scale(0.7);
+  transform: rotate(-90deg) scale(0.7);
 }
 
 .slot.selected {

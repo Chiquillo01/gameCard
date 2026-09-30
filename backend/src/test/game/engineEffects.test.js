@@ -380,6 +380,13 @@ describe('Espora Venenosa', () => {
     expect(poisoned).toMatchObject({ statuses: ['Veneno'], atk: 1, printedAtk: 3 });
     expect(state.players[1].vp).toBe(STARTING_VP - 2);
     expect(state.log.some((l) => l.message === 'Orco Guerrero queda en estado Veneno (por Espora Venenosa).')).toBe(true);
+
+    // The card doesn't say "hasta el final del turno": the Atk loss stays after the status ends.
+    toPhase(state, 'main1', 1);
+    const later = viewFor(state, 0).players[1].field.monsters.find((m) => m && m.instanceId === orco);
+    expect(later.statuses || []).not.toContain('Veneno');
+    expect(later).toMatchObject({ atk: 1, printedAtk: 3 });
+    expect(later.statMods).toEqual(expect.arrayContaining([expect.objectContaining({ atk: -2 })]));
   });
 });
 
