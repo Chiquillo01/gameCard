@@ -208,6 +208,15 @@ function materialLocationSatisfies(loc, controllerIndex, req) {
   });
 }
 
+// What a material is for a recipe's filter: its card — or, for a token (Catapulta's "2 Tokens
+// Balista"), which has no card, its own definition.
+function materialCard(state, id) {
+  if (!String(id).startsWith('token:')) return getCard(cardIdFromInstance(id));
+  const loc = findInstanceLocation(state, id);
+  const m = loc && loc.zone === 'field:monster' ? state.players[loc.ownerIndex].field.monsters[loc.slot] : null;
+  return m ? { ...m.tokenDef, category: 'monster', isToken: true } : null;
+}
+
 // Fusion/compilado summon. `materialInstanceIds` must satisfy every requirement in
 // card.activationCost.args.materials (see backend game docs / compilate_costs.json).
 function compileSummon(state, controllerIndex, compiladoInstanceId, materialInstanceIds, slot = null) {
@@ -232,8 +241,7 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
       // and have it moved into the summoner's own graveyard.
       const loc = findInstanceLocation(state, id);
       if (!materialLocationSatisfies(loc, controllerIndex, req)) continue;
-      const mCard = getCard(cardIdFromInstance(id));
-      if (matchesCardFilter(mCard, req)) { usedIds.add(id); matched++; }
+      if (matchesCardFilter(materialCard(state, id), req)) { usedIds.add(id); matched++; }
       if (matched >= req.count) break;
     }
     if (matched < req.count) return { ok: false, reason: `missing-material:${JSON.stringify(req)}` };
@@ -266,7 +274,8 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
   });
   placeMonster(state, compiladoInstanceId, controllerIndex, { position: 'attack', slot });
   const entry = pl.field.monsters.find((m) => m && m.instanceId === compiladoInstanceId);
-  entry.materials = used;
+  // A token used as material just stops existing — only real cards stay under the compiled monster.
+  entry.materials = used.filter((id) => !String(id).startsWith('token:'));
 
   log(state, `${pl.userId} compila a ${card.name}.`);
   fireMaterialTriggers(state, controllerIndex, used, compiladoInstanceId, materialCounters);
@@ -320,4 +329,4 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   return { ok: true };
 }
 
-module.exports = { normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };
+module.exports = { materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };

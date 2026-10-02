@@ -13,6 +13,7 @@ const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
 const { STARTING_VP } = require('./constants');
 const { describeEffect } = require('./effectLabels');
 const { withLocations } = require('./choiceOptions');
+const { compileInfo } = require('./compileInfo');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
 
 // Player-initiated effect types (as opposed to 'triggered'/'trigger', which fire automatically,
@@ -280,6 +281,11 @@ function describeInstance(state, instanceId, ownerIndex, isViewerOwner) {
     base.specialSummonAvailable = isViewerOwner && specialSummonAvailable(state, ownerIndex, instanceId, card);
   }
   if (!isViewerOwner) return base;
+  // A Compilación in the Mazo-C (or hand): its recipe and what the player has for it.
+  if (card.category === 'fusion') {
+    const loc = findInstanceLocation(state, instanceId);
+    if (loc && (loc.zone === 'extra' || loc.zone === 'hand')) base.compile = compileInfo(state, ownerIndex, instanceId);
+  }
   return { ...base, ...effectsFor(state, ownerIndex, instanceId, cardId) };
 }
 

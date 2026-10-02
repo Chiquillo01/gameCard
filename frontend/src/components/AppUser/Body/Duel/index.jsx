@@ -12,6 +12,7 @@ import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import { isDeckPlayable } from '../../../../lib/utils/deckRules';
 import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
 import { ChoiceOptionList } from './ChoiceOptions';
+import CompileModal from './CompileModal';
 
 const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
 
@@ -216,9 +217,10 @@ const DuelPage = () => {
     setPendingPosition(null);
   };
 
-  const startFusion = (card) => {
+  // `preset`: materials already picked (the Mazo-C's suggestion) — the player can still change them.
+  const startFusion = (card, preset = []) => {
     closeChoices();
-    setFusion({ instanceId: card.instanceId, materials: new Set() });
+    setFusion({ instanceId: card.instanceId, materials: new Set(preset) });
     setOpenPile(null);
   };
 
@@ -613,7 +615,17 @@ const DuelPage = () => {
         />
       )}
 
-      {openPile && (
+      {openPile && openPile.side === 'me' && openPile.zone === 'extra' && (
+        <CompileModal
+          cards={me.extra || []}
+          cardsById={cardsById}
+          canCompileNow={isMyTurn && (view.phase === 'main1' || view.phase === 'main2') && !view.chain && !view.pendingTriggerChoice}
+          onCompile={(card, suggested) => startFusion(card, suggested)}
+          onClose={() => setOpenPile(null)}
+        />
+      )}
+
+      {openPile && !(openPile.side === 'me' && openPile.zone === 'extra') && (
         <PileModal
           title={PILE_LABELS[openPile.zone]}
           cards={openPile.side === 'me' ? me[openPile.zone] : enemy[openPile.zone]}

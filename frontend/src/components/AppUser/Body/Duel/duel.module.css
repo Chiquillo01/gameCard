@@ -1383,3 +1383,162 @@
   background: #ffd75e;
   box-shadow: 0 0 0 2px #fff4c2;
 }
+
+/* Mazo-C: each Compilación with its card, recipe and what the player has for it. */
+.compileModal {
+  max-width: 900px;
+}
+
+.compileSummary {
+  margin: -0.5rem 0 0;
+  text-align: center;
+  color: #6b3d16;
+}
+
+.compileRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.875rem;
+  background: rgba(255, 255, 255, 0.35);
+  border: 2px solid #b89860;
+  border-left: 6px solid #a3342a;
+  padding: 0.625rem;
+}
+
+.compileRowReady {
+  border-left-color: #3f7a3a;
+  background: rgba(220, 245, 210, 0.45);
+}
+
+.compileFace {
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.compileInfo {
+  flex: 1 1 18rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  color: #4a2a10;
+}
+
+.compileInfo button {
+  align-self: flex-start;
+  margin-top: auto;
+}
+
+.compileInfo button:disabled {
+  background: linear-gradient(180deg, #a89a86, #7a6d5c);
+  cursor: not-allowed;
+}
+
+.compileHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+}
+
+.compileName {
+  font-size: 1.375rem;
+}
+
+.compileStatus {
+  font-size: 0.9375rem;
+  padding: 0.125rem 0.5rem;
+  border: 2px solid currentColor;
+}
+
+.compileStatusReady {
+  color: #2c6b46;
+}
+
+.compileStatusBlocked {
+  color: #a3342a;
+}
+
+.compileStats {
+  color: #6b3d16;
+}
+
+.compileRecipeTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.625rem;
+  margin-top: 0.25rem;
+}
+
+.compileReqs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.compileReq {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.25rem 0.375rem;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.compileReqHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.5rem;
+}
+
+.compileReqIcon {
+  font-weight: bold;
+}
+
+.compileReqMet .compileReqIcon,
+.compileReqMet .compileReqCount {
+  color: #2c6b46;
+}
+
+.compileReqMissing .compileReqIcon,
+.compileReqMissing .compileReqCount {
+  color: #a3342a;
+}
+
+.compileReqLabel {
+  font-size: 1.0625rem;
+}
+
+.compileReqZones {
+  color: #6b3d16;
+  font-size: 0.875rem;
+}
+
+.compileReqCount {
+  margin-left: auto;
+  font-size: 0.875rem;
+}
+
+.compileChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.compileChip {
+  background: #f8ecc8;
+  border: 1px solid #b89860;
+  padding: 0 0.375rem;
+  font-size: 0.875rem;
+}
+
+.compileChipWhere {
+  color: #6b3d16;
+}
+
+.compileCopies {
+  color: #6b3d16;
+  font-size: 1.0625rem;
+}

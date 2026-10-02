@@ -534,3 +534,43 @@ describe('Options to pick from say where each card is', () => {
     expect(byId[hidden]).toEqual({ instanceId: hidden, name: 'Monstruo boca abajo', image: null, where: { owner: 'rival', zone: 'monster', slot: 1, position: 'defense', faceDown: true } });
   });
 });
+
+describe('Mazo-C: what each Compilación needs', () => {
+  it('lists the recipe, what the player has for it, and a suggestion once it can be compiled', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const gigante = await instance(0, 'Orco Gigante');
+    state.players[0].extra.push(gigante);
+    const orco1 = await onField(state, 0, 'Orco Guerrero');
+    await toHand(state, 0, 'Orco Gladiador'); // in hand: the recipe only takes them from the field
+
+    const pending = viewFor(state, 0).players[0].extra.find((c) => c.instanceId === gigante).compile;
+    expect(pending).toMatchObject({ ready: false, blockedBy: 'Te faltan materiales.', suggested: [] });
+    expect(pending.requirements).toEqual([expect.objectContaining({ label: '2 × monstruo Orco', zones: ['Campo'], count: 2, have: 1 })]);
+    expect(pending.requirements[0].candidates).toEqual([expect.objectContaining({ instanceId: orco1, name: 'Orco Guerrero', zoneLabel: 'Campo', slot: 0 })]);
+
+    const orco2 = await onField(state, 0, 'Orco Gladiador');
+    const ready = viewFor(state, 0).players[0].extra.find((c) => c.instanceId === gigante).compile;
+    expect(ready).toMatchObject({ ready: true, blockedBy: null });
+    expect(ready.suggested.sort()).toEqual([orco1, orco2].sort());
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: gigante, materialInstanceIds: ready.suggested }).ok).toBe(true);
+  });
+
+  it('Catapulta compiles from 2 Balista tokens, which then stop existing', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const catapulta = await instance(0, 'Catapulta');
+    state.players[0].extra.push(catapulta);
+    const def = { name: 'Balista', attribute: 'Tierra', breed: 'Metal', level: 2, atk: 2, def: 2 };
+    const tokens = [0, 1].map((slot) => {
+      const id = `token:Balista:test${slot}`;
+      state.players[0].field.monsters[slot] = { instanceId: id, cardId: null, isToken: true, tokenDef: def, position: 'attack', faceDown: false, baseAtk: 2, baseDef: 2, summonedTurn: 0, equips: [], counters: {} };
+      return id;
+    });
+    const info = viewFor(state, 0).players[0].extra.find((c) => c.instanceId === catapulta).compile;
+    expect(info).toMatchObject({ ready: true });
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: catapulta, materialInstanceIds: info.suggested }).ok).toBe(true);
+    expect(monster(state, catapulta)).toMatchObject({ materials: [] });
+    tokens.forEach((id) => expect(monster(state, id)).toBeUndefined());
+  });
+});
