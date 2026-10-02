@@ -27,6 +27,7 @@ function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
   const loc = findInstanceLocation(state, instanceId);
   if (!loc || loc.ownerIndex !== ownerIndex) return [];
   if (hasStatus(state, instanceId, FREEZE)) return [];
+  if (loc.zone === 'hand' && card.category === 'support') return []; // played with ACTIVATE_SUPPORT
   const entry = fieldEntryAt(state, loc);
   if (entry && entry.isMonsterEquip) return [];
   // A face-down Normal/Continuo/Equipo support is activated by turning it over (ACTIVATE_SET_SUPPORT),
@@ -332,4 +333,4 @@ function describeFieldSupport(state, s, ownerIndex, isViewerOwner) {
   return { ...described, ...effectsFor(state, ownerIndex, s.instanceId, s.cardId) };
 }
 
-module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer };
+module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer, computeAvailableEffects, specialSummonAvailable };

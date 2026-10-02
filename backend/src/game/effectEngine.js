@@ -77,6 +77,9 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
   if (hasStatus(state, sourceInstanceId, FREEZE)) return { ok: false, reason: 'frozen' };
   // Only an effect this card actually has (its own, or one it copied) — never an arbitrary id.
   if (!effectIdsAt(state, sourceInstanceId).includes(effectId)) return { ok: false, reason: 'unknown-effect' };
+  // An Apoyo in hand is played with ACTIVATE_SUPPORT, which pays its activation cost and takes it
+  // out of the hand — its "en activación" effect is not a separate effect to use on its own.
+  if (loc.zone === 'hand' && getCard(cardIdFromInstance(sourceInstanceId)).category === 'support') return { ok: false, reason: 'play-support-instead' };
 
   // A Veloz/Contraataque set face-down is activated by turning it over, paying its activation cost
   // and going to the Cementerio afterwards — exactly like activating it from the hand.

@@ -501,3 +501,15 @@ describe('Equipping a monster as an Equipo', () => {
     expect(monster(state, victim)).toBeFalsy();
   });
 });
+
+describe('An Apoyo in hand', () => {
+  it('is only played with ACTIVATE_SUPPORT: its "en activación" effect is not a free button (Olla de la Usura)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const olla = await toHand(state, 0, 'Olla de la Usura');
+    expect(viewFor(state, 0).players[0].hand.find((c) => c.instanceId === olla).availableEffects).toEqual([]);
+    const handBefore = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'OLLA_USURA_DRAW', sourceInstanceId: olla })).toMatchObject({ ok: false, reason: 'play-support-instead' });
+    expect(state.players[0].hand).toHaveLength(handBefore);
+  });
+});

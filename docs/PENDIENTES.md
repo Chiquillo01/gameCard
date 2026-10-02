@@ -63,6 +63,23 @@ sirve de referencia:
   - El nombre "Ediocion Espacial Tokens" tiene erratas; como la semilla busca los productos por
     nombre, cambiarlo crearía uno nuevo en vez de renombrar este.
 
+## IA del bot
+
+Fase 1 hecha (`backend/src/game/bot/`): el bot prueba cada jugada en una copia de la partida (sin
+ver tu mano, tu Mazo ni tus cartas boca abajo), puntúa el tablero resultante y juega la mejor. Lo
+que valora está en `bot/weights.js`; no conoce cartas por nombre, así que los cambios de balance
+no le afectan. Siguientes fases:
+
+- **Fase 2 – Guardar cada partida:** al terminar un duelo, guardar en MongoDB los mazos, las
+  jugadas, un resumen del tablero por turno y quién ganó (hoy las partidas solo viven en memoria).
+- **Fase 3 – Aprender de esos datos:** ajustar los pesos de `weights.js` con las partidas
+  guardadas (por ejemplo, un modelo que estime la probabilidad de ganar), y enfrentar bots entre sí
+  para generar partidas de entrenamiento.
+- **Fase 4 – Búsqueda más profunda (opcional):** MCTS (simular partidas hasta el final para cada
+  jugada candidata) y niveles de dificultad según cuánto piensa.
+- Limitaciones actuales: mira una jugada cada vez (no planea combos de varias cartas ni el turno
+  del rival más allá de una estimación de daño) y supone que el rival no responde en la Pila.
+
 ## Antes de la beta
 
 - **URLs fijas en el código:** los sockets apuntan a `http://localhost:3001` (Duelo y Amigos) y el

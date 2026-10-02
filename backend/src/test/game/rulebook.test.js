@@ -154,17 +154,16 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
     const instanceId = state.players[0].hand.find((id) => id.split(':')[1] === card._id.toString());
     await avispaOnDeckTop(state);
 
-    // Rejected before the card has ever been in the graveyard.
+    // Rejected while it's in hand: an Apoyo in hand is played as a card (ACTIVATE_SUPPORT), and
+    // its graveyard effect needs it in the graveyard.
     const tooEarly = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: instanceId });
     expect(tooEarly.ok).toBe(false);
-    expect(tooEarly.reason).toBe('not-in-graveyard');
+    expect(tooEarly.reason).toBe('play-support-instead');
 
-    // The view the client uses to decide which buttons to show should agree: while the card is
-    // in hand, its hand-only search effect is offered but its graveyard-only effect is not.
+    // The view the client uses to decide which buttons to show agrees: no effect buttons in hand.
     const handView = viewFor(state, 0);
     const handCardView = handView.players[0].hand.find((c) => c.instanceId === instanceId);
-    expect(handCardView.availableEffects).toContain('WASP_SWARM_SEARCH');
-    expect(handCardView.availableEffects).not.toContain('WASP_SWARM_GRAVE');
+    expect(handCardView.availableEffects).toEqual([]);
 
     // Playing a Normal Apoyo places it on the Campo and opens the response window; once both
     // sides pass, its primary effect resolves and it lands in the graveyard.
