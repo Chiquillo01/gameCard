@@ -20,13 +20,24 @@ const { Effect } = require('../Schema/effect');
 const cards = require('./cards_final.json');
 const effects = require('./effects_final.json');
 
+// The JSON entry as the schema would store it (defaults filled in), without the generated _id —
+// replaceOne keeps a card's existing _id, which decks and collections point at.
+function withDefaults(Model, data) {
+  const doc = new Model(data).toObject();
+  if (!('_id' in data)) delete doc._id;
+  delete doc.createdAt;
+  delete doc.updatedAt;
+  return doc;
+}
+
 async function seed() {
   await connectDB();
 
+  // Each document is REPLACED with what the JSON says (plus the schema defaults), not merged into:
+  // a field removed from the JSON (an old cost, a dropped filter) must go from the database too,
+  // or the engine keeps running the old rule.
   console.log(`Seeding ${effects.length} effects...`);
-  await Promise.all(
-    effects.map((e) => Effect.findByIdAndUpdate(e._id, e, { upsert: true, setDefaultsOnInsert: true })),
-  );
+  await Promise.all(effects.map((e) => Effect.replaceOne({ _id: e._id }, withDefaults(Effect, e), { upsert: true })));
   // effects_final.json is the whole catalog: an effect removed from it (the old keywords) goes
   // from the database too, instead of lingering for cards that still reference it.
   const pruned = await Effect.deleteMany({ _id: { $nin: effects.map((e) => e._id) } });
@@ -40,10 +51,7 @@ async function seed() {
   console.log(`Seeding ${cards.length} cards...`);
   for (const card of cards) {
     // eslint-disable-next-line no-await-in-loop
-    await Card.findOneAndUpdate({ number: card.number }, card, {
-      upsert: true,
-      setDefaultsOnInsert: true,
-    });
+    await Card.replaceOne({ number: card.number }, withDefaults(Card, card), { upsert: true });
   }
 
   const cardCount = await Card.countDocuments();
