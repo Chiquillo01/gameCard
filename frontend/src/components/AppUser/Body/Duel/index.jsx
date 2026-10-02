@@ -11,6 +11,7 @@ import CardFace from '../CreateNewDeck/CardModal/CardFace';
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import { isDeckPlayable } from '../../../../lib/utils/deckRules';
 import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
+import { ChoiceOptionList } from './ChoiceOptions';
 
 const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
 
@@ -1042,13 +1043,18 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
         </h3>
         <div className={styles.pileModalList}>
           {cards.length === 0 && <p className={styles.pileEmpty}>Vacío.</p>}
-          {cards.map((card) => (
-            <div key={card.instanceId} className={styles.pileModalCard}>
-              {card.image && <img src={card.image} alt={card.name} />}
-              <span className={styles.pileModalCardName}>{card.name}</span>
-              {renderCardExtra && renderCardExtra(card)}
-            </div>
-          ))}
+          {/* A pick's options say where each card is: grouped by zone, with its position and a map. */}
+          {cards.some((card) => card.where) ? (
+            <ChoiceOptionList cards={cards} renderCardExtra={renderCardExtra} />
+          ) : (
+            cards.map((card) => (
+              <div key={card.instanceId} className={styles.pileModalCard}>
+                {card.image && <img src={card.image} alt={card.name} />}
+                <span className={styles.pileModalCardName}>{card.name}</span>
+                {renderCardExtra && renderCardExtra(card)}
+              </div>
+            ))
+          )}
         </div>
         {onClose && (
           <button className={styles.surrenderButton} onClick={onClose}>

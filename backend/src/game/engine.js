@@ -12,6 +12,7 @@ const { checkConditions } = require('./effects/conditions');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
 const { STARTING_VP } = require('./constants');
 const { describeEffect } = require('./effectLabels');
+const { withLocations } = require('./choiceOptions');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
 
 // Player-initiated effect types (as opposed to 'triggered'/'trigger', which fire automatically,
@@ -81,6 +82,13 @@ function coinTossFirstPlayer(random = Math.random) {
 const CHAIN_RESPONSE_TYPES = ['ACTIVATE_SUPPORT', 'ACTIVATE_EFFECT', 'PASS_CHAIN'];
 
 function applyAction(state, playerIndex, action) {
+  const res = dispatchAction(state, playerIndex, action);
+  // A pick the player still has to make: each option says where that card is (choiceOptions.js).
+  if (res && res.reason === 'choose-target') res.options = withLocations(state, res.options, playerIndex);
+  return res;
+}
+
+function dispatchAction(state, playerIndex, action) {
   if (state.status !== 'active') return { ok: false, reason: 'match-finished' };
 
   if (action.type === 'SURRENDER') {
@@ -241,9 +249,9 @@ function describePendingTriggerChoice(state, viewerIndex) {
     };
   }
   if (pending.kind === 'discard') {
-    return { kind: 'discard', count: pending.count, options: describeHand(state, viewerIndex), prompt: pending.prompt };
+    return { kind: 'discard', count: pending.count, options: withLocations(state, describeHand(state, viewerIndex), viewerIndex), prompt: pending.prompt };
   }
-  return { kind: 'effect', options: pending.options, prompt: pending.prompt };
+  return { kind: 'effect', options: withLocations(state, pending.options, viewerIndex), prompt: pending.prompt };
 }
 
 // The card's own summon_rule effect (its "método de invocación especial"), if it has one the

@@ -1315,3 +1315,71 @@
     flex-shrink: 0;
   }
 }
+
+/* Options of a pick: grouped by zone, whose card it is, where exactly, and a mini board. */
+.choiceGroupTitle {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.6875rem;
+  color: #4a2a10;
+  margin: 0.5rem 0 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 2px solid #b89860;
+}
+
+.optionMine {
+  border-left: 6px solid #3f7a3a;
+}
+
+.optionRival {
+  border-left: 6px solid #a3342a;
+}
+
+.optionText {
+  flex: 1 1 12rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.optionDetails {
+  color: #6b3d16;
+  font-size: 0.875rem;
+}
+
+.optionCardBack {
+  width: 56px;
+  height: 78px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: repeating-linear-gradient(45deg, #6b3d16 0 6px, #5a3212 6px 12px);
+  border: 2px solid #4a2a10;
+  color: #f1ddab;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1rem;
+}
+
+.miniBoard {
+  display: grid;
+  grid-template-columns: repeat(7, 12px);
+  grid-template-rows: repeat(2, 16px);
+  gap: 2px;
+  padding: 3px;
+  background: #4a2a10;
+  flex-shrink: 0;
+}
+
+.miniCell {
+  background: #8a6a3a;
+}
+
+.miniPile {
+  background: #5a3a18;
+}
+
+.miniLit {
+  background: #ffd75e;
+  box-shadow: 0 0 0 2px #fff4c2;
+}

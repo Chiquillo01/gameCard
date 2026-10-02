@@ -513,3 +513,24 @@ describe('An Apoyo in hand', () => {
     expect(state.players[0].hand).toHaveLength(handBefore);
   });
 });
+
+describe('Options to pick from say where each card is', () => {
+  it("whose, which zone and position, Atk/Vida — and a rival's face-down card stays hidden", async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const mine = await onField(state, 0, 'Slime', { position: 'defense' });
+    const theirs = await onField(state, 1, 'Orco Gladiador');
+    const hidden = await onField(state, 1, 'Orco Guerrero', { position: 'defense', faceDown: true });
+    const trap = await instance(1, 'Trampa de Madera');
+    placeSupport(state, trap, 1, { faceDown: true });
+    const relampago = await toHand(state, 0, 'Relámpago');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: relampago });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    // "Destruye un monstruo": the rival's face-down Apoyo isn't one of the options.
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([mine, theirs, hidden].sort());
+    const byId = Object.fromEntries(ask.options.map((o) => [o.instanceId, o]));
+    expect(byId[mine]).toMatchObject({ name: 'Slime', where: { owner: 'self', zone: 'monster', slot: 0, position: 'defense', faceDown: false } });
+    expect(byId[theirs]).toMatchObject({ name: 'Orco Gladiador', where: { owner: 'rival', zone: 'monster', slot: 0, position: 'attack', atk: 3 } });
+    expect(byId[hidden]).toEqual({ instanceId: hidden, name: 'Monstruo boca abajo', image: null, where: { owner: 'rival', zone: 'monster', slot: 1, position: 'defense', faceDown: true } });
+  });
+});

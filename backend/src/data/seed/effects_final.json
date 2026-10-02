@@ -916,7 +916,8 @@
       {
         "fn": "destroy",
         "args": {
-          "target": "selected"
+          "target": "selected",
+          "zone": "monster"
         }
       }
     ],
@@ -5574,7 +5575,7 @@
         "fn": "destroy",
         "args": {
           "target": "selected",
-          "zone": "field"
+          "zone": "monster"
         }
       }
     ]
