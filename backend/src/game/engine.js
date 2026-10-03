@@ -6,7 +6,7 @@ const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport, activateSetSupport } = require('./support');
 const { declareAttack, attackBlockReason, allowedAttacks } = require('./combat');
 const { changePosition } = require('./position');
-const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand, getEffectiveStats } = require('./effectEngine');
+const { isOwnActivation, activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand, getEffectiveStats } = require('./effectEngine');
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
 const { checkConditions } = require('./effects/conditions');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
@@ -40,6 +40,9 @@ function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
   return effectIdsAt(state, instanceId).filter((effectId) => {
     const effect = getEffect(effectId);
     if (!effect || !PLAYER_ACTIVATABLE_TYPES.includes(effect.type)) return false;
+    // A face-up Apoyo's "en activación" effect went on the Pila with the card (a set Veloz still
+    // offers it: that's how it's turned face-up).
+    if (!setFast && isOwnActivation(card, effect)) return false;
     // Effects that don't say which zone they need (most monster ignition/quick abilities)
     // default to "must be face-up on the field" — the ordinary case for that kind of ability.
     const requiredZone = requiredZoneFor(effect) || 'field';

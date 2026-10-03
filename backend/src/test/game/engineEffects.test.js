@@ -646,3 +646,24 @@ describe('Aboleth: "cuando es enviada del Campo al Cementerio" summons 2 Tentác
     expect(tentacles(state, 0)).toHaveLength(2);
   });
 });
+
+describe('A one-shot Apoyo waiting on the Pila', () => {
+  it('Cometa del Cosmo: its "en activación" effect cannot be used again while it waits to resolve', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const oceano = await instance(1, 'Oceano');
+    placeSupport(state, await instance(1, 'Trampa de Madera'), 1, { faceDown: true });
+    state.players[1].field.territory = { instanceId: oceano, cardId: oceano.split(':')[1], faceDown: false, counters: {} };
+    const cometa = await toHand(state, 0, 'Cometa del Cosmo');
+    const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: cometa, targets: [oceano] });
+    expect(res.ok).toBe(true);
+    // While it's on the Pila (face-up in a support zone) it offers no effect of its own…
+    const onField = viewFor(state, 0).players[0].field.support.find((s) => s && s.instanceId === cometa);
+    expect(onField.availableEffects).toEqual([]);
+    // …and activating it again is refused.
+    applyAction(state, 1, { type: 'PASS_CHAIN' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DESTRUIR_APOYO', sourceInstanceId: cometa })).toMatchObject({ ok: false });
+    passAll(state);
+    expect(state.log.filter((l) => / es destruida\./.test(l.message))).toHaveLength(1);
+  });
+});

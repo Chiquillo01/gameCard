@@ -22,6 +22,18 @@ function makeCtx(state, controllerIndex, effect, sourceInstanceId) {
 // sitting in that zone right now — this is the shared convention effect authoring used for
 // that (`from` on the trigger's args, or the shorthand "onGraveyard"). Kraken/Rakshasa ("descarta
 // esta carta") are used from the hand the same way.
+// A one-shot Apoyo's (Normal / Veloz / Contraataque) own "En activación" effect — what
+// ACTIVATE_SUPPORT / turning it face-up runs, never a separate ACTIVATE_EFFECT. Continuos and
+// Territorios keep theirs: "una vez por turno" abilities used from the field (Forja, Guarida del
+// Oscuro). Graveyard/exile effects of a card are separate, and allowed.
+const ONE_SHOT_SUPPORTS = ['normal', 'instant', 'counter'];
+function isOwnActivation(card, effect) {
+  if (!card || card.category !== 'support' || !ONE_SHOT_SUPPORTS.includes(card.subtype)) return false;
+  if (!effect || !effect.trigger || effect.trigger.fn !== 'onActivation') return false;
+  const from = effect.trigger.args && effect.trigger.args.from;
+  return from !== 'graveyard' && from !== 'banished';
+}
+
 function requiredZoneFor(effect) {
   if (!effect.trigger) return null;
   const from = effect.trigger.args && effect.trigger.args.from;
@@ -89,6 +101,9 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
   }
   if (entry && entry.faceDown) return { ok: false, reason: 'face-down' };
   if (entry && entry.isMonsterEquip) return { ok: false, reason: 'unknown-effect' };
+  // Its "en activación" effect already went on the Pila with the card itself: a face-up Apoyo on
+  // the field (Cometa del Cosmo waiting to resolve, a Continuo) can't run it again for free.
+  if (isOwnActivation(getCard(cardIdFromInstance(sourceInstanceId)), effect)) return { ok: false, reason: 'already-activated' };
 
   // Effects that don't say which zone they need (most monster ignition/quick abilities) default to
   // "must be face-up on the field" — the ordinary case for that kind of ability.
@@ -478,4 +493,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };
+module.exports = { isOwnActivation, activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };
