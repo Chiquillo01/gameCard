@@ -282,8 +282,11 @@
   },
   {
     "_id": "ABOLETH_DEATH_TOKENS",
-    "type": "trigger",
+    "type": "triggered",
     "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard"
+    },
     "conditions": [
       {
         "fn": "wasOnField",

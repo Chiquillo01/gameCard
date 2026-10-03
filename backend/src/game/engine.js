@@ -84,6 +84,9 @@ const CHAIN_RESPONSE_TYPES = ['ACTIVATE_SUPPORT', 'ACTIVATE_EFFECT', 'PASS_CHAIN
 
 function applyAction(state, playerIndex, action) {
   const res = dispatchAction(state, playerIndex, action);
+  // A placement still waiting is asked with the zones that are free after this action (or done at
+  // once if only one is left).
+  if (res && res.ok) require('./placement').settlePlacements(state);
   // A pick the player still has to make: each option says where that card is (choiceOptions.js).
   if (res && res.reason === 'choose-target') res.options = withLocations(state, res.options, playerIndex);
   return res;

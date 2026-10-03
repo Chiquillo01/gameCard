@@ -75,12 +75,25 @@ function fillChoice(picked, pool, count) {
 }
 
 // Pays by moving `count` cards out of `pool` into `toZone`: the player's picks first.
-function payFromPool(ctx, pool, count, picks, toZone) {
+function payFromPool(ctx, pool, count, picks, toZone, { destroyed = false } = {}) {
   const picked = (picks || []).filter((id) => pool.includes(id));
   const chosen = fillChoice(picked, pool, count);
   if (chosen.length < count) return false;
+  // Cards that leave the field for the Cementerio this way still count as "enviada del Campo al
+  // Cementerio" (Aboleth), and a "destruye" cost as destroyed by an effect (Pez Leviatán).
+  const fromField = chosen
+    .map((id) => ({ id, loc: findInstanceLocation(ctx.state, id) }))
+    .filter(({ id, loc }) => loc && loc.zone.startsWith('field') && !String(id).startsWith('token:'));
   chosen.forEach((id) => moveToZone(ctx.state, id, toZone));
   record(ctx, chosen);
+  if (toZone === 'graveyard') {
+    const { fireTrigger } = require('../effectEngine');
+    fromField.forEach(({ id, loc }) => {
+      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex };
+      fireTrigger(ctx.state, 'sentToGraveyard', event);
+      if (destroyed && loc.zone === 'field:monster') fireTrigger(ctx.state, 'onMonsterDestroyed', { ...event, reason: 'effect' });
+    });
+  }
   return true;
 }
 
@@ -170,7 +183,7 @@ function millSpecific(ctx, args, picks) {
 
 // "Destruye un monstruo [filter] en tu Campo:" — never the card paying (Aboleth: a monstruo Agua).
 function destroyOwnMonster(ctx, args, picks) {
-  return payFromPool(ctx, ownMonsterPool(ctx, args), 1, picks, 'graveyard');
+  return payFromPool(ctx, ownMonsterPool(ctx, args), 1, picks, 'graveyard', { destroyed: true });
 }
 
 function sacrificeControlled(ctx, args, picks) {
@@ -178,7 +191,7 @@ function sacrificeControlled(ctx, args, picks) {
 }
 
 function destroyMonster(ctx, args, picks) {
-  return sacrificeControlled(ctx, { amount: 1 }, picks);
+  return payFromPool(ctx, ownMonsterPool(ctx, {}), 1, picks, 'graveyard', { destroyed: true });
 }
 
 function spendCounter(ctx, args) {

@@ -298,7 +298,10 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
   const picks = [...new Set((targets || []).filter((t) => t != null))];
 
   if (pending.kind === 'slot') {
-    if (!pending.slots.includes(slot)) return { ok: false, reason: 'no-field-space' };
+    // A card's placement is checked against the zones free NOW — the board may have changed since
+    // the choice was asked (another card landed while it waited).
+    const legal = require('./placement').isPlacement(pending) ? require('./placement').freeMonsterSlots(state, pending.controllerIndex) : pending.slots;
+    if (!legal.includes(slot)) return { ok: false, reason: 'no-field-space' };
     state.pendingTriggerChoices.shift();
     if (pending.purpose === 'relocate') require('./effects/actions').relocateSelfFromChoice(state, pending, slot);
     else if (pending.purpose === 'equip') require('./effects/extraActions').equipFromChoice(state, pending, slot);

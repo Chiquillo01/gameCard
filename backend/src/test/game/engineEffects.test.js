@@ -606,3 +606,43 @@ describe('Mazo-C: what each Compilación needs', () => {
     tokens.forEach((id) => expect(monster(state, id)).toBeUndefined());
   });
 });
+
+describe('Aboleth: "cuando es enviada del Campo al Cementerio" summons 2 Tentáculo Musculoso', () => {
+  const tentacles = (state, p) => state.players[p].field.monsters.filter((m) => m && m.isToken && m.tokenDef.name === 'Tentáculo Musculoso');
+
+  it('when destroyed by an effect (Relámpago)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const aboleth = await onField(state, 1, 'Aboleth');
+    const relampago = await toHand(state, 0, 'Relámpago');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: relampago, targets: [aboleth] }).ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    expect(state.players[1].graveyard).toContain(aboleth);
+    expect(tentacles(state, 1)).toHaveLength(2);
+  });
+
+  it('when destroyed in battle', async () => {
+    const state = await makeDuel();
+    const gigante = await onField(state, 0, 'Gigante de Fuego');
+    const aboleth = await onField(state, 1, 'Aboleth');
+    toPhase(state, 'battle', 0);
+    expect(applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: gigante, targetInstanceId: aboleth }).ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    expect(state.players[1].graveyard).toContain(aboleth);
+    expect(tentacles(state, 1)).toHaveLength(2);
+  });
+
+  it('when destroyed to pay a cost (another Aboleth coming out)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const first = await onField(state, 0, 'Aboleth');
+    const second = await toHand(state, 0, 'Aboleth');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: second, targets: [first] }).ok).toBe(true);
+    placePending(state);
+    expect(state.players[0].graveyard).toContain(first);
+    expect(monster(state, second)).toBeDefined();
+    expect(tentacles(state, 0)).toHaveLength(2);
+  });
+});
