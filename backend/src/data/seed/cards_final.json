@@ -1022,13 +1022,15 @@
     "atk": 8,
     "def": 5,
     "level": 8,
-    "effect": "Una vez por turno, como efecto rápido: \n• Destruye 1 carta en el Campo, y si lo haces, el efecto de este monstruo es el del monstruo destruido.\nEste monstruo es considerado de todos los tipos.",
+    "effect": "Una vez por turno, como efecto rápido:\n• Destruye 1 monstruo en el Campo, y si lo haces, el efecto de este monstruo es el del monstruo destruido.\nEste monstruo es considerado de todos los tipos.",
     "state": 1,
     "number": 42,
     "effectCodes": [
       "DOPPEL_ALL_TYPES",
-      "DOPPEL_COPY_EFFECT"
-    ]
+      "DOPPEL_COPY_EFFECT",
+      "DOPPEL_SPECIAL_SUMMON"
+    ],
+    "invocationText": "Solo puede ser invocado si tienes 8 cartas en tu Cementerio."
   },
   {
     "name": "Héroe del Caos",

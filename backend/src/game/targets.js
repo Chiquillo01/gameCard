@@ -332,9 +332,10 @@ function pendingEffectChoice(ctx, effect, targets = [], exclude = []) {
 function hasNoLegalTarget(ctx, effect) {
   const steps = assignPicks(ctx, effect, [], []);
   const empty = ({ pool, upTo }) => pool && pool.length === 0 && !upTo;
-  // `required` on a step: the card can't be activated without something for it (Sacrificio memorable
-  // needs a monster on each side).
-  if (steps.some((s) => empty(s) && (TARGET_REQUIRED.has(s.step.fn) || (s.step.args && s.step.args.required)))) return true;
+  // `required` on a step: the card can't be activated without enough for it (Sacrificio memorable
+  // needs a monster on each side; Refuerzos, 2 monsters in the Cementerio to shuffle back).
+  if (steps.some((s) => s.pool && s.step.args && s.step.args.required && s.pool.length < (s.count || 1))) return true;
+  if (steps.some((s) => empty(s) && TARGET_REQUIRED.has(s.step.fn))) return true;
   return steps.length > 0 && steps[0].index === 0 && empty(steps[0]);
 }
 const TARGET_REQUIRED = new Set(['negateEffect', 'negateEffects', 'target', 'changeBeed', 'equipMonster', 'equipMonsterToSelf', 'destroyAndCopyEffect', 'destroyAndGainVP']);

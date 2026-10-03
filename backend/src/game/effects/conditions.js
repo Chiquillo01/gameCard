@@ -199,6 +199,11 @@ function hasCounter(ctx, args) {
   return !!entry && ((entry.counters || {})[args.counter] || 0) >= (args.min || 1);
 }
 
+// "Si tienes N cartas en tu Cementerio" (Doppelganger: 8).
+function graveyardCount(ctx, args) {
+  return player(ctx.state, ctx.controllerIndex).graveyard.length >= (args.min || 1);
+}
+
 // "Excepto el turno que fue enviada al Cementerio".
 function notSameTurnSentToGraveyard(ctx) {
   return ((ctx.state.graveyardTurn || {})[ctx.sourceInstanceId]) !== ctx.state.turnNumber;
@@ -233,6 +238,7 @@ const registry = {
   onceDuelLimit,
   hasCounter,
   notSameTurnSentToGraveyard,
+  graveyardCount,
   isEquippedToRace,
 };
 

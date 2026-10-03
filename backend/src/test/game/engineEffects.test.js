@@ -685,3 +685,67 @@ describe('A one-shot Apoyo waiting on the Pila', () => {
     expect(state.log.filter((l) => / es destruida\./.test(l.message))).toHaveLength(1);
   });
 });
+
+describe('Refuerzos from the Cementerio', () => {
+  it('needs 2 monsters there, lets the player pick which 2, then draws 1', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const refuerzos = await toGraveyard(state, 0, 'Refuerzos');
+    state.graveyardTurn = { [refuerzos]: 0 }; // sent on an earlier turn
+    const one = await toGraveyard(state, 0, 'Slime');
+    const act = (targets) => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos, targets });
+    expect(act([])).toMatchObject({ ok: false, reason: 'no-legal-target' });
+
+    const two = await toGraveyard(state, 0, 'Orco Guerrero');
+    const three = await toGraveyard(state, 0, 'Orco Gladiador');
+    const ask = act([]);
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige los 2 monstruos de tu Cementerio que barajas en el Mazo' });
+    expect(act([one])).toMatchObject({ ok: false, reason: 'choose-target' });
+    const hand = state.players[0].hand.length;
+    expect(act([one, three]).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].graveyard).toContain(two);
+    expect(state.players[0].graveyard).not.toContain(one);
+    expect(state.players[0].graveyard).not.toContain(three);
+    expect(state.players[0].banished).toContain(refuerzos);
+    expect(state.players[0].hand).toHaveLength(hand + 1);
+  });
+});
+
+describe('Doppelganger', () => {
+  it('comes out only with 8 cards in the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const doppel = await toHand(state, 0, 'Doppelganger');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: doppel, position: 'attack' })).toMatchObject({ ok: false });
+    for (let i = 0; i < 7; i++) await toGraveyard(state, 0, 'Slime');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: doppel })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
+    await toGraveyard(state, 0, 'Slime');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: doppel }).ok).toBe(true);
+    expect(monster(state, doppel)).toBeDefined();
+  });
+
+  it('destroys a monster (never an Apoyo) and takes its effect', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const doppel = await onField(state, 0, 'Doppelganger');
+    const ent = await onField(state, 1, 'Ent');
+    await onField(state, 1, 'Slime');
+    const trap = await instance(1, 'Trampa de Madera');
+    placeSupport(state, trap, 1, { faceDown: true });
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DOPPEL_COPY_EFFECT', sourceInstanceId: doppel });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(ask.options.map((o) => o.instanceId)).not.toContain(trap);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DOPPEL_COPY_EFFECT', sourceInstanceId: doppel, targets: [ent] }).ok).toBe(true);
+    passAll(state);
+    expect(monster(state, ent)).toBeUndefined();
+    // Ent's "añade un monstruo Planta del Mazo" is now Doppelganger's own.
+    const view = viewFor(state, 0).players[0].field.monsters.find((m) => m && m.instanceId === doppel);
+    expect(view.availableEffects).toContain('ENT_SEARCH_PLANTA');
+    const espora = await toDeckTop(state, 0, 'Espora Venenosa');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ENT_SEARCH_PLANTA', sourceInstanceId: doppel }).ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    expect(state.players[0].hand).toContain(espora);
+  });
+});

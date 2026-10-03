@@ -109,7 +109,7 @@ describe('Costs the data uses', () => {
     state.turnNumber = 3; // it reached the Cementerio on an earlier turn
     toPhase(state, 'main1', 0);
     const ask = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos });
-    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige los monstruos que vuelven al Mazo' });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige los 2 monstruos de tu Cementerio que barajas en el Mazo' });
     expect(ask.options.map((o) => o.instanceId).sort()).toEqual([slime, valkiria, avispa].sort());
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos, targets: [slime, avispa] }).ok).toBe(true);
     passAll(state);

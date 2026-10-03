@@ -380,12 +380,36 @@
         "fn": "destroyAndCopyEffect",
         "args": {
           "source": "self",
-          "target": "any",
+          "target": "selected",
+          "zone": "monster",
           "count": 1
         }
       }
     ],
     "source": "Efecto(monster)"
+  },
+  {
+    "_id": "DOPPEL_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "graveyardCount",
+        "args": {
+          "min": 8
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
   },
   {
     "_id": "KRAKEN_NEGATE",
@@ -5543,7 +5567,9 @@
         "fn": "returnFromGraveyardToDeck",
         "args": {
           "count": 2,
-          "shuffled": true
+          "shuffled": true,
+          "required": true,
+          "prompt": "Elige los 2 monstruos de tu Cementerio que barajas en el Mazo"
         }
       },
       {
