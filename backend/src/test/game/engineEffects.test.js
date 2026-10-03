@@ -226,7 +226,7 @@ describe('Actions and flags that used to do nothing', () => {
   it('Gigante Elemental is immune to effects of monsters sharing an attribute with its materials', async () => {
     const state = await makeDuel();
     const gigante = await onField(state, 1, 'Gigante Elemental');
-    monster(state, gigante).materials = [await instance(1, 'Fire Giant')];
+    monster(state, gigante).materials = [await instance(1, 'Gigante de Fuego')];
     recomputeContinuous(state);
     const fireSource = await onField(state, 0, 'Bálor'); // Fuego
     const darkSource = await onField(state, 0, 'Cubo Gelatinoso'); // Oscuridad
@@ -355,7 +355,7 @@ describe('Keywords and "monstruo sin efecto"', () => {
 
   it('a monster whose only effects describe how it is summoned counts as "sin efecto"', async () => {
     expect(matchesCardFilter(getCard(await idOf('Valkiria')), { effectless: true })).toBe(true);
-    expect(matchesCardFilter(getCard(await idOf('Fire Giant')), { effectless: true })).toBe(true);
+    expect(matchesCardFilter(getCard(await idOf('Gigante de Fuego')), { effectless: true })).toBe(true);
     expect(matchesCardFilter(getCard(await idOf('Doppelganger')), { effectless: true })).toBe(false);
     expect(matchesCardFilter(getCard(await idOf('Doppelganger')), { effectless: false })).toBe(true);
   });
@@ -570,6 +570,22 @@ describe('Mazo-C: what each Compilación needs', () => {
     await onField(state, 0, 'Pez Leviatán');
     expect(info(amooth)).toMatchObject({ ready: true });
     expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: dorado, materialInstanceIds: info(dorado).suggested }).ok).toBe(true);
+  });
+
+  it('Gigante Elemental: 5 monsters with "Gigante" in the name, from the field or the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const elemental = await instance(0, 'Gigante Elemental');
+    state.players[0].extra.push(elemental);
+    await onField(state, 0, 'Gigante de Fuego');
+    await onField(state, 0, 'Gigante del Trueno');
+    await toGraveyard(state, 0, 'Gigante de Rocas');
+    await toGraveyard(state, 0, 'Gigante de las Nubes');
+    const info = () => viewFor(state, 0).players[0].extra.find((c) => c.instanceId === elemental).compile;
+    expect(info()).toMatchObject({ ready: false, requirements: [expect.objectContaining({ have: 4, count: 5 })] });
+    await toGraveyard(state, 0, 'Gigante de Hielo');
+    expect(info()).toMatchObject({ ready: true });
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: elemental, materialInstanceIds: info().suggested }).ok).toBe(true);
   });
 
   it('Catapulta compiles from 2 Balista tokens, which then stop existing', async () => {

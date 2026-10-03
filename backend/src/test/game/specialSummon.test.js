@@ -102,13 +102,13 @@ describe('SPECIAL_SUMMON', () => {
     expect(state.players[0].vp).toBe(before - 5);
   });
 
-  it('Fire Giant: sacrifices a Fuego monster', async () => {
-    const { state, inHand } = await makeMatch(['Fire Giant', 'Slime', 'Kraken']);
+  it('Gigante de Fuego: sacrifices a Fuego monster', async () => {
+    const { state, inHand } = await makeMatch(['Gigante de Fuego', 'Slime', 'Kraken']);
     toMain1(state);
     const fireCard = await Card.findOne({ attribute: 'Fuego', category: 'monster' }).lean();
     const fireMon = `0:${fireCard._id}:f`;
     placeMonster(state, fireMon, 0, { position: 'attack' });
-    const giant = inHand('Fire Giant');
+    const giant = inHand('Gigante de Fuego');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: giant })).toMatchObject({ ok: true });
     expect(monsterOf(state, 0, fireMon)).toBeUndefined();
     expect(state.players[0].graveyard).toContain(fireMon);

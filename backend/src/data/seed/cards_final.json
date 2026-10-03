@@ -449,9 +449,9 @@
     "name": "HipoCampo",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736329488/hipoCampotcg_iqflh9.png",
     "attribute": "Agua",
-    "breed": "Serpienta Marina",
+    "breed": "Serpiente Marina",
     "family": "Marino",
-    "type": "Serpienta Marina",
+    "type": "Serpiente Marina",
     "description": "En las profundidades del océano, el HipoCampo se desliza con la gracia de un espíritu del agua. Su cuerpo combina la fuerza de un caballo con la elegancia de un pez, y sus escamas relucen en tonos de azul y verde. Habitante de arrecifes mágicos y cavernas submarinas, protege los secretos de los mares. Aventureros relatan cómo su relincho bajo el agua resuena como un canto, guiando o extraviando a los navegantes según sus intenciones. Elegante y misterioso, el hipoCampo encarna la belleza y el poder de los reinos submarinos.",
     "rarity": "epic",
     "category": "monster",
@@ -2210,7 +2210,7 @@
     "number": 90
   },
   {
-    "name": "Fire Giant",
+    "name": "Gigante de Fuego",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736526894/giganteescarchatcg_nv9cqn.png",
     "attribute": "Fuego",
     "breed": "Roca",
@@ -2232,7 +2232,7 @@
     ]
   },
   {
-    "name": "Lightning Giant",
+    "name": "Gigante del Trueno",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736577787/giganterayos_erc4a9.png",
     "attribute": "Electricidad",
     "breed": "Roca",
@@ -2254,7 +2254,7 @@
     ]
   },
   {
-    "name": "Stone Giant",
+    "name": "Gigante de Rocas",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736536299/gigantepiedratcg_imrxw1.png",
     "attribute": "Tierra",
     "breed": "Roca",
@@ -2276,7 +2276,7 @@
     ]
   },
   {
-    "name": "Cloud Giant",
+    "name": "Gigante de las Nubes",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736578265/gigantefuegotcg_qjlu01.png",
     "attribute": "Viento",
     "breed": "Roca",
@@ -2298,7 +2298,7 @@
     ]
   },
   {
-    "name": "Frost Giant",
+    "name": "Gigante de Hielo",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736577237/gigantenubetcg_qh9qm5.png",
     "attribute": "Hielo",
     "breed": "Roca",
@@ -2458,8 +2458,7 @@
       "args": {
         "materials": [
           {
-            "family": "Elemental",
-            "category": "monster",
+            "nameContains": "Gigante",
             "count": 5,
             "zone": [
               "field",
