@@ -556,6 +556,22 @@ describe('Mazo-C: what each Compilación needs', () => {
     expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: gigante, materialInstanceIds: ready.suggested }).ok).toBe(true);
   });
 
+  it('Pez Dorado ("2 monstruos Agua") and Amooth ("3 monstruos Marinos") take any of them', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const dorado = await instance(0, 'Pez Dorado de la Suerte');
+    const amooth = await instance(0, 'Protector del Mar, Amooth');
+    state.players[0].extra.push(dorado, amooth);
+    await onField(state, 0, 'HipoCampo');
+    await onField(state, 0, 'Cangrejo Archipiélago');
+    const info = (id) => viewFor(state, 0).players[0].extra.find((c) => c.instanceId === id).compile;
+    expect(info(dorado)).toMatchObject({ ready: true });
+    expect(info(amooth)).toMatchObject({ ready: false, requirements: [expect.objectContaining({ have: 2, count: 3 })] });
+    await onField(state, 0, 'Pez Leviatán');
+    expect(info(amooth)).toMatchObject({ ready: true });
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: dorado, materialInstanceIds: info(dorado).suggested }).ok).toBe(true);
+  });
+
   it('Catapulta compiles from 2 Balista tokens, which then stop existing', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);

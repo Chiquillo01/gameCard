@@ -561,11 +561,7 @@
       "args": {
         "materials": [
           {
-            "breedIn": [
-              "Monstruo Marino",
-              "Serpiente Marina",
-              "Pez"
-            ],
+            "family": "Marino",
             "count": 3
           }
         ]
@@ -674,11 +670,7 @@
       "args": {
         "materials": [
           {
-            "breedIn": [
-              "Monstruo Marino",
-              "Serpiente Marina",
-              "Pez"
-            ],
+            "attribute": "Agua",
             "count": 2
           }
         ]
@@ -2466,7 +2458,8 @@
       "args": {
         "materials": [
           {
-            "nameContains": "Gigante",
+            "family": "Elemental",
+            "category": "monster",
             "count": 5,
             "zone": [
               "field",
