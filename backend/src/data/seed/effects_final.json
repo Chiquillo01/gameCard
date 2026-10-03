@@ -303,10 +303,11 @@
           "token": {
             "name": "Tentáculo Musculoso",
             "attribute": "Agua",
+            "family": "Marino",
+            "breed": "Pez",
             "level": 3,
             "atk": 0,
-            "def": 0,
-            "breed": "Pez"
+            "def": 0
           }
         }
       }

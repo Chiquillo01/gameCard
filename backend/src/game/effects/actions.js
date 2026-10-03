@@ -314,8 +314,6 @@ function buffPhaseActive(state, phase) {
 
 // A token has no card data, so it can only satisfy an empty filter.
 function monsterMatches(entry, filter) {
-  const hasFilter = Object.values(filter || {}).some((v) => v !== undefined && v !== null && v !== '');
-  if (entry.isToken) return !hasFilter;
   return matchesFilter(entry, filter);
 }
 

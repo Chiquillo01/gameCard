@@ -33,7 +33,7 @@ function rowMatches(row, args) {
   if ((args.faceUp || (args.filter && args.filter.faceUp)) && entry.faceDown) return false;
   if ((args.faceDown || (args.filter && args.filter.faceDown)) && !entry.faceDown) return false;
   if (args.filter && Object.values(args.filter).some((v) => v !== undefined && v !== null && v !== '' && v !== true && v !== false)) {
-    if (entry.isToken) return false;
+    if (entry.isToken && row.kind !== 'monster') return false;
     if (row.kind === 'monster' ? !matchesFilter(entry, args.filter) : !matchesCardFilter(getCard(entry.cardId), args.filter)) return false;
   }
   if (args.maxDef != null && row.kind === 'monster' && (entry.baseDef + ((entry.tempBuff || {}).def || 0)) > args.maxDef) return false;
@@ -173,7 +173,7 @@ function searchCandidates(state, controllerIndex, fn, args) {
   }
   // Refuerzos: "un monstruo que comparta atributo con un monstruo que tengas en Campo".
   const fieldAttributes = filter.matchAttributeWithFieldMonster
-    ? pl.field.monsters.filter((m) => m && !m.isToken && !m.faceDown).map((m) => getCard(m.cardId).attribute)
+    ? pl.field.monsters.filter((m) => m && !m.faceDown).map((m) => (m.isToken ? m.tokenDef.attribute : getCard(m.cardId).attribute))
     : null;
   const ids = [];
   zones.forEach((zone) => pl[zone].forEach((id) => {

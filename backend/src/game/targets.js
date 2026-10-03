@@ -64,7 +64,7 @@ function selectRows(ctx, args) {
   if (args.excludeSelf !== false) rows = rows.filter((r) => r.entry.instanceId !== ctx.sourceInstanceId);
   const filter = args.filter ? { ...args.filter, category: undefined } : null;
   if (filter && Object.values(filter).some((v) => v !== undefined && v !== null && v !== '')) {
-    rows = rows.filter((r) => !r.entry.isToken && (r.kind === 'monster' ? matchesFilter(r.entry, filter) : matchesCardFilter(getCard(r.entry.cardId), filter)));
+    rows = rows.filter((r) => (r.kind === 'monster' ? matchesFilter(r.entry, filter) : !r.entry.isToken && matchesCardFilter(getCard(r.entry.cardId), filter)));
   }
   if (effect.targetSelector === 'fieldLicantropo' && args.target === 'selected') {
     rows = rows.filter((r) => !r.entry.isToken && r.kind === 'monster' && matchesFilter(r.entry, { nameContains: 'Licántropo' }));

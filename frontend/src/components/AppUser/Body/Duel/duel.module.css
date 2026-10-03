@@ -1542,3 +1542,45 @@
   color: #6b3d16;
   font-size: 1.0625rem;
 }
+
+.compileEffect {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.compileEffectText {
+  background: rgba(255, 255, 255, 0.45);
+  border-left: 3px solid #b89860;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9375rem;
+  line-height: 1.3;
+}
+
+.compileEffectText p {
+  margin: 0 0 0.25rem;
+}
+
+.compileEffectText p:last-child {
+  margin-bottom: 0;
+}
+
+.compileEffectFolded {
+  max-height: 4.2em;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(180deg, #000 60%, transparent);
+  mask-image: linear-gradient(180deg, #000 60%, transparent);
+}
+
+.compileEffectToggle {
+  align-self: flex-start;
+  margin-top: 0 !important;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #6b3d16;
+  text-decoration: underline;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+}

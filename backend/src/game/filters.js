@@ -15,7 +15,12 @@ const categoryMatches = (cardCategory, wanted) => normalize(cardCategory) === (C
 // Shared "does this monster on field match this filter" used by continuous buffs, search
 // effects, targeting, etc. All keys are optional and AND together.
 function matchesFilter(monsterEntry, filter = {}) {
-  if (!monsterEntry || monsterEntry.isToken) return false;
+  if (!monsterEntry) return false;
+  // A token is a monster too: it matches by its own definition (Tentáculo Musculoso: Agua / Pez).
+  if (monsterEntry.isToken) {
+    if (filter.position && monsterEntry.position !== filter.position) return false;
+    return matchesCardFilter({ ...monsterEntry.tokenDef, category: 'monster' }, filter);
+  }
   const base = getCard(monsterEntry.cardId);
   // What the card counts as right now on the field: a monster turned into another breed (Pegaso,
   // Capitán Bandido) matches as that breed; one that took another card's name and level

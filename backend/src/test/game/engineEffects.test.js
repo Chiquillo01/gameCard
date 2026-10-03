@@ -634,6 +634,24 @@ describe('Aboleth: "cuando es enviada del Campo al Cementerio" summons 2 Tentác
     expect(tentacles(state, 1)).toHaveLength(2);
   });
 
+  it('its own Tentáculos (Agua) can be destroyed to bring Aboleth back; a token just disappears', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const aboleth = await onField(state, 0, 'Aboleth');
+    const relampago = await toHand(state, 0, 'Relámpago');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: relampago, targets: [aboleth] }).ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    const [tentacle] = tentacles(state, 0);
+    expect(viewFor(state, 0).players[0].graveyard.find((g) => g.instanceId === aboleth).specialSummonAvailable).toBe(true);
+    const ask = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth, targets: [tentacle.instanceId] }).ok).toBe(true);
+    expect(monster(state, aboleth)).toBeDefined();
+    expect(tentacles(state, 0)).toHaveLength(1);
+    expect(state.players[0].graveyard.some((id) => id.startsWith('token:'))).toBe(false);
+  });
+
   it('when destroyed to pay a cost (another Aboleth coming out)', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);

@@ -1,4 +1,5 @@
-import CardFace from '../CreateNewDeck/CardModal/CardFace';
+import { useState } from 'react';
+import CardFace, { EffectDisplay } from '../CreateNewDeck/CardModal/CardFace';
 import styles from './duel.module.css';
 
 // The Mazo-C: each Compilación as the whole card next to its recipe, one requirement per line
@@ -19,6 +20,27 @@ function groupCopies(cards) {
     else groups.set(card.cardId, { card, copies: 1 });
   });
   return [...groups.values()];
+}
+
+// The card's effect in readable size; a long one starts folded to a few lines.
+const LONG_EFFECT = 170;
+function EffectText({ text }) {
+  const [open, setOpen] = useState(false);
+  if (!text) return null;
+  const long = text.length > LONG_EFFECT;
+  return (
+    <div className={styles.compileEffect}>
+      <span className={styles.compileRecipeTitle}>Efecto</span>
+      <div className={`${styles.compileEffectText} ${long && !open ? styles.compileEffectFolded : ''}`}>
+        <EffectDisplay effect={text} />
+      </div>
+      {long && (
+        <button type='button' className={styles.compileEffectToggle} onClick={() => setOpen((v) => !v)}>
+          {open ? 'Ver menos' : 'Ver más'}
+        </button>
+      )}
+    </div>
+  );
 }
 
 function MaterialChip({ material }) {
@@ -92,6 +114,7 @@ export default function CompileModal({ cards, cardsById, canCompileNow, onCompil
                       Nivel {full.level ?? '—'} · ⚔ Atk {full.atk} · ♥ Vida {full.def}
                     </span>
                   )}
+                  <EffectText text={full.effect} />
                   <span className={styles.compileRecipeTitle}>Materiales</span>
                   <ul className={styles.compileReqs}>
                     {info.requirements.map((req) => (

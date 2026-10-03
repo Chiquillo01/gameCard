@@ -6,7 +6,8 @@ const { getEffectiveStats, fireTrigger, recomputeContinuous } = require('./effec
 const { checkWin } = require('./outcome');
 
 function isWater(entry) {
-  return !entry.isToken && !entry.faceDown && getCard(entry.cardId).attribute === 'Agua';
+  if (entry.faceDown) return false;
+  return (entry.isToken ? entry.tokenDef.attribute : getCard(entry.cardId).attribute) === 'Agua';
 }
 
 const hasAbility = (m, name) => (m.abilities || []).some((a) => a.name === name);

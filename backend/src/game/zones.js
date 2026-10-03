@@ -106,6 +106,12 @@ function log(state, message) {
 // `deckPosition: 'shuffle'` inserts it at a random spot ("baraja/regresa al Mazo") instead of on top.
 function moveToZone(state, instanceId, toZone, ownerIndexOverride, { deckPosition = 'top' } = {}) {
   const loc = findInstanceLocation(state, instanceId);
+  // A token that leaves the field stops existing — it never reaches a hand, Mazo or Cementerio.
+  if (String(instanceId).startsWith('token:')) {
+    if (loc) removeFromZone(state, instanceId, loc);
+    clearStatus(state, instanceId, BURN);
+    return true;
+  }
   const ownerIndex = ownerIndexOverride ?? ownerOfInstance(instanceId) ?? (loc ? loc.ownerIndex : null);
   if (ownerIndex === null) return false;
   const leaving = loc && loc.zone === 'field:monster' ? state.players[loc.ownerIndex].field.monsters[loc.slot] : null;
