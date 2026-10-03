@@ -749,3 +749,24 @@ describe('Doppelganger', () => {
     expect(state.players[0].hand).toContain(espora);
   });
 });
+
+describe('Vampiro: "destruye una carta cuyo Atk actual sea diferente a su Atk original"', () => {
+  it('only a face-up monster whose Atk really changed; never a face-down one', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const vampiro = await onField(state, 0, 'Vampiro');
+    const hidden = await onField(state, 1, 'Orco Gladiador', { position: 'defense', faceDown: true });
+    const plain = await onField(state, 1, 'Slime');
+    const act = (targets) => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'VAMPIRO_DESTROY_MODIFIED_ATK', sourceInstanceId: vampiro, targets });
+    expect(act([])).toMatchObject({ ok: false, reason: 'no-legal-target' });
+    expect(act([hidden])).toMatchObject({ ok: false });
+
+    const boosted = await onField(state, 1, 'Orco Guerrero');
+    monster(state, boosted).baseAtk += 2; // its Atk is no longer the printed one
+    expect(act([]).ok).toBe(true); // the only legal one, picked without asking
+    passAll(state);
+    expect(monster(state, boosted)).toBeUndefined();
+    expect(monster(state, hidden)).toBeDefined();
+    expect(monster(state, plain)).toBeDefined();
+  });
+});

@@ -16,6 +16,16 @@ const categoryMatches = (cardCategory, wanted) => normalize(cardCategory) === (C
 // effects, targeting, etc. All keys are optional and AND together.
 function matchesFilter(monsterEntry, filter = {}) {
   if (!monsterEntry) return false;
+  // "Que su Atk actual sea diferente a su Atk original" (Vampiro): read off the field, and only for
+  // a face-up monster — a face-down one shows no Atk at all.
+  if (filter.atkDiffersFromOriginal) {
+    if (monsterEntry.faceDown) return false;
+    const printed = monsterEntry.isToken ? monsterEntry.tokenDef.atk || 0 : getCard(monsterEntry.cardId).atk || 0;
+    const current = Math.max(0, (monsterEntry.baseAtk || 0) + ((monsterEntry.tempBuff || {}).atk || 0));
+    if (current === printed) return false;
+    const { atkDiffersFromOriginal, ...rest } = filter;
+    return matchesFilter(monsterEntry, rest);
+  }
   // A token is a monster too: it matches by its own definition (Tentáculo Musculoso: Agua / Pez).
   if (monsterEntry.isToken) {
     if (filter.position && monsterEntry.position !== filter.position) return false;
@@ -52,6 +62,8 @@ function attributeMatches(cardAttribute, wantedSpanish) {
 // validate fusion/Compilación material requirements against a candidate card.
 function matchesCardFilter(card, filter = {}) {
   if (!card) return false;
+  // A card off the field (or an Apoyo) has no current Atk to compare.
+  if (filter.atkDiffersFromOriginal) return false;
   if (filter.name && !sameText(card.name, filter.name)) return false;
   // `nameIncludes` is the older spelling of `nameContains` some effect data still uses.
   const contains = filter.nameContains || filter.nameIncludes;

@@ -32,6 +32,7 @@ function rowMatches(row, args) {
   const { entry } = row;
   if ((args.faceUp || (args.filter && args.filter.faceUp)) && entry.faceDown) return false;
   if ((args.faceDown || (args.filter && args.filter.faceDown)) && !entry.faceDown) return false;
+  if (args.filter && args.filter.atkDiffersFromOriginal && !(row.kind === 'monster' && matchesFilter(entry, { atkDiffersFromOriginal: true }))) return false;
   if (args.filter && Object.values(args.filter).some((v) => v !== undefined && v !== null && v !== '' && v !== true && v !== false)) {
     if (entry.isToken && row.kind !== 'monster') return false;
     if (row.kind === 'monster' ? !matchesFilter(entry, args.filter) : !matchesCardFilter(getCard(entry.cardId), args.filter)) return false;

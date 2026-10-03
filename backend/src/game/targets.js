@@ -63,7 +63,14 @@ function selectRows(ctx, args) {
   if (args.target === 'fieldMonsterInAttackPosition') rows = rows.filter((r) => r.entry.position === 'attack' && !r.entry.faceDown);
   if (args.excludeSelf !== false) rows = rows.filter((r) => r.entry.instanceId !== ctx.sourceInstanceId);
   const filter = args.filter ? { ...args.filter, category: undefined } : null;
-  if (filter && Object.values(filter).some((v) => v !== undefined && v !== null && v !== '')) {
+  const hasFilter = filter && Object.values(filter).some((v) => v !== undefined && v !== null && v !== '');
+  // A rival's face-down card shows nothing: a pick that depends on what it is (a breed, an
+  // attribute, its Atk...) can't choose it. Whether it's face-down/face-up or its position is
+  // plain to see (Oscuro: "destruye una carta boca abajo").
+  const VISIBLE_KEYS = ['faceDown', 'faceUp', 'position'];
+  const asksWhatItIs = hasFilter && Object.entries(filter).some(([k, v]) => !VISIBLE_KEYS.includes(k) && v !== undefined && v !== null && v !== '');
+  if (asksWhatItIs) rows = rows.filter((r) => !(r.entry.faceDown && r.ownerIndex !== ctx.controllerIndex));
+  if (hasFilter) {
     rows = rows.filter((r) => (r.kind === 'monster' ? matchesFilter(r.entry, filter) : !r.entry.isToken && matchesCardFilter(getCard(r.entry.cardId), filter)));
   }
   if (effect.targetSelector === 'fieldLicantropo' && args.target === 'selected') {
