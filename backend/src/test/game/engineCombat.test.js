@@ -295,3 +295,21 @@ describe('A face-down defender is turned over before the damage step', () => {
     expect(state.lastBattle.steps).toEqual(expect.arrayContaining(['Espora Venenosa estaba boca abajo: se giró para el combate.', 'Se compara Atk 1 con Vida 1.']));
   });
 });
+
+describe('An attacker that stops being in attack position', () => {
+  it('Hechizo de volteo on the attacker in response: the attack stops, nothing is destroyed', async () => {
+    const state = await makeDuel();
+    const attacker = await onField(state, 0, 'Vampiro');
+    const defender = await onField(state, 1, 'Vampiro');
+    const hechizo = await toHand(state, 1, 'Hechizo de volteo');
+    state.players[1].pixelcoins = 12;
+    toPhase(state, 'battle', 0);
+    expect(declare(state, 0, attacker, defender).ok).toBe(true);
+    expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: hechizo, targets: [attacker] }).ok).toBe(true);
+    passAll(state);
+    expect(monster(state, attacker)).toMatchObject({ position: 'defense', faceDown: true });
+    expect(monster(state, defender)).toBeDefined();
+    expect(state.players.map((p) => p.vp)).toEqual([STARTING_VP, STARTING_VP]);
+    expect(state.log.some((l) => /ya no está en posición de ataque: el ataque se detiene/.test(l.message))).toBe(true);
+  });
+});

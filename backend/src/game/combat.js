@@ -87,11 +87,12 @@ function performBattle(state, link) {
     return;
   }
   const attackerName = monsterName(attacker);
+  if (attackStopped(state, attacker)) return;
 
   if (!link.targetInstanceId) {
     // "Antes de la fase de daño" (Serpiente de Muelle) for a direct attack too.
     fireTrigger(state, 'beforeDamageCalculation', { instanceId: attacker.instanceId, attackerInstanceId: attacker.instanceId, defenderInstanceId: null });
-    if (!getFieldMonster(state, attacker.instanceId)) return;
+    if (!getFieldMonster(state, attacker.instanceId) || attackStopped(state, attacker)) return;
     const atk = getEffectiveStats(attacker).atk;
     const before = oppPl.vp;
     oppPl.vp = Math.max(0, oppPl.vp - atk);
@@ -118,6 +119,7 @@ function performBattle(state, link) {
     return;
   }
   defender = getFieldMonster(state, defender.instanceId);
+  if (attackStopped(state, attacker)) return;
 
   // Rulebook, Rotación: a face-down defender is turned face-up so its Vida can be read, and its
   // "al ser girada" effects resolve right then, before the damage is calculated. What they do
@@ -139,6 +141,15 @@ function performBattle(state, link) {
   return damageStep(state, link);
 }
 
+// Only a face-up monster in attack position attacks: one turned to defense / face-down while the
+// attack waited (Hechizo de volteo in response) stops there, and no battle happens.
+function attackStopped(state, attacker) {
+  if (!attacker.faceDown && attacker.position === 'attack') return false;
+  log(state, `${attacker.faceDown ? 'El monstruo atacante' : monsterName(attacker)} ya no está en posición de ataque: el ataque se detiene.`);
+  recomputeContinuous(state);
+  return true;
+}
+
 // The damage step of a battle between two monsters (after any face-down defender was turned over
 // and its effects resolved).
 function damageStep(state, link) {
@@ -154,6 +165,7 @@ function damageStep(state, link) {
     checkWin(state);
     return;
   }
+  if (attackStopped(state, attacker)) return;
   const attackerName = monsterName(attacker);
   const wasFaceDown = !!link.revealed;
   const attackerStats = getEffectiveStats(attacker);
