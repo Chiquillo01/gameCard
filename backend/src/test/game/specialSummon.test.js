@@ -94,8 +94,10 @@ describe('SPECIAL_SUMMON', () => {
     expect(monsterOf(state, 0, pegaso)).toBeDefined();
   });
 
-  it('Vampiro: pays 5 VP instead of a card cost', async () => {
+  it('Vampiro: pays 5 VP instead of a card cost (with a Murcielago in the Cementerio)', async () => {
     const { state, inHand } = await makeMatch(['Vampiro', 'Kraken']);
+    const bat = await Card.findOne({ name: 'Murcielago' }).lean();
+    state.players[0].graveyard.push(`0:${bat._id}:bat`);
     toMain1(state);
     const before = state.players[0].vp;
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: inHand('Vampiro') })).toMatchObject({ ok: true });

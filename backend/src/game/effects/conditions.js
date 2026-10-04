@@ -1,7 +1,7 @@
 const { getCard } = require('../cardIndex');
 const { player, opponentIndex, getFieldMonster, findInstanceLocation } = require('../zones');
 const { cardIdFromInstance } = require('../deckUtils');
-const { matchesFilter } = require('../filters');
+const { matchesFilter, matchesCardFilter } = require('../filters');
 
 function wasOnField(ctx) {
   return true; // by the time a "sent to graveyard" trigger fires we can no longer check the
@@ -199,6 +199,16 @@ function hasCounter(ctx, args) {
   return !!entry && ((entry.counters || {})[args.counter] || 0) >= (args.min || 1);
 }
 
+// "Controlando a X en Campo o Cementerio" (Vampiro, Vampiresa: "Murcielago"): one of the player's
+// own cards named X face-up on their field, or in their Cementerio (args.zones picks which).
+function hasCardIn(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const zones = args.zones || ['field', 'graveyard'];
+  const named = (cardId) => matchesCardFilter(getCard(cardId), { name: args.name });
+  if (zones.includes('field') && [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && named(e.cardId))) return true;
+  return ['graveyard', 'banished', 'hand'].some((z) => zones.includes(z) && pl[z].some((id) => named(cardIdFromInstance(id))));
+}
+
 // "Si tienes N cartas en tu Cementerio" (Doppelganger: 8).
 function graveyardCount(ctx, args) {
   return player(ctx.state, ctx.controllerIndex).graveyard.length >= (args.min || 1);
@@ -239,6 +249,7 @@ const registry = {
   hasCounter,
   notSameTurnSentToGraveyard,
   graveyardCount,
+  hasCardIn,
   isEquippedToRace,
 };
 

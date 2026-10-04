@@ -770,3 +770,33 @@ describe('Vampiro: "destruye una carta cuyo Atk actual sea diferente a su Atk or
     expect(monster(state, plain)).toBeDefined();
   });
 });
+
+describe('Murcielago, Vampiro and Vampiresa: special summon only', () => {
+  it('Murcielago pays 2 VP; it has no Normal Summon', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const bat = await toHand(state, 0, 'Murcielago');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: bat, position: 'attack' })).toMatchObject({ ok: false });
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: bat }).ok).toBe(true);
+    expect(state.players[0].vp).toBe(STARTING_VP - 2);
+  });
+
+  it('Vampiro (5 VP) and Vampiresa (4 VP) need a Murcielago in the Campo or the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const vampiro = await toHand(state, 0, 'Vampiro');
+    const vampiresa = await toHand(state, 0, 'Vampiresa');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: vampiro, position: 'attack' })).toMatchObject({ ok: false });
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiro })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
+
+    await toGraveyard(state, 0, 'Murcielago');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiro }).ok).toBe(true);
+    expect(state.players[0].vp).toBe(STARTING_VP - 5);
+
+    state.players[0].graveyard = [];
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiresa })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
+    await onField(state, 0, 'Murcielago');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiresa }).ok).toBe(true);
+    expect(state.players[0].vp).toBe(STARTING_VP - 9);
+  });
+});

@@ -270,7 +270,7 @@
     "def": 1,
     "level": 1,
     "effect": "Al ser enviado al Cementerio:\n• Añade a tu Mano 1 \"Murciélago\" de tu Mazo.",
-    "invocationText": "Se puede invocar especial pagando 2 VP.",
+    "invocationText": "Esta carta solo puede ser Invocada de forma especial pagando 2 VP.",
     "state": 4,
     "number": 12,
     "effectCodes": [
@@ -3109,7 +3109,7 @@
     "def": 4,
     "level": 6,
     "effect": "Una vez por turno, cómo efecto rápido puedes activar 1 de estos 2 efectos:\n• Genera 1 Píxel.\n• Destruye una carta en el Campo, que su Atk actual sea diferente a su Atk original.",
-    "invocationText": "Se puede invocar especial pagando 5 VP.",
+    "invocationText": "Esta carta solo puede ser Invocada de forma especial pagando 5 VP y controlando a \"Murcielago\" en Campo o Cementerio.",
     "state": 2,
     "number": 128,
     "effectCodes": [
@@ -3439,7 +3439,7 @@
     "def": 5,
     "level": 5,
     "effect": "Una vez por turno, cómo puedes activar 1 de estos 2 efectos:\n• Genera 1 Píxel.\n• Resta 3 puntos de Atk a un monstruo enemigo.",
-    "invocationText": "Se puede invocar especial pagando 4 VP.",
+    "invocationText": "Esta carta solo puede ser Invocada de forma especial pagando 4 VP y controlando a \"Murcielago\" en Campo o Cementerio.",
     "state": 3,
     "number": 141,
     "effectCodes": [

@@ -6536,7 +6536,18 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "hasCardIn",
+        "args": {
+          "name": "Murcielago",
+          "zones": [
+            "field",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6604,7 +6615,18 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "hasCardIn",
+        "args": {
+          "name": "Murcielago",
+          "zones": [
+            "field",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
