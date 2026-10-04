@@ -6,8 +6,8 @@ const SUPPORT_ZONES = 4; // Territorio (Reino) is a separate 5th zone, not part 
 const MAX_HAND_SIZE = 8; // book contradicts itself (7 to exile vs 8 to graveyard) — using the more detailed rule (Fase Final: discard to 8, to graveyard)
 
 const STARTING_PIXELS = 4; // balance pass: was 6
-const PIXEL_INCOME_PER_TURN = 4; // balance pass: was 6
-const PIXEL_CAP = 12;
+const PIXEL_INCOME_PER_TURN = 2; // balance pass: was 6, then 4
+const PIXEL_CAP = 8; // balance pass: was 12
 
 const PHASES = ['draw', 'standby', 'main1', 'battle', 'main2', 'end'];
 
