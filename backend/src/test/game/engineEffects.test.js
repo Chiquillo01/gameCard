@@ -904,3 +904,14 @@ describe('Loto de Obsidiana', () => {
     expect(state.players[0].pixelcoins).toBe(6);
   });
 });
+
+describe('Searches by kind of Apoyo and by what the text mentions', () => {
+  it('a subtype/textIncludes filter only offers matching cards, not the whole Mazo', async () => {
+    const { matchesCardFilter: m } = require('../../game/filters');
+    const card = async (n) => getCard(await idOf(n));
+    expect(m(await card('Trampa de Madera'), { subtype: 'Contraataque' })).toBe((await card('Trampa de Madera')).subtype === 'counter');
+    expect(m(await card('Llamada al Héroe'), { subtype: 'Normal', textIncludes: 'Héroe' })).toBe(true);
+    expect(m(await card('Llamada al Héroe'), { subtype: 'Contraataque' })).toBe(false);
+    expect(m(await card('Relámpago'), { textIncludes: 'Héroe' })).toBe(false);
+  });
+});

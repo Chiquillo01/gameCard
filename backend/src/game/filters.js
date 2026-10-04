@@ -9,6 +9,7 @@ const sameText = (a, b) => normalize(a) === normalize(b);
 // A Compilación (fusion) card counts as a monster on the field/in the deck for anything that
 // says `category: "Compilado"` — the Spanish label authored in the effect data — even though
 // the schema's own `category` value for it is "fusion".
+const SUBTYPE_LABELS = { normal: 'normal', veloz: 'instant', contraataque: 'counter', contraefecto: 'counter', continuo: 'continuous', equipo: 'equipment', territorio: 'field', reino: 'field' };
 const CATEGORY_LABEL_TO_SCHEMA = { compilado: 'fusion', monstruo: 'monster', soporte: 'support', token: 'token' };
 const categoryMatches = (cardCategory, wanted) => normalize(cardCategory) === (CATEGORY_LABEL_TO_SCHEMA[normalize(wanted)] || normalize(wanted));
 
@@ -76,6 +77,10 @@ function matchesCardFilter(card, filter = {}) {
   if (filter.attribute && ![card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, filter.attribute))) return false;
   if (filter.level != null && card.level !== filter.level) return false;
   if (filter.minLevel != null && (card.level || 0) < filter.minLevel) return false;
+  // An Apoyo's kind, by its Spanish name or the stored one ("Contraataque" = counter).
+  if (filter.subtype && ![].concat(filter.subtype).some((s) => normalize(card.subtype) === (SUBTYPE_LABELS[normalize(s)] || normalize(s)))) return false;
+  // "Que menciona X en su texto": its name or its effect text.
+  if (filter.textIncludes && !normalize(`${card.name} ${card.effect || ''}`).includes(normalize(filter.textIncludes))) return false;
   if (filter.maxLevel != null && (card.level || 0) > filter.maxLevel) return false;
   // "Monstruo sin efecto" (true) or a monster that has one (false).
   if (filter.effectless != null && isEffectless(card) !== !!filter.effectless) return false;
