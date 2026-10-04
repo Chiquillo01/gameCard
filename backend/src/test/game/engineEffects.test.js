@@ -880,3 +880,27 @@ describe('Intercanvio del Pequeño', () => {
     expect(monster(state, esqueleto)).toBeDefined();
   });
 });
+
+describe('Loto de Obsidiana', () => {
+  it('costs a card from hand; 3 pixels; from the Cementerio, 3 more but not the turn it got there', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    state.players[0].pixelcoins = 0;
+    const loto = await toHand(state, 0, 'Loto de Obsidiana');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: loto })).toMatchObject({ ok: false, reason: 'cannot-pay-cost' });
+    const pay = await toHand(state, 0, 'Slime');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: loto }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].graveyard).toEqual(expect.arrayContaining([pay, loto]));
+    expect(state.players[0].pixelcoins).toBe(3);
+
+    state.players[1].pixelcoins = 10; // the rival has more pixels
+    const fromGrave = () => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'OBSIDIAN_GRAVE_PIXEL', sourceInstanceId: loto });
+    expect(fromGrave()).toMatchObject({ ok: false, reason: 'conditions-not-met' }); // sent there this turn
+    state.graveyardTurn[loto] = state.turnNumber - 1;
+    expect(fromGrave().ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].banished).toContain(loto);
+    expect(state.players[0].pixelcoins).toBe(6);
+  });
+});

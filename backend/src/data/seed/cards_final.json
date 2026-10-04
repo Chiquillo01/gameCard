@@ -641,7 +641,13 @@
       "UNNEGATABLE",
       "OBSIDIAN_PIXEL_GEN",
       "OBSIDIAN_GRAVE_PIXEL"
-    ]
+    ],
+    "activationCost": {
+      "fn": "discart",
+      "args": {
+        "count": 1
+      }
+    }
   },
   {
     "name": "Pez Dorado de la Suerte",

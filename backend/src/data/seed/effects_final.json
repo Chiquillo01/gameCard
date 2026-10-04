@@ -720,6 +720,9 @@
     "conditions": [
       {
         "fn": "opponentHasMorePixels"
+      },
+      {
+        "fn": "notSameTurnSentToGraveyard"
       }
     ],
     "requiresTarget": false,
@@ -733,7 +736,7 @@
       {
         "fn": "generatePixels",
         "args": {
-          "amount": 2
+          "amount": 3
         }
       }
     ],
