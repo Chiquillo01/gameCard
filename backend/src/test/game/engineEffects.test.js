@@ -816,3 +816,29 @@ describe('Vampiresa', () => {
     expect(viewFor(state, 0).players[1].field.monsters.find((m) => m && m.instanceId === orco).atk).toBe(3);
   });
 });
+
+describe('Guarida del Oscuro', () => {
+  it('can be played with nothing to search; its "una vez por turno" search is used from the field', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const guarida = await toHand(state, 0, 'Guarida del Oscuro');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: guarida }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].field.territory).toMatchObject({ instanceId: guarida });
+    const search = () => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'OSC_DEMON_SEARCH', sourceInstanceId: guarida });
+    expect(search()).toMatchObject({ ok: false, reason: 'no-legal-target' }); // no Oscuridad Demonio in the Mazo
+
+    const slime = await toDeckTop(state, 0, 'Slime');
+    const cubo = await toDeckTop(state, 0, 'Cubo Gelatinoso');
+    expect(viewFor(state, 0).players[0].field.territory.availableEffects).toContain('OSC_DEMON_SEARCH');
+    expect(search().ok).toBe(true);
+    passAll(state);
+    let guard = 0;
+    while (viewFor(state, 0).pendingTriggerChoice && guard++ < 5) {
+      const pending = viewFor(state, 0).pendingTriggerChoice;
+      applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [pending.options[pending.options.length - 1].instanceId] });
+    }
+    expect([slime, cubo].filter((id) => state.players[0].hand.includes(id) || state.players[0].graveyard.includes(id))).toHaveLength(2);
+    expect(search()).toMatchObject({ ok: false, reason: 'once-per-turn' });
+  });
+});

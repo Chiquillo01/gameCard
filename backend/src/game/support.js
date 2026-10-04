@@ -182,11 +182,17 @@ function describeFieldTarget(m) {
 // A "triggered" one (Nido de Avispas) waits for its event and a "continuous" one is recomputed.
 const ON_PLAY_EFFECT_TYPES = ['activated', 'quick', 'ignition'];
 
+// A Continuo's or Territorio's "una vez por turno" ability (Guarida del Oscuro's search, Forja's
+// Balista) is used from the field with its own button — playing the card doesn't run it, and an
+// ability with nothing to do right now doesn't stop the card from being played.
+const ONE_SHOT_SUPPORTS = ['normal', 'instant', 'counter'];
+
 function onPlayEffects(card) {
   return (card.effectCodes || [])
     .map((effectId) => getEffect(effectId))
     .filter((effect) => effect && ON_PLAY_EFFECT_TYPES.includes(effect.type))
-    .filter((effect) => !['graveyard', 'banished', 'field'].includes(requiredZoneFor(effect)));
+    .filter((effect) => !['graveyard', 'banished', 'field'].includes(requiredZoneFor(effect)))
+    .filter((effect) => ONE_SHOT_SUPPORTS.includes(card.subtype) || !(effect.trigger && effect.trigger.fn === 'onActivation'));
 }
 
 module.exports = { activateSupport, activateSetSupport, onPlayEffects };
