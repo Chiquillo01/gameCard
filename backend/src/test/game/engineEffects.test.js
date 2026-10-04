@@ -826,10 +826,10 @@ describe('Guarida del Oscuro', () => {
     passAll(state);
     expect(state.players[0].field.territory).toMatchObject({ instanceId: guarida });
     const search = () => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'OSC_DEMON_SEARCH', sourceInstanceId: guarida });
-    expect(search()).toMatchObject({ ok: false, reason: 'no-legal-target' }); // no Oscuridad Demonio in the Mazo
+    expect(search()).toMatchObject({ ok: false, reason: 'no-legal-target' }); // no Demonio/Inmortal/Pecador in the Mazo
 
-    const slime = await toDeckTop(state, 0, 'Slime');
-    const cubo = await toDeckTop(state, 0, 'Cubo Gelatinoso');
+    const slime = await toDeckTop(state, 0, 'Íncubo'); // Pecador
+    const cubo = await toDeckTop(state, 0, 'Rey Demonio'); // a Demonio of Fuego counts too
     expect(viewFor(state, 0).players[0].field.territory.availableEffects).toContain('OSC_DEMON_SEARCH');
     expect(search().ok).toBe(true);
     passAll(state);

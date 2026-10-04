@@ -3151,7 +3151,7 @@
     "category": "support",
     "subtype": "field",
     "expansion": "IDL",
-    "effect": "Una vez por turno: \n• Agrega a tu mano dos monstruos que sean Oscuridad y Demonio de tu Mazo, y si lo haces, descarta una carta.\nLos monstruos Demonio de Oscuridad ganan +5 Atk y Vida.",
+    "effect": "Una vez por turno: \n• Agrega a tu mano dos monstruos que sean Demonio, Inmortal, Pecador y/o Cambiaformas de tu Mazo, y si lo haces, descarta una carta.\nLos monstruos Demonio de Oscuridad ganan +5 Atk y Vida.",
     "invocationText": "Activación - 3 Píxel",
     "state": 1,
     "number": 130,

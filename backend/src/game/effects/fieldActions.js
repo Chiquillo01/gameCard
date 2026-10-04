@@ -148,7 +148,7 @@ function takeControl(ctx, args, targets) {
 
 // Normalizes the handful of search-action shapes the effect data uses into one { filter, zones, count }.
 function normalizeSearchArgs(fn, args = {}) {
-  if (fn === 'searchDeck') return { filter: { attribute: args.attribute, breed: args.breed, family: args.family }, zones: ['deck'], count: args.count || 1 };
+  if (fn === 'searchDeck') return { filter: args.filter || { attribute: args.attribute, breed: args.breed, family: args.family }, zones: ['deck'], count: args.count || 1 };
   if (fn === 'searchFromDeck') return { filter: args, zones: ['deck'], count: 1 };
   if (fn === 'addCardToHandFromGraveyard') return { filter: args.filter || args, zones: ['graveyard'], count: args.count || 1 };
   if (fn === 'recoverCardsToHand') {

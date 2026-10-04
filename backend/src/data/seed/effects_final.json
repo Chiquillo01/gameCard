@@ -1107,8 +1107,15 @@
         "fn": "searchDeck",
         "args": {
           "count": 2,
-          "attribute": "Oscuridad",
-          "breed": "Demonio"
+          "filter": {
+            "category": "monster",
+            "breedIn": [
+              "Demonio",
+              "Inmortal",
+              "Pecador",
+              "Cambiaformas"
+            ]
+          }
         }
       },
       {
