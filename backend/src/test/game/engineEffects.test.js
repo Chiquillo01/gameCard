@@ -858,3 +858,25 @@ describe('Guarida del Oscuro on the field', () => {
     expect(monster(state, kraken).tempBuff).toEqual({ atk: 0, def: 0 });
   });
 });
+
+describe('Intercanvio del Pequeño', () => {
+  it('costs a card from hand the player picks; then summons a Nivel 1 monster from the Mazo', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const card = await toHand(state, 0, 'Intercanvio del Pequeño');
+    const esqueleto = await toDeckTop(state, 0, 'Esqueleto'); // Nivel 1
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card })).toMatchObject({ ok: false, reason: 'cannot-pay-cost' });
+
+    const keep = await toHand(state, 0, 'Orco Guerrero');
+    const pay = await toHand(state, 0, 'Slime');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige la carta que descartas' });
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([keep, pay].sort());
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [pay] }).ok).toBe(true);
+    expect(state.players[0].graveyard).toContain(pay);
+    expect(state.players[0].hand).toContain(keep);
+    passAll(state);
+    placePending(state);
+    expect(monster(state, esqueleto)).toBeDefined();
+  });
+});

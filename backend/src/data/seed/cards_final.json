@@ -3092,7 +3092,13 @@
     "effectCodes": [
       "INVOCAR_NIVEL_1_DESDE_MAZO",
       "INTERCAMBIO_GY_SUMMON"
-    ]
+    ],
+    "activationCost": {
+      "fn": "discart",
+      "args": {
+        "count": 1
+      }
+    }
   },
   {
     "name": "Vampiro",

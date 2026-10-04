@@ -300,6 +300,11 @@ const COST_PROMPTS = {
   destroyMonster: 'Elige el monstruo que destruyes',
   destroyOwnMonster: 'Elige el monstruo que destruyes',
   exileFiltered: 'Elige las cartas que exilias',
+  discart: 'Elige la carta que descartas',
+  discardCard: 'Elige la carta que descartas',
+  discardFromHand: 'Elige la carta que descartas',
+  discardCards: 'Elige las cartas que descartas',
+  discardSelfAndCard: 'Elige la carta que descartas',
 };
 
 // Used right before payCost by anything that pays a cost off a player pick: null once there's
