@@ -1502,12 +1502,16 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "attribute": "Oscuridad",
-            "breed": "Demonio"
+            "breedIn": [
+              "Demonio",
+              "Inmortal",
+              "Pecador",
+              "Cambiaformas"
+            ]
           },
           "buff": {
-            "atk": 5,
-            "def": 5
+            "atk": 4,
+            "def": 4
           },
           "scope": "field"
         }

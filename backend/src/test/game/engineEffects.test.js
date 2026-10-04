@@ -842,3 +842,19 @@ describe('Guarida del Oscuro', () => {
     expect(search()).toMatchObject({ ok: false, reason: 'once-per-turn' });
   });
 });
+
+describe('Guarida del Oscuro on the field', () => {
+  it('+4 Atk/Vida to every Demonio, Inmortal, Pecador and Cambiaformas monster on the field', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const guarida = await toHand(state, 0, 'Guarida del Oscuro');
+    const vampiro = await onField(state, 0, 'Vampiro'); // Inmortal
+    const kraken = await onField(state, 0, 'Kraken'); // Monstruo Marino: not one of them
+    const incubo = await onField(state, 1, 'Íncubo'); // Pecador, on the rival's side
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: guarida }).ok).toBe(true);
+    passAll(state);
+    expect(monster(state, vampiro).tempBuff).toEqual({ atk: 4, def: 4 });
+    expect(monster(state, incubo).tempBuff).toEqual({ atk: 4, def: 4 });
+    expect(monster(state, kraken).tempBuff).toEqual({ atk: 0, def: 0 });
+  });
+});
