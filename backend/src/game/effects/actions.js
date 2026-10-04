@@ -321,12 +321,14 @@ function allFieldMonsters(state) {
   return state.players.flatMap((p) => p.field.monsters).filter(Boolean);
 }
 
-// The monsters in the same column as `instanceId` (same zone index on both sides of the board, as
-// the board shows them), not counting it (Íncubo/Súcubo).
+// The monsters in the same column as `instanceId`, not counting it (Íncubo/Súcubo). The rival's side
+// is turned 180° on the board, so the zone facing yours is the mirrored one: your zone 1 (from the
+// left) faces their zone 1 as you see it, which is their last zone.
 function columnMonsters(state, instanceId) {
-  for (const pl of state.players) {
-    const slot = pl.field.monsters.findIndex((m) => m && m.instanceId === instanceId);
-    if (slot !== -1) return state.players.map((p) => p.field.monsters[slot]).filter((m) => m && m.instanceId !== instanceId);
+  for (let p = 0; p < state.players.length; p++) {
+    const slot = state.players[p].field.monsters.findIndex((m) => m && m.instanceId === instanceId);
+    if (slot === -1) continue;
+    return state.players.map((pl, i) => pl.field.monsters[i === p ? slot : pl.field.monsters.length - 1 - slot]).filter((m) => m && m.instanceId !== instanceId);
   }
   return [];
 }

@@ -3668,7 +3668,7 @@
           "heads": {
             "fn": "gainVP",
             "args": {
-              "amount": 3
+              "amount": 5
             }
           },
           "tails": {
@@ -5153,7 +5153,8 @@
           "count": 1,
           "buff": {
             "atk": -3
-          }
+          },
+          "duration": "endOfTurn"
         }
       }
     ]
@@ -5426,7 +5427,7 @@
     "cost": {
       "fn": "payVP",
       "args": {
-        "amount": 10
+        "amount": 8
       }
     },
     "choice": true,
@@ -5440,7 +5441,8 @@
       {
         "fn": "destroyAndGainVP",
         "args": {
-          "target": "fieldCard",
+          "target": "selected",
+          "zone": "monster",
           "vpEqualToAtk": true
         }
       }

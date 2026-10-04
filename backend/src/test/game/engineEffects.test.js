@@ -121,6 +121,7 @@ describe('Choices and picks', () => {
     const dracula = await onField(state, 0, 'Drácula, El primer Inmortal');
     const slime = await onField(state, 1, 'Slime');
     const valkiria = await onField(state, 1, 'Valkiria');
+    placeSupport(state, await instance(1, 'Trampa de Madera'), 1, { faceDown: true }); // "un monstruo": never offered
     const choose = activate(state, 0, 'DRACULA_CHOICE', dracula);
     expect(choose).toMatchObject({ reason: 'choose-target', prompt: 'Elige qué efecto aplicar' });
     expect(choose.options.map((o) => o.instanceId)).toEqual(['choice:0', 'choice:1']);
@@ -129,7 +130,7 @@ describe('Choices and picks', () => {
     expect(activate(state, 0, 'DRACULA_CHOICE', dracula, ['choice:1', valkiria]).ok).toBe(true);
     passAll(state);
     expect(monster(state, valkiria)).toBeUndefined();
-    expect(state.players[0].vp).toBe(STARTING_VP - 10 + 11); // paid 10 VP, recovered Valkiria's 11 Atk
+    expect(state.players[0].vp).toBe(STARTING_VP - 8 + 11); // paid 8 VP, recovered Valkiria's 11 Atk
     expect(state.players[0].pixelcoins).toBe(12); // the other option didn't run
   });
 
@@ -163,7 +164,7 @@ describe('Choices and picks', () => {
     toPhase(state, 'main1', 0);
     const incubo = await onField(state, 0, 'Íncubo', { slot: 2 });
     const across = await onField(state, 1, 'Valkiria', { slot: 2 });
-    const aside = await onField(state, 1, 'Slime', { slot: 4 });
+    const aside = await onField(state, 1, 'Slime', { slot: 0 }); // faces zone 4 (the rival's side is turned 180°)
     recomputeContinuous(state);
     expect(monster(state, across).tempBuff).toEqual({ atk: -2, def: -2 });
     expect(monster(state, aside).tempBuff).toEqual({ atk: 0, def: 0 });
@@ -261,7 +262,7 @@ describe('Actions and flags that used to do nothing', () => {
   it('Moneda de la Fortuna runs the step the coin picks', async () => {
     const state = await makeDuel();
     registry.coinFlip({ state, controllerIndex: 0 }, getEffect('MONEDA_FORTUNA_COINFLIP').actions[0].args);
-    expect(state.players[0].vp).toBe(state.lastCoinFlip ? STARTING_VP + 3 : STARTING_VP - 3);
+    expect(state.players[0].vp).toBe(state.lastCoinFlip ? STARTING_VP + 5 : STARTING_VP - 3); // heads +5, tails -3
   });
 
   it('Licántropo Cazador summoned by a Licano\'s effect: Atk 10 until the end of the next turn, and back to the Mazo at the end of the Battle Phase, bringing out another Licano', async () => {
@@ -798,5 +799,20 @@ describe('Murcielago, Vampiro and Vampiresa: special summon only', () => {
     await onField(state, 0, 'Murcielago');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiresa }).ok).toBe(true);
     expect(state.players[0].vp).toBe(STARTING_VP - 9);
+  });
+});
+
+describe('Vampiresa', () => {
+  it('-3 Atk to the rival monster the player picks, only until the end of the turn', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const vampiresa = await onField(state, 0, 'Vampiresa');
+    const orco = await onField(state, 1, 'Orco Guerrero');
+    await onField(state, 1, 'Slime');
+    expect(activate(state, 0, 'VAMPIRESA_CHOICE', vampiresa, ['choice:1', orco]).ok).toBe(true);
+    passAll(state);
+    expect(viewFor(state, 0).players[1].field.monsters.find((m) => m && m.instanceId === orco).atk).toBe(0); // 3 - 3
+    toPhase(state, 'main1', 1);
+    expect(viewFor(state, 0).players[1].field.monsters.find((m) => m && m.instanceId === orco).atk).toBe(3);
   });
 });
