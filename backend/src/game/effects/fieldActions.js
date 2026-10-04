@@ -66,7 +66,7 @@ function sendToGraveyard(ctx, row) {
   log(ctx.state, `${card ? card.name : 'Una ficha'} es destruida.`);
   if (!entry.isToken) {
     const { fireTrigger } = require('../effectEngine');
-    fireTrigger(ctx.state, 'sentToGraveyard', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex });
+    fireTrigger(ctx.state, 'sentToGraveyard', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, from: 'field', reason: 'effect' });
     if (wasMonster) fireTrigger(ctx.state, 'onMonsterDestroyed', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, reason: 'effect' });
   }
 }
@@ -255,6 +255,7 @@ function sendFromDeckToGY(ctx, args, targets) {
   (targets || []).forEach((id) => {
     moveToZone(ctx.state, id, 'graveyard');
     log(ctx.state, `${getCard(cardIdFromInstance(id)).name} es enviada del Mazo al Cementerio.`);
+    require('../effectEngine').announceSentToGraveyard(ctx.state, id, ctx.controllerIndex, { from: 'deck', reason: 'effect' });
   });
   ctx.movedCards = [...(ctx.movedCards || []), ...(targets || [])];
 }

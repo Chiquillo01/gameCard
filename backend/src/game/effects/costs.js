@@ -81,15 +81,16 @@ function payFromPool(ctx, pool, count, picks, toZone, { destroyed = false } = {}
   if (chosen.length < count) return false;
   // Cards that leave the field for the Cementerio this way still count as "enviada del Campo al
   // Cementerio" (Aboleth), and a "destruye" cost as destroyed by an effect (Pez Leviatán).
-  const fromField = chosen
+  const moved = chosen
     .map((id) => ({ id, loc: findInstanceLocation(ctx.state, id) }))
-    .filter(({ id, loc }) => loc && loc.zone.startsWith('field') && !String(id).startsWith('token:'));
+    .filter(({ id, loc }) => loc && !String(id).startsWith('token:'));
   chosen.forEach((id) => moveToZone(ctx.state, id, toZone));
   record(ctx, chosen);
   if (toZone === 'graveyard') {
     const { fireTrigger } = require('../effectEngine');
-    fromField.forEach(({ id, loc }) => {
-      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex };
+    moved.forEach(({ id, loc }) => {
+      const from = loc.zone.startsWith('field') ? 'field' : loc.zone;
+      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex, from, reason: 'cost' };
       fireTrigger(ctx.state, 'sentToGraveyard', event);
       if (destroyed && loc.zone === 'field:monster') fireTrigger(ctx.state, 'onMonsterDestroyed', { ...event, reason: 'effect' });
     });

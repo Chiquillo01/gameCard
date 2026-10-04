@@ -102,7 +102,7 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
   if (entry && entry.faceDown) return { ok: false, reason: 'face-down' };
   if (entry && entry.isMonsterEquip) return { ok: false, reason: 'unknown-effect' };
   // Its "en activación" effect already went on the Pila with the card itself: a face-up Apoyo on
-  // the field (Cometa del Cosmo waiting to resolve, a Continuo) can't run it again for free.
+  // the field (Tifón Místico waiting to resolve, a Continuo) can't run it again for free.
   if (isOwnActivation(getCard(cardIdFromInstance(sourceInstanceId)), effect)) return { ok: false, reason: 'already-activated' };
 
   // Effects that don't say which zone they need (most monster ignition/quick abilities) default to
@@ -218,6 +218,11 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
     if (args.filter && !(bySource && matchesCardFilter(bySource, args.filter))) return false;
   }
   if ((eventName === 'summonedByEffect' || eventName === 'summonedByCardEffect') && args.breed && !(bySource && matchesCardFilter(bySource, { breed: args.breed }))) return false;
+  // "Cuando es enviada DEL CAMPO al Cementerio" (Aboleth) / "...por batalla" (Duende Reptante).
+  if (eventName === 'sentToGraveyard') {
+    if (args.from && eventArgs.from && args.from !== eventArgs.from) return false;
+    if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
+  }
   if (eventName === 'onMonsterDestroyed') {
     if (args.target === 'self' && m.instanceId !== eventArgs.instanceId) return false;
     if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
@@ -232,6 +237,13 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
     if (!involved.some((id) => { const e = getFieldMonster(state, id); return e && matchesFilter(e, args.filter || {}); })) return false;
   }
   return true;
+}
+
+// A card just reached its owner's Cementerio: its "cuando es enviada al Cementerio" effects get to
+// fire. `from`: 'field' | 'hand' | 'deck'; `reason`: 'battle' | 'effect' | 'cost' | 'discard' | 'mill'.
+function announceSentToGraveyard(state, instanceId, ownerIndex, { from, reason } = {}) {
+  if (!instanceId || String(instanceId).startsWith('token:')) return;
+  fireTrigger(state, 'sentToGraveyard', { instanceId, cardId: cardIdFromInstance(instanceId), ownerIndex, from, reason });
 }
 
 // Fires every triggered/trigger effect on the board that matches, in field order (turn player's
@@ -337,6 +349,7 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     state.pendingTriggerChoices.shift();
     chosen.slice(0, need).forEach((id) => require('./zones').moveToZone(state, id, 'graveyard'));
     log(state, `${pl.userId} descarta ${need} carta(s).`);
+    chosen.slice(0, need).forEach((id) => announceSentToGraveyard(state, id, controllerIndex, { from: 'hand', reason: 'discard' }));
     recomputeContinuous(state);
     require('./placement').settlePlacements(state);
     require('./combat').resumeBattle(state);
@@ -493,4 +506,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { isOwnActivation, activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };
+module.exports = { announceSentToGraveyard, isOwnActivation, activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };

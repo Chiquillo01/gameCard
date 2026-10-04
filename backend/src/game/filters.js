@@ -10,7 +10,7 @@ const sameText = (a, b) => normalize(a) === normalize(b);
 // says `category: "Compilado"` — the Spanish label authored in the effect data — even though
 // the schema's own `category` value for it is "fusion".
 const SUBTYPE_LABELS = { normal: 'normal', veloz: 'instant', contraataque: 'counter', contraefecto: 'counter', continuo: 'continuous', equipo: 'equipment', territorio: 'field', reino: 'field' };
-const CATEGORY_LABEL_TO_SCHEMA = { compilado: 'fusion', monstruo: 'monster', soporte: 'support', token: 'token' };
+const CATEGORY_LABEL_TO_SCHEMA = { compilado: 'fusion', monstruo: 'monster', soporte: 'support', apoyo: 'support', token: 'token' };
 const categoryMatches = (cardCategory, wanted) => normalize(cardCategory) === (CATEGORY_LABEL_TO_SCHEMA[normalize(wanted)] || normalize(wanted));
 
 // Shared "does this monster on field match this filter" used by continuous buffs, search

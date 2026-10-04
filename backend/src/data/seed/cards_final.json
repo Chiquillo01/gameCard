@@ -304,8 +304,12 @@
       "args": {
         "materials": [
           {
+            "name": "Ciempiés Gigante",
+            "count": 1
+          },
+          {
             "family": "Insecto",
-            "count": 2
+            "count": 1
           }
         ]
       }
@@ -3358,7 +3362,7 @@
     ]
   },
   {
-    "name": "Cometa del Cosmo",
+    "name": "Tifón Místico",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736853858/tifonmisticotcg_qyqq4n.png",
     "attribute": "none",
     "type": "instant",

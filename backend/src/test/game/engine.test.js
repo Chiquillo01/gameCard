@@ -111,6 +111,18 @@ describe('Game engine', () => {
     expect(state.players[0].pixelcoins).toBe(PIXEL_CAP);
   });
 
+  it('no player draws on their own first turn; from their second turn on, they draw 1', async () => {
+    const state = await makeTestMatch();
+    const hand0 = state.players[0].hand.length;
+    const hand1 = state.players[1].hand.length;
+    advanceUntil(state, 2, 'main1'); // player 1's first turn
+    expect(state.players[1].hand).toHaveLength(hand1);
+    advanceUntil(state, 3, 'main1'); // player 0's second turn
+    expect(state.players[0].hand).toHaveLength(hand0 + 1);
+    advanceUntil(state, 4, 'main1'); // player 1's second turn
+    expect(state.players[1].hand).toHaveLength(hand1 + 1);
+  });
+
   it('skips both Battle and Principal 2 on the very first turn of the match', async () => {
     const state = await makeTestMatch();
     expect(state.phase).toBe('draw');

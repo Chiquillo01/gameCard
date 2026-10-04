@@ -98,6 +98,7 @@ function discardRandomCard(ctx, args) {
   const id = pl.hand[i];
   moveToZone(ctx.state, id, 'graveyard');
   log(ctx.state, `${pl.userId} descarta una carta al azar.`);
+  require('../effectEngine').announceSentToGraveyard(ctx.state, id, idx, { from: 'hand', reason: 'discard' });
 }
 
 // "Exilia esa carta" — the picked cards (targets.js pools them), never a protected one.
@@ -403,7 +404,11 @@ function millDeck(ctx, args) {
   const idx = resolvePlayerIndex(ctx, args.target);
   const pl = player(ctx.state, idx);
   const amount = args.amount || 1;
-  for (let i = 0; i < amount && pl.deck.length; i++) moveToZone(ctx.state, pl.deck[0], 'graveyard', idx);
+  for (let i = 0; i < amount && pl.deck.length; i++) {
+    const id = pl.deck[0];
+    moveToZone(ctx.state, id, 'graveyard', idx);
+    require('../effectEngine').announceSentToGraveyard(ctx.state, id, idx, { from: 'deck', reason: 'mill' });
+  }
 }
 
 // "Gana un ataque extra": for this turn when it's an activated effect (Bálor, Orco Gladiador), for
@@ -788,6 +793,8 @@ function runAction(ctx, step, targets) {
     log(ctx.state, `[motor] acción "${step.fn}" aún no implementada — se ignora.`);
     return;
   }
+  // "...y si lo haces, X": X only runs when the step before it did its job.
+  if (step.args && step.args.conditionalOn && ctx.previousSucceeded === false) return;
   impl(ctx, step.args || {}, targets);
 }
 

@@ -300,7 +300,7 @@ function destroyInBattle(state, ownerIndex, victim, destroyer) {
   } else {
     // moveToZone also releases the materials under a compiled monster and ends its burning.
     moveToZone(state, victim.instanceId, 'graveyard');
-    const event = { instanceId: victim.instanceId, cardId: cardIdFromInstance(victim.instanceId), ownerIndex: require('./zones').ownerOfInstance(victim.instanceId) ?? ownerIndex, reason: 'battle' };
+    const event = { instanceId: victim.instanceId, cardId: cardIdFromInstance(victim.instanceId), ownerIndex: require('./zones').ownerOfInstance(victim.instanceId) ?? ownerIndex, reason: 'battle', from: 'field' };
     fireTrigger(state, 'sentToGraveyard', event);
     fireTrigger(state, 'onMonsterDestroyed', event);
   }

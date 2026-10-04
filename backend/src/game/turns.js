@@ -37,8 +37,8 @@ function runPhaseEntry(state) {
   const pl = player(state, state.turnPlayer);
 
   if (state.phase === 'draw') {
-    const isVeryFirstTurn = state.firstTurn && state.turnNumber === 1;
-    if (!isVeryFirstTurn) {
+    // Each player's own first turn has no draw (not only the turn that opens the duel).
+    if (pl.turnsPlayed > 0) {
       drawCards(state, state.turnPlayer, 1);
       if (state.status !== 'active') return;
     }

@@ -285,7 +285,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "sentToGraveyard"
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field"
+      }
     },
     "conditions": [
       {
@@ -674,6 +677,26 @@
         "fn": "banishSelf",
         "args": {
           "from": "graveyard"
+        }
+      },
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "count": 2,
+          "filter": {
+            "nameContains": "Avispa",
+            "category": "monster"
+          },
+          "required": true,
+          "prompt": "Elige los 2 monstruos \"Avispa\" de tu Cementerio que barajas en el Mazo"
+        }
+      },
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1,
+          "conditionalOn": "previousActionSucceeded"
         }
       }
     ],
@@ -3035,7 +3058,7 @@
       {
         "fn": "applyStatus",
         "args": {
-          "target": "selected",
+          "target": "enemyMonster",
           "status": "Congelado"
         }
       }
@@ -5841,7 +5864,10 @@
     "_id": "PRIMER_GINETE_GY_RECOVER",
     "type": "triggered",
     "trigger": {
-      "fn": "sentToGraveyard"
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field"
+      }
     },
     "actions": [
       {

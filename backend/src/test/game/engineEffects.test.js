@@ -667,13 +667,13 @@ describe('Aboleth: "cuando es enviada del Campo al Cementerio" summons 2 Tentác
 });
 
 describe('A one-shot Apoyo waiting on the Pila', () => {
-  it('Cometa del Cosmo: its "en activación" effect cannot be used again while it waits to resolve', async () => {
+  it('Tifón Místico: its "en activación" effect cannot be used again while it waits to resolve', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const oceano = await instance(1, 'Oceano');
     placeSupport(state, await instance(1, 'Trampa de Madera'), 1, { faceDown: true });
     state.players[1].field.territory = { instanceId: oceano, cardId: oceano.split(':')[1], faceDown: false, counters: {} };
-    const cometa = await toHand(state, 0, 'Cometa del Cosmo');
+    const cometa = await toHand(state, 0, 'Tifón Místico');
     const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: cometa, targets: [oceano] });
     expect(res.ok).toBe(true);
     // While it's on the Pila (face-up in a support zone) it offers no effect of its own…
@@ -913,5 +913,87 @@ describe('Searches by kind of Apoyo and by what the text mentions', () => {
     expect(m(await card('Llamada al Héroe'), { subtype: 'Normal', textIncludes: 'Héroe' })).toBe(true);
     expect(m(await card('Llamada al Héroe'), { subtype: 'Contraataque' })).toBe(false);
     expect(m(await card('Relámpago'), { textIncludes: 'Héroe' })).toBe(false);
+  });
+});
+
+describe('"Cuando es enviada al Cementerio" from anywhere, and where it came from', () => {
+  it('Héroe Montado sent from the Mazo by Héroe de Marfil adds a Héroe Apoyo to the hand', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const llamada = await toDeckTop(state, 0, 'Llamada al Héroe');
+    const montado = await toDeckTop(state, 0, 'Héroe Montado');
+    const marfil = await toHand(state, 0, 'Héroe de Marfil');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: marfil, position: 'attack' }).ok).toBe(true);
+    let guard = 0;
+    while (viewFor(state, 0).pendingTriggerChoice && guard++ < 5) {
+      const pending = viewFor(state, 0).pendingTriggerChoice;
+      const pick = pending.options.find((o) => o.instanceId === montado || o.instanceId === llamada) || pending.options[0];
+      applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [pick.instanceId] });
+    }
+    expect(state.players[0].graveyard).toContain(montado);
+    expect(state.players[0].hand).toContain(llamada);
+  });
+
+  it('Aboleth discarded from the hand does not summon its tokens ("del Campo al Cementerio")', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const aboleth = await toHand(state, 0, 'Aboleth');
+    await toHand(state, 0, 'Slime'); // two cards: the player picks which one
+    const { requestDiscard } = require('../../game/effects/actions');
+    requestDiscard(state, 0, 1, 'Descarta');
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [aboleth] }).ok).toBe(true);
+    expect(state.players[0].graveyard).toContain(aboleth);
+    expect(state.players[0].field.monsters.filter(Boolean)).toHaveLength(0);
+    expect(viewFor(state, 0).pendingTriggerChoice).toBeNull();
+  });
+});
+
+describe('Héroe de Escarcha as a material', () => {
+  it('freezes a monster of the rival, never one of the player', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const escarcha = await onField(state, 0, 'Héroe de Escarcha');
+    const mine = await onField(state, 0, 'Slime');
+    const theirs = await onField(state, 1, 'Orco Guerrero');
+    await onField(state, 1, 'Orco Gladiador');
+    const { fireMaterialTriggers } = require('../../game/effectEngine');
+    fireMaterialTriggers(state, 0, [escarcha], `0:${await idOf('Héroe Berserker')}:x`);
+    const pending = viewFor(state, 0).pendingTriggerChoice;
+    expect(pending.options.map((o) => o.instanceId)).not.toContain(mine);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [theirs] }).ok).toBe(true);
+    expect(state.statuses[theirs].map((s) => s.type)).toContain('Congelado');
+    expect(state.statuses[mine]).toBeUndefined();
+  });
+});
+
+describe('Ciempiés Eterno', () => {
+  it('is compiled from "Ciempiés Gigante" + 1 Insecto', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const eterno = await instance(0, 'Ciempiés Eterno');
+    state.players[0].extra.push(eterno);
+    const a = await onField(state, 0, 'Avispa gigante');
+    await onField(state, 0, 'Avispa Rosa');
+    const info = () => viewFor(state, 0).players[0].extra.find((c) => c.instanceId === eterno).compile;
+    expect(info()).toMatchObject({ ready: false }); // two Insectos, but no Ciempiés Gigante
+    const gigante = await onField(state, 0, 'Ciempiés Gigante');
+    expect(info()).toMatchObject({ ready: true });
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: eterno, materialInstanceIds: [gigante, a] }).ok).toBe(true);
+  });
+});
+
+describe('Enjambre de Avispas from the Cementerio', () => {
+  it('with 3 Avispas there, the player picks which 2 go back', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const enjambre = await toGraveyard(state, 0, 'Enjambre de Avispas');
+    const wasps = [await toGraveyard(state, 0, 'Avispa gigante'), await toGraveyard(state, 0, 'Avispa Rosa'), await toGraveyard(state, 0, 'Avispa Mutante')];
+    expect(viewFor(state, 0).players[0].graveyard.find((c) => c.instanceId === enjambre).availableEffects).toContain('WASP_SWARM_GRAVE');
+    const act = (targets) => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: enjambre, targets });
+    expect(act([])).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige los 2 monstruos "Avispa" de tu Cementerio que barajas en el Mazo' });
+    expect(act([wasps[0], wasps[2]]).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].graveyard).toContain(wasps[1]);
+    expect(state.players[0].deck).toEqual(expect.arrayContaining([wasps[0], wasps[2]]));
   });
 });

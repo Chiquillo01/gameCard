@@ -7,13 +7,24 @@ const { getIo } = require('../socket/socketServer');
 
 const UNPLAYABLE_DECK_ERROR = 'Este mazo no cumple el tamaño mínimo (40-50 cartas, máx. 10 de fusión) para poder jugar.';
 
-// For now the bot plays a mirror of the player's own deck: always a legal deck (it passed the
-// same checks), and a fair match-up while the bot has no deck of its own.
+// A mirror of a deck (the player's own, when there's nothing else to pick from).
 function buildBotDeck(playerDeck) {
   return {
     cards: (playerDeck.cards || []).map((c) => ({ card: c.card, amount: c.amount })),
     fusionCards: (playerDeck.fusionCards || []).map((c) => ({ card: c.card, amount: c.amount })),
   };
+}
+
+// The bot plays a deck picked at random among the playable decks of the admin accounts (the
+// curated ones), for variety; with none playable it mirrors the player's own deck.
+async function pickBotDeck(playerDeck, random = Math.random) {
+  const admins = await User.find({ admin: true }).select('_id').lean();
+  const decks = admins.length
+    ? await Deck.find({ owner: { $in: admins.map((a) => a._id) } }).populate('cards.card').populate('fusionCards.card')
+    : [];
+  const playable = decks.filter(isDeckPlayable);
+  if (!playable.length) return buildBotDeck(playerDeck);
+  return buildBotDeck(playable[Math.floor(random() * playable.length)]);
 }
 
 function broadcastState(matchId) {
@@ -56,7 +67,7 @@ const startPve = async (req, res) => {
       nameA: user && user.userName,
       deckA: deck,
       playerB: 'BOT',
-      deckB: buildBotDeck(deck),
+      deckB: await pickBotDeck(deck),
       vsBot: true,
       ...coinTossFirstPlayer(),
     });
@@ -199,6 +210,7 @@ module.exports = {
   getState,
   sendAction,
   buildBotDeck,
+  pickBotDeck,
   broadcastState,
   maybeRunBot,
   _handleSocketAction,

@@ -177,12 +177,20 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
     const graveCardView = graveView.players[0].graveyard.find((c) => c.instanceId === instanceId);
     expect(graveCardView.availableEffects).toEqual(['WASP_SWARM_GRAVE']);
 
+    // It needs 2 Avispas in the Cementerio to shuffle back.
+    const avispa = await Card.findOne({ name: 'Avispa gigante' }).lean();
+    const wasps = [`0:${avispa._id}:gy1`, `0:${avispa._id}:gy2`];
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: instanceId })).toMatchObject({ ok: false, reason: 'no-legal-target' });
+    state.players[0].graveyard.push(...wasps);
+    const pixels = state.players[0].pixelcoins;
     const fromGrave = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: instanceId });
     expect(fromGrave.ok).toBe(true);
     passChain(state);
-    // WASP_SWARM_GRAVE's action is banishSelf — the card leaves the graveyard for exile.
+    // It exiles itself, shuffles the 2 Avispas back into the Mazo and generates 1 pixel.
     expect(state.players[0].graveyard).not.toContain(instanceId);
     expect(state.players[0].banished).toContain(instanceId);
+    expect(state.players[0].deck).toEqual(expect.arrayContaining(wasps));
+    expect(state.players[0].pixelcoins).toBe(pixels + 1);
   });
 
   it("does not fire the graveyard-only effect just from playing the card off hand", async () => {
