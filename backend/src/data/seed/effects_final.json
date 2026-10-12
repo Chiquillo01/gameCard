@@ -7049,5 +7049,138 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "_id": "CLIONNE_PLANT_PROTECTION",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "protectFromEffectDestruction",
+        "args": {
+          "filter": {
+            "family": "Planta"
+          },
+          "excludeSelf": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "GROOK_EXCAVATE",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "excavate",
+        "args": {
+          "cards": 3,
+          "filter": {
+            "family": "Planta",
+            "category": "monster"
+          },
+          "count": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PODER_PLANTAS_STRONGEST_ONLY",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "attacksOnlyOnStrongest"
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "RENOVACION_VIDA_SUMMON",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "summonFromHand",
+        "args": {
+          "filter": {
+            "family": "Planta",
+            "category": "monster"
+          },
+          "ignoreCost": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "RENOVACION_VIDA_GY_SHUFFLE_DRAW",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "conditions": [
+      {
+        "fn": "notSameTurnSentToGraveyard"
+      }
+    ],
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "count": 2,
+          "filter": {
+            "family": "Planta",
+            "category": "monster"
+          },
+          "required": true,
+          "prompt": "Elige las 2 Plantas de tu Cementerio que barajas en el Mazo"
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1,
+          "conditionalOn": "previousActionSucceeded"
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

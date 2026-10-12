@@ -4037,5 +4037,112 @@
       "AVISPA_BATALLA_ZERO_ATK"
     ],
     "image": "/assets/CardImg/generated/avispa-de-batalla.png"
+  },
+  {
+    "name": "Clionne, Dama Ramificada del Bosque",
+    "description": "-",
+    "expansion": "SBE",
+    "obtainable": false,
+    "attribute": "Natura",
+    "breed": "Flor",
+    "family": "Planta",
+    "type": "Flor",
+    "rarity": "common",
+    "category": "fusion",
+    "atk": 6,
+    "def": 5,
+    "level": 6,
+    "effect": "Otros monstruos Planta en tu Campo no pueden ser destruidos por efectos de cartas.",
+    "invocationText": "Compilación - 3 Planta",
+    "state": 4,
+    "number": 164,
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "family": "Planta",
+            "count": 3
+          }
+        ]
+      }
+    },
+    "effectCodes": [
+      "CLIONNE_PLANT_PROTECTION"
+    ],
+    "image": "/assets/CardImg/generated/clionne-dama-ramificada-del-bosque.png"
+  },
+  {
+    "name": "Grook, el Árbol Guardián",
+    "description": "-",
+    "expansion": "SBE",
+    "obtainable": false,
+    "attribute": "Natura",
+    "breed": "Mutación",
+    "family": "Planta",
+    "type": "Mutación",
+    "rarity": "common",
+    "category": "monster",
+    "atk": 5,
+    "def": 1,
+    "level": 3,
+    "effect": "Una vez por turno, excava 3 cartas de la parte superior de tu Deck:\n• Si encuentras un monstruo de tipo Planta, añade ese objetivo a tu Mano.",
+    "state": 4,
+    "number": 165,
+    "effectCodes": [
+      "GROOK_EXCAVATE"
+    ],
+    "image": "/assets/CardImg/generated/grook-el-arbol-guardian.png"
+  },
+  {
+    "name": "Poder de las Plantas",
+    "description": "-",
+    "expansion": "SBE",
+    "obtainable": false,
+    "attribute": "none",
+    "type": "continuous",
+    "rarity": "common",
+    "category": "support",
+    "subtype": "continuous",
+    "effect": "Tu oponente solo puede elegir para ataques al monstruo con más Ataque que controles.",
+    "invocationText": "Activación - 2 Píxel",
+    "state": 4,
+    "number": 166,
+    "activationCost": {
+      "fn": "payPixels",
+      "args": {
+        "amount": 2
+      }
+    },
+    "effectCodes": [
+      "PODER_PLANTAS_STRONGEST_ONLY"
+    ],
+    "image": "/assets/CardImg/generated/poder-de-las-plantas.png"
+  },
+  {
+    "name": "Renovación de Vida",
+    "description": "-",
+    "expansion": "SBE",
+    "obtainable": false,
+    "attribute": "none",
+    "type": "normal",
+    "rarity": "rare",
+    "category": "support",
+    "subtype": "normal",
+    "effect": "En activación:\n• Invoca un monstruo Planta de tu Mano.\nExilia esta carta del Cementerio excepto el turno que fue enviada al Cementerio:\n• Baraja al Mazo 2 Plantas del Cementerio y si lo haces roba 1 carta.",
+    "invocationText": "Activación - 3 Píxel",
+    "state": 3,
+    "number": 167,
+    "activationCost": {
+      "fn": "payPixels",
+      "args": {
+        "amount": 3
+      }
+    },
+    "effectCodes": [
+      "RENOVACION_VIDA_SUMMON",
+      "RENOVACION_VIDA_GY_SHUFFLE_DRAW"
+    ],
+    "image": "/assets/CardImg/generated/renovacion-de-vida.png"
   }
 ]

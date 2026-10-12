@@ -99,6 +99,10 @@ function destroy(ctx, args, targets) {
       log(ctx.state, 'Un monstruo protegido ignora el efecto.');
       return;
     }
+    if (row.entry.cannotBeDestroyedByEffects) {
+      log(ctx.state, `${row.entry.isToken ? row.entry.tokenDef.name : getCard(row.entry.cardId).name} no puede ser destruido por efectos de cartas.`);
+      return;
+    }
     sendToGraveyard(ctx, row);
     ctx.destroyedCount += 1;
   });
@@ -270,6 +274,45 @@ function preventBattleDestruction(ctx, args) {
   targets.forEach((m) => { m.cannotBeDestroyedByBattle = true; });
 }
 
+// "Otros monstruos [filter] en tu Campo no pueden ser destruidos por efectos de cartas" (Clionne).
+function protectFromEffectDestruction(ctx, args) {
+  player(ctx.state, ctx.controllerIndex).field.monsters
+    .filter((m) => m && !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId) && matchesFilter(m, args.filter || {}))
+    .forEach((m) => { m.cannotBeDestroyedByEffects = true; });
+}
+
+// "Tu oponente solo puede elegir para ataques al monstruo con más Ataque que controles" (Poder de
+// las Plantas): combat.attackBlockReason reads the flag.
+function attacksOnlyOnStrongest(ctx) {
+  player(ctx.state, ctx.controllerIndex).attacksOnlyOnStrongest = true;
+}
+
+// "Excava N cartas de la parte superior de tu Mazo: si encuentras un [filter], añádelo a tu Mano"
+// (Grook). The excavated cards are shown in the log; the others stay where they were.
+function excavateCandidates(state, controllerIndex, args) {
+  const top = player(state, controllerIndex).deck.slice(0, args.cards || 3);
+  return top.filter((id) => getCard(cardIdFromInstance(id)).category !== 'fusion' && matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {}));
+}
+
+function excavate(ctx, args, targets) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const top = pl.deck.slice(0, args.cards || 3);
+  if (!top.length) return;
+  log(ctx.state, `${pl.userId} excava ${top.map((id) => getCard(cardIdFromInstance(id)).name).join(', ')}.`);
+  const found = excavateCandidates(ctx.state, ctx.controllerIndex, args);
+  const chosen = (targets || []).filter((id) => found.includes(id)).slice(0, args.count || 1);
+  const picked = chosen.length ? chosen : found.slice(0, args.count || 1);
+  if (!picked.length) {
+    log(ctx.state, 'No encuentra ninguna carta que añadir a la Mano.');
+    return;
+  }
+  picked.forEach((id) => {
+    pl.deck = pl.deck.filter((x) => x !== id);
+    pl.hand.push(id);
+    log(ctx.state, `${pl.userId} añade ${getCard(cardIdFromInstance(id)).name} a la mano.`);
+  });
+}
+
 function protectFromOpponentEffects(ctx) {
   const entry = player(ctx.state, ctx.controllerIndex).field.monsters.find((m) => m && m.instanceId === ctx.sourceInstanceId);
   if (entry) entry.immuneToOpponentEffects = true;
@@ -295,6 +338,9 @@ module.exports = {
   searchFromDeck,
   addCardToHandFromGraveyard,
   preventBattleDestruction,
+  protectFromEffectDestruction,
+  attacksOnlyOnStrongest,
+  excavate,
   cannotBeDestroyedOrExiled: protectFromOpponentEffects,
   cannotBeDestroyedByOpponentEffects: protectFromOpponentEffects,
   grantTimedBuff,
@@ -312,3 +358,4 @@ module.exports = {
   normalizeSearchArgs,
   SEARCH_FNS,
 };
+Object.defineProperty(module.exports, 'excavateCandidates', { value: excavateCandidates, enumerable: false });

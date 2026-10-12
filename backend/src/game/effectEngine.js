@@ -401,12 +401,14 @@ function recomputeContinuous(state) {
   releaseCorrosion(state);
   state.players.forEach((pl) => {
     pl.cantLose = false;
+    pl.attacksOnlyOnStrongest = false;
     pl.cantWin = false;
     pl.activationTax = 0;
     pl.field.monsters.filter(Boolean).forEach((m) => {
       resetTempMods(m);
       addTempMod(m, poisonDebuff(state, m.instanceId), 'Veneno', 'status');
       m.cannotBeDestroyedByBattle = false;
+      m.cannotBeDestroyedByEffects = false;
       m.immuneToOpponentEffects = false;
       m.negatedByContinuous = false;
       m.canAttackDirectly = false;

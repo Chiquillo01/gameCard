@@ -136,6 +136,11 @@ function stepPool(ctx, step) {
       return isSelect(args) ? ids(selectRows(ctx, args).filter((r) => !protectedFromRemoval(ctx, r))) : null;
     case 'exileTarget':
       return args.target === 'self' ? null : ids(selectRows(ctx, { ...args, target: args.target || 'selected' }).filter((r) => !protectedFromRemoval(ctx, r)));
+    case 'excavate': {
+      // Nothing found is a fine result (it was a dig), so an empty dig is no pick, not "no target".
+      const found = require('./effects/fieldActions').excavateCandidates(ctx.state, ctx.controllerIndex, args);
+      return found.length ? found : null;
+    }
     case 'compileFromExtra':
       return require('./effects/extraActions').compilableFromExtra(ctx, args);
     case 'applyStatus':
@@ -263,6 +268,7 @@ const STEP_PROMPTS = {
   destroyCards: 'Elige la carta que se destruye',
   destroyAndCopyEffect: 'Elige la carta que se destruye',
   compileFromExtra: 'Elige la Compilación que compilas',
+  excavate: 'Elige la carta excavada que añades a tu Mano',
   setAtk: 'Elige el monstruo cuyo Atk cambia',
   destroyAndGainVP: 'Elige la carta que se destruye',
   destroyUpToHeroCount: 'Elige las cartas que se destruyen',

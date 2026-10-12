@@ -54,6 +54,15 @@ function attackBlockReason(state, controllerIndex, attacker, targetInstanceId) {
     if (!defender) return 'defender-not-found';
     if (defender.untargetable) return 'cannot-be-targeted';
   }
+  // Poder de las Plantas: only the defender's strongest monster can be chosen for an attack.
+  if (oppPl.attacksOnlyOnStrongest) {
+    const monsters = oppPl.field.monsters.filter((m) => m && !m.untargetable);
+    if (monsters.length) {
+      const top = Math.max(...monsters.map((m) => getEffectiveStats(m).atk));
+      const defender = targetInstanceId && monsters.find((m) => m.instanceId === targetInstanceId);
+      if (!defender || getEffectiveStats(defender).atk !== top) return 'must-attack-strongest';
+    }
+  }
   return null;
 }
 

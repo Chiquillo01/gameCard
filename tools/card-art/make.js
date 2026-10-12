@@ -312,6 +312,110 @@ function pearl(L, cx, cy, s, tones, glow) {
   L.ball(cx - s * 0.1, cy - s * 0.06, s * 0.07, s * 0.07, [hex('#ffffff', 150), hex('#ffffff', 220), hex('#ffffff')]);
 }
 
+
+const LEAF = [hex('#1e4a1e'), hex('#3a8a32'), hex('#8ad05a')];
+const BARK = [hex('#3a2414'), hex('#6a4426'), hex('#9a6a3e')];
+
+// A cloud of leaves (overlapping shaded blobs), seeded so it's the same every run.
+function foliage(L, cx, cy, rx, ry, seed, tones = LEAF, n = 14) {
+  const r = rng(seed);
+  for (let i = 0; i < n; i++) {
+    const a = r() * Math.PI * 2;
+    const d = Math.sqrt(r());
+    L.ball(cx + Math.cos(a) * rx * d * 0.75, cy + Math.sin(a) * ry * d * 0.75, rx * (0.28 + r() * 0.18), ry * (0.28 + r() * 0.18), tones);
+  }
+}
+
+function flower(L, x, y, s, petal = [hex('#a82a5a'), hex('#e85a8a'), hex('#ffb0c8')]) {
+  for (let k = 0; k < 5; k++) L.ball(x + Math.cos((k / 5) * Math.PI * 2) * s, y + Math.sin((k / 5) * Math.PI * 2) * s, s * 0.8, s * 0.8, petal);
+  L.ball(x, y, s * 0.6, s * 0.6, T.gold);
+}
+
+// Clionne: a dryad whose body is a trunk and whose hair is a crown of leaves and flowers.
+function dryad(L, cx, cy, s) {
+  const skin = [hex('#b07a52'), hex('#e8b48a'), hex('#fbdcc0')];
+  foliage(L, cx, cy - s * 0.45, s * 0.75, s * 0.55, 91); // hair behind
+  // trunk-dress, widening into roots
+  L.poly([[cx - s * 0.16, cy - s * 0.1], [cx + s * 0.16, cy - s * 0.1], [cx + s * 0.42, cy + s * 0.75], [cx - s * 0.42, cy + s * 0.75]], (x, y) => toneFor(BARK, -((x - cx) / s) * 3 + Math.sin(y * 1.7) * 0.25, x, y));
+  for (let i = -2; i <= 2; i++) L.line(cx + i * s * 0.12, cy + s * 0.75, cx + i * s * 0.3, cy + s * 0.92, BARK[0], Math.max(1, Math.round(s / 14)));
+  // branch arms with leaves at the ends
+  L.line(cx - s * 0.14, cy, cx - s * 0.62, cy - s * 0.32, BARK[1], Math.max(2, Math.round(s / 9)));
+  L.line(cx + s * 0.14, cy, cx + s * 0.62, cy - s * 0.3, BARK[1], Math.max(2, Math.round(s / 9)));
+  foliage(L, cx - s * 0.66, cy - s * 0.36, s * 0.2, s * 0.16, 12, LEAF, 5);
+  foliage(L, cx + s * 0.66, cy - s * 0.34, s * 0.2, s * 0.16, 13, LEAF, 5);
+  // face and neck
+  L.rect(Math.round(cx - s * 0.06), Math.round(cy - s * 0.25), Math.round(s * 0.12), Math.round(s * 0.18), skin[1]);
+  L.ball(cx, cy - s * 0.38, s * 0.16, s * 0.19, skin);
+  [-0.06, 0.06].forEach((dx) => L.rect(Math.round(cx + dx * s - 1), Math.round(cy - s * 0.41), 2, 2, hex('#2a5a2a')));
+  L.line(cx - s * 0.04, cy - s * 0.29, cx + s * 0.04, cy - s * 0.29, hex('#a84a4a'));
+  // flowers in the hair
+  [[-0.4, -0.62], [0.05, -0.8], [0.42, -0.58], [-0.2, -0.86], [0.3, -0.82]].forEach(([dx, dy]) => flower(L, cx + dx * s, cy + dy * s, s * 0.05));
+}
+
+// Grook: an old tree with a face, glowing eyes and root feet.
+function treeGuardian(L, cx, cy, s) {
+  foliage(L, cx, cy - s * 0.55, s * 0.85, s * 0.42, 55);
+  L.poly([[cx - s * 0.3, cy - s * 0.35], [cx + s * 0.3, cy - s * 0.35], [cx + s * 0.38, cy + s * 0.6], [cx - s * 0.38, cy + s * 0.6]], (x, y) => toneFor(BARK, -((x - cx) / s) * 3 + (Math.floor(x / 2) % 3 === 0 ? -0.4 : 0), x, y));
+  // root feet
+  for (let i = -1; i <= 1; i += 2) {
+    L.poly([[cx + i * s * 0.1, cy + s * 0.5], [cx + i * s * 0.55, cy + s * 0.72], [cx + i * s * 0.3, cy + s * 0.75]], BARK[0]);
+  }
+  // arms
+  L.line(cx - s * 0.3, cy - s * 0.05, cx - s * 0.7, cy + s * 0.25, BARK[1], Math.max(2, Math.round(s / 7)));
+  L.line(cx + s * 0.3, cy - s * 0.05, cx + s * 0.72, cy - s * 0.25, BARK[1], Math.max(2, Math.round(s / 7)));
+  foliage(L, cx + s * 0.76, cy - s * 0.3, s * 0.16, s * 0.14, 9, LEAF, 4);
+  // face: hollow eyes that glow, a crooked mouth
+  [-0.12, 0.12].forEach((dx) => {
+    L.ball(cx + dx * s, cy - s * 0.1, s * 0.08, s * 0.06, [hex('#1a0e06'), hex('#1a0e06'), hex('#2a1a0e')]);
+    L.ball(cx + dx * s, cy - s * 0.1, s * 0.04, s * 0.03, [hex('#c8a020'), hex('#ffe060'), hex('#fffac0')]);
+  });
+  L.line(cx - s * 0.12, cy + s * 0.12, cx + s * 0.12, cy + s * 0.1, hex('#1a0e06'), Math.max(1, Math.round(s / 16)));
+  // moss
+  foliage(L, cx - s * 0.2, cy + s * 0.32, s * 0.12, s * 0.06, 4, [hex('#2a5a22'), hex('#4a8a3a'), hex('#7ab85a')], 4);
+}
+
+// Poder de las Plantas: vines wrapped around a glowing leaf emblem.
+function vineEmblem(L, cx, cy, s) {
+  softGlow(L, cx, cy, s * 0.9, '#b8ff9a', 150);
+  // the leaf
+  L.poly([[cx, cy - s * 0.7], [cx + s * 0.45, cy - s * 0.1], [cx + s * 0.2, cy + s * 0.5], [cx, cy + s * 0.65], [cx - s * 0.2, cy + s * 0.5], [cx - s * 0.45, cy - s * 0.1]], (x, y) => toneFor(LEAF, -((x - cx) / s) * 2 - ((y - cy) / s), x, y));
+  L.line(cx, cy - s * 0.6, cx, cy + s * 0.62, hex('#c8f0a0'), Math.max(1, Math.round(s / 18)));
+  for (let k = 1; k <= 3; k++) {
+    L.line(cx, cy - s * 0.4 + k * s * 0.22, cx + s * 0.25, cy - s * 0.55 + k * s * 0.22, hex('#a8e080'));
+    L.line(cx, cy - s * 0.4 + k * s * 0.22, cx - s * 0.25, cy - s * 0.55 + k * s * 0.22, hex('#a8e080'));
+  }
+  // vines spiralling around it
+  for (let t = 0; t < Math.PI * 4; t += 0.04) {
+    const r = s * (0.55 + 0.08 * Math.sin(t * 3));
+    L.ball(cx + Math.cos(t) * r, cy + Math.sin(t) * r * 1.05 - (t - Math.PI * 2) * s * 0.04, s * 0.045, s * 0.045, [hex('#2a5a1a'), hex('#4a8a2a'), hex('#7ac04a')]);
+  }
+  [[0.62, -0.2], [-0.6, 0.25], [0.3, 0.68], [-0.35, -0.62]].forEach(([dx, dy], i) => L.ball(cx + dx * s, cy + dy * s, s * 0.11, s * 0.06, LEAF, { angle: i }));
+}
+
+// Renovación de Vida: a sprout rising from a mound in a beam of light.
+function sprout(L, cx, cy, s) {
+  softGlow(L, cx, cy - s * 0.1, s * 0.85, '#fff6b0', 170);
+  L.ball(cx, cy + s * 0.55, s * 0.75, s * 0.25, [hex('#3a2416'), hex('#5a3a22'), hex('#7a5232')]);
+  L.line(cx, cy + s * 0.45, cx + s * 0.02, cy - s * 0.25, hex('#5aa83a'), Math.max(2, Math.round(s / 10)));
+  L.ball(cx - s * 0.24, cy - s * 0.32, s * 0.26, s * 0.13, LEAF, { angle: 0.5 });
+  L.ball(cx + s * 0.27, cy - s * 0.4, s * 0.28, s * 0.14, LEAF, { angle: -0.5 });
+  L.ball(cx + s * 0.02, cy - s * 0.32, s * 0.06, s * 0.08, LEAF);
+}
+
+// Little four-point sparkles (on the background layer, so they get no outline).
+function sparkles(L, cx, cy, s, seed, n = 9) {
+  const r = rng(seed);
+  for (let i = 0; i < n; i++) {
+    const x = cx + (r() - 0.5) * s * 1.6;
+    const y = cy + (r() - 0.7) * s * 1.1;
+    L.set(x, y, hex('#fffbe0'));
+    L.set(x + 1, y, hex('#fffbe0', 140));
+    L.set(x - 1, y, hex('#fffbe0', 140));
+    L.set(x, y - 1, hex('#fffbe0', 140));
+    L.set(x, y + 1, hex('#fffbe0', 140));
+  }
+}
+
 // ---------- cards ----------
 const CARDS = [
   {
@@ -393,6 +497,37 @@ const CARDS = [
     draw(bg, fg) {
       gradient(bg, [hex('#2a0a06'), hex('#7a1a0a'), hex('#e8602a')]);
       pearl(fg, fg.w * 0.5, fg.h * 0.5, fg.h * 0.45, [hex('#a8200a'), hex('#f8702a'), hex('#ffe08a')], '#ffb040');
+    },
+  },
+  {
+    file: 'clionne-dama-ramificada-del-bosque.png', tier: 'bit16',
+    draw(bg, fg) {
+      forest(bg, 64, { sky: ['#d8f0c8', '#8ac89a', '#3a6a4a'], ground: ['#4a7a32', '#2f5a22'] });
+      softGlow(bg, bg.w * 0.5, bg.h * 0.45, bg.h * 0.55, '#f0ffd8', 120);
+      dryad(fg, fg.w * 0.5, fg.h * 0.5, fg.h * 0.5);
+    },
+  },
+  {
+    file: 'grook-el-arbol-guardian.png', tier: 'bit8',
+    draw(bg, fg) {
+      forest(bg, 72, { sky: ['#a8c8a0', '#5a8a6a', '#2a4a3a'] });
+      treeGuardian(fg, fg.w * 0.48, fg.h * 0.48, fg.h * 0.55);
+    },
+  },
+  {
+    file: 'poder-de-las-plantas.png', tier: 'bit8',
+    draw(bg, fg) {
+      gradient(bg, [hex('#0a1a0e'), hex('#1a3a1e'), hex('#2a5a2a')]);
+      vineEmblem(fg, fg.w * 0.5, fg.h * 0.5, fg.h * 0.42);
+    },
+  },
+  {
+    file: 'renovacion-de-vida.png', tier: 'bit8',
+    draw(bg, fg) {
+      gradient(bg, [hex('#3a2a5a'), hex('#a8607a'), hex('#f0b07a'), hex('#f8e0a0')], { y1: Math.round(bg.h * 0.82) });
+      gradient(bg, [hex('#4a3020'), hex('#2a1a12')], { y0: Math.round(bg.h * 0.82) });
+      sprout(fg, fg.w * 0.5, fg.h * 0.52, fg.h * 0.5);
+      sparkles(bg, bg.w * 0.5, bg.h * 0.52, bg.h * 0.5, 17);
     },
   },
 ];

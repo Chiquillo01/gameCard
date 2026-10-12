@@ -789,7 +789,7 @@ const registry = {
 };
 
 const fieldActions = require('./fieldActions');
-['destroy', 'destroyTarget', 'destroyCards', 'growSelf', 'takeControl', 'addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck', 'searchFromDeck', 'addCardToHandFromGraveyard', 'preventBattleDestruction', 'cannotBeDestroyedOrExiled', 'cannotBeDestroyedByOpponentEffects', 'summonFromDeck', 'specialSummonFromDeck', 'summonFromHand', 'specialSummonFromGY', 'summonFromZones', 'summon', 'sendFromDeckToGY']
+['destroy', 'destroyTarget', 'destroyCards', 'growSelf', 'takeControl', 'addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck', 'searchFromDeck', 'addCardToHandFromGraveyard', 'preventBattleDestruction', 'cannotBeDestroyedOrExiled', 'cannotBeDestroyedByOpponentEffects', 'summonFromDeck', 'specialSummonFromDeck', 'summonFromHand', 'specialSummonFromGY', 'summonFromZones', 'summon', 'sendFromDeckToGY', 'protectFromEffectDestruction', 'attacksOnlyOnStrongest', 'excavate']
   .forEach((fn) => { registry[fn] = fieldActions[fn]; });
 Object.assign(registry, require('./extraActions'));
 
