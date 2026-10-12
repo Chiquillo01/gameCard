@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Modal from 'react-modal';
 import styles from './deckPage.module.css';
 import { getUserDecks, deleteDecks } from '../../../../lib/utils/apiDeck';
-import { isDeckPlayable, deckSizes, MIN_DECK_SIZE, MAX_DECK_SIZE } from '../../../../lib/utils/deckRules';
+import { isDeckPlayable, deckSizes } from '../../../../lib/utils/deckRules';
+import { useGameRules } from '../../../../lib/utils/gameRules';
 import { successToast, errorToast } from '../../../../lib/toastify/toast';
 
 const deckImages = [
@@ -15,6 +16,7 @@ const deckImages = [
 ];
 
 const DeckPage = () => {
+  const { minDeckSize: MIN_DECK_SIZE, maxDeckSize: MAX_DECK_SIZE } = useGameRules(); // re-renders when the server's rules arrive
   const navigate = useNavigate();
   const [decks, setDecks] = useState(null);
   // Picking decks to delete: clicking a deck ticks it instead of opening it.

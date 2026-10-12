@@ -2,17 +2,13 @@
 // saved) and duelController (validates what can actually be played). A deck can be saved while
 // still under construction — MIN_DECK_SIZE is only enforced at duel-start time — but it can
 // never be saved over the max sizes, since those are hard physical limits either way.
-const MIN_DECK_SIZE = 40;
-const MAX_DECK_SIZE = 50;
-const MAX_FUSION_CARDS = 10;
+// The sizes and the per-rarity copy limits are game rules (game/rules.js, from the database).
+const { rules } = require('./rules');
 
-// Fallback only — used if a Card document somehow has no `state` (banlist value). The real,
-// authoritative limit lives on each card's own `state` field (see Schema/card.js), so a card
-// can be banned/limited without touching this code.
-const MAX_COPIES_BY_RARITY = { legendary: 1, epic: 2, rare: 3, common: 4 };
-
+// The real, authoritative limit lives on each card's own `state` field (see Schema/card.js), so a
+// card can be banned/limited without touching anything; the rarity limit is only a fallback.
 function maxCopiesOf(card) {
-  return card?.state ?? MAX_COPIES_BY_RARITY[card?.rarity] ?? 3;
+  return card?.state ?? (rules().maxCopiesByRarity || {})[card?.rarity] ?? 3;
 }
 
 const entryCardId = (entry) => String(entry.card && entry.card._id ? entry.card._id : entry.card);
@@ -43,7 +39,17 @@ function isDeckPlayable(deck) {
   const overLimit = mergeEntries(entries).some(({ card, amount }) => byId.has(card) && amount > maxCopiesOf(byId.get(card)));
   if (overLimit) return false;
   const { totalMain, totalFusion } = deckSizes(deck);
-  return totalMain >= MIN_DECK_SIZE && totalMain <= MAX_DECK_SIZE && totalFusion <= MAX_FUSION_CARDS;
+  const r = rules();
+  return totalMain >= r.minDeckSize && totalMain <= r.maxDeckSize && totalFusion <= r.maxFusionCards;
 }
 
-module.exports = { MIN_DECK_SIZE, MAX_DECK_SIZE, MAX_FUSION_CARDS, MAX_COPIES_BY_RARITY, maxCopiesOf, mergeEntries, deckSizes, isDeckPlayable };
+module.exports = {
+  maxCopiesOf,
+  mergeEntries,
+  deckSizes,
+  isDeckPlayable,
+  get MIN_DECK_SIZE() { return rules().minDeckSize; },
+  get MAX_DECK_SIZE() { return rules().maxDeckSize; },
+  get MAX_FUSION_CARDS() { return rules().maxFusionCards; },
+  get MAX_COPIES_BY_RARITY() { return rules().maxCopiesByRarity; },
+};

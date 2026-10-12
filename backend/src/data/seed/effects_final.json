@@ -4461,13 +4461,15 @@
     },
     "conditions": [],
     "requiresTarget": true,
-    "targetSelector": "fieldLicantropo",
     "actions": [
       {
         "fn": "returnCardToHand",
         "args": {
           "target": "selected",
-          "zone": "field"
+          "zone": "monster",
+          "filter": {
+            "nameContains": "Licántropo"
+          }
         }
       },
       {

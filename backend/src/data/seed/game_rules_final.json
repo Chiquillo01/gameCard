@@ -1,0 +1,19 @@
+{
+  "startingVp": 40,
+  "startingHandSize": 6,
+  "startingPixels": 4,
+  "pixelIncomePerTurn": 2,
+  "pixelCap": 8,
+  "maxHandSize": 8,
+  "burnEndOfTurnDamage": 5,
+  "freezeBreakerAttribute": "Agua",
+  "minDeckSize": 40,
+  "maxDeckSize": 50,
+  "maxFusionCards": 10,
+  "maxCopiesByRarity": {
+    "legendary": 1,
+    "epic": 2,
+    "rare": 3,
+    "common": 4
+  }
+}

@@ -19,6 +19,8 @@ const { Effect } = require('../Schema/effect');
 
 const cards = require('./cards_final.json');
 const effects = require('./effects_final.json');
+const gameRules = require('./game_rules_final.json');
+const { GameRules } = require('../Schema/gameRules');
 
 // The JSON entry as the schema would store it (defaults filled in), without the generated _id —
 // replaceOne keeps a card's existing _id, which decks and collections point at.
@@ -53,6 +55,9 @@ async function seed() {
     // eslint-disable-next-line no-await-in-loop
     await Card.replaceOne({ number: card.number }, withDefaults(Card, card), { upsert: true });
   }
+
+  console.log('Seeding game rules...');
+  await GameRules.replaceOne({ _id: 'rules' }, { _id: 'rules', ...gameRules }, { upsert: true });
 
   const cardCount = await Card.countDocuments();
   const effectCount = await Effect.countDocuments();

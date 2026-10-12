@@ -3,7 +3,8 @@ const { Deck } = require('../data/Schema/deck');
 const { User } = require('../data/Schema/user');
 const { Card } = require('../data/Schema/card');
 const { UserCollection } = require('../data/Schema/userCollection');
-const { MAX_DECK_SIZE, MAX_FUSION_CARDS, maxCopiesOf, mergeEntries } = require('../game/deckRules');
+const { maxCopiesOf, mergeEntries } = require('../game/deckRules');
+const { rules } = require('../game/rules');
 
 // The only owner fields a deck response carries — never the email, admin flag or password hash.
 const PUBLIC_OWNER_FIELDS = 'userName profilePicture';
@@ -45,9 +46,9 @@ async function validateDeckPayload(userId, { cards, fusionCards, tokens }) {
   if (wrongToken) return { error: `"${cardDocsById.get(wrongToken).name}" no es una carta de token válida.` };
 
   const totalMain = mainCards.reduce((sum, c) => sum + c.amount, 0);
-  if (totalMain > MAX_DECK_SIZE) return { error: `El mazo principal no puede tener más de ${MAX_DECK_SIZE} cartas (tiene ${totalMain}).` };
+  if (totalMain > rules().maxDeckSize) return { error: `El mazo principal no puede tener más de ${rules().maxDeckSize} cartas (tiene ${totalMain}).` };
   const totalExtra = extraCards.reduce((sum, c) => sum + c.amount, 0);
-  if (totalExtra > MAX_FUSION_CARDS) return { error: `No puedes añadir más de ${MAX_FUSION_CARDS} cartas de fusión al mazo.` };
+  if (totalExtra > rules().maxFusionCards) return { error: `No puedes añadir más de ${rules().maxFusionCards} cartas de fusión al mazo.` };
 
   for (const c of [...mainCards, ...extraCards]) {
     const card = cardDocsById.get(c.card);

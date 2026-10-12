@@ -10,7 +10,7 @@ const { isOwnActivation, activateEffect, resolveTriggerChoice, requiredZoneFor, 
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
 const { checkConditions } = require('./effects/conditions');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
-const { STARTING_VP } = require('./constants');
+const { rules } = require('./rules');
 const { describeEffect } = require('./effectLabels');
 const { withLocations } = require('./choiceOptions');
 const { compileInfo } = require('./compileInfo');
@@ -201,7 +201,7 @@ function viewFor(state, viewerIndex) {
     turnPlayer: state.turnPlayer,
     phase: state.phase,
     winnerIndex: state.winnerIndex,
-    startingVp: STARTING_VP, // what the VP bars are measured against
+    startingVp: rules().startingVp, // what the VP bars are measured against
     // Why the duel ended ("se queda sin VP", "se rinde"...), once it has.
     endReason: state.endReason ? readableLogLine(state, { message: state.endReason }, names).message : null,
     you: viewerIndex,

@@ -10,6 +10,7 @@ const { storeRouter } = require('./storeRouter.js');
 const { marketRouter } = require('./marketRouter.js');
 const { adminRouter } = require('./adminRouter');
 const { duelRouter } = require('./duelRouter');
+const { rulesRouter } = require('./rulesRouter');
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/store', storeRouter);
 router.use('/market', jwtMiddleware, marketRouter);
 router.use('/admin', jwtMiddleware, adminRouter);
 router.use('/duel', duelRouter);
+router.use('/rules', rulesRouter);
 
 module.exports = router;

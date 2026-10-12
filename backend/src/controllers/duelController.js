@@ -5,7 +5,9 @@ const { createMatch, applyAction, viewFor, coinTossFirstPlayer, runBotTurn, matc
 const { isDeckPlayable } = require('../game/deckRules');
 const { getIo } = require('../socket/socketServer');
 
-const UNPLAYABLE_DECK_ERROR = 'Este mazo no cumple el tamaño mínimo (40-50 cartas, máx. 10 de fusión) para poder jugar.';
+const { rules } = require('../game/rules');
+
+const unplayableDeckError = () => `Este mazo no cumple el tamaño mínimo (${rules().minDeckSize}-${rules().maxDeckSize} cartas, máx. ${rules().maxFusionCards} de fusión) para poder jugar.`;
 
 // A mirror of a deck (the player's own, when there's nothing else to pick from).
 function buildBotDeck(playerDeck) {
@@ -57,7 +59,7 @@ const startPve = async (req, res) => {
     const { deckId } = req.body;
     const deck = await Deck.findOne({ _id: deckId, owner: userId }).populate('cards.card').populate('fusionCards.card');
     if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
-    if (!isDeckPlayable(deck)) return res.status(400).json({ error: UNPLAYABLE_DECK_ERROR });
+    if (!isDeckPlayable(deck)) return res.status(400).json({ error: unplayableDeckError() });
 
     const matchId = randomUUID();
     const user = await User.findById(userId).select('userName');
@@ -86,7 +88,7 @@ const challenge = async (req, res) => {
     const { friendUserId, deckId } = req.body;
     const deck = await Deck.findOne({ _id: deckId, owner: userId });
     if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
-    if (!isDeckPlayable(deck)) return res.status(400).json({ error: UNPLAYABLE_DECK_ERROR });
+    if (!isDeckPlayable(deck)) return res.status(400).json({ error: unplayableDeckError() });
     const friend = await User.findById(friendUserId);
     if (!friend) return res.status(404).json({ error: 'Usuario no encontrado' });
 
@@ -123,7 +125,7 @@ const acceptChallenge = async (req, res) => {
     ]);
     if (!challengerDeck || !opponentDeck) return res.status(404).json({ error: 'Mazo no encontrado' });
     if (!isDeckPlayable(challengerDeck) || !isDeckPlayable(opponentDeck)) {
-      return res.status(400).json({ error: UNPLAYABLE_DECK_ERROR });
+      return res.status(400).json({ error: unplayableDeckError() });
     }
 
     const [challenger, opponent] = await Promise.all([User.findById(pending.challengerId).select('userName'), User.findById(userId).select('userName')]);

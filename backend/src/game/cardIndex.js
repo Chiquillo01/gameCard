@@ -10,7 +10,7 @@ let loadedAt = 0;
 
 async function loadCardIndex(force = false) {
   if (!force && Date.now() - loadedAt < 60_000 && cardsById.size) return;
-  const [cards, effects] = await Promise.all([Card.find().lean(), Effect.find().lean()]);
+  const [cards, effects] = await Promise.all([Card.find().lean(), Effect.find().lean(), require('./rules').loadRules()]);
   cardsById = new Map(cards.map((c) => [c._id.toString(), c]));
   effectsById = new Map(effects.map((e) => [e._id, e]));
   loadedAt = Date.now();

@@ -10,7 +10,7 @@ import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import CardsCollectedDisplay from './CardsCollectedDisplay';
 import CardsSelectedDisplay from './CardsSelectedDisplay';
 import TokenSelector from './TokenSelector';
-import { MIN_DECK_SIZE, MAX_DECK_SIZE, MAX_FUSION_CARDS } from '../../../../lib/utils/deckRules';
+import { useGameRules, maxCopiesOf } from '../../../../lib/utils/gameRules';
 
 const TOAST_OPTIONS = {
   autoClose: 3000,
@@ -25,6 +25,9 @@ const TOAST_OPTIONS = {
 const showToast = (type, message) => toast[type](message, TOAST_OPTIONS);
 
 const CreateNewDeck = () => {
+  // Deck sizes and copy limits, as the server's rules say.
+  const gameRules = useGameRules();
+  const { minDeckSize: MIN_DECK_SIZE, maxDeckSize: MAX_DECK_SIZE, maxFusionCards: MAX_FUSION_CARDS } = gameRules;
   const { deckId } = useParams();
   const navigate = useNavigate();
   // True while a save is on its way: a second click can't send another one (and create a copy).
@@ -49,8 +52,9 @@ const CreateNewDeck = () => {
   const overLimit = [...selectedCards, ...selectedFusionCards]
     .map((c) => {
       const owned = userCards.length ? userCards.find((u) => u.id === c.id)?.amount ?? 0 : Infinity;
-      const max = Math.min(c.state ?? 3, owned);
-      return c.amount > max ? { name: c.name, amount: c.amount, max, byOwned: owned < (c.state ?? 3) } : null;
+      const limit = maxCopiesOf(c, gameRules);
+      const max = Math.min(limit, owned);
+      return c.amount > max ? { name: c.name, amount: c.amount, max, byOwned: owned < limit } : null;
     })
     .filter(Boolean);
 
@@ -99,7 +103,7 @@ const CreateNewDeck = () => {
     // The real per-card ceiling is the card's own banlist value (`state`), not a flat number —
     // it defaults by rarity (Legendaria 1 / Épica 2 / Rara 3 / Común 4) but can be overridden
     // per card, and the backend rejects anything above it.
-    const maxCopies = card.state ?? 3;
+    const maxCopies = maxCopiesOf(card, gameRules);
     const maxTotal = isFusionCard ? MAX_FUSION_CARDS : MAX_DECK_SIZE;
     const totalInArray = selectedArray.reduce((sum, c) => sum + c.amount, 0);
     const totalLabel = isFusionCard

@@ -1,14 +1,15 @@
 const { buildInstances } = require('./deckUtils');
-const { STARTING_VP, STARTING_HAND_SIZE, STARTING_PIXELS, MONSTER_ZONES, SUPPORT_ZONES } = require('./constants');
+const { MONSTER_ZONES, SUPPORT_ZONES } = require('./constants');
+const { rules } = require('./rules');
 
 function makePlayer(userId, deckDoc, ownerIndex, name = null) {
   const { deck, extra } = buildInstances(deckDoc, ownerIndex);
-  const hand = deck.splice(0, STARTING_HAND_SIZE);
+  const hand = deck.splice(0, rules().startingHandSize);
   return {
     userId: userId.toString(),
     name, // shown on the board and in the log instead of the id
-    vp: STARTING_VP,
-    pixelcoins: STARTING_PIXELS,
+    vp: rules().startingVp,
+    pixelcoins: rules().startingPixels,
     normalSummonUsed: false,
     turnsPlayed: 0, // rulebook: no automatic pixel income on a player's own first turn
     hand,

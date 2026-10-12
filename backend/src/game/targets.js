@@ -73,9 +73,6 @@ function selectRows(ctx, args) {
   if (hasFilter) {
     rows = rows.filter((r) => (r.kind === 'monster' ? matchesFilter(r.entry, filter) : !r.entry.isToken && matchesCardFilter(getCard(r.entry.cardId), filter)));
   }
-  if (effect.targetSelector === 'fieldLicantropo' && args.target === 'selected') {
-    rows = rows.filter((r) => !r.entry.isToken && r.kind === 'monster' && matchesFilter(r.entry, { nameContains: 'Licántropo' }));
-  }
   return rows;
 }
 
@@ -176,7 +173,7 @@ function stepPool(ctx, step) {
 // Distinct names among the Héroe monsters on the whole field (Héroe de la Esperanza).
 function heroCount(ctx, countBy = {}) {
   const heroes = fieldRows(ctx.state, 'any', ctx.controllerIndex)
-    .filter((r) => r.kind === 'monster' && !r.entry.isToken && !r.entry.faceDown && matchesFilter(r.entry, { breed: countBy.breed || 'Héroe' }))
+    .filter((r) => r.kind === 'monster' && !r.entry.isToken && !r.entry.faceDown && matchesFilter(r.entry, countBy.filter || { breed: countBy.breed }))
     .map((r) => getCard(r.entry.cardId).name);
   return countBy.uniqueNames === false ? heroes.length : new Set(heroes).size;
 }

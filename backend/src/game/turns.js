@@ -1,10 +1,11 @@
-const { PHASES, MAX_HAND_SIZE, PIXEL_INCOME_PER_TURN, PIXEL_CAP } = require('./constants');
+const { PHASES } = require('./constants');
+const { rules } = require('./rules');
 const { player, opponentIndex, log, placeMonster, moveToZone } = require('./zones');
 const { getCard } = require('./cardIndex');
 const { cardIdFromInstance } = require('./deckUtils');
 const { fireTrigger, recomputeContinuous, expireTimedBuffs } = require('./effectEngine');
 const { checkWin } = require('./outcome');
-const { burningMonsters, expireStatuses, BURN_END_OF_TURN_DAMAGE } = require('./statuses');
+const { burningMonsters, expireStatuses } = require('./statuses');
 const { expireNegations } = require('./negation');
 const { drawCards, expireMirrors } = require('./draw');
 
@@ -47,7 +48,7 @@ function runPhaseEntry(state) {
     const isPlayersFirstTurn = pl.turnsPlayed === 0;
     if (!isPlayersFirstTurn) {
       const before = pl.pixelcoins;
-      pl.pixelcoins = Math.min(PIXEL_CAP, pl.pixelcoins + PIXEL_INCOME_PER_TURN);
+      pl.pixelcoins = Math.min(rules().pixelCap, pl.pixelcoins + rules().pixelIncomePerTurn);
       if (pl.pixelcoins !== before) log(state, `${pl.userId} gana píxeles (total: ${pl.pixelcoins}).`);
     }
     pl.turnsPlayed += 1;
@@ -70,9 +71,10 @@ function runPhaseEntry(state) {
     // in different sections) — using the more detailed rule: discard to MAX_HAND_SIZE, to the
     // graveyard. The player picks which cards go (Rulebook: a discard is never random unless the
     // card says so) — the turn can't end until they have.
-    const excess = pl.hand.length - MAX_HAND_SIZE;
+    const maxHand = rules().maxHandSize;
+    const excess = pl.hand.length - maxHand;
     if (excess > 0) {
-      require('./effects/actions').requestDiscard(state, state.turnPlayer, excess, `Tienes más de ${MAX_HAND_SIZE} cartas: elige ${excess} para descartar`);
+      require('./effects/actions').requestDiscard(state, state.turnPlayer, excess, `Tienes más de ${maxHand} cartas: elige ${excess} para descartar`);
     }
   }
 
@@ -120,8 +122,9 @@ function applyBurnDamage(state) {
   state.players.forEach((p, i) => {
     const burning = burningMonsters(state, i).length;
     if (!burning) return;
-    p.vp = Math.max(0, p.vp - burning * BURN_END_OF_TURN_DAMAGE);
-    log(state, `${p.userId} recibe ${burning * BURN_END_OF_TURN_DAMAGE} de daño por quemadura (VP: ${p.vp}).`);
+    const burnDamage = burning * rules().burnEndOfTurnDamage;
+    p.vp = Math.max(0, p.vp - burnDamage);
+    log(state, `${p.userId} recibe ${burnDamage} de daño por quemadura (VP: ${p.vp}).`);
   });
 }
 

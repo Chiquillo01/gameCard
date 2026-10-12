@@ -1,3 +1,4 @@
+const { attributeMatches } = require('./filters');
 const { getCard, getEffect } = require('./cardIndex');
 const { player, opponentIndex, moveToZone, log, getFieldMonster } = require('./zones');
 const { hasStatus, FREEZE, BURN } = require('./statuses');
@@ -7,7 +8,8 @@ const { checkWin } = require('./outcome');
 
 function isWater(entry) {
   if (entry.faceDown) return false;
-  return (entry.isToken ? entry.tokenDef.attribute : getCard(entry.cardId).attribute) === 'Agua';
+  const attribute = entry.isToken ? entry.tokenDef.attribute : getCard(entry.cardId).attribute;
+  return attributeMatches(attribute, require('./rules').rules().freezeBreakerAttribute);
 }
 
 const hasAbility = (m, name) => (m.abilities || []).some((a) => a.name === name);

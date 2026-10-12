@@ -1,13 +1,10 @@
-// Values sourced from Rulebook.pdf, confirmed with the designer.
-const STARTING_VP = 40; // balance pass: was 80, then 60
-const STARTING_HAND_SIZE = 6;
+// The board's shape and the turn's phases (Rulebook.pdf). The balance numbers — starting VP,
+// pixels, hand and deck sizes... — are data: game/rules.js reads them from the database (seeded
+// from data/seed/game_rules_final.json). The getters below keep the old names working.
+const { rules } = require('./rules');
+
 const MONSTER_ZONES = 5;
 const SUPPORT_ZONES = 4; // Territorio (Reino) is a separate 5th zone, not part of this
-const MAX_HAND_SIZE = 8; // book contradicts itself (7 to exile vs 8 to graveyard) — using the more detailed rule (Fase Final: discard to 8, to graveyard)
-
-const STARTING_PIXELS = 4; // balance pass: was 6
-const PIXEL_INCOME_PER_TURN = 2; // balance pass: was 6, then 4
-const PIXEL_CAP = 8; // balance pass: was 12
 
 const PHASES = ['draw', 'standby', 'main1', 'battle', 'main2', 'end'];
 
@@ -23,14 +20,15 @@ const EFFECT_TYPES = {
 };
 
 module.exports = {
-  STARTING_VP,
-  STARTING_HAND_SIZE,
   MONSTER_ZONES,
   SUPPORT_ZONES,
-  MAX_HAND_SIZE,
-  STARTING_PIXELS,
-  PIXEL_INCOME_PER_TURN,
-  PIXEL_CAP,
   PHASES,
   EFFECT_TYPES,
+  get STARTING_VP() { return rules().startingVp; },
+  get STARTING_HAND_SIZE() { return rules().startingHandSize; },
+  get MAX_HAND_SIZE() { return rules().maxHandSize; },
+  get STARTING_PIXELS() { return rules().startingPixels; },
+  get PIXEL_INCOME_PER_TURN() { return rules().pixelIncomePerTurn; },
+  get PIXEL_CAP() { return rules().pixelCap; },
+  get FREEZE_BREAKER_ATTRIBUTE() { return rules().freezeBreakerAttribute; },
 };
