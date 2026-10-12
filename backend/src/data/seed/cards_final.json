@@ -1468,7 +1468,7 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "CDG",
-    "atk": 2,
+    "atk": 1,
     "def": 0,
     "level": 3,
     "effect": "Monstruo sin efecto.",
@@ -1490,7 +1490,7 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "CDG",
-    "atk": 5,
+    "atk": 4,
     "def": 2,
     "level": 5,
     "effect": "Cuando esta carta es enviada al Cementerio: \n• Añade a tu Mano una carta \"Héroe\" de Apoyo de tu Mazo.",
@@ -3347,14 +3347,14 @@
     "category": "support",
     "subtype": "normal",
     "expansion": "IDL",
-    "effect": "En activación:\n• Haz 10 VP a tu oponente.",
-    "invocationText": "Activación - 1 Píxel",
+    "effect": "En activación:\n• Haz 8 VP a tu oponente.",
+    "invocationText": "Activación - 2 Píxel",
     "state": 3,
     "number": 137,
     "activationCost": {
       "fn": "payPixels",
       "args": {
-        "amount": 1
+        "amount": 2
       }
     },
     "effectCodes": [

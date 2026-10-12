@@ -221,7 +221,8 @@ describe('Actions and flags that used to do nothing', () => {
     monster(state, berserker).materials = [await instance(0, 'Héroe Silencioso'), await instance(0, 'Héroe Corrupto')];
     const valkiria = await onField(state, 1, 'Valkiria');
     recomputeContinuous(state);
-    expect(monster(state, valkiria).tempBuff.atk).toBe(-(2 + 3));
+    const printedAtk = async (name) => getCard(await idOf(name)).atk;
+    expect(monster(state, valkiria).tempBuff.atk).toBe(-((await printedAtk('Héroe Silencioso')) + (await printedAtk('Héroe Corrupto'))));
   });
 
   it('Gigante Elemental is immune to effects of monsters sharing an attribute with its materials', async () => {

@@ -2691,7 +2691,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 10
+          "amount": 8
         }
       }
     ]
