@@ -1103,7 +1103,8 @@
       "CAPITAN_BANDIDO_BATTLE_IMMUNE",
       "CAPITAN_BANDIDO_MATON_BUFF",
       "CAPITAN_BANDIDO_SPECIAL_SUMMON"
-    ]
+    ],
+    "image": "/assets/CardImg/generated/capitan-bandido.png"
   },
   {
     "name": "Héroe de la Esperanza",
@@ -2129,7 +2130,8 @@
     "effect": "Token de Aboleth",
     "invocationText": "Token de Aboleth",
     "state": 5,
-    "number": 85
+    "number": 85,
+    "image": "/assets/CardImg/generated/tentaculo-musculoso.png"
   },
   {
     "name": "Token de Balista",
@@ -2147,7 +2149,8 @@
     "effect": "Token de Forja de los herreros",
     "invocationText": "Token de Forja de los herreros",
     "state": 5,
-    "number": 86
+    "number": 86,
+    "image": "/assets/CardImg/generated/token-de-balista.png"
   },
   {
     "name": "Token del Tesoro",
@@ -2165,7 +2168,8 @@
     "effect": "Token de Piratas",
     "invocationText": "Token de Piratas",
     "state": 5,
-    "number": 87
+    "number": 87,
+    "image": "/assets/CardImg/generated/token-del-tesoro.png"
   },
   {
     "name": "Perla de Hielo",
@@ -2183,7 +2187,8 @@
     "effect": "Token genérico",
     "invocationText": "Token genérico",
     "state": 5,
-    "number": 88
+    "number": 88,
+    "image": "/assets/CardImg/generated/perla-de-hielo.png"
   },
   {
     "name": "Perla Oscura",
@@ -2201,7 +2206,8 @@
     "effect": "Token genérico",
     "invocationText": "Token genérico",
     "state": 5,
-    "number": 89
+    "number": 89,
+    "image": "/assets/CardImg/generated/perla-oscura.png"
   },
   {
     "name": "Perla de Fuego",
@@ -2219,7 +2225,8 @@
     "effect": "Token genérico",
     "invocationText": "Token genérico",
     "state": 5,
-    "number": 90
+    "number": 90,
+    "image": "/assets/CardImg/generated/perla-de-fuego.png"
   },
   {
     "name": "Gigante de Fuego",
@@ -3944,7 +3951,8 @@
       "AVISPA_REINA_NIDO",
       "AVISPA_REINA_EXILE",
       "AVISPA_REINA_DESTROY"
-    ]
+    ],
+    "image": "/assets/CardImg/generated/avispa-reina.png"
   },
   {
     "name": "Avispa Arquera",
@@ -3978,7 +3986,8 @@
     "effectCodes": [
       "AVISPA_ARQUERA_BUFF",
       "AVISPA_ARQUERA_ONSUMMON"
-    ]
+    ],
+    "image": "/assets/CardImg/generated/avispa-arquera.png"
   },
   {
     "name": "Avispa de Respaldo",
@@ -4002,7 +4011,8 @@
       "AVISPA_RESPALDO_SPECIAL_SUMMON",
       "AVISPA_RESPALDO_COMPILE",
       "AVISPA_RESPALDO_MATERIAL_BUFF"
-    ]
+    ],
+    "image": "/assets/CardImg/generated/avispa-de-respaldo.png"
   },
   {
     "name": "Avispa de Batalla",
@@ -4025,6 +4035,7 @@
     "effectCodes": [
       "AVISPA_BATALLA_SPECIAL_SUMMON",
       "AVISPA_BATALLA_ZERO_ATK"
-    ]
+    ],
+    "image": "/assets/CardImg/generated/avispa-de-batalla.png"
   }
 ]
