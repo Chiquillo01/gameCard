@@ -179,6 +179,8 @@ function searchCandidates(state, controllerIndex, fn, args) {
   const ids = [];
   zones.forEach((zone) => pl[zone].forEach((id) => {
     const card = getCard(cardIdFromInstance(id));
+    // A Compilación never goes to the hand (it lives in the Mazo-C), so a search can't offer one.
+    if (card.category === 'fusion') return;
     if (!matchesCardFilter(card, filter) || taken.includes(card.attribute)) return;
     if (fieldAttributes && !(['monster', 'fusion'].includes(card.category) && fieldAttributes.includes(card.attribute))) return;
     ids.push(id);

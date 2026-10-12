@@ -112,6 +112,8 @@ function moveToZone(state, instanceId, toZone, ownerIndexOverride, { deckPositio
     clearStatus(state, instanceId, BURN);
     return true;
   }
+  // A Compilación never sits in a hand or the Mazo: sent there, it goes back to its Mazo-C.
+  if ((toZone === 'hand' || toZone === 'deck') && getCard(require('./deckUtils').cardIdFromInstance(instanceId)).category === 'fusion') toZone = 'extra';
   const ownerIndex = ownerIndexOverride ?? ownerOfInstance(instanceId) ?? (loc ? loc.ownerIndex : null);
   if (ownerIndex === null) return false;
   const leaving = loc && loc.zone === 'field:monster' ? state.players[loc.ownerIndex].field.monsters[loc.slot] : null;

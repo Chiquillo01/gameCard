@@ -82,6 +82,8 @@ function matchesCardFilter(card, filter = {}) {
   // "Que menciona X en su texto": its name or its effect text.
   if (filter.textIncludes && !normalize(`${card.name} ${card.effect || ''}`).includes(normalize(filter.textIncludes))) return false;
   if (filter.maxLevel != null && (card.level || 0) > filter.maxLevel) return false;
+  // "De nivel N o menor" as the effect data also spells it.
+  if (filter.levelOrLower != null && (card.level || 0) > filter.levelOrLower) return false;
   // "Monstruo sin efecto" (true) or a monster that has one (false).
   if (filter.effectless != null && isEffectless(card) !== !!filter.effectless) return false;
   return true;

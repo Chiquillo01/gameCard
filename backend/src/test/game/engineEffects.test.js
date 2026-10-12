@@ -998,3 +998,27 @@ describe('Enjambre de Avispas from the Cementerio', () => {
     expect(state.players[0].deck).toEqual(expect.arrayContaining([wasps[0], wasps[2]]));
   });
 });
+
+describe('A Compilación never goes to the hand', () => {
+  it('Avispa Rosa only offers Himenóptero monsters of level 3 or less from the Cementerio, never a Compilación', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const rosa = await onField(state, 0, 'Avispa Rosa');
+    await toGraveyard(state, 0, 'Avispa Reina');
+    await toGraveyard(state, 0, 'Avispa Arquera');
+    const small = await toGraveyard(state, 0, 'Avispa gigante');
+    const small2 = await toGraveyard(state, 0, 'Avispa de Batalla');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'AVISPA_ROSA_ADD_HAND', sourceInstanceId: rosa });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([small, small2].sort());
+  });
+
+  it('a compiled monster sent back to the hand goes to its Mazo-C instead', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const arquera = await onField(state, 0, 'Avispa Arquera');
+    moveToZone(state, arquera, 'hand');
+    expect(state.players[0].hand).not.toContain(arquera);
+    expect(state.players[0].extra).toContain(arquera);
+  });
+});
