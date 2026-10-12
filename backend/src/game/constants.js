@@ -1,5 +1,5 @@
 // Values sourced from Rulebook.pdf, confirmed with the designer.
-const STARTING_VP = 60; // balance pass: was 80
+const STARTING_VP = 40; // balance pass: was 80, then 60
 const STARTING_HAND_SIZE = 6;
 const MONSTER_ZONES = 5;
 const SUPPORT_ZONES = 4; // Territorio (Reino) is a separate 5th zone, not part of this
