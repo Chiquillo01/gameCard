@@ -3908,5 +3908,123 @@
     "effectCodes": [
       "HERMANDAD_LICANTROPOS_SUMMON"
     ]
+  },
+  {
+    "name": "Avispa Reina",
+    "attribute": "Viento",
+    "breed": "Himenóptero",
+    "family": "Insecto",
+    "type": "Himenóptero",
+    "description": "-",
+    "expansion": "SBE",
+    "obtainable": false,
+    "rarity": "legendary",
+    "category": "fusion",
+    "atk": 8,
+    "def": 5,
+    "level": 8,
+    "effect": "Todos los \"Avispa\" en el Campo obtienen +4 Atk.\nCada vez que se active el efecto de un \"Avispa\", coloca 1 contador de Miel sobre esta carta.\nUna vez por turno como efecto rápido, puedes retirar tantos contadores de Miel como el efecto que quieres aplicar:\n• 2 Añade a tu Mano \"Nido de Avispas\" del Mazo o Cementerio.\n• 4 Exilia 1 monstruo del oponente hasta el final del siguiente turno.\n• 6 Destruye una carta en el campo del oponente.",
+    "invocationText": "Compilación - 4 \"Avispa\"",
+    "state": 1,
+    "number": 160,
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "nameContains": "Avispa",
+            "count": 4
+          }
+        ]
+      }
+    },
+    "effectCodes": [
+      "AVISPA_REINA_BUFF",
+      "AVISPA_REINA_MIEL",
+      "AVISPA_REINA_NIDO",
+      "AVISPA_REINA_EXILE",
+      "AVISPA_REINA_DESTROY"
+    ]
+  },
+  {
+    "name": "Avispa Arquera",
+    "attribute": "Viento",
+    "breed": "Himenóptero",
+    "family": "Insecto",
+    "type": "Himenóptero",
+    "description": "-",
+    "expansion": "SBE",
+    "obtainable": false,
+    "rarity": "rare",
+    "category": "fusion",
+    "atk": 3,
+    "def": 5,
+    "level": 5,
+    "effect": "Esta carta obtiene +1 Atk y Vida por cada \"Avispa\" en tu Cementerio.\nCuando esta carta es invocada:\n• Manda al Cementerio un \"Avispa\" de tu Mazo.",
+    "invocationText": "Compilación - 2 \"Avispa\"",
+    "state": 3,
+    "number": 161,
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "nameContains": "Avispa",
+            "count": 2
+          }
+        ]
+      }
+    },
+    "effectCodes": [
+      "AVISPA_ARQUERA_BUFF",
+      "AVISPA_ARQUERA_ONSUMMON"
+    ]
+  },
+  {
+    "name": "Avispa de Respaldo",
+    "attribute": "Viento",
+    "breed": "Himenóptero",
+    "family": "Insecto",
+    "type": "Himenóptero",
+    "description": "-",
+    "expansion": "SBE",
+    "obtainable": false,
+    "rarity": "epic",
+    "category": "monster",
+    "atk": 1,
+    "def": 2,
+    "level": 3,
+    "effect": "Una vez por turno como efecto rápido:\n• Compila un monstruo de Himenóptero desde tu Deck-C.\nSi se usa como material para un monstruo Compilación Insecto:\n• El monstruo Compilación gana +1 Atk/Vida.",
+    "invocationText": "Si controlas 2 \"Avispa\", se puede invocar especial.",
+    "state": 2,
+    "number": 162,
+    "effectCodes": [
+      "AVISPA_RESPALDO_SPECIAL_SUMMON",
+      "AVISPA_RESPALDO_COMPILE",
+      "AVISPA_RESPALDO_MATERIAL_BUFF"
+    ]
+  },
+  {
+    "name": "Avispa de Batalla",
+    "attribute": "Viento",
+    "breed": "Himenóptero",
+    "family": "Insecto",
+    "type": "Himenóptero",
+    "description": "-",
+    "expansion": "SBE",
+    "obtainable": false,
+    "rarity": "common",
+    "category": "monster",
+    "atk": 1,
+    "def": 1,
+    "level": 2,
+    "effect": "Una vez por turno si controlas otro \"Avispa\", selecciona un monstruo del oponente:\n• Su Atk se vuelve 0 hasta el final del turno.",
+    "invocationText": "Si no controlas monstruos, se puede invocar especial.",
+    "state": 4,
+    "number": 163,
+    "effectCodes": [
+      "AVISPA_BATALLA_SPECIAL_SUMMON",
+      "AVISPA_BATALLA_ZERO_ATK"
+    ]
   }
 ]

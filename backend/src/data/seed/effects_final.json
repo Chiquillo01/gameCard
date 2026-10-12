@@ -6730,5 +6730,323 @@
         }
       }
     ]
+  },
+  {
+    "_id": "AVISPA_REINA_BUFF",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "buff": {
+            "atk": 4
+          },
+          "scope": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_REINA_MIEL",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "effectActivated",
+      "args": {
+        "filter": {
+          "nameContains": "Avispa"
+        },
+        "excludeSelf": true
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCounter",
+        "args": {
+          "counter": "Miel",
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_REINA_NIDO",
+    "type": "quick",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Avispa Reina",
+          "max": 1
+        }
+      }
+    ],
+    "cost": {
+      "fn": "spendCounter",
+      "args": {
+        "counter": "Miel",
+        "amount": 2
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "filter": {
+            "name": "Nido de Avispas"
+          },
+          "scope": [
+            "deck",
+            "graveyard"
+          ],
+          "count": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_REINA_EXILE",
+    "type": "quick",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Avispa Reina",
+          "max": 1
+        }
+      }
+    ],
+    "cost": {
+      "fn": "spendCounter",
+      "args": {
+        "counter": "Miel",
+        "amount": 4
+      }
+    },
+    "actions": [
+      {
+        "fn": "exileTarget",
+        "args": {
+          "target": "enemyMonster",
+          "duration": "endOfNextTurn"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_REINA_DESTROY",
+    "type": "quick",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Avispa Reina",
+          "max": 1
+        }
+      }
+    ],
+    "cost": {
+      "fn": "spendCounter",
+      "args": {
+        "counter": "Miel",
+        "amount": 6
+      }
+    },
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "side": "opponent"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_ARQUERA_BUFF",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "atk": 1,
+          "def": 1,
+          "scope": "ownGraveyard",
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_ARQUERA_ONSUMMON",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "sendFromDeckToGY",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "count": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_RESPALDO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "count": 2
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_RESPALDO_COMPILE",
+    "type": "quick",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "compileFromExtra",
+        "args": {
+          "filter": {
+            "category": "fusion",
+            "breed": "Himenóptero"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_RESPALDO_MATERIAL_BUFF",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "usedAsMaterial",
+      "args": {
+        "family": "Insecto"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "target": "compiled",
+          "buff": {
+            "atk": 1,
+            "def": 1
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_BATALLA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsNoMonsters"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_BATALLA_ZERO_ATK",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "count": 1,
+          "excludeSelf": true
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "setAtk",
+        "args": {
+          "target": "enemyMonster",
+          "value": 0,
+          "duration": "endOfTurn"
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

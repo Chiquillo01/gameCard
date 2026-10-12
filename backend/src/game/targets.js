@@ -136,9 +136,12 @@ function stepPool(ctx, step) {
       return isSelect(args) ? ids(selectRows(ctx, args).filter((r) => !protectedFromRemoval(ctx, r))) : null;
     case 'exileTarget':
       return args.target === 'self' ? null : ids(selectRows(ctx, { ...args, target: args.target || 'selected' }).filter((r) => !protectedFromRemoval(ctx, r)));
+    case 'compileFromExtra':
+      return require('./effects/extraActions').compilableFromExtra(ctx, args);
     case 'applyStatus':
     case 'grantBuff':
     case 'damageMonster':
+    case 'setAtk':
       return isSelect(args) ? ids(faceUpMonsters(selectRows(ctx, args))) : null;
     case 'returnCardToHand':
     case 'bounceToHand':
@@ -259,6 +262,8 @@ const STEP_PROMPTS = {
   destroyTarget: 'Elige la carta que se destruye',
   destroyCards: 'Elige la carta que se destruye',
   destroyAndCopyEffect: 'Elige la carta que se destruye',
+  compileFromExtra: 'Elige la Compilación que compilas',
+  setAtk: 'Elige el monstruo cuyo Atk cambia',
   destroyAndGainVP: 'Elige la carta que se destruye',
   destroyUpToHeroCount: 'Elige las cartas que se destruyen',
   exileTarget: 'Elige la carta que se exilia',

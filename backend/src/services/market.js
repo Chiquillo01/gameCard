@@ -71,8 +71,9 @@ async function createListing(userId, { cardId, amount, price }) {
   if (!copies) throw new MarketError(400, 'La cantidad tiene que ser un número entero de copias.');
   const unitPrice = positiveInt(price, MAX_PRICE);
   if (!unitPrice) throw new MarketError(400, 'El precio tiene que ser un número entero de pixelcoins (mínimo 1).');
-  const card = await Card.findById(cardId).select('name');
+  const card = await Card.findById(cardId).select('name obtainable');
   if (!card) throw new MarketError(404, 'Carta no encontrada.');
+  if (card.obtainable === false) throw new MarketError(400, 'Esta carta no se puede vender: todavía no se puede conseguir.');
 
   const keep = copiesToKeep(await copiesInDecks(userId), cardId);
   // Takes the copies only if the player still has them to spare, in one atomic update.

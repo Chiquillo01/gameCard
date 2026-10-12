@@ -2,7 +2,8 @@ const { Schema, model } = require('mongoose');
 
 // Single source of truth for the "state" (banlist) default, so both the schema and anything
 // that builds a Card document by hand (e.g. the seed script) agree on the rarity fallback.
-const DEFAULT_STATE_BY_RARITY = { legendary: 1, epic: 2, rare: 3, common: 4 };
+// The per-rarity copy limit is a game rule (game/rules.js, from the database).
+const rarityLimit = (rarity) => (require('../../game/rules').rules().maxCopiesByRarity || {})[rarity];
 
 const cardSchema = new Schema(
   {
@@ -95,7 +96,7 @@ const cardSchema = new Schema(
       type: Number,
       required: true,
       default: function () {
-        return DEFAULT_STATE_BY_RARITY[this.rarity] ?? 3;
+        return rarityLimit(this.rarity) ?? 3;
       },
     },
     // Structured rules data for the game engine (backend/src/game) — replaces free-text `effect`
@@ -112,9 +113,15 @@ const cardSchema = new Schema(
       type: [String],
       default: [],
     },
+    // false: a card that exists to be played with but can't be got (no chest drops it, it can't be
+    // sold on the Market) — test cards, cards not released yet.
+    obtainable: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true },
 );
 
 const Card = model('Card', cardSchema);
-module.exports = { Card, DEFAULT_STATE_BY_RARITY };
+module.exports = { Card };

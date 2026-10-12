@@ -278,7 +278,40 @@ function disableAttacks(ctx, args) {
   ctx.state.attackBans[who] = ctx.state.turnNumber;
 }
 
+// "Compila un monstruo [filter] desde tu Mazo-C" (Avispa de Respaldo): the Compilaciones in the
+// player's Mazo-C that match and could be compiled right now.
+function compilableFromExtra(ctx, args) {
+  const { matchesCardFilter } = require('../filters');
+  const { compileInfo } = require('../compileInfo');
+  const pl = player(ctx.state, ctx.controllerIndex);
+  return pl.extra.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {}) && compileInfo(ctx.state, ctx.controllerIndex, id).ready);
+}
+
+// Compiles the picked one (the only one, if there's no choice) with the materials it suggests —
+// the cheapest that meet its recipe — and lets the player pick its zone.
+function compileFromExtra(ctx, args, targets) {
+  const candidates = compilableFromExtra(ctx, args);
+  const chosen = (targets || []).find((id) => candidates.includes(id)) || (candidates.length === 1 ? candidates[0] : null);
+  if (!chosen) {
+    log(ctx.state, 'No hay ninguna Compilación que se pueda compilar.');
+    return;
+  }
+  const { compileInfo } = require('../compileInfo');
+  const materials = compileInfo(ctx.state, ctx.controllerIndex, chosen).suggested;
+  const freeing = materials.filter((id) => player(ctx.state, ctx.controllerIndex).field.monsters.some((m) => m && m.instanceId === id));
+  require('../placement').requestPlacement(ctx.state, {
+    purpose: 'effectCompile',
+    controllerIndex: ctx.controllerIndex,
+    instanceId: chosen,
+    sourceInstanceId: chosen,
+    materials,
+    freeing,
+    prompt: `Elige dónde compilas ${getCard(cardIdFromInstance(chosen)).name}`,
+  });
+}
+
 module.exports = {
+  compileFromExtra,
   target,
   fairyLeaveBonus,
   afterOpponentSearch,
@@ -311,3 +344,4 @@ module.exports = {
 // Not a card action (every enumerable export here is registered as one): resolveTriggerChoice
 // calls it once the player has picked the support zone for a monster being equipped.
 Object.defineProperty(module.exports, 'equipFromChoice', { value: equipFromChoice, enumerable: false });
+Object.defineProperty(module.exports, 'compilableFromExtra', { value: compilableFromExtra, enumerable: false });

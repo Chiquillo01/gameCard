@@ -10,14 +10,15 @@ const { getCard } = require('./cardIndex');
 const { player, log, placeMonster, corrodedSlots, removeFromZone, findInstanceLocation } = require('./zones');
 const { cardIdFromInstance } = require('./deckUtils');
 
-const PURPOSES = ['token', 'effectSummon', 'takeControl', 'decompile'];
+const PURPOSES = ['token', 'effectSummon', 'takeControl', 'decompile', 'effectCompile'];
 
 const isPlacement = (pending) => !!pending && pending.kind === 'slot' && PURPOSES.includes(pending.purpose);
 
-function freeMonsterSlots(state, playerIndex) {
+// `freeing`: cards about to leave the field (a compilation's materials), whose zones count as free.
+function freeMonsterSlots(state, playerIndex, freeing = []) {
   const pl = player(state, playerIndex);
   const blocked = corrodedSlots(pl, 'monsters');
-  return pl.field.monsters.map((m, i) => (m === null && !blocked.includes(i) ? i : -1)).filter((i) => i >= 0);
+  return pl.field.monsters.map((m, i) => ((m === null || freeing.includes(m.instanceId)) && !blocked.includes(i) ? i : -1)).filter((i) => i >= 0);
 }
 
 // Queues a placement and settles whatever needs no choice.
@@ -34,7 +35,7 @@ function settlePlacements(state) {
   const queue = state.pendingTriggerChoices || [];
   while (isPlacement(queue[0])) {
     const pending = queue[0];
-    const slots = freeMonsterSlots(state, pending.controllerIndex);
+    const slots = freeMonsterSlots(state, pending.controllerIndex, pending.freeing || []);
     if (slots.length > 1) {
       pending.slots = slots;
       return;
@@ -67,6 +68,12 @@ const nameOf = (instanceId) => getCard(cardIdFromInstance(instanceId)).name;
 
 // Puts the card in `slot` and does what comes with it.
 function finishPlacement(state, pending, slot) {
+  // Avispa de Respaldo: the Compilación it brings out, with its materials, in the zone picked.
+  if (pending.purpose === 'effectCompile') {
+    const res = require('./summon').compileSummon(state, pending.controllerIndex, pending.instanceId, pending.materials, slot);
+    if (!res.ok) log(state, `No se pudo compilar ${nameOf(pending.instanceId)}.`);
+    return;
+  }
   const pl = player(state, pending.controllerIndex);
   switch (pending.purpose) {
     case 'token': {

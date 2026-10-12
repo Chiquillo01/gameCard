@@ -1,7 +1,7 @@
 const { getCard } = require('../cardIndex');
 const { player, opponentIndex, moveToZone, log, findInstanceLocation, removeFromZone, findEmptySlot, corrodedSlots, releaseEquipment, getFieldMonster, ownerOfInstance } = require('../zones');
 const { addStatus, setStatusDebuff, FREEZE, BURN, POISON } = require('../statuses');
-const { matchesFilter } = require('../filters');
+const { matchesFilter, matchesCardFilter } = require('../filters');
 const { cardIdFromInstance } = require('../deckUtils');
 const { checkWin, declareWin } = require('../outcome');
 const { negateCard, END_OF_TURN } = require('../negation');
@@ -109,7 +109,8 @@ function discardRandomCard(ctx, args) {
 function exileTarget(ctx, args, targets) {
   const { canAffect } = require('../targets');
   const { getEffectiveStats } = require('../effectEngine');
-  const temporary = END_OF_TURN.includes(args.duration);
+  const nextTurn = args.duration === 'endOfNextTurn';
+  const temporary = nextTurn || END_OF_TURN.includes(args.duration);
   ctx.lastTargetsAtk = 0;
   (targets || []).forEach((instanceId) => {
     const loc = findInstanceLocation(ctx.state, instanceId);
@@ -121,9 +122,10 @@ function exileTarget(ctx, args, targets) {
     moveToZone(ctx.state, instanceId, 'banished');
     if (temporary && isMonster && !String(instanceId).startsWith('token:')) {
       ctx.state.returnAtEndPhase = ctx.state.returnAtEndPhase || [];
-      ctx.state.returnAtEndPhase.push({ instanceId, ownerIndex: ownerOfInstance(instanceId) ?? loc.ownerIndex, position: entry.position });
+      ctx.state.returnAtEndPhase.push({ instanceId, ownerIndex: ownerOfInstance(instanceId) ?? loc.ownerIndex, position: entry.position, returnTurn: ctx.state.turnNumber + (nextTurn ? 1 : 0) });
     }
-    log(ctx.state, `${sourceName(ctx.state, instanceId)} es exiliada${temporary && isMonster ? ' hasta la Fase Final' : ''} (por ${ctxSource(ctx)}).`);
+    const until = nextTurn ? ' hasta el final del siguiente turno' : ' hasta la Fase Final';
+    log(ctx.state, `${sourceName(ctx.state, instanceId)} es exiliada${temporary && isMonster ? until : ''} (por ${ctxSource(ctx)}).`);
   });
 }
 
@@ -341,6 +343,8 @@ function buffTargets(ctx, args, targets) {
   const all = allFieldMonsters(ctx.state);
   if (targets && targets.length) return all.filter((m) => targets.includes(m.instanceId));
   if (args.target === 'self') return all.filter((m) => m.instanceId === ctx.sourceInstanceId);
+  // "El monstruo Compilación gana..." (Avispa de Respaldo used as a material).
+  if (args.target === 'compiled') return all.filter((m) => ctx.event && m.instanceId === ctx.event.compiledInstanceId);
   const enemies = player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean);
   if (args.target === 'allEnemyMonsters' || args.target === 'opponentMonsters' || args.scope === 'opponentField') return enemies;
   if (args.scope === 'column') return columnMonsters(ctx.state, ctx.sourceInstanceId);
@@ -453,6 +457,8 @@ function applyScaledBuff(ctx, args, targets) {
   let scaleBy;
   if (args.scope === 'equippedToSelf') {
     scaleBy = equipsOn(ctx.state, ctx.sourceInstanceId).length;
+  } else if (args.scope === 'ownGraveyard') {
+    scaleBy = player(ctx.state, ctx.controllerIndex).graveyard.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), filter)).length;
   } else {
     const pool = args.scope === 'field' ? allFieldMonsters(ctx.state) : args.scope === 'opponentField' ? enemyMonsters : controllerMonsters;
     const counted = pool.filter((m) => monsterMatches(m, filter) && !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId));

@@ -86,8 +86,10 @@ function runPhaseEntry(state) {
 // field now, in the position they left in. With no free zone they go to the Cementerio instead;
 // one that already left the Exilio some other way stays wherever it is.
 function returnExiled(state) {
-  const due = state.returnAtEndPhase || [];
-  state.returnAtEndPhase = [];
+  const all = state.returnAtEndPhase || [];
+  // "Hasta el final del siguiente turno" waits for that turn's Fase Final.
+  const due = all.filter((r) => (r.returnTurn ?? state.turnNumber) <= state.turnNumber);
+  state.returnAtEndPhase = all.filter((r) => !due.includes(r));
   due.forEach(({ instanceId, ownerIndex, position }) => {
     const owner = player(state, ownerIndex);
     if (!owner.banished.includes(instanceId)) return;

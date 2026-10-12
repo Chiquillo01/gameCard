@@ -223,6 +223,10 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
     if (args.from && eventArgs.from && args.from !== eventArgs.from) return false;
     if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
   }
+  if (eventName === 'effectActivated') {
+    if (args.excludeSelf && eventArgs.instanceId === m.instanceId) return false;
+    if (args.filter && !(eventCard && matchesCardFilter(eventCard, args.filter))) return false;
+  }
   if (eventName === 'onMonsterDestroyed') {
     if (args.target === 'self' && m.instanceId !== eventArgs.instanceId) return false;
     if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
@@ -237,6 +241,15 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
     if (!involved.some((id) => { const e = getFieldMonster(state, id); return e && matchesFilter(e, args.filter || {}); })) return false;
   }
   return true;
+}
+
+// A card's effect was activated (an Apoyo played, an effect used, a triggered effect run): "cada vez
+// que se active el efecto de un Avispa" (Avispa Reina). An effect that only reacts to this event
+// doesn't count as an activation itself — two of them would set each other off forever.
+function announceEffectActivated(state, instanceId, controllerIndex, effects = []) {
+  if (!instanceId || String(instanceId).startsWith('token:')) return;
+  if (effects.length && effects.every((e) => e && e.trigger && e.trigger.fn === 'effectActivated')) return;
+  fireTrigger(state, 'effectActivated', { instanceId, cardId: cardIdFromInstance(instanceId), controllerIndex });
 }
 
 // A card just reached its owner's Cementerio: its "cuando es enviada al Cementerio" effects get to
@@ -309,6 +322,7 @@ function runTriggered(state, ctx, effect, card, targets) {
     return false;
   }
   log(state, `Se activa el efecto de ${card.name}.`);
+  announceEffectActivated(state, ctx.sourceInstanceId, ctx.controllerIndex, [effect]);
   resolveActions({ ...ctx, costPaid: ctx.paidCards || [] }, effect, targets.filter((t) => !costTaken.includes(t)));
   return true;
 }
@@ -327,7 +341,7 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
   if (pending.kind === 'slot') {
     // A card's placement is checked against the zones free NOW — the board may have changed since
     // the choice was asked (another card landed while it waited).
-    const legal = require('./placement').isPlacement(pending) ? require('./placement').freeMonsterSlots(state, pending.controllerIndex) : pending.slots;
+    const legal = require('./placement').isPlacement(pending) ? require('./placement').freeMonsterSlots(state, pending.controllerIndex, pending.freeing || []) : pending.slots;
     if (!legal.includes(slot)) return { ok: false, reason: 'no-field-space' };
     state.pendingTriggerChoices.shift();
     if (pending.purpose === 'relocate') require('./effects/actions').relocateSelfFromChoice(state, pending, slot);
@@ -506,4 +520,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { announceSentToGraveyard, isOwnActivation, activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };
+module.exports = { announceEffectActivated, announceSentToGraveyard, isOwnActivation, activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };

@@ -74,7 +74,7 @@ function controlsMonster(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
   const filter = args.filter || { breed: args.breed, family: args.family, attribute: args.attribute, name: args.name };
   const count = args.count || 1;
-  return pl.field.monsters.filter((m) => m && !m.faceDown && matchesFilter(m, filter)).length >= count;
+  return pl.field.monsters.filter((m) => m && !m.faceDown && !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId) && matchesFilter(m, filter)).length >= count;
 }
 
 // "Si controlas [count] monstruo(s) [filter]" EXCLUDING the card whose own effect this is
@@ -209,6 +209,11 @@ function hasCardIn(ctx, args) {
   return ['graveyard', 'banished', 'hand'].some((z) => zones.includes(z) && pl[z].some((id) => named(cardIdFromInstance(id))));
 }
 
+// "Si no controlas monstruos" (Avispa de Batalla).
+function controlsNoMonsters(ctx) {
+  return player(ctx.state, ctx.controllerIndex).field.monsters.every((m) => !m);
+}
+
 // "Si tienes N cartas en tu Cementerio" (Doppelganger: 8).
 function graveyardCount(ctx, args) {
   return player(ctx.state, ctx.controllerIndex).graveyard.length >= (args.min || 1);
@@ -249,6 +254,7 @@ const registry = {
   hasCounter,
   notSameTurnSentToGraveyard,
   graveyardCount,
+  controlsNoMonsters,
   hasCardIn,
   isEquippedToRace,
 };

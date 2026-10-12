@@ -57,6 +57,7 @@ function addLink(state, { controllerIndex, sourceInstanceId, cardName, effects, 
   state.priorityPlayer = opponentIndex(controllerIndex);
   state.chainLastActionWasPass = false;
   log(state, `${player(state, controllerIndex).userId} activa ${cardName} (se abre una ventana para responder).`);
+  require('./effectEngine').announceEffectActivated(state, sourceInstanceId, controllerIndex, effects);
   // Lich: "Tu oponente pierde 5 VP cada vez que activa un efecto" (recomputeContinuous keeps the
   // tax on whoever it applies to).
   const pl = player(state, controllerIndex);
