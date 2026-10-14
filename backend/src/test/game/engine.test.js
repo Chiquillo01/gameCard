@@ -8,7 +8,7 @@ const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { attackAndResolve } = require('./chainHelpers');
 const { runBotTurn } = require('../../game/botAI');
-const { STARTING_PIXELS, PIXEL_INCOME_PER_TURN, PIXEL_CAP } = require('../../game/constants');
+const { STARTING_PIXELS, PIXEL_INCOME_PER_TURN, PIXEL_CAP, STARTING_HAND_SIZE } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -89,10 +89,10 @@ function advanceUntil(state, targetTurn, targetPhase) {
 }
 
 describe('Game engine', () => {
-  it('deals 6 cards to each player and starts turn 1 on the draw phase', async () => {
+  it('deals the starting hand (game rules) to each player and starts turn 1 on the draw phase', async () => {
     const state = await makeTestMatch();
-    expect(state.players[0].hand).toHaveLength(6);
-    expect(state.players[1].hand).toHaveLength(6);
+    expect(state.players[0].hand).toHaveLength(STARTING_HAND_SIZE);
+    expect(state.players[1].hand).toHaveLength(STARTING_HAND_SIZE);
     expect(state.turnPlayer).toBe(0);
     expect(state.phase).toBe('draw');
   });
@@ -222,8 +222,8 @@ describe('Game engine', () => {
   it('produces a redacted view that hides the opponent hand contents', async () => {
     const state = await makeTestMatch();
     const view = viewFor(state, 0);
-    expect(view.players[0].hand).toHaveLength(6);
+    expect(view.players[0].hand).toHaveLength(STARTING_HAND_SIZE);
     expect(view.players[1].hand).toBeUndefined();
-    expect(view.players[1].handCount).toBe(6);
+    expect(view.players[1].handCount).toBe(STARTING_HAND_SIZE);
   });
 });

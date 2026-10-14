@@ -1,6 +1,6 @@
 {
   "startingVp": 40,
-  "startingHandSize": 6,
+  "startingHandSize": 5,
   "startingPixels": 4,
   "pixelIncomePerTurn": 2,
   "pixelCap": 8,
