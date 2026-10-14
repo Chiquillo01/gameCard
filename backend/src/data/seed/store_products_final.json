@@ -1,21 +1,21 @@
 [
   {
     "name": "Ataque de las Bestias",
-    "description": "Contiene 6 cartas: 3 comunes, 2 raras (cada una con un 20% de probabilidad de ser épica) y 1 épica (con un 10% de probabilidad de ser legendaria).",
+    "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
     "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740301510/cofreADB1tcg_tgxzvw.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
     },
     "reward": {
-      "cards": 6,
+      "cards": 5,
       "pixelgems": 0
     },
     "category": "chest",
-    "expansion": "ADB",
+    "expansion": "AdB",
     "dropTable": [
       {
-        "count": 3,
+        "count": 2,
         "odds": {
           "common": 1
         }
@@ -23,36 +23,35 @@
       {
         "count": 2,
         "odds": {
-          "rare": 0.8,
-          "epic": 0.2
+          "rare": 1
         }
       },
       {
         "count": 1,
         "odds": {
-          "epic": 0.9,
-          "legendary": 0.1
+          "epic": 0.98,
+          "legendary": 0.02
         }
       }
     ]
   },
   {
     "name": "Introducción de Leyendas",
-    "description": "Contiene 6 cartas: 3 comunes, 2 raras (cada una con un 20% de probabilidad de ser épica) y 1 épica (con un 10% de probabilidad de ser legendaria).",
+    "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
     "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302806/cofreIDL1tcg_nqnn0e.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
     },
     "reward": {
-      "cards": 6,
+      "cards": 5,
       "pixelgems": 0
     },
     "category": "chest",
-    "expansion": "IDL",
+    "expansion": "IdL",
     "dropTable": [
       {
-        "count": 3,
+        "count": 2,
         "odds": {
           "common": 1
         }
@@ -60,36 +59,35 @@
       {
         "count": 2,
         "odds": {
-          "rare": 0.8,
-          "epic": 0.2
+          "rare": 1
         }
       },
       {
         "count": 1,
         "odds": {
-          "epic": 0.9,
-          "legendary": 0.1
+          "epic": 0.98,
+          "legendary": 0.02
         }
       }
     ]
   },
   {
     "name": "Coliseo de Guerreros",
-    "description": "Contiene 6 cartas: 3 comunes, 2 raras (cada una con un 20% de probabilidad de ser épica) y 1 épica (con un 10% de probabilidad de ser legendaria).",
+    "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
     "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
     },
     "reward": {
-      "cards": 6,
+      "cards": 5,
       "pixelgems": 0
     },
     "category": "chest",
-    "expansion": "CDG",
+    "expansion": "CdG",
     "dropTable": [
       {
-        "count": 3,
+        "count": 2,
         "odds": {
           "common": 1
         }
@@ -97,36 +95,71 @@
       {
         "count": 2,
         "odds": {
-          "rare": 0.8,
-          "epic": 0.2
+          "rare": 1
         }
       },
       {
         "count": 1,
         "odds": {
-          "epic": 0.9,
-          "legendary": 0.1
+          "epic": 0.98,
+          "legendary": 0.02
+        }
+      }
+    ]
+  },
+  {
+    "name": "Esperanza del Caos",
+    "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740301510/cofreADB1tcg_tgxzvw.png",
+    "price": {
+      "pixelcoins": 100,
+      "pixelgems": 10
+    },
+    "reward": {
+      "cards": 5,
+      "pixelgems": 0
+    },
+    "category": "chest",
+    "expansion": "EdC",
+    "dropTable": [
+      {
+        "count": 2,
+        "odds": {
+          "common": 1
+        }
+      },
+      {
+        "count": 2,
+        "odds": {
+          "rare": 1
+        }
+      },
+      {
+        "count": 1,
+        "odds": {
+          "epic": 0.98,
+          "legendary": 0.02
         }
       }
     ]
   },
   {
     "name": "Sombras del Bosque Encantado",
-    "description": "Contiene 6 cartas: 3 comunes, 2 raras (cada una con un 20% de probabilidad de ser épica) y 1 épica (con un 10% de probabilidad de ser legendaria).",
-    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302806/cofreIDL1tcg_nqnn0e.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
     },
     "reward": {
-      "cards": 6,
+      "cards": 5,
       "pixelgems": 0
     },
     "category": "chest",
     "expansion": "SBE",
     "dropTable": [
       {
-        "count": 3,
+        "count": 2,
         "odds": {
           "common": 1
         }
@@ -134,36 +167,35 @@
       {
         "count": 2,
         "odds": {
-          "rare": 0.8,
-          "epic": 0.2
+          "rare": 1
         }
       },
       {
         "count": 1,
         "odds": {
-          "epic": 0.9,
-          "legendary": 0.1
+          "epic": 0.98,
+          "legendary": 0.02
         }
       }
     ]
   },
   {
     "name": "Perdición del Arrecife Oculto",
-    "description": "Contiene 6 cartas: 3 comunes, 2 raras (cada una con un 20% de probabilidad de ser épica) y 1 épica (con un 10% de probabilidad de ser legendaria).",
-    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
     },
     "reward": {
-      "cards": 6,
+      "cards": 5,
       "pixelgems": 0
     },
     "category": "chest",
     "expansion": "PAO",
     "dropTable": [
       {
-        "count": 3,
+        "count": 2,
         "odds": {
           "common": 1
         }
@@ -171,36 +203,35 @@
       {
         "count": 2,
         "odds": {
-          "rare": 0.8,
-          "epic": 0.2
+          "rare": 1
         }
       },
       {
         "count": 1,
         "odds": {
-          "epic": 0.9,
-          "legendary": 0.1
+          "epic": 0.98,
+          "legendary": 0.02
         }
       }
     ]
   },
   {
     "name": "Nacimiento de la Magia",
-    "description": "Contiene 6 cartas: 3 comunes, 2 raras (cada una con un 20% de probabilidad de ser épica) y 1 épica (con un 10% de probabilidad de ser legendaria).",
-    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740301510/cofreADB1tcg_tgxzvw.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
     },
     "reward": {
-      "cards": 6,
+      "cards": 5,
       "pixelgems": 0
     },
     "category": "chest",
-    "expansion": "NDM",
+    "expansion": "NdM",
     "dropTable": [
       {
-        "count": 3,
+        "count": 2,
         "odds": {
           "common": 1
         }
@@ -208,23 +239,58 @@
       {
         "count": 2,
         "odds": {
-          "rare": 0.8,
-          "epic": 0.2
+          "rare": 1
         }
       },
       {
         "count": 1,
         "odds": {
-          "epic": 0.9,
-          "legendary": 0.1
+          "epic": 0.98,
+          "legendary": 0.02
         }
       }
     ]
   },
   {
-    "name": "Ganancia por Honor",
-    "description": "Cofre de edición especial con cartas muy poderosas para ser el rey de los Choques. Contiene 5 cartas: 2 comunes, 2 épicas y 1 épica (con un 10% de probabilidad de ser legendaria).",
-    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "name": "Descomposicion sin Fin",
+    "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740301510/cofreADB1tcg_tgxzvw.png",
+    "price": {
+      "pixelcoins": 100,
+      "pixelgems": 10
+    },
+    "reward": {
+      "cards": 5,
+      "pixelgems": 0
+    },
+    "category": "chest",
+    "expansion": "DsF",
+    "dropTable": [
+      {
+        "count": 2,
+        "odds": {
+          "common": 1
+        }
+      },
+      {
+        "count": 2,
+        "odds": {
+          "rare": 1
+        }
+      },
+      {
+        "count": 1,
+        "odds": {
+          "epic": 0.98,
+          "legendary": 0.02
+        }
+      }
+    ]
+  },
+  {
+    "name": "Ganancia y Honor",
+    "description": "Cofre edición especia que ofrece cartas muy poderosas para ser el rey de los Choques.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302806/cofreIDL1tcg_nqnn0e.png",
     "price": {
       "pixelcoins": 150,
       "pixelgems": 15
@@ -234,7 +300,7 @@
       "pixelgems": 0
     },
     "category": "spEdition",
-    "expansion": "GPH",
+    "expansion": "GyH",
     "dropTable": [
       {
         "count": 2,
@@ -259,21 +325,21 @@
   },
   {
     "name": "Ediocion Espacial Tokens",
-    "description": "Contiene 6 fichas (tokens) para disfrutar.",
-    "imageUrl": "assets/CardImg/cardplaceholdertcg.png",
+    "description": "Seis tokens para disfrutar.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740301510/cofreADB1tcg_tgxzvw.png",
     "price": {
       "pixelcoins": 30,
       "pixelgems": 3
     },
     "reward": {
-      "cards": 6,
+      "cards": 5,
       "pixelgems": 0
     },
     "category": "spEdition",
     "expansion": "EET",
     "dropTable": [
       {
-        "count": 6,
+        "count": 5,
         "odds": {
           "common": 1
         }
@@ -281,19 +347,100 @@
     ]
   },
   {
-    "name": "Tiempo Primitivo",
-    "description": "Mazo de estructura con 30 cartas de Licántropos: un pack económico para empezar a jugar con una sola compra.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738924646/licantropoalfatcg_oqsaaf.png",
+    "name": "Colmena Eterna",
+    "description": "Paquete de estructura que ofrece un pack economico para empezar ha jugar con la compra de una sola unidad.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740301510/cofreADB1tcg_tgxzvw.png",
     "price": {
       "pixelcoins": 400,
       "pixelgems": 400
     },
     "reward": {
-      "cards": 30,
+      "cards": 40,
       "pixelgems": 0
     },
     "category": "structure",
-    "expansion": "TP-ME",
+    "expansion": "CE",
+    "structureCards": [
+      {
+        "name": "Avispa gigante",
+        "amount": 4
+      },
+      {
+        "name": "Avispa Mutante",
+        "amount": 4
+      },
+      {
+        "name": "Avispa Rosa",
+        "amount": 3
+      },
+      {
+        "name": "Avispa de Obsidiana",
+        "amount": 2
+      },
+      {
+        "name": "Ciempiés Gigante",
+        "amount": 3
+      },
+      {
+        "name": "Ciempiés Eterno",
+        "amount": 2
+      },
+      {
+        "name": "Armadura de Insecto",
+        "amount": 3
+      },
+      {
+        "name": "Nido de Avispas",
+        "amount": 3
+      },
+      {
+        "name": "Enjambre de Avispas",
+        "amount": 2
+      },
+      {
+        "name": "Armadura del poder",
+        "amount": 2
+      },
+      {
+        "name": "Espíritu de batalla",
+        "amount": 2
+      },
+      {
+        "name": "Sacrificio memorable",
+        "amount": 2
+      },
+      {
+        "name": "Hechizo de volteo",
+        "amount": 2
+      },
+      {
+        "name": "Trampa de Madera",
+        "amount": 2
+      },
+      {
+        "name": "Relámpago",
+        "amount": 2
+      },
+      {
+        "name": "Tifón Místico",
+        "amount": 2
+      }
+    ]
+  },
+  {
+    "name": "Tiempo Primitivo",
+    "description": "Paquete de estructura que ofrece un pack economico para empezar ha jugar con la compra de una sola unidad.",
+    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740301510/cofreADB1tcg_tgxzvw.png",
+    "price": {
+      "pixelcoins": 400,
+      "pixelgems": 400
+    },
+    "reward": {
+      "cards": 40,
+      "pixelgems": 0
+    },
+    "category": "structure",
+    "expansion": "TP",
     "structureCards": [
       {
         "name": "Damarco, licántropo luchador",
@@ -301,23 +448,23 @@
       },
       {
         "name": "Licántropo Beta",
-        "amount": 2
+        "amount": 3
       },
       {
         "name": "Licántropo Cazador",
-        "amount": 2
+        "amount": 3
       },
       {
         "name": "Licántropo de Hielo",
-        "amount": 2
+        "amount": 3
       },
       {
         "name": "Licántropo Gigante",
-        "amount": 2
+        "amount": 3
       },
       {
         "name": "Licántropo Zombie",
-        "amount": 2
+        "amount": 3
       },
       {
         "name": "Gato del Destino",
@@ -325,7 +472,7 @@
       },
       {
         "name": "Bala de Plata",
-        "amount": 2
+        "amount": 3
       },
       {
         "name": "El Primer Infectado, padre de licántropos",
@@ -341,19 +488,19 @@
       },
       {
         "name": "Licántropo Alfa",
-        "amount": 2
+        "amount": 3
       },
       {
         "name": "Licántropo Mago",
-        "amount": 2
+        "amount": 3
       },
       {
         "name": "Licántropo, Bestia de Gévaudan",
-        "amount": 2
+        "amount": 3
       },
       {
         "name": "Hermandad de Licántropos",
-        "amount": 2
+        "amount": 3
       }
     ]
   },

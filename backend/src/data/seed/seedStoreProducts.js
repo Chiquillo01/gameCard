@@ -1,5 +1,5 @@
 // Loads the store catalog (chests, special editions, structure decks, pixelgem packs) into
-// MongoDB. Safe to re-run: products are upserted by `name`.
+// MongoDB. Safe to re-run: products are upserted by `name`, and ones no longer in the file removed.
 //
 // Usage:
 //   node src/data/seed/seedStoreProducts.js
@@ -24,6 +24,11 @@ async function seed() {
       setDefaultsOnInsert: true,
     });
   }
+
+  // The file is the whole catalog: a product no longer in it (renamed or retired) leaves the store.
+  // Past orders keep their own copy of the name and price, so nothing else depends on it.
+  const removed = await StoreProduct.deleteMany({ name: { $nin: products.map((p) => p.name) } });
+  if (removed.deletedCount) console.log(`Removed ${removed.deletedCount} products no longer in the catalog.`);
 
   const count = await StoreProduct.countDocuments();
   console.log(`Done. StoreProduct collection now has ${count} documents.`);
