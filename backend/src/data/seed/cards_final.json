@@ -3299,6 +3299,7 @@
     "expansion": "IdL",
     "effect": "En activación, selecciona una Compilación en el Campo:\n• Descompilala, y si lo haces, niega los efectos de los materiales invocados.",
     "invocationText": "Activación - 2 Píxel",
+    "state": 4,
     "number": 177,
     "activationCost": {
       "fn": "payPixels",
@@ -4140,6 +4141,7 @@
     "atk": 4,
     "def": 2,
     "level": 4,
+    "state": 2,
     "number": 215,
     "effectCodes": []
   },
@@ -5149,6 +5151,7 @@
     "expansion": "SBE",
     "effect": "Una vez por turno:\n• Baraja a tu Mazo 1 monstruo \"Bosque Oscuro\" de tu Cementerio o Exilio y, si lo haces, roba 1 carta.",
     "invocationText": "Activación - 2 Píxel",
+    "state": 4,
     "number": 266,
     "activationCost": {
       "fn": "payPixels",
@@ -5215,6 +5218,7 @@
     "expansion": "SBE",
     "effect": "Por cada monstruo que tu adversario Invoque:\n• Esta carta gana 1 raíz.\nEl monstruo equipado gana +1 de Vida por cada raíz en esta carta.",
     "invocationText": "Activación - 2 Píxel",
+    "state": 4,
     "number": 269,
     "activationCost": {
       "fn": "payPixels",
@@ -5318,6 +5322,7 @@
     "atk": 6,
     "def": 4,
     "level": 6,
+    "state": 2,
     "number": 274,
     "activationCost": {
       "fn": "compileFrom",
@@ -5365,6 +5370,7 @@
     "expansion": "SBE",
     "effect": "En activación:\n• Gana 30 VP.\nExilia esta carta del Cementerio si tu oponente tiene más PV que tú:\n• Gana 30 VP.",
     "invocationText": "Activación - 3 Píxel",
+    "state": 2,
     "number": 276,
     "activationCost": {
       "fn": "payPixels",
@@ -5406,6 +5412,7 @@
     "expansion": "SBE",
     "effect": "En activación:\n• Añade a tu Mano un monstruo \"Bosque Oscuro\" de tu Mazo o Cementerio, luego descarta una carta.\nUna vez por turno, si \"Hada del Bosque Oscuro\" está en el Campo, selecciona una carta en el Campo:\n• Destruyela.\nAl final del turno, si \"Hada del Bosque Oscuro\" está en el Campo:\n• Genera 1 Píxel.\nLos monstruos \"Bosque Oscuro\" ganan +2 de Atk y Vida.",
     "invocationText": "Activación - 4 Píxel",
+    "state": 1,
     "number": 278,
     "activationCost": {
       "fn": "payPixels",
@@ -5560,6 +5567,7 @@
     "expansion": "SBE",
     "effect": "En activación, selecciona un monstruo en el Campo:\n• Destruye ese monstruo, y si lo haces, genera 1 píxel por cada nivel que tenga el monstruo.",
     "invocationText": "Activación - sacrifica 1 Planta.",
+    "state": 3,
     "number": 284,
     "effectCodes": []
   },
@@ -5872,6 +5880,7 @@
     "expansion": "TP",
     "effect": "Si tu adversario activa el efecto que Invoca un monstruo al Campo y tú controlas un Licántropo en el Campo:\n• Niega ese efecto y destruye la carta.",
     "invocationText": "Activación - 2 Píxel",
+    "state": 4,
     "number": 298,
     "activationCost": {
       "fn": "payPixels",
@@ -6043,6 +6052,7 @@
     "expansion": "TP",
     "effect": "En activación:\n• Agrega a la Mano una carta Simple del Mazo.\nUna vez por turno declara el nombre de un Monstruo Sin Efecto: \n• Si tienes el Monstruo mencionado en el Mazo o Cementerio, invocalo de forma especial.",
     "invocationText": "Activación - 3 Píxel",
+    "state": 2,
     "number": 304,
     "activationCost": {
       "fn": "payPixels",
@@ -6092,6 +6102,7 @@
     "atk": 3,
     "def": 8,
     "level": 5,
+    "state": 3,
     "number": 306,
     "activationCost": {
       "fn": "compileFrom",
@@ -6210,6 +6221,7 @@
     "expansion": "TP",
     "effect": "En activación:\n• Invoca especial un Monstruo Sin Efecto del Mazo en posición de Defensa.",
     "invocationText": "Activación - 1 Píxel",
+    "state": 3,
     "number": 311,
     "activationCost": {
       "fn": "payPixels",

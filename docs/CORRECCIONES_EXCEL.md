@@ -31,7 +31,7 @@ Además hay filas vacías con nombre «???»: 79-100, 120-130, 229, 253-259 y 31
 
 ## 3. state (banlist)
 
-Sin state (la BD usa el de su rareza): 177 Des - Compilación, 215 Sunne, Princesa Solar, 266 Pantano del Bosque Oscuro, 269 Raíz Centenaria, 274 Guardián del Bosque Oscuro, 276 Extensor de Vida, 278 El Bosque Oscuro, 284 El poder de las plantas, 298 Barrida de Licántropos, 304 Búsqueda Normal, 306 Licántropo Guardián, 311 Llamada Simple.
+Ya añadido en la BD según su rareza (pon el mismo valor en el Excel): 177 Des - Compilación 4, 215 Sunne, Princesa Llama 2, 266 Pantano del Bosque Oscuro 4, 269 Raíz Centenaria 4, 274 Guardián del Bosque Oscuro 2, 276 Extensor de Vida 2, 278 El Bosque Oscuro 1, 284 El poder de las plantas 3, 298 Barrida de Licántropos 4, 304 Búsqueda Normal 2, 306 Licántropo Guardián 3, 311 Llamada Simple 3.
 
 State distinto del normal de su rareza (¿a propósito?):
 
