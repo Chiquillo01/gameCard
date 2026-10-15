@@ -9,7 +9,7 @@ const RARITY_ORDER = ['common', 'rare', 'epic', 'legendary'];
 // but a "type" (a card's breed, e.g. "Dragón") has dozens of possible values and grows as new
 // cards are added, so its options come from `availableTypes` (whatever's actually in the
 // player's collection right now) instead of a list that would just go stale again.
-const FilterMenu = ({ filters, onFilterChange, onClearFilters, availableCategories = [], availableTypes = [], availableAttributes = [], availableFamilies = [] }) => {
+const FilterMenu = ({ filters, onFilterChange, onClearFilters, availableCategories = [], availableTypes = [], availableAttributes = [], availableFamilies = [], availableExpansions = [] }) => {
   const categoryOptions = availableCategories.length
     ? availableCategories
     : Object.keys(CATEGORY_LABELS);
@@ -89,6 +89,21 @@ const FilterMenu = ({ filters, onFilterChange, onClearFilters, availableCategori
           {rarityOptions.map((key) => (
             <option key={key} value={key}>
               {RARITY_LABELS[key]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className={styles.filterSection}>
+        <h5>Edición</h5>
+        <select
+          value={filters.expansion}
+          onChange={(e) => onFilterChange('expansion', e.target.value)}
+          className={styles.select}
+        >
+          <option value=''>Todas</option>
+          {availableExpansions.map(({ code, name }) => (
+            <option key={code} value={code}>
+              {name}
             </option>
           ))}
         </select>
