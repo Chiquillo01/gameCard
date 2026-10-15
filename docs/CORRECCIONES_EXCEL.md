@@ -23,7 +23,7 @@ Además hay filas vacías con nombre «???»: 79-100, 120-130, 229, 253-259 y 31
 |---|---|---|---|
 | 311 / 312 | Llamada Simple | Dos cartas con el mismo nombre y efectos distintos | Renombrar una |
 | 118 / 119 | Banshee / Mimeto | Filas sueltas repetidas (solo imagen y descripción) bajo las cartas 113 y 102. Mimeto dice Raro en una y Común en la otra | Pasar la imagen/descripción a la fila buena (113 / 102) y borrar 118-119 |
-| 104 | Slime | En `text.invocation` está la descripción de un licántropo | Poner `-` |
+| 104, 113, 132, 137, 174, 238 | Slime, Banshee, Héroe Silencioso, Héroe Corrupto, Valkiria, Gigante de Rocas | La descripción empieza y termina con comillas | Quitarlas (en la BD ya están quitadas) |
 | 290 | Tarasca, el Titán del Reino | Compilación sin receta, sin breed y sin atributo | Completar |
 | 277 | Raiz Asfixiante | Soporte sin coste (`-`) | Poner «Activación - …» |
 | 50 | Orco Jefe | Sin efecto | Completar o «Monstruo sin efecto.» |
