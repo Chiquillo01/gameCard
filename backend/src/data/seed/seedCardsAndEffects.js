@@ -43,23 +43,33 @@ function withDefaults(Model, data) {
 
 // The sheet can renumber cards. Before upserting by `number`, every existing card document moves to
 // the number its name (or a former name, card_renames_final.json) has now, keeping its _id — decks
-// and collections point at it. A document whose card is no longer in the file is parked on a
+// and collections point at it. Two cards can share a name (each keeps its number when it's one of
+// that name's; a stray one takes a free one). A document whose card is no longer in the file is parked on a
 // negative number so it can't be overwritten by a new card; with --prune it is deleted instead,
 // together with its copies in collections, decks and the Market.
 async function renumberByName(cards, renames, { prune = false } = {}) {
-  const target = new Map(cards.map((c) => [c.name, c.number]));
+  const numbersOf = new Map();
+  cards.forEach((c) => numbersOf.set(c.name, [...(numbersOf.get(c.name) || []), c.number]));
   Object.entries(renames).forEach(([now, before]) => before.forEach((old) => {
-    if (!target.has(old)) target.set(old, target.get(now));
+    if (!numbersOf.has(old)) numbersOf.set(old, numbersOf.get(now));
   }));
   const docs = await Card.find({}, { name: 1, number: 1 }).lean();
-  const kept = docs.filter((d) => target.has(d.name));
-  const gone = docs.filter((d) => !target.has(d.name));
-  const moving = kept.filter((d) => d.number !== target.get(d.name));
+  const kept = docs.filter((d) => numbersOf.has(d.name));
+  const gone = docs.filter((d) => !numbersOf.has(d.name));
+  const taken = new Set(kept.filter((d) => numbersOf.get(d.name).includes(d.number)).map((d) => d.number));
+  const target = new Map();
+  const moving = kept.filter((d) => !numbersOf.get(d.name).includes(d.number));
+  moving.forEach((d) => {
+    const free = numbersOf.get(d.name).find((n) => !taken.has(n));
+    if (free === undefined) throw new Error(`More "${d.name}" documents in the database than in cards_final.json.`);
+    taken.add(free);
+    target.set(d._id.toString(), free);
+  });
   const parking = gone.filter((d) => d.number > 0);
   if (moving.length || parking.length) {
     // Two steps through negative numbers, so no two documents ever share one (it's unique).
     await Card.bulkWrite([...moving, ...parking].map((d, i) => ({ updateOne: { filter: { _id: d._id }, update: { $set: { number: -1 - i } } } })));
-    await Card.bulkWrite(moving.map((d) => ({ updateOne: { filter: { _id: d._id }, update: { $set: { number: target.get(d.name) } } } })));
+    await Card.bulkWrite(moving.map((d) => ({ updateOne: { filter: { _id: d._id }, update: { $set: { number: target.get(d._id.toString()) } } } })));
     if (moving.length) console.log(`Renumbered ${moving.length} card(s).`);
   }
   if (!gone.length) return;

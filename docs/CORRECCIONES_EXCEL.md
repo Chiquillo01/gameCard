@@ -4,15 +4,13 @@ Revisión del 15-10-2026. Número = columna `number`.
 
 ## 1. Bloquean la carga (estas cartas NO están en la BD)
 
+Ya corregidas y cargadas: 31 Grover, el Goblin Guardián, 52 Orco Conjurador, 261 Búho del bosque oscuro y 306 Licántropo Guardián.
+
 | Nº | Carta | Qué falta |
 |---|---|---|
-| 31 | Grover, el Goblin Guardián | Atk, Vida y Nivel (`-`) |
-| 52 | Orco Conjurador | Atk, Vida y Nivel (`-`) |
 | 196 | Grifo | Atk, Vida, Nivel y efecto |
 | 197 | Hipogrifo | Atk, Vida, Nivel y efecto |
 | 198 | Mantícora | Atk, Vida, Nivel y efecto |
-| 261 | Búho del bosque oscuro | Atk, Vida y Nivel (vacíos) |
-| 306 | Licántropo Guardián | Atk, Vida y Nivel (`-`) |
 | 313 | Licántropo Albino | Rareza, Atk, Vida, Nivel, efecto y state |
 | 117 | ??? (Reino, efecto de Pasto de Huesos) | Nombre |
 | 289 | ?? (Veloz, sacrifica 1 Planta) | Nombre — y su efecto es casi el mismo que el 284 «El poder de las plantas» |
@@ -107,6 +105,7 @@ Los efectos buscan por nombre: si no coincide, el efecto no encuentra la carta.
 | 1 | LenguAcida | 2 Dragónes → 2 Dragones |
 | 301 | Cadejo | Monstuos → Monstruos |
 | 17 | Sky | Añada → Añade |
+| 306 | Licántropo Guardián | «campodel» → campo del; «Destruyelas» → Destrúyelas |
 
 **Términos mezclados (unificar):**
 

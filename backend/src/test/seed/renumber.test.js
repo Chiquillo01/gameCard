@@ -33,6 +33,13 @@ describe('renumberByName', () => {
     expect(await Card.findOne({ number: 3 })).toBeNull(); // free for the new card
   });
 
+  it('handles two cards with the same name', async () => {
+    const [x, y] = await Card.insertMany([card('Llamada', 1), card('Llamada', 5)]);
+    await renumberByName([card('Llamada', 1), card('Llamada', 2)], {});
+    expect((await Card.findById(x._id)).number).toBe(1);
+    expect((await Card.findById(y._id)).number).toBe(2);
+  });
+
   it('keeps a card that is gone aside, and deletes it (and its copies) only with prune', async () => {
     const [a, gone] = await Card.insertMany([card('A', 1), card('Gone', 2)]);
     await UserCollection.create({ userId: owner, cards: [{ cardId: a._id, amount: 1 }, { cardId: gone._id, amount: 2 }] });

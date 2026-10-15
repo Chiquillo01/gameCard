@@ -692,6 +692,40 @@
     ]
   },
   {
+    "attribute": "Tierra",
+    "description": "-",
+    "category": "fusion",
+    "effectCodes": [],
+    "name": "Grover, el Goblin Guardián",
+    "type": "Goblin",
+    "breed": "Goblin",
+    "family": "Grokkar",
+    "rarity": "common",
+    "expansion": "CdG",
+    "effect": "Esta carta no puede ser destruida en Batalla.\nEsta carta puede atacar en Posición de Defensa.",
+    "invocationText": "Compilación - \"Grover, el Goblin\" + \"Goblin Guardián\"",
+    "atk": 1,
+    "def": 7,
+    "level": 5,
+    "state": 4,
+    "number": 31,
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "count": 1,
+            "name": "Grover, el Goblin"
+          },
+          {
+            "count": 1,
+            "name": "Goblin Guardián"
+          }
+        ]
+      }
+    }
+  },
+  {
     "name": "Goblin Reptante",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736584950/trasgoreptantetcg_ksyyvi.png",
     "attribute": "Tierra",
@@ -1125,6 +1159,36 @@
     "effectCodes": [
       "ORCO_DARDOS_POISON"
     ]
+  },
+  {
+    "attribute": "Tierra",
+    "description": "-",
+    "category": "fusion",
+    "effectCodes": [],
+    "name": "Orco Conjurador",
+    "type": "Orco",
+    "breed": "Orco",
+    "family": "Grokkar",
+    "rarity": "rare",
+    "expansion": "CdG",
+    "effect": "Los monstruos de tu adversario no pueden ser destruidos en batalla.\nTodos los monstruos que no sean Orco en el Campo cambian a Posición de Ataque.",
+    "invocationText": "Compilación - 2 Orco",
+    "atk": 7,
+    "def": 5,
+    "level": 5,
+    "state": 4,
+    "number": 52,
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "count": 2,
+            "breed": "Orco"
+          }
+        ]
+      }
+    }
   },
   {
     "name": "Grover, el Goblin Ardiente",
@@ -4965,6 +5029,36 @@
     ]
   },
   {
+    "attribute": "Viento",
+    "description": "-",
+    "category": "fusion",
+    "effectCodes": [],
+    "name": "Búho del bosque oscuro",
+    "type": "Bestia Alada",
+    "breed": "Bestia Alada",
+    "family": "Bestia",
+    "rarity": "common",
+    "expansion": "SBE",
+    "effect": "Puedes exiliar esta carta en tu Cementerio:\n• Devuelve al Mazo hasta 3 monstruos \"Bosque Oscuro\" desde el Cementerio.",
+    "invocationText": "Compilación - 2 \"Bosque Oscuro\"",
+    "atk": 5,
+    "def": 6,
+    "level": 5,
+    "state": 4,
+    "number": 261,
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "count": 2,
+            "nameContains": "Bosque Oscuro"
+          }
+        ]
+      }
+    }
+  },
+  {
     "name": "Carnivora Come Hombres",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736417040/carnivoracomehumanostcg_goraew.png",
     "attribute": "Natura",
@@ -5962,6 +6056,39 @@
     "effectCodes": [
       "HIPERTRICOSIS_SEARCH"
     ]
+  },
+  {
+    "attribute": "Tierra",
+    "description": "-",
+    "category": "fusion",
+    "effectCodes": [],
+    "name": "Licántropo Guardián",
+    "type": "Licano",
+    "breed": "Licano",
+    "family": "Bestia",
+    "rarity": "rare",
+    "expansion": "TP",
+    "effect": "Una vez por turno selecciona dos cartas en el campodel oponente: \n• Destruyelas.",
+    "invocationText": "Compilación - \"Licántropo Beta\" + 2 Licano",
+    "atk": 3,
+    "def": 8,
+    "level": 5,
+    "number": 306,
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "count": 1,
+            "name": "Licántropo Beta"
+          },
+          {
+            "count": 2,
+            "breed": "Licano"
+          }
+        ]
+      }
+    }
   },
   {
     "name": "Licántropo Alfa",
