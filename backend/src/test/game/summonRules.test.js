@@ -236,12 +236,15 @@ describe('Effect values follow the card text', () => {
 });
 
 describe('Phase-timed effects', () => {
-  it('Bálor hits the rival for 3 only in the standby phase, once per turn', async () => {
-    const { state, inHand } = await makeMatch(['Bálor', 'Kraken']);
+  it('Bálor puts QUEMADURA on a rival monster in the standby phase', async () => {
+    const { state, inHand } = await makeMatch(['Bálor', 'Kraken'], ['Kraken']);
     const { placeMonster } = require('../../game/zones');
+    const { hasStatus } = require('../../game/statuses');
     placeMonster(state, inHand('Bálor'), 0, { position: 'attack' });
+    const kraken = state.players[1].hand[0];
+    placeMonster(state, kraken, 1, { position: 'attack' });
     while (state.turnNumber === 1 && state.phase !== 'end') applyAction(state, 0, { type: 'ADVANCE_PHASE' });
-    expect(state.players[1].vp).toBe(STARTING_VP - 3);
+    expect(hasStatus(state, kraken, 'Quemadura')).toBe(true);
   });
 
 });

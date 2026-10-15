@@ -214,9 +214,14 @@ function controlsNoMonsters(ctx) {
   return player(ctx.state, ctx.controllerIndex).field.monsters.every((m) => !m);
 }
 
-// "Si tienes N cartas en tu Cementerio" (Doppelganger: 8).
+// "Si tienes N cartas en tu Cementerio" (Doppelganger: 8). `monsters`/`filter` count only those cards,
+// and `player: 'both'` asks it of both players (Deva: "los dos jugadores tienen como mínimo 3
+// monstruos en Cementerio").
 function graveyardCount(ctx, args) {
-  return player(ctx.state, ctx.controllerIndex).graveyard.length >= (args.min || 1);
+  const who = args.player === 'both' ? [0, 1] : [args.player === 'opponent' ? opponentIndex(ctx.controllerIndex) : ctx.controllerIndex];
+  return who.every((i) => player(ctx.state, i).graveyard
+    .map((id) => getCard(cardIdFromInstance(id)))
+    .filter((card) => (!args.monsters || ['monster', 'fusion'].includes(card.category)) && (!args.filter || matchesCardFilter(card, args.filter))).length >= (args.min || 1));
 }
 
 // "Excepto el turno que fue enviada al Cementerio".

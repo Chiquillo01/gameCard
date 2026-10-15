@@ -421,7 +421,12 @@ function millDeck(ctx, args) {
 function grantExtraAttack(ctx, args) {
   const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
   if (!m) return;
-  const amount = args.perMaterial ? (m.materials || []).length : (args.amount || 1);
+  const { hasStatus } = require('../statuses');
+  const enemies = player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean);
+  const amount = args.perMaterial ? (m.materials || []).length
+    : args.perEnemyWithStatus ? enemies.filter((e) => hasStatus(ctx.state, e.instanceId, args.perEnemyWithStatus)).length
+      : (args.amount || 1);
+  if (!amount) return;
   if (isContinuous(ctx)) {
     m.extraAttacksContinuous = (m.extraAttacksContinuous || 0) + amount;
     return;

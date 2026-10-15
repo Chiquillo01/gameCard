@@ -1235,7 +1235,7 @@ function humanizeReason(reason) {
     'monster-not-found': 'No se encontró ese monstruo.',
     'not-battle-phase': 'Solo puedes atacar en la fase de batalla.',
     'must-target-a-monster': 'El rival tiene monstruos: debes elegir uno como objetivo.',
-    'must-attack-strongest': 'Poder de las Plantas: solo puedes atacar al monstruo con más Ataque del rival.',
+    'must-attack-strongest': 'Un efecto del rival te obliga a atacar a su monstruo más fuerte.',
     'not-your-turn': 'No es tu turno.',
     'not-in-graveyard': 'Esa carta no está en el cementerio.',
     'not-in-exile': 'Esa carta no está en el exilio.',

@@ -1,8 +1,8 @@
-// The four test Plantas (SBE): their effects work, and they can't be got.
+// The Plantas test cards (SBE): their effects work as the current card texts say.
 const { connectDB, disconnectDB } = require('../../mongo/connection');
 const { applyAction } = require('../../game/engine');
 const { recomputeContinuous } = require('../../game/effectEngine');
-const { seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
+const { seedCatalog, makeDuel, toHand, onField, toPhase, passAll, monster } = require('./engineHelpers');
 const { placePending } = require('./chainHelpers');
 
 beforeAll(async () => {
@@ -42,57 +42,54 @@ describe('Clionne, Dama Ramificada del Bosque', () => {
 });
 
 describe('Grook, el Árbol Guardián', () => {
-  it('digs the top 3 cards and adds a Planta monster among them (the player picks); nothing found is fine', async () => {
+  it('once per turn, +1 Vida to a Planta monster on its own side (the player picks; itself too)', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const grook = await onField(state, 0, 'Grook, el Árbol Guardián');
-    const deep = await toDeckTop(state, 0, 'Ent'); // 4th from the top: not reached
-    const cactus = await toDeckTop(state, 0, 'Cactus Violento');
-    await toDeckTop(state, 0, 'Orco Guerrero');
-    const espora = await toDeckTop(state, 0, 'Espora Venenosa');
-    const ask = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'GROOK_EXCAVATE', sourceInstanceId: grook });
+    const ent = await onField(state, 0, 'Ent');
+    await onField(state, 0, 'Orco Guerrero'); // not a Planta
+    await onField(state, 1, 'Cactus Violento'); // a Planta, but the rival's
+    const grow = (targets) => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'GROOK_PLANT_GROW', sourceInstanceId: grook, targets });
+    const ask = grow();
     expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
-    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([cactus, espora].sort());
-    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'GROOK_EXCAVATE', sourceInstanceId: grook, targets: [cactus] }).ok).toBe(true);
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([grook, ent].sort());
+    const vida = monster(state, ent).baseDef;
+    expect(grow([ent]).ok).toBe(true);
     passAll(state);
-    expect(state.players[0].hand).toContain(cactus);
-    expect(state.players[0].deck).toContain(deep);
-    expect(state.players[0].deck[0]).toBe(espora); // the rest stay where they were
-
-    const other = await makeDuel();
-    toPhase(other, 'main1', 0);
-    const grook2 = await onField(other, 0, 'Grook, el Árbol Guardián');
-    const hand = other.players[0].hand.length;
-    expect(applyAction(other, 0, { type: 'ACTIVATE_EFFECT', effectId: 'GROOK_EXCAVATE', sourceInstanceId: grook2 }).ok).toBe(true); // a Mazo of Krakens
-    passAll(other);
-    expect(other.players[0].hand).toHaveLength(hand);
+    recomputeContinuous(state);
+    expect(monster(state, ent).baseDef).toBe(vida + 1);
+    expect(grow([ent])).toMatchObject({ ok: false, reason: 'once-per-turn' });
   });
 });
 
 describe('Poder de las Plantas', () => {
-  it('the rival can only attack the strongest monster', async () => {
+  it('the rival can only attack the monster with the most Vida', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 1);
     const poder = await toHand(state, 1, 'Poder de las Plantas');
     expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: poder }).ok).toBe(true);
     passAll(state);
-    const weak = await onField(state, 1, 'Slime');
-    const strong = await onField(state, 1, 'Orco Guerrero');
+    const tough = await onField(state, 1, 'Ent');
+    const other = await onField(state, 1, 'Slime');
+    monster(state, tough).baseDef = 9;
+    monster(state, tough).baseAtk = 1;
+    monster(state, other).baseDef = 1;
+    monster(state, other).baseAtk = 9;
     const attacker = await onField(state, 0, 'Gigante de Fuego');
     recomputeContinuous(state);
     toPhase(state, 'battle', 0);
     const declare = (target) => applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: attacker, targetInstanceId: target });
-    expect(declare(weak)).toMatchObject({ ok: false, reason: 'must-attack-strongest' });
+    expect(declare(other)).toMatchObject({ ok: false, reason: 'must-attack-strongest' });
     expect(declare(null)).toMatchObject({ ok: false });
-    expect(declare(strong).ok).toBe(true);
+    expect(declare(tough).ok).toBe(true);
   });
 });
 
-describe('Renovación de Vida', () => {
-  it('summons a Planta from the hand; from the Cementerio it shuffles 2 Plantas back and draws', async () => {
+describe('Renovación de Vida.', () => {
+  it('summons a Planta from the hand, and needs one there', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
-    const card = await toHand(state, 0, 'Renovación de Vida');
+    const card = await toHand(state, 0, 'Renovación de Vida.');
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card })).toMatchObject({ ok: false, reason: 'no-legal-target' });
     const ent = await toHand(state, 0, 'Ent');
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card }).ok).toBe(true);
@@ -100,17 +97,5 @@ describe('Renovación de Vida', () => {
     placePending(state);
     expect(monster(state, ent)).toBeDefined();
     expect(state.players[0].graveyard).toContain(card);
-
-    state.graveyardTurn[card] = state.turnNumber - 1;
-    const a = await toGraveyard(state, 0, 'Cactus Violento');
-    const fromGrave = (targets) => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'RENOVACION_VIDA_GY_SHUFFLE_DRAW', sourceInstanceId: card, targets });
-    expect(fromGrave([])).toMatchObject({ ok: false, reason: 'no-legal-target' }); // only one Planta there
-    const b = await toGraveyard(state, 0, 'Espora Venenosa');
-    const hand = state.players[0].hand.length;
-    expect(fromGrave([]).ok).toBe(true);
-    passAll(state);
-    expect(state.players[0].deck).toEqual(expect.arrayContaining([a, b]));
-    expect(state.players[0].banished).toContain(card);
-    expect(state.players[0].hand).toHaveLength(hand + 1);
   });
 });

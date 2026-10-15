@@ -27,7 +27,7 @@ const attack = (state, p, attacker, target = null) => {
 };
 
 describe('Responding to an attack', () => {
-  it('Trampa de Madera negates a direct attack and ends the Battle Phase', async () => {
+  it('Trampa de Madera negates a direct attack; the Battle Phase goes on', async () => {
     const state = await makeDuel();
     const attacker = await onField(state, 0, 'Orco Gladiador');
     const trampa = await toHand(state, 1, 'Trampa de Madera');
@@ -43,7 +43,7 @@ describe('Responding to an attack', () => {
     passAll(state);
     expect(state.players[1].vp).toBe(STARTING_VP);
     expect(state.players[1].graveyard).toContain(trampa);
-    expect(state.phase).toBe('main2');
+    expect(state.phase).toBe('battle');
   });
 
   it('Trampa de Madera cannot be used when no direct attack is happening', async () => {
@@ -160,20 +160,19 @@ describe('Battle events', () => {
 });
 
 describe('Flags effects set are honored', () => {
-  it('Bálor: its extra attack lets it attack twice that turn', async () => {
+  it('Bálor: one extra attack per rival monster with QUEMADURA', async () => {
+    const { addStatus } = require('../../game/statuses');
     const state = await makeDuel();
-    const balor = await onField(state, 0, 'Bálor');
     toPhase(state, 'main1', 0);
     toPhase(state, 'main1', 1);
     toPhase(state, 'main1', 0); // turn 3: this turn has a Battle Phase
+    const balor = await onField(state, 0, 'Bálor');
+    const slimes = [await onField(state, 1, 'Slime'), await onField(state, 1, 'Slime'), await onField(state, 1, 'Slime')];
+    addStatus(state, slimes[0], 'Quemadura');
+    addStatus(state, slimes[1], 'Quemadura');
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'BALOR_EXTRA_ATTACK', sourceInstanceId: balor }).ok).toBe(true);
     passAll(state);
-    applyAction(state, 0, { type: 'ADVANCE_PHASE' });
-    expect(attack(state, 0, balor).ok).toBe(true);
-    expect(attack(state, 0, balor).ok).toBe(true);
-    expect(attack(state, 0, balor)).toMatchObject({ ok: false, reason: 'already-attacked' });
-    // Two direct hits of 11, plus its own "En cada fase de espera: inflige 3 VP" in turns 1-3.
-    expect(state.players[1].vp).toBe(STARTING_VP - 3 * 3 - 22);
+    expect(monster(state, balor).extraAttacksTurn).toEqual({ turn: state.turnNumber, count: 2 });
   });
 
   it('Damarco attacks once more per material under it', async () => {

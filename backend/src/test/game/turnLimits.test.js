@@ -76,7 +76,8 @@ describe('"Una vez por turno" is tracked per card copy, not per card name', () =
   it('lets a second copy of Enjambre de Avispas be played after the first, in the same turn', async () => {
     const { state, inHand } = await makeMatch(['Enjambre de Avispas', 'Enjambre de Avispas', 'Kraken']);
     toMain1(state);
-    state.players[0].pixelcoins = 6;
+    const cost = cards.find((c) => c.name === 'Enjambre de Avispas').activationCost.args.amount;
+    state.players[0].pixelcoins = 2 * cost + 1;
     // Something for each copy's search to find.
     const avispa = await Card.findOne({ name: 'Avispa Rosa' }).lean();
     const [a1, a2] = [`0:${avispa._id}:a1`, `0:${avispa._id}:a2`];
@@ -88,6 +89,6 @@ describe('"Una vez por turno" is tracked per card copy, not per card name', () =
     passChain(state);
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: second, targets: [a2] })).toMatchObject({ ok: true });
     passChain(state);
-    expect(state.players[0].pixelcoins).toBe(6 - 4);
+    expect(state.players[0].pixelcoins).toBe(1);
   });
 });

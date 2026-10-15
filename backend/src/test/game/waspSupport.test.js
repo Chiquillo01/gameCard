@@ -139,8 +139,10 @@ describe('Cards that cannot be obtained', () => {
     const { createListing } = require('../../services/market');
     const reina = await Card.findOne({ name: 'Avispa Reina' }).lean();
     expect(reina.obtainable).toBe(false);
-    const drawn = await drawChest({ expansion: 'SBE', dropTable: [{ count: 3, odds: { common: 1 } }, { count: 1, odds: { legendary: 1 } }] });
-    expect(drawn).toBeNull(); // SBE has no obtainable card yet
+    const table = [{ count: 20, odds: { common: 1, rare: 1, epic: 1, legendary: 1 } }];
+    const drawn = await drawChest({ expansion: reina.expansion, dropTable: table });
+    expect(drawn.length).toBe(20);
+    expect(drawn.filter((c) => c.obtainable === false)).toEqual([]);
     await expect(createListing('64b000000000000000000001', { cardId: reina._id, amount: 1, price: 5 })).rejects.toMatchObject({ status: 400 });
   });
 });

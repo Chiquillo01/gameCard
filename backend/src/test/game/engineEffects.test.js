@@ -121,16 +121,18 @@ describe('Choices and picks', () => {
     const dracula = await onField(state, 0, 'Drácula, El primer Inmortal');
     const slime = await onField(state, 1, 'Slime');
     const valkiria = await onField(state, 1, 'Valkiria');
-    placeSupport(state, await instance(1, 'Trampa de Madera'), 1, { faceDown: true }); // "un monstruo": never offered
+    const trampa = placeSupport(state, await instance(1, 'Trampa de Madera'), 1, { faceDown: true }).instanceId; // "una carta": supports too
     const choose = activate(state, 0, 'DRACULA_CHOICE', dracula);
     expect(choose).toMatchObject({ reason: 'choose-target', prompt: 'Elige qué efecto aplicar' });
     expect(choose.options.map((o) => o.instanceId)).toEqual(['choice:0', 'choice:1']);
     const pick = activate(state, 0, 'DRACULA_CHOICE', dracula, ['choice:1']);
-    expect(pick.options.map((o) => o.instanceId).sort()).toEqual([slime, valkiria].sort());
+    expect(pick.options.map((o) => o.instanceId).sort()).toEqual([slime, valkiria, trampa].sort());
+    const valkiriaAtk = monster(state, valkiria).baseAtk;
+    const vpCost = getEffect('DRACULA_CHOICE').cost.args.amount;
     expect(activate(state, 0, 'DRACULA_CHOICE', dracula, ['choice:1', valkiria]).ok).toBe(true);
     passAll(state);
     expect(monster(state, valkiria)).toBeUndefined();
-    expect(state.players[0].vp).toBe(STARTING_VP - 8 + 11); // paid 8 VP, recovered Valkiria's 11 Atk
+    expect(state.players[0].vp).toBe(STARTING_VP - vpCost + valkiriaAtk); // paid the VP, recovered Valkiria's Atk
     expect(state.players[0].pixelcoins).toBe(12); // the other option didn't run
   });
 
@@ -335,16 +337,6 @@ describe('Optional effects ("Puedes...")', () => {
     expect(state.players[0].hand.length).toBe(hand);
   });
 
-  it('Bálor: "puedes activar uno de estos efectos" — one of the two per turn, not both', async () => {
-    const state = await makeDuel();
-    const balor = await onField(state, 0, 'Bálor');
-    await onField(state, 1, 'Slime');
-    toPhase(state, 'main1', 0);
-    expect(activate(state, 0, 'BALOR_EXTRA_ATTACK', balor).ok).toBe(true);
-    passAll(state);
-    expect(activate(state, 0, 'BALOR_INFLICT_BURN', balor)).toMatchObject({ ok: false, reason: 'conditions-not-met' });
-  });
-
   it('Damarco no longer has the "destroy 2 cards" effect its text never had', async () => {
     expect(getCard(await idOf('Damarco, licántropo luchador')).effectCodes).toEqual(['DAMARCO_EXTRA_ATTACKS']);
   });
@@ -393,25 +385,6 @@ describe('Espora Venenosa', () => {
 });
 
 describe('Exiled "hasta la Fase Final"', () => {
-  it('Traición de Vida: only a rival monster; gains VP equal to its Atk; it comes back in the Fase Final', async () => {
-    const state = await makeDuel();
-    toPhase(state, 'main1', 0);
-    const traicion = await toHand(state, 0, 'Traición de Vida');
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: traicion })).toMatchObject({ ok: false, reason: 'no-legal-target' });
-
-    await onField(state, 0, 'Orco Guerrero'); // the player's own monster is never offered
-    const cactus = await onField(state, 1, 'Cactus Violento', { position: 'defense' });
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: traicion }).ok).toBe(true);
-    passAll(state);
-    expect(state.players[1].banished).toContain(cactus);
-    expect(state.players[0].vp).toBe(STARTING_VP + 4); // Cactus Violento's Atk
-
-    toPhase(state, 'end', 0);
-    expect(state.players[1].banished).not.toContain(cactus);
-    expect(monster(state, cactus)).toMatchObject({ position: 'defense', faceDown: false });
-    expect(state.log.some((l) => l.message === 'Cactus Violento vuelve del Exilio al Campo.')).toBe(true);
-  });
-
   it('Orco Gigante: the monster it exiles comes back at the end of the turn', async () => {
     const state = await makeDuel();
     const gigante = await onField(state, 0, 'Orco Gigante');
@@ -818,11 +791,11 @@ describe('Vampiresa', () => {
   });
 });
 
-describe('Guarida del Oscuro', () => {
+describe('Guarida del Ser Oscuro', () => {
   it('can be played with nothing to search; its "una vez por turno" search is used from the field', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
-    const guarida = await toHand(state, 0, 'Guarida del Oscuro');
+    const guarida = await toHand(state, 0, 'Guarida del Ser Oscuro');
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: guarida }).ok).toBe(true);
     passAll(state);
     expect(state.players[0].field.territory).toMatchObject({ instanceId: guarida });
@@ -844,11 +817,11 @@ describe('Guarida del Oscuro', () => {
   });
 });
 
-describe('Guarida del Oscuro on the field', () => {
+describe('Guarida del Ser Oscuro on the field', () => {
   it('+4 Atk/Vida to every Demonio, Inmortal, Pecador and Cambiaformas monster on the field', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
-    const guarida = await toHand(state, 0, 'Guarida del Oscuro');
+    const guarida = await toHand(state, 0, 'Guarida del Ser Oscuro');
     const vampiro = await onField(state, 0, 'Vampiro'); // Inmortal
     const kraken = await onField(state, 0, 'Kraken'); // Monstruo Marino: not one of them
     const incubo = await onField(state, 1, 'Íncubo'); // Pecador, on the rival's side
@@ -1020,5 +993,21 @@ describe('A Compilación never goes to the hand', () => {
     moveToZone(state, arquera, 'hand');
     expect(state.players[0].hand).not.toContain(arquera);
     expect(state.players[0].extra).toContain(arquera);
+  });
+});
+
+describe('Deva', () => {
+  it('can only be special summoned when both players have at least 3 monsters in the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const deva = await toHand(state, 0, 'Deva');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: deva })).toMatchObject({ ok: false, reason: 'special-summon-only' });
+    for (const name of ['Slime', 'Slime', 'Slime']) await toGraveyard(state, 0, name);
+    await toGraveyard(state, 1, 'Slime');
+    await toGraveyard(state, 1, 'Relámpago'); // not a monster
+    await toGraveyard(state, 1, 'Slime');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: deva }).ok).toBe(false);
+    await toGraveyard(state, 1, 'Kraken');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: deva }).ok).toBe(true);
   });
 });

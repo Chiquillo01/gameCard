@@ -175,9 +175,11 @@
     "conditions": [],
     "actions": [
       {
-        "fn": "burnOpponent",
+        "fn": "applyStatus",
         "args": {
-          "amount": 3
+          "target": "enemyMonster",
+          "count": 1,
+          "status": "Quemadura"
         }
       }
     ],
@@ -507,48 +509,15 @@
     "source": "Efecto(monster)"
   },
   {
-    "_id": "BALOR_INFLICT_BURN",
-    "type": "ignition",
-    "oncePerTurn": true,
-    "conditions": [
-      {
-        "fn": "limitPerTurn",
-        "args": {
-          "name": "Bálor",
-          "max": 1
-        }
-      }
-    ],
-    "actions": [
-      {
-        "fn": "applyStatus",
-        "args": {
-          "target": "enemyMonster",
-          "count": 1,
-          "status": "Quemadura"
-        }
-      }
-    ],
-    "source": "Efecto(monster)"
-  },
-  {
     "_id": "BALOR_EXTRA_ATTACK",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [
-      {
-        "fn": "limitPerTurn",
-        "args": {
-          "name": "Bálor",
-          "max": 1
-        }
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "grantExtraAttack",
         "args": {
-          "amount": 1
+          "perEnemyWithStatus": "Quemadura"
         }
       }
     ],
@@ -879,35 +848,6 @@
     "source": "EfectoBD(activated)"
   },
   {
-    "_id": "ANILLO_BODA_CEMENTERIO",
-    "type": "activated",
-    "oncePerTurn": false,
-    "trigger": {
-      "fn": "onGraveyard"
-    },
-    "conditions": [],
-    "requiresTarget": false,
-    "actions": [
-      {
-        "fn": "mirrorEvent",
-        "args": {
-          "event": "draw",
-          "actor": "receiver",
-          "receiver": "self"
-        }
-      },
-      {
-        "fn": "mirrorEvent",
-        "args": {
-          "event": "gainVP",
-          "actor": "receiver",
-          "receiver": "self"
-        }
-      }
-    ],
-    "source": "EfectoBD(activated)"
-  },
-  {
     "_id": "ANILLO_BODA_TURNO",
     "type": "activated",
     "oncePerTurn": false,
@@ -1040,9 +980,6 @@
     "actions": [
       {
         "fn": "negateAttack"
-      },
-      {
-        "fn": "endBattlePhase"
       }
     ],
     "source": "EfectoBD(activated)"
@@ -1392,7 +1329,7 @@
         "fn": "modifyStatsPerMonsterOnField",
         "args": {
           "atk": 1,
-          "scope": "opponentField"
+          "scope": "field"
         }
       }
     ],
@@ -2691,7 +2628,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 8
+          "amount": 6
         }
       }
     ]
@@ -4238,7 +4175,6 @@
         "fn": "buffPerCount",
         "args": {
           "atk": -1,
-          "def": -1,
           "scope": "opponentField"
         }
       }
@@ -5467,7 +5403,7 @@
     "cost": {
       "fn": "payVP",
       "args": {
-        "amount": 8
+        "amount": 10
       }
     },
     "choice": true,
@@ -5482,7 +5418,6 @@
         "fn": "destroyAndGainVP",
         "args": {
           "target": "selected",
-          "zone": "monster",
           "vpEqualToAtk": true
         }
       }
@@ -7076,26 +7011,6 @@
     "source": "authored"
   },
   {
-    "_id": "GROOK_EXCAVATE",
-    "type": "ignition",
-    "oncePerTurn": true,
-    "conditions": [],
-    "actions": [
-      {
-        "fn": "excavate",
-        "args": {
-          "cards": 3,
-          "filter": {
-            "family": "Planta",
-            "category": "monster"
-          },
-          "count": 1
-        }
-      }
-    ],
-    "source": "authored"
-  },
-  {
     "_id": "PODER_PLANTAS_STRONGEST_ONLY",
     "type": "continuous",
     "oncePerTurn": false,
@@ -7105,7 +7020,10 @@
     "conditions": [],
     "actions": [
       {
-        "fn": "attacksOnlyOnStrongest"
+        "fn": "attacksOnlyOnStrongest",
+        "args": {
+          "stat": "def"
+        }
       }
     ],
     "source": "authored"
@@ -7137,47 +7055,49 @@
     "source": "authored"
   },
   {
-    "_id": "RENOVACION_VIDA_GY_SHUFFLE_DRAW",
-    "type": "activated",
-    "oncePerTurn": false,
-    "trigger": {
-      "fn": "onActivation",
-      "args": {
-        "phase": "main",
-        "from": "graveyard"
-      }
-    },
-    "conditions": [
-      {
-        "fn": "notSameTurnSentToGraveyard"
-      }
-    ],
-    "cost": {
-      "fn": "banishSelf",
-      "args": {
-        "from": "graveyard"
-      }
-    },
+    "_id": "GROOK_PLANT_GROW",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
     "actions": [
       {
-        "fn": "returnToDeck",
+        "fn": "grantBuff",
         "args": {
-          "from": "graveyard",
-          "count": 2,
+          "target": "selected",
+          "side": "self",
+          "zone": "monster",
           "filter": {
-            "family": "Planta",
-            "category": "monster"
+            "family": "Planta"
           },
-          "required": true,
-          "prompt": "Elige las 2 Plantas de tu Cementerio que barajas en el Mazo"
+          "excludeSelf": false,
+          "buff": {
+            "def": 1
+          }
         }
-      },
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "DEVA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
       {
-        "fn": "drawCards",
+        "fn": "graveyardCount",
         "args": {
-          "player": "self",
-          "amount": 1,
-          "conditionalOn": "previousActionSucceeded"
+          "player": "both",
+          "min": 3,
+          "monsters": true
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
         }
       }
     ],

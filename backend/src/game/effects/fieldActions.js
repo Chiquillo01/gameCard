@@ -281,10 +281,10 @@ function protectFromEffectDestruction(ctx, args) {
     .forEach((m) => { m.cannotBeDestroyedByEffects = true; });
 }
 
-// "Tu oponente solo puede elegir para ataques al monstruo con más Ataque que controles" (Poder de
-// las Plantas): combat.attackBlockReason reads the flag.
-function attacksOnlyOnStrongest(ctx) {
-  player(ctx.state, ctx.controllerIndex).attacksOnlyOnStrongest = true;
+// "Tu oponente solo puede elegir para ataques al monstruo con más Vida que controles" (Poder de las
+// Plantas): combat.attackBlockReason reads the flag, which holds the stat compared ('atk'/'def').
+function attacksOnlyOnStrongest(ctx, args = {}) {
+  player(ctx.state, ctx.controllerIndex).attacksOnlyOnStrongest = args.stat || 'atk';
 }
 
 // "Excava N cartas de la parte superior de tu Mazo: si encuentras un [filter], añádelo a tu Mano"

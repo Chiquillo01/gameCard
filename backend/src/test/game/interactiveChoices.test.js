@@ -168,7 +168,8 @@ describe('Search effects offer real choices instead of grabbing whichever card i
     passChain(state);
     expect(state.players[0].hand).toContain(chosen);
     expect(state.players[0].deck).not.toContain(chosen);
-    expect(state.players[0].pixelcoins).toBe(4);
+    const cost = (await Card.findOne({ name: 'Enjambre de Avispas' }).lean()).activationCost.args.amount;
+    expect(state.players[0].pixelcoins).toBe(6 - cost);
   });
 
   it('does not ask when there is only one legal match', async () => {
