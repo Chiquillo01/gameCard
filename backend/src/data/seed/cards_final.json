@@ -74,6 +74,7 @@
   },
   {
     "name": "Safira, Bebé Dragón",
+    "image": "/assets/CardImg/generated/safira-bebe-dragon.png",
     "attribute": "Luz",
     "type": "Dragón",
     "breed": "Dragón",
@@ -176,6 +177,7 @@
   },
   {
     "name": "Safira, la Dragóna Real",
+    "image": "/assets/CardImg/generated/safira-la-dragona-real.png",
     "attribute": "Luz",
     "type": "Dragón",
     "breed": "Dragón",
@@ -195,6 +197,7 @@
   },
   {
     "name": "Safira, la Reina Dragón",
+    "image": "/assets/CardImg/generated/safira-la-reina-dragon.png",
     "attribute": "Luz",
     "type": "Dragón",
     "breed": "Dragón",
@@ -316,6 +319,7 @@
   },
   {
     "name": "Safira, la Joven Heredera",
+    "image": "/assets/CardImg/generated/safira-la-joven-heredera.png",
     "attribute": "Luz",
     "type": "Dragón",
     "breed": "Dragón",
@@ -379,6 +383,7 @@
   },
   {
     "name": "El Jinete Original, Draco",
+    "image": "/assets/CardImg/generated/el-jinete-original-draco.png",
     "attribute": "Fuego",
     "type": "Paladín",
     "breed": "Paladín",
@@ -648,6 +653,7 @@
   },
   {
     "name": "Camino de la Reina",
+    "image": "/assets/CardImg/generated/camino-de-la-reina.png",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
@@ -697,6 +703,7 @@
     "category": "fusion",
     "effectCodes": [],
     "name": "Grover, el Goblin Guardián",
+    "image": "/assets/CardImg/generated/grover-el-goblin-guardian.png",
     "type": "Goblin",
     "breed": "Goblin",
     "family": "Grokkar",
@@ -748,6 +755,7 @@
   },
   {
     "name": "Goblin Ardiente",
+    "image": "/assets/CardImg/generated/goblin-ardiente.png",
     "attribute": "Fuego",
     "type": "Goblin",
     "breed": "Goblin",
@@ -766,6 +774,7 @@
   },
   {
     "name": "Goblin Guardián",
+    "image": "/assets/CardImg/generated/goblin-guardian.png",
     "attribute": "Tierra",
     "type": "Goblin",
     "breed": "Goblin",
@@ -805,6 +814,7 @@
   },
   {
     "name": "Orco Traicionero",
+    "image": "/assets/CardImg/generated/orco-traicionero.png",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -824,6 +834,7 @@
   },
   {
     "name": "Orcos del primer Batallón",
+    "image": "/assets/CardImg/generated/orcos-del-primer-batallon.png",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -909,6 +920,7 @@
   },
   {
     "name": "Grover, el Goblin Solitario",
+    "image": "/assets/CardImg/generated/grover-el-goblin-solitario.png",
     "attribute": "Tierra",
     "type": "Goblin",
     "breed": "Goblin",
@@ -943,6 +955,7 @@
   },
   {
     "name": "Grover, el Goblin",
+    "image": "/assets/CardImg/generated/grover-el-goblin.png",
     "attribute": "Viento",
     "type": "Goblin",
     "breed": "Goblin",
@@ -961,6 +974,7 @@
   },
   {
     "name": "Ciudadela de los Verdes",
+    "image": "/assets/CardImg/generated/ciudadela-de-los-verdes.png",
     "attribute": "none",
     "type": "field",
     "description": "-",
@@ -982,6 +996,7 @@
   },
   {
     "name": "En busca del Goblin",
+    "image": "/assets/CardImg/generated/en-busca-del-goblin.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -1003,6 +1018,7 @@
   },
   {
     "name": "Catedral de los Goblins",
+    "image": "/assets/CardImg/generated/catedral-de-los-goblins.png",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
@@ -1122,6 +1138,7 @@
   },
   {
     "name": "Orco Jefe",
+    "image": "/assets/CardImg/generated/orco-jefe.png",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -1166,6 +1183,7 @@
     "category": "fusion",
     "effectCodes": [],
     "name": "Orco Conjurador",
+    "image": "/assets/CardImg/generated/orco-conjurador.png",
     "type": "Orco",
     "breed": "Orco",
     "family": "Grokkar",
@@ -1192,6 +1210,7 @@
   },
   {
     "name": "Grover, el Goblin Ardiente",
+    "image": "/assets/CardImg/generated/grover-el-goblin-ardiente.png",
     "attribute": "Fuego",
     "type": "Goblin",
     "breed": "Goblin",
@@ -1249,6 +1268,7 @@
   },
   {
     "name": "Goblin Solitario",
+    "image": "/assets/CardImg/generated/goblin-solitario.png",
     "attribute": "Tierra",
     "type": "Goblin",
     "breed": "Goblin",
@@ -1289,6 +1309,7 @@
   },
   {
     "name": "Conjurador Orco",
+    "image": "/assets/CardImg/generated/conjurador-orco.png",
     "attribute": "Arcano",
     "type": "Orco",
     "breed": "Orco",
@@ -1376,6 +1397,7 @@
   },
   {
     "name": "El Duende Elegido",
+    "image": "/assets/CardImg/generated/el-duende-elegido.png",
     "attribute": "none",
     "type": "counter",
     "description": "-",
@@ -1467,6 +1489,7 @@
   },
   {
     "name": "Araña de Fase",
+    "image": "/assets/CardImg/generated/arana-de-fase.png",
     "attribute": "Tierra",
     "type": "Araneidos",
     "breed": "Araneidos",
@@ -1556,6 +1579,7 @@
   },
   {
     "name": "Cucaracha de Combate",
+    "image": "/assets/CardImg/generated/cucaracha-de-combate.png",
     "attribute": "Tierra",
     "type": "Blattidae",
     "breed": "Blattidae",
@@ -1574,6 +1598,7 @@
   },
   {
     "name": "Insecto Buscador",
+    "image": "/assets/CardImg/generated/insecto-buscador.png",
     "attribute": "Tierra",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -1750,6 +1775,7 @@
   },
   {
     "name": "Draña",
+    "image": "/assets/CardImg/generated/drana.png",
     "attribute": "Oscuridad",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -1844,6 +1870,7 @@
   },
   {
     "name": "Esqueleto Parásito",
+    "image": "/assets/CardImg/generated/esqueleto-parasito.png",
     "attribute": "Oscuridad",
     "type": "Zombi",
     "breed": "Zombi",
@@ -2020,6 +2047,7 @@
   },
   {
     "name": "Armadura Animada",
+    "image": "/assets/CardImg/generated/armadura-animada.png",
     "attribute": "Oscuridad",
     "type": "Zombi",
     "breed": "Zombi",
@@ -2301,6 +2329,7 @@
   },
   {
     "name": "Herida Sangrante",
+    "image": "/assets/CardImg/generated/herida-sangrante.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -2604,6 +2633,7 @@
   },
   {
     "name": "Cáliz de Sangre",
+    "image": "/assets/CardImg/generated/caliz-de-sangre.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -2727,6 +2757,7 @@
   },
   {
     "name": "Héroe Frío Polar",
+    "image": "/assets/CardImg/generated/heroe-frio-polar.png",
     "attribute": "Hielo",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2913,6 +2944,7 @@
   },
   {
     "name": "Venganza de los Héroes",
+    "image": "/assets/CardImg/generated/venganza-de-los-heroes.png",
     "attribute": "none",
     "type": "counter",
     "description": "-",
@@ -2934,6 +2966,7 @@
   },
   {
     "name": "Noche Eterna",
+    "image": "/assets/CardImg/generated/noche-eterna.png",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
@@ -3209,6 +3242,7 @@
   },
   {
     "name": "Sátiro Vengador",
+    "image": "/assets/CardImg/generated/satiro-vengador.png",
     "attribute": "Natura",
     "type": "Hada",
     "breed": "Hada",
@@ -3290,6 +3324,7 @@
   },
   {
     "name": "Des - Compilación",
+    "image": "/assets/CardImg/generated/des-compilacion.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -3335,6 +3370,7 @@
   },
   {
     "name": "La Virtud del Más Débil",
+    "image": "/assets/CardImg/generated/la-virtud-del-mas-debil.png",
     "attribute": "none",
     "type": "equipment",
     "description": "-",
@@ -3437,6 +3473,7 @@
   },
   {
     "name": "Planetar",
+    "image": "/assets/CardImg/generated/planetar.png",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3503,6 +3540,7 @@
   },
   {
     "name": "El Vacío",
+    "image": "/assets/CardImg/generated/el-vacio.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -3524,6 +3562,7 @@
   },
   {
     "name": "Hoguera",
+    "image": "/assets/CardImg/generated/hoguera.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -3727,6 +3766,7 @@
   },
   {
     "name": "Sombra",
+    "image": "/assets/CardImg/generated/sombra.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -3796,6 +3836,7 @@
   },
   {
     "name": "Equipo Sunne - Astas de Combate",
+    "image": "/assets/CardImg/generated/equipo-sunne-astas-de-combate.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -3817,6 +3858,7 @@
   },
   {
     "name": "Equipo Sunne - Espada Solar",
+    "image": "/assets/CardImg/generated/equipo-sunne-espada-solar.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -3838,6 +3880,7 @@
   },
   {
     "name": "Equipo Sunne - Resonador",
+    "image": "/assets/CardImg/generated/equipo-sunne-resonador.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -3859,6 +3902,7 @@
   },
   {
     "name": "Familiar Mágico - Gus",
+    "image": "/assets/CardImg/generated/familiar-magico-gus.png",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -3877,6 +3921,7 @@
   },
   {
     "name": "Familiar Mágico - Mochi",
+    "image": "/assets/CardImg/generated/familiar-magico-mochi.png",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3895,6 +3940,7 @@
   },
   {
     "name": "Familiar Mágico - Monin",
+    "image": "/assets/CardImg/generated/familiar-magico-monin.png",
     "attribute": "Fuego",
     "type": "Fuego",
     "breed": "Fuego",
@@ -3937,6 +3983,7 @@
   },
   {
     "name": "Libro de hechizos - Castigo",
+    "image": "/assets/CardImg/generated/libro-de-hechizos-castigo.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -3958,6 +4005,7 @@
   },
   {
     "name": "Libro de hechizos - Fulminar",
+    "image": "/assets/CardImg/generated/libro-de-hechizos-fulminar.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -3979,6 +4027,7 @@
   },
   {
     "name": "Anciana de los libros",
+    "image": "/assets/CardImg/generated/anciana-de-los-libros.png",
     "attribute": "Oscuridad",
     "type": "Mago",
     "breed": "Mago",
@@ -4013,6 +4062,7 @@
   },
   {
     "name": "Bibliotecaria",
+    "image": "/assets/CardImg/generated/bibliotecaria.png",
     "attribute": "Luz",
     "type": "Mago",
     "breed": "Mago",
@@ -4056,6 +4106,7 @@
   },
   {
     "name": "Equipo Sunne - Plan Maestro",
+    "image": "/assets/CardImg/generated/equipo-sunne-plan-maestro.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -4129,6 +4180,7 @@
   },
   {
     "name": "Sunne, Princesa Llama",
+    "image": "/assets/CardImg/generated/sunne-princesa-llama.png",
     "attribute": "Lava",
     "type": "Fuego",
     "breed": "Fuego",
@@ -4147,6 +4199,7 @@
   },
   {
     "name": "Zona de Impacto",
+    "image": "/assets/CardImg/generated/zona-de-impacto.png",
     "attribute": "none",
     "type": "field",
     "description": "-",
@@ -4168,6 +4221,7 @@
   },
   {
     "name": "Biblioteca Ancestral",
+    "image": "/assets/CardImg/generated/biblioteca-ancestral.png",
     "attribute": "none",
     "type": "field",
     "description": "-",
@@ -4234,6 +4288,7 @@
   },
   {
     "name": "Bibliotecario",
+    "image": "/assets/CardImg/generated/bibliotecario.png",
     "attribute": "Luz",
     "type": "Mago",
     "breed": "Mago",
@@ -4344,6 +4399,7 @@
   },
   {
     "name": "Libro de hechizos - Dragar",
+    "image": "/assets/CardImg/generated/libro-de-hechizos-dragar.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -4365,6 +4421,7 @@
   },
   {
     "name": "Libro de hechizos - Necronomicon",
+    "image": "/assets/CardImg/generated/libro-de-hechizos-necronomicon.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -4464,6 +4521,7 @@
   },
   {
     "name": "Héroe Aprendiz",
+    "image": "/assets/CardImg/generated/heroe-aprendiz.png",
     "attribute": "Tierra",
     "type": "Héroe",
     "breed": "Héroe",
@@ -4765,6 +4823,7 @@
   },
   {
     "name": "Koi Mágico",
+    "image": "/assets/CardImg/generated/koi-magico.png",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -4805,6 +4864,7 @@
   },
   {
     "name": "Tiburón de Grandes Fauces",
+    "image": "/assets/CardImg/generated/tiburon-de-grandes-fauces.png",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -4928,6 +4988,7 @@
   },
   {
     "name": "Manta-Raya",
+    "image": "/assets/CardImg/generated/manta-raya.png",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -4968,6 +5029,7 @@
   },
   {
     "name": "Hidra",
+    "image": "/assets/CardImg/generated/hidra.png",
     "attribute": "Agua",
     "type": "Reptil",
     "breed": "Reptil",
@@ -4987,6 +5049,7 @@
   },
   {
     "name": "Pecera de Cristal",
+    "image": "/assets/CardImg/generated/pecera-de-cristal.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -5036,6 +5099,7 @@
     "category": "fusion",
     "effectCodes": [],
     "name": "Búho del bosque oscuro",
+    "image": "/assets/CardImg/generated/buho-del-bosque-oscuro.png",
     "type": "Bestia Alada",
     "breed": "Bestia Alada",
     "family": "Bestia",
@@ -5084,6 +5148,7 @@
   },
   {
     "name": "Cuélebre del Bosque Oscuro",
+    "image": "/assets/CardImg/generated/cuelebre-del-bosque-oscuro.png",
     "attribute": "Tierra",
     "type": "Reptil",
     "breed": "Reptil",
@@ -5123,6 +5188,7 @@
   },
   {
     "name": "Nuberu del Bosque Oscuro",
+    "image": "/assets/CardImg/generated/nuberu-del-bosque-oscuro.png",
     "attribute": "Viento",
     "type": "Mago",
     "breed": "Mago",
@@ -5142,6 +5208,7 @@
   },
   {
     "name": "Pantano del Bosque Oscuro",
+    "image": "/assets/CardImg/generated/pantano-del-bosque-oscuro.png",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
@@ -5163,6 +5230,7 @@
   },
   {
     "name": "Pétalos de Rosa",
+    "image": "/assets/CardImg/generated/petalos-de-rosa.png",
     "attribute": "none",
     "type": "equipment",
     "description": "-",
@@ -5209,6 +5277,7 @@
   },
   {
     "name": "Raíz Centenaria",
+    "image": "/assets/CardImg/generated/raiz-centenaria.png",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
@@ -5230,6 +5299,7 @@
   },
   {
     "name": "Atalaya del Bosque Oscuro",
+    "image": "/assets/CardImg/generated/atalaya-del-bosque-oscuro.png",
     "attribute": "Tierra",
     "type": "Hada",
     "breed": "Hada",
@@ -5248,6 +5318,7 @@
   },
   {
     "name": "Busgosu del Bosque Oscuro",
+    "image": "/assets/CardImg/generated/busgosu-del-bosque-oscuro.png",
     "attribute": "Tierra",
     "type": "Hada",
     "breed": "Hada",
@@ -5267,6 +5338,7 @@
   },
   {
     "name": "Engranaje maestro",
+    "image": "/assets/CardImg/generated/engranaje-maestro.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -5309,6 +5381,7 @@
   },
   {
     "name": "Guardián del Bosque Oscuro",
+    "image": "/assets/CardImg/generated/guardian-del-bosque-oscuro.png",
     "attribute": "Natura",
     "type": "Mutación",
     "breed": "Mutación",
@@ -5361,6 +5434,7 @@
   },
   {
     "name": "Extensor de Vida",
+    "image": "/assets/CardImg/generated/extensor-de-vida.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -5382,6 +5456,7 @@
   },
   {
     "name": "Raiz Asfixiante",
+    "image": "/assets/CardImg/generated/raiz-asfixiante.png",
     "attribute": "none",
     "type": "equipment",
     "description": "-",
@@ -5403,6 +5478,7 @@
   },
   {
     "name": "El Bosque Oscuro",
+    "image": "/assets/CardImg/generated/el-bosque-oscuro.png",
     "attribute": "none",
     "type": "field",
     "description": "-",
@@ -5558,6 +5634,7 @@
   },
   {
     "name": "El poder de las plantas",
+    "image": "/assets/CardImg/generated/el-poder-de-las-plantas.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -5598,6 +5675,7 @@
   },
   {
     "name": "Sabio del Bosque Oscuro",
+    "image": "/assets/CardImg/generated/sabio-del-bosque-oscuro.png",
     "attribute": "Arcano",
     "type": "Mago",
     "breed": "Mago",
@@ -5628,6 +5706,7 @@
   },
   {
     "name": "Xana del Bosque Oscuro",
+    "image": "/assets/CardImg/generated/xana-del-bosque-oscuro.png",
     "attribute": "Tierra",
     "type": "Hada",
     "breed": "Hada",
@@ -5664,6 +5743,7 @@
   },
   {
     "name": "Tarasca, el Titán del Reino",
+    "image": "/assets/CardImg/generated/tarasca-el-titan-del-reino.png",
     "attribute": "none",
     "family": "Bestia",
     "description": "-",
@@ -5871,6 +5951,7 @@
   },
   {
     "name": "Barrida de Licántropos",
+    "image": "/assets/CardImg/generated/barrida-de-licantropos.png",
     "attribute": "none",
     "type": "counter",
     "description": "-",
@@ -6043,6 +6124,7 @@
   },
   {
     "name": "Búsqueda Normal",
+    "image": "/assets/CardImg/generated/busqueda-normal.png",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
@@ -6092,6 +6174,7 @@
     "category": "fusion",
     "effectCodes": [],
     "name": "Licántropo Guardián",
+    "image": "/assets/CardImg/generated/licantropo-guardian.png",
     "type": "Licano",
     "breed": "Licano",
     "family": "Bestia",
@@ -6212,6 +6295,7 @@
   },
   {
     "name": "Llamada Simple",
+    "image": "/assets/CardImg/generated/llamada-simple-311.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -6233,6 +6317,7 @@
   },
   {
     "name": "Llamada Simple",
+    "image": "/assets/CardImg/generated/llamada-simple-312.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",

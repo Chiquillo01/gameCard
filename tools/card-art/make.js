@@ -1,5 +1,6 @@
 // Card illustrations for the cards that had none, drawn in code as pixel art.
-// Usage: node tools/card-art/make.js frontend/public/assets/CardImg/generated [name-filter]
+// Usage: node tools/card-art/make.js frontend/public/assets/CardImg/generated [name-filter | --sheet]
+// (--sheet writes _sheet.png: every batch2 card in one grid, for review.)
 // The card's image field points at /assets/CardImg/generated/<file> (cards_final.json).
 // Same frame as the rest of the game (423x308).
 // Monsters, supports and tokens: 8-bit (chunky pixels, few tones). Compilaciones: 16-bit (finer
@@ -8,7 +9,6 @@ const path = require('path');
 const { glow: softGlow, Layer, hex, mix, gradient, toneFor, bayer, rng, writePng } = require('./pixel');
 
 const OUT = process.argv[2] || path.join(__dirname, 'out');
-require('fs').mkdirSync(OUT, { recursive: true });
 const W = 423;
 const H = 308;
 const TIERS = { bit8: { w: 71, h: 52, scale: 6 }, bit16: { w: 141, h: 103, scale: 3 } };
@@ -532,14 +532,54 @@ const CARDS = [
   },
 ];
 
-const only = process.argv[3];
-CARDS.filter((c) => !only || c.file.includes(only)).forEach((card) => {
-  const { w, h, scale } = TIERS[card.tier];
+// The cards of the new sheet that had no image (batch2.js, keyed by card number): their file name
+// comes from the card's name, and Compilaciones are 16-bit.
+const slug = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+function batch2Cards() {
+  const all = require('../../backend/src/data/seed/cards_final.json');
+  const draws = require('./batch2');
+  return Object.entries(draws).map(([number, draw]) => {
+    const card = all.find((c) => c.number === Number(number));
+    if (!card) throw new Error('no card ' + number);
+    const twin = all.filter((c) => c.name === card.name).length > 1;
+    return { number: card.number, file: slug(card.name) + (twin ? '-' + card.number : '') + '.png', tier: card.category === 'fusion' ? 'bit16' : 'bit8', draw };
+  });
+}
+
+function render(card) {
+  const { w, h } = TIERS[card.tier];
   const bg = new Layer(w, h);
   const fg = new Layer(w, h);
   card.draw(bg, fg);
   fg.outline(OUTLINE);
   bg.draw(fg);
-  writePng(path.join(OUT, card.file), bg, scale, W, H);
-  console.log('wrote', card.file);
-});
+  return bg;
+}
+
+module.exports = { wasp, stoneWall, cave, forest, treeGuardian, vineEmblem, sunset, sea, honeycomb, sparkles, batch2Cards, render, TIERS, W, H };
+
+if (require.main === module) {
+  require('fs').mkdirSync(OUT, { recursive: true });
+  const only = process.argv[3];
+  const list = CARDS.concat(batch2Cards());
+  if (only === '--sheet') {
+    // Every batch-2 card at its own pixel size in one grid, to review them all at once.
+    const cards2 = batch2Cards();
+    const cols = 8;
+    const cw = 72; const ch = 53;
+    const sheet = new Layer(cols * cw, Math.ceil(cards2.length / cols) * ch);
+    cards2.forEach((card, i) => {
+      const img = render(card);
+      const step = img.w / 71;
+      for (let y = 0; y < 52; y++) for (let x = 0; x < 71; x++) sheet.set((i % cols) * cw + x, Math.floor(i / cols) * ch + y, img.get(Math.floor(x * step), Math.floor(y * step)));
+    });
+    writePng(path.join(OUT, '_sheet.png'), sheet, 3, sheet.w * 3, sheet.h * 3);
+    console.log('wrote _sheet.png');
+  } else {
+    list.filter((c) => !only || c.file.includes(only)).forEach((card) => {
+      const { scale } = TIERS[card.tier];
+      writePng(path.join(OUT, card.file), render(card), scale, W, H);
+      console.log('wrote', card.file);
+    });
+  }
+}
