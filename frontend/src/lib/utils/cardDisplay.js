@@ -95,7 +95,7 @@ export const SUPPORT_SUBTYPE_LABELS = {
   continuous: 'Continuo',
   instant: 'Veloz',
   equipment: 'Equipo',
-  counter: 'Contraataque',
+  counter: 'Contraefecto',
   field: 'Reino',
 };
 

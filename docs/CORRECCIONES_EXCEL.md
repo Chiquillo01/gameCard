@@ -26,8 +26,8 @@ Además hay filas vacías con nombre «???»: 79-100, 120-130, 229, 253-259 y 31
 | 104, 113, 132, 137, 174, 238 | Slime, Banshee, Héroe Silencioso, Héroe Corrupto, Valkiria, Gigante de Rocas | La descripción empieza y termina con comillas | Quitarlas (en la BD ya están quitadas) |
 | 290 | Tarasca, el Titán del Reino | Sin breed (tipo) ni atributo (receta ya añadida) | Completar |
 | 50 | Orco Jefe | Sin efecto | Completar o «Monstruo sin efecto.» |
-| 269 | Raíz Centenaria | Tipo «Equpo» | «Equipo» |
-| — | Counter / Contraefecto | Dos nombres para el mismo tipo (3 «Counter», 2 «Contraefecto») | Usar solo uno |
+| 269 | Raíz Centenaria | Ahora es Continuo, pero el texto habla de «el monstruo equipado» (eso es de un Equipo) | Elegir: Equipo, o cambiar el texto |
+| — | Counter → Contraefecto | En «Counter» (3 cartas) poner «Contraefecto». En el juego ya se muestra «Contraefecto» | Cambiar en el Excel |
 
 ## 3. state (banlist)
 

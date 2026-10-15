@@ -5207,11 +5207,11 @@
   {
     "name": "Raíz Centenaria",
     "attribute": "none",
-    "type": "equipment",
+    "type": "continuous",
     "description": "-",
     "rarity": "common",
     "category": "support",
-    "subtype": "equipment",
+    "subtype": "continuous",
     "expansion": "SBE",
     "effect": "Por cada monstruo que tu adversario Invoque:\n• Esta carta gana 1 raíz.\nEl monstruo equipado gana +1 de Vida por cada raíz en esta carta.",
     "invocationText": "Activación - 2 Píxel",

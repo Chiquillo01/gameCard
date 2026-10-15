@@ -46,7 +46,7 @@ const DuelPage = () => {
   const [selectedAttacker, setSelectedAttacker] = useState(null);
   // A monster from hand is waiting on the player to pick attack/defense/set.
   const [pendingSummon, setPendingSummon] = useState(null);
-  // A Veloz/Contraataque support from hand is waiting on activate-now-vs-set-face-down.
+  // A Veloz/Contraefecto support from hand is waiting on activate-now-vs-set-face-down.
   const [pendingSupportChoice, setPendingSupportChoice] = useState(null);
   // One of your own monsters was clicked in a main phase: pick the position to switch it to.
   const [pendingPosition, setPendingPosition] = useState(null);
@@ -229,7 +229,7 @@ const DuelPage = () => {
     const isMainPhase = view.phase === 'main1' || view.phase === 'main2';
     const chainOpen = !!view.chain;
     const canRespondToChain = chainOpen && view.chain.priorityPlayer === view.you;
-    // Rulebook, Velocidades: an Apoyo Veloz/Contraataque (Speed 2/3) can be activated from hand in
+    // Rulebook, Velocidades: an Apoyo Veloz/Contraefecto (Speed 2/3) can be activated from hand in
     // any phase of its controller's own turn, not just Main Phase — and, like any Speed 2+ card,
     // as a response whenever it's this player's priority on an open Pila.
     const isFastSupport = card.category === 'support' && (card.subtype === 'instant' || card.subtype === 'counter');
@@ -376,7 +376,7 @@ const DuelPage = () => {
     return hovered.atk != null ? { ...card, atk: hovered.atk, def: hovered.def } : card;
   })();
 
-  // Clicking one of your own face-down supports in a main phase activates it (Veloz/Contraataque
+  // Clicking one of your own face-down supports in a main phase activates it (Veloz/Contraefecto
   // cards have their own effect buttons instead).
   const onFieldSupportClick = (support) => {
     if (!support.faceDown || support.subtype === 'instant' || support.subtype === 'counter') return;

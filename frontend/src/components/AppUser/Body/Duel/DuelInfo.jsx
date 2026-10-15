@@ -28,7 +28,7 @@ const SUPPORT_SUBTYPES = {
   equipment: 'Equipo',
   field: 'Territorio',
   instant: 'Apoyo Veloz',
-  counter: 'Contraataque',
+  counter: 'Contraefecto',
 };
 
 const COUNTER_LABELS = { gear: 'Engranaje' };
@@ -89,7 +89,7 @@ export function guideFor({ view, me, enemy, isMyTurn, attacker, canAttackDirectl
       const what = top.kind === 'attack' ? `${topIsRival ? 'El rival declara' : 'Declaras'} "${top.cardName}"` : `${topIsRival ? 'El rival activa' : 'Activas'} ${top.cardName}`;
       return {
         tone: 'action',
-        text: `${what}. Puedes responder con una carta de Velocidad ${Math.max(2, top.speed)} o más (Apoyo Veloz, Contraataque o un efecto rápido) o pulsar "Pasar" para que se resuelva.`,
+        text: `${what}. Puedes responder con una carta de Velocidad ${Math.max(2, top.speed)} o más (Apoyo Veloz, Contraefecto o un efecto rápido) o pulsar "Pasar" para que se resuelva.`,
       };
     }
     return { tone: 'wait', text: 'Esperando a que el rival responda o pase…' };
