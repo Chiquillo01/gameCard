@@ -2,7 +2,7 @@
   {
     "name": "Ataque de las Bestias",
     "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098371/Chest.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
@@ -38,7 +38,7 @@
   {
     "name": "Introducción de Leyendas",
     "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098371/Chest.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
@@ -74,7 +74,7 @@
   {
     "name": "Coliseo de Guerreros",
     "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098961/ChestCdG.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
@@ -110,7 +110,7 @@
   {
     "name": "Esperanza del Caos",
     "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098371/Chest.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
@@ -146,7 +146,7 @@
   {
     "name": "Sombras del Bosque Encantado",
     "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098961/ChestSBE.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
@@ -182,7 +182,7 @@
   {
     "name": "Perdición del Arrecife Oculto",
     "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098960/ChestPAO.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
@@ -218,7 +218,7 @@
   {
     "name": "Nacimiento de la Magia",
     "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098371/Chest.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
@@ -254,7 +254,7 @@
   {
     "name": "Descomposicion sin Fin",
     "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302168/cofreCDG1tcg_g3bgo4.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098839/ChestDsF.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
@@ -290,7 +290,7 @@
   {
     "name": "Ganancia y Honor",
     "description": "Cofre edición especia que ofrece cartas muy poderosas para ser el rey de los Choques.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302806/cofreIDL1tcg_nqnn0e.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098371/Chest.png",
     "price": {
       "pixelcoins": 150,
       "pixelgems": 15
@@ -326,7 +326,7 @@
   {
     "name": "Ediocion Espacial Tokens",
     "description": "Seis tokens para disfrutar.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1740302806/cofreIDL1tcg_nqnn0e.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098371/Chest.png",
     "price": {
       "pixelcoins": 30,
       "pixelgems": 3
