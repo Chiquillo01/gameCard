@@ -50,14 +50,10 @@ Los efectos buscan por nombre: si no coincide, el efecto no encuentra la carta.
 
 | Nº | Carta | Cita | Debería ser |
 |---|---|---|---|
-| 283 | Carnívora Bestia-Moss | «Carnívora Come-Humanos» (receta) | «Carnivora Come Hombres» (o renombrar la 262) |
 | 133 | Murcielago | «Murciélago» | El nombre de la carta no lleva tilde: unificar |
-| 156 | Súcubo | «Incubo» | «Íncubo» |
-| 216 | Zona de Impacto | «Sunne, Princesa del Sol» | «Sunne, Princesa Solar» |
 | 200-202, 212, 215 | Equipo Sunne / Sunne | «Armadura Sunne» | No existe ninguna carta así (¿«Equipo Sunne»?) |
 | 42 | Grover, el Goblin | «Catedral Goblin» | «Catedral de los Goblins» |
 | 75 | Draña | «Araña Oscura», «Drañar» | No existen |
-| 218 | Motor de Engranaje | «Engranage» | «Engranaje» |
 | 272 | Engranaje maestro | «Gear» | ¿«Engranaje»? |
 | 302 | El Primer Infectado | «Licano» entre comillas | Es un tipo, no un nombre: quitar las comillas |
 
@@ -70,7 +66,6 @@ Los efectos buscan por nombre: si no coincide, el efecto no encuentra la carta.
 - 110 «Intercanvio del Pequeño» → Intercambio
 - 9 «Safira, la Dragóna Real» → Dragona, sin tilde
 - 19 «El Primer Ginete» → Jinete (lo cita la receta de la 18)
-- 285 «Renovación de Vida.» → sin el punto final
 
 **Espacios de más en el nombre:**
 
@@ -92,7 +87,7 @@ Los efectos buscan por nombre: si no coincide, el efecto no encuentra la carta.
 
 | Nº | Carta | Errata |
 |---|---|---|
-| 175, 268, 285 | Contenedor sospechoso, Poder de las Plantas, Renovación de Vida. | montruo → monstruo |
+| 175, 268, 285 | Contenedor sospechoso, Poder de las Plantas, Renovación de Vida | montruo → monstruo |
 | 287, 312 | Xana del Bosque Oscuro, Llamada Simple | Vidaensa → Defensa |
 | 154 | Héroe de Escarcha | 0ponente (con cero) → oponente |
 | 144, 157 | Vampiro, Vampiresa | coantrolando → controlando |
@@ -113,7 +108,7 @@ Los efectos buscan por nombre: si no coincide, el efecto no encuentra la carta.
 
 ## 6. Sin imagen
 
-Ya tienen una imagen generada en la BD (pon la ruta en el Excel): 49 Capitán Bandido, 64 Avispa de Batalla, 72 Avispa de Respaldo, 74 Avispa Reina, 76 Avispa Arquera, 161-166 tokens, 268 Poder de las Plantas, 280 Clionne, 281 Grook, 285 Renovación de Vida. — ruta `/assets/CardImg/generated/<nombre>.png`.
+Ya tienen una imagen generada en la BD (pon la ruta en el Excel): 49 Capitán Bandido, 64 Avispa de Batalla, 72 Avispa de Respaldo, 74 Avispa Reina, 76 Avispa Arquera, 161-166 tokens, 268 Poder de las Plantas, 280 Clionne, 281 Grook, 285 Renovación de Vida — ruta `/assets/CardImg/generated/<nombre>.png`.
 
 Sin ninguna imagen (salen con la imagen genérica):
 

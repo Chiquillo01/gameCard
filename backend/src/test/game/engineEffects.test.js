@@ -182,7 +182,7 @@ describe('Choices and picks', () => {
   it('Carnívora Come Hombres equips the picked attack-position monster and gets +1 Atk; it goes to its owner\'s Cementerio later', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
-    const carnivora = await onField(state, 0, 'Carnivora Come Hombres');
+    const carnivora = await onField(state, 0, 'Carnívora Come Hombres');
     const slime = await onField(state, 1, 'Slime');
     expect(activate(state, 0, 'CARNIVORA_STEAL_EQUIP', carnivora, [slime]).ok).toBe(true);
     passAll(state);
@@ -463,7 +463,7 @@ describe('Cards that pick their target', () => {
 describe('Equipping a monster as an Equipo', () => {
   it('the player picks which support zone it goes to', async () => {
     const state = await makeDuel();
-    const carnivora = await onField(state, 0, 'Carnivora Come Hombres');
+    const carnivora = await onField(state, 0, 'Carnívora Come Hombres');
     const victim = await onField(state, 1, 'Orco Guerrero');
     toPhase(state, 'main1', 0);
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CARNIVORA_STEAL_EQUIP', sourceInstanceId: carnivora, targets: [victim] }).ok).toBe(true);

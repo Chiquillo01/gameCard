@@ -25,7 +25,7 @@ afterAll(async () => {
 });
 
 // Player A's deck is exactly `namesA` (x1 each) so they all start in hand; B gets `namesB` (x2).
-const PLAIN = ['Carnivora Come Hombres', 'El Primer Ginete', 'Dragón de Oscuridad Bebe', 'Inferno, el Dragón de Fuego', 'Oscuro, el Dragón de Oscuridad', 'Roco, el Dragón de Tierra', 'Sky, el Dragón de Viento', 'Capitán Bandido'];
+const PLAIN = ['Carnívora Come Hombres', 'El Primer Ginete', 'Dragón de Oscuridad Bebe', 'Inferno, el Dragón de Fuego', 'Oscuro, el Dragón de Oscuridad', 'Roco, el Dragón de Tierra', 'Sky, el Dragón de Viento', 'Capitán Bandido'];
 
 async function makeMatch(namesA, namesB = PLAIN) {
   const build = async (tag, names, amount) => {

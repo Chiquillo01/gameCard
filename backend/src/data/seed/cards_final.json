@@ -2852,7 +2852,7 @@
     "category": "monster",
     "expansion": "EdC",
     "effect": "Los monstruos que estén en la misma columna que esta carta pierden -2 Atk/Vida.\nUna vez por turno:\n• Desplaza esta carta a una nueva ubicación en el tablero de juego.",
-    "invocationText": "Se puede invocar especial si controlas a \"Incubo\".",
+    "invocationText": "Se puede invocar especial si controlas a \"Íncubo\".",
     "atk": 3,
     "def": 4,
     "level": 3,
@@ -4127,7 +4127,7 @@
     ]
   },
   {
-    "name": "Sunne, Princesa Solar",
+    "name": "Sunne, Princesa Llama",
     "attribute": "Lava",
     "type": "Fuego",
     "breed": "Fuego",
@@ -4152,7 +4152,7 @@
     "category": "support",
     "subtype": "field",
     "expansion": "NdM",
-    "effect": "En activación:\n• Agrega a la Mano un \"Sunne, Princesa del Sol\" del Mazo.\nUna vez por turno excava las 3 primeras cartas de tu Mazo:\n• Agrega a la Mano 1 \"Equipo Sunne\" que haya sido excavado, envía al Cementerio las demás cartas.",
+    "effect": "En activación:\n• Agrega a la Mano un \"Sunne, Princesa Llama\" del Mazo.\nUna vez por turno excava las 3 primeras cartas de tu Mazo:\n• Agrega a la Mano 1 \"Equipo Sunne\" que haya sido excavado, envía al Cementerio las demás cartas.",
     "invocationText": "Activación - 2 Píxel",
     "state": 2,
     "number": 216,
@@ -4196,7 +4196,7 @@
     "rarity": "legendary",
     "category": "monster",
     "expansion": "NdM",
-    "effect": "En invocación:\n• Añade a tu Mano 1 carta de Apoyo \"Engranage\" del Mazo.\nCada vez que un monstruo Máquina sea Invocado a tu lado del Campo, aplica ambos efectos en secuencia:\n• Esta carta gana 1 Engranage.\n• Genera 1 Píxel.\nSi esta carta tiene al menos 1 Engranage, no puede ser objetivo de ataques ni efectos de cartas.",
+    "effect": "En invocación:\n• Añade a tu Mano 1 carta de Apoyo \"Engranaje\" del Mazo.\nCada vez que un monstruo Máquina sea Invocado a tu lado del Campo, aplica ambos efectos en secuencia:\n• Esta carta gana 1 Engranaje.\n• Genera 1 Píxel.\nSi esta carta tiene al menos 1 Engranaje, no puede ser objetivo de ataques ni efectos de cartas.",
     "atk": 1,
     "def": 1,
     "level": 1,
@@ -4328,7 +4328,7 @@
     "rarity": "rare",
     "category": "monster",
     "expansion": "NdM",
-    "effect": "En invocación, si controlas a \"Enano Constructor\":\n• Genera 3 Engranages en esta carta.\nSi se usa como material para un monstruo Maquina Compilación:\n• El monstruo gana los Engranages que tenia esta carta.",
+    "effect": "En invocación, si controlas a \"Enano Constructor\":\n• Genera 3 Engranajes en esta carta.\nSi se usa como material para un monstruo Maquina Compilación:\n• El monstruo gana los Engranajes que tenia esta carta.",
     "invocationText": "Si esta \"Enano Constructor\" en Campo, se permite invocar de forma especial, pero solo una vez por turno",
     "atk": 1,
     "def": 1,
@@ -4393,7 +4393,7 @@
     "rarity": "rare",
     "category": "monster",
     "expansion": "NdM",
-    "effect": "En invocación, si controlas a \"Enano Constructor\":\n• Destruye una carta en el Campo del oponente.\nSi se usa como material para un monstruo Maquina Compilación:\n• El monstruo gana los Engranages que tenia esta carta.",
+    "effect": "En invocación, si controlas a \"Enano Constructor\":\n• Destruye una carta en el Campo del oponente.\nSi se usa como material para un monstruo Maquina Compilación:\n• El monstruo gana los Engranajes que tenia esta carta.",
     "invocationText": "Si esta \"Enano Constructor\" en Campo, se permite invocar de forma especial, pero solo una vez por turno",
     "atk": 1,
     "def": 1,
@@ -5059,7 +5059,7 @@
     }
   },
   {
-    "name": "Carnivora Come Hombres",
+    "name": "Carnívora Come Hombres",
     "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736417040/carnivoracomehumanostcg_goraew.png",
     "attribute": "Natura",
     "type": "Mutación",
@@ -5523,7 +5523,7 @@
     "category": "fusion",
     "expansion": "SBE",
     "effect": "Una vez por turno, selecciona un monstruo en el Campo que este en posición de ataque: \n• Equipa el monstruo seleccionado a esta carta.\nPor cada carta equipada a ella gana +4 Atk y puede tener hasta dos equipos al mismo tiempo.",
-    "invocationText": "Compilación - \"Carnívora Come-Humanos\" + 1 Planta",
+    "invocationText": "Compilación - \"Carnívora Come Hombres\" + 1 Planta",
     "atk": 4,
     "def": 5,
     "level": 6,
@@ -5534,7 +5534,7 @@
       "args": {
         "materials": [
           {
-            "name": "Carnivora Come Hombres",
+            "name": "Carnívora Come Hombres",
             "count": 1
           },
           {
@@ -5564,7 +5564,7 @@
     "effectCodes": []
   },
   {
-    "name": "Renovación de Vida.",
+    "name": "Renovación de Vida",
     "image": "/assets/CardImg/generated/renovacion-de-vida.png",
     "attribute": "none",
     "type": "normal",

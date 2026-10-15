@@ -85,11 +85,11 @@ describe('Poder de las Plantas', () => {
   });
 });
 
-describe('Renovación de Vida.', () => {
+describe('Renovación de Vida', () => {
   it('summons a Planta from the hand, and needs one there', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
-    const card = await toHand(state, 0, 'Renovación de Vida.');
+    const card = await toHand(state, 0, 'Renovación de Vida');
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card })).toMatchObject({ ok: false, reason: 'no-legal-target' });
     const ent = await toHand(state, 0, 'Ent');
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card }).ok).toBe(true);

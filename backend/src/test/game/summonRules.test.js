@@ -200,10 +200,10 @@ describe('Effect values follow the card text', () => {
   const monsterOf = (state, playerIndex, instanceId) => state.players[playerIndex].field.monsters.find((m) => m && m.instanceId === instanceId);
 
   it('Arboleda gives every Planta on the field (both sides) +1 Atk/Vida and nothing else', async () => {
-    const { state, inHand } = await makeMatch(['Arboleda', 'Carnivora Come Hombres', 'Slime', 'Kraken']);
+    const { state, inHand } = await makeMatch(['Arboleda', 'Carnívora Come Hombres', 'Slime', 'Kraken']);
     toMain1(state);
     state.players[0].pixelcoins = 6;
-    const planta = inHand('Carnivora Come Hombres');
+    const planta = inHand('Carnívora Come Hombres');
     const slime = inHand('Slime');
     applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: planta, position: 'attack' });
     state.players[0].normalSummonUsed = false;
@@ -255,7 +255,7 @@ describe('Effects rewritten to match the new descriptions', () => {
   const idOf = (state, p, name) => [...state.players[p].hand, ...state.players[p].deck].find((id) => getCard(id.split(':')[1]).name === name);
 
   it('Sacrificio memorable destroys one of your monsters as the cost and one of the rival\'s', async () => {
-    const { state, inHand } = await makeMatch(['Sacrificio memorable', 'Slime', 'Kraken'], ['Esqueleto', 'Slime', 'Carnivora Come Hombres', 'Kraken', 'Arboleda', 'Nido de Avispas']);
+    const { state, inHand } = await makeMatch(['Sacrificio memorable', 'Slime', 'Kraken'], ['Esqueleto', 'Slime', 'Carnívora Come Hombres', 'Kraken', 'Arboleda', 'Nido de Avispas']);
     toMain1(state);
     state.players[0].pixelcoins = 6;
     const mine = inHand('Slime');
