@@ -5383,10 +5383,17 @@
     "category": "support",
     "subtype": "equipment",
     "expansion": "SBE",
-    "effect": "El monstruo equipado con esta carta  no puede declarar ataques ni activar sus efectos mientras tenga esta carta equipada.\nEsta carta se puede equipar a cualquier monstruo en el Campo.\nActivación - 1 Píxel",
+    "effect": "El monstruo equipado con esta carta  no puede declarar ataques ni activar sus efectos mientras tenga esta carta equipada.\nEsta carta se puede equipar a cualquier monstruo en el Campo.",
     "state": 2,
     "number": 277,
-    "effectCodes": []
+    "effectCodes": [],
+    "invocationText": "Activación - 2 Píxel",
+    "activationCost": {
+      "fn": "payPixels",
+      "args": {
+        "amount": 2
+      }
+    }
   },
   {
     "name": "El Bosque Oscuro",
@@ -5655,13 +5662,25 @@
     "rarity": "epic",
     "category": "fusion",
     "expansion": "SBE",
-    "effect": "Una vez por turno: \n• Destruye los monstruos con menos Atk que este monstruo y esta carta gana 20 de Atk permanentemente por cada monstruo destruido por este efecto\nCompilación - 3 Bestia",
+    "effect": "Una vez por turno: \n• Destruye los monstruos con menos Atk que este monstruo y esta carta gana 2 de Atk permanentemente por cada monstruo destruido por este efecto.",
     "atk": 7,
     "def": 7,
     "level": 8,
     "state": 2,
     "number": 290,
-    "effectCodes": []
+    "effectCodes": [],
+    "invocationText": "Compilación - 3 Bestia",
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "family": "Bestia",
+            "count": 3
+          }
+        ]
+      }
+    }
   },
   {
     "name": "Damarco, licántropo luchador",
