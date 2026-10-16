@@ -3119,7 +3119,7 @@
     "description": "El Gigante de Fuego, un destructor imparable, se alza entre ríos de lava y explosiones volcánicas. Su piel de roca fundida, surcada por grietas que emanan llamas, refleja el furor de un volcán en erupción. Invoca torrentes de fuego desde sus manos, desatando una fuerza devastadora. Esta entidad colosal, vinculada al poder del fuego, es capaz de invocar olas de lava que arrasan todo a su paso y encender vastos territorios con solo un gesto. Es temido como un destructor de tierras, un avatar de la furia elemental del fuego.",
     "rarity": "common",
     "category": "monster",
-    "expansion": "GyH",
+    "expansion": "PAO",
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Fuego en tu Campo.",
     "atk": 11,
