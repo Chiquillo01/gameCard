@@ -896,7 +896,7 @@
   },
   {
     "name": "Armadura del poder",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736871416/armadurapodertcg_wk6hkg.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173594/armadurapodertcg.png",
     "attribute": "none",
     "type": "equipment",
     "description": "En lo profundo de un templo abandonado, la legendaria Armadura del Poder reposa sobre un pedestal. Este artefacto único brilla con una energía contenida, como si esperara al elegido para desatar su máximo potencial. Ningún ser viviente se atreve a acercarse, temiendo el despertar de la fuerza que yace en su núcleo.",
@@ -1489,7 +1489,7 @@
   },
   {
     "name": "Araña de Fase",
-    "image": "/assets/CardImg/generated/arana-de-fase.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173520/aranaFasetcg.jpg",
     "attribute": "Tierra",
     "type": "Araneidos",
     "breed": "Araneidos",
@@ -1509,7 +1509,7 @@
   },
   {
     "name": "Avispa de Batalla",
-    "image": "/assets/CardImg/generated/avispa-de-batalla.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174316/avispaBatallaTCG.jpg",
     "attribute": "Viento",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -1533,7 +1533,7 @@
   },
   {
     "name": "Avispa gigante",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736580591/avispagigantetcg_iisn8a.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173654/avispagigantetcg.png",
     "attribute": "Viento",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -1556,7 +1556,7 @@
   },
   {
     "name": "Avispa Mutante",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736591361/avispamutantetcg_n0hcf5.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173657/avispamutantetcg.png",
     "attribute": "Viento",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -1641,7 +1641,7 @@
   },
   {
     "name": "Armadura de Insecto",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736875480/armadurainsectotcg_nrq8vk.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173592/armadurainsectotcg.png",
     "attribute": "none",
     "type": "equipment",
     "description": "Esta armadura, inspirada en las criaturas más resistentes de la naturaleza, combina placas brillantes que reflejan tonos verdes y ámbares metálicos, similares al caparazón de un escarabajo. Su diseño incluye pinchos afilados y detalles segmentados, evocando el cuerpo de un insecto. Colocada sobre un pedestal de madera y piedra, está rodeada de raíces y plantas que se entrelazan con su base, como si el bosque la protegiera. Forjada con la magia de la naturaleza, otorga a quien la porte ataques mortales. Sin embargo, su energía palpita con peligro, como si estuviera viva y esperando a su próximo portador.",
@@ -1665,7 +1665,7 @@
   },
   {
     "name": "Avispa de Obsidiana",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736094055/avispaobsidianatcg_aqo58v.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173658/avispaobsidianatcg.png",
     "attribute": "Viento",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -1687,7 +1687,7 @@
   },
   {
     "name": "Avispa de Respaldo",
-    "image": "/assets/CardImg/generated/avispa-de-respaldo.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174385/avispaRespaldoTCG.jpg",
     "attribute": "Viento",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -1737,7 +1737,7 @@
   },
   {
     "name": "Avispa Reina",
-    "image": "/assets/CardImg/generated/avispa-reina.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174357/avispaReinaTCG.jpg",
     "attribute": "Viento",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -1794,7 +1794,7 @@
   },
   {
     "name": "Avispa Arquera",
-    "image": "/assets/CardImg/generated/avispa-arquera.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174023/avispaArqueraTCG.jpg",
     "attribute": "Viento",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -1849,7 +1849,7 @@
   },
   {
     "name": "Avispa Rosa",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736431451/avisparosatcg_sxrs6x.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173659/avisparosatcg.png",
     "attribute": "Viento",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -2023,7 +2023,7 @@
   },
   {
     "name": "Auto-Mutilación",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736854476/automutilaciontcg_n2pdsl.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173652/automutilaciontcg.png",
     "attribute": "none",
     "type": "instant",
     "description": "En un instante cargado de desesperación, un aventurero solitario se encuentra sentado en un rincón oscuro de un calabozo, con su brazo extendido y mostrando señales de auto-mutilación en su mano. Esta imagen encapsula el sacrificio personal y los oscuros momentos de introspección que los aventureros enfrentan en su búsqueda de poder o redención.",
@@ -2047,7 +2047,7 @@
   },
   {
     "name": "Armadura Animada",
-    "image": "/assets/CardImg/generated/armadura-animada.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173922/armaduraAnimadaTCG.jpg",
     "attribute": "Oscuridad",
     "type": "Zombi",
     "breed": "Zombi",
@@ -2139,7 +2139,7 @@
   },
   {
     "name": "Banshee",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736591769/bansheetcg_knhukl.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173666/bansheetcg.png",
     "attribute": "Oscuridad",
     "type": "Cambiaformas",
     "breed": "Cambiaformas",
@@ -3179,7 +3179,7 @@
   },
   {
     "name": "Arpía",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735476401/arpiatcg_expmlo.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173604/arpiatcg.png",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3492,7 +3492,7 @@
   },
   {
     "name": "Bálor",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736091812/balortcg_tqaoqm.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173665/balortcg.png",
     "attribute": "Fuego",
     "type": "Demonio",
     "breed": "Demonio",
@@ -3584,7 +3584,7 @@
   },
   {
     "name": "Ba-o la diosa del Inframundo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736956475/baodiosainframundotcg_tzed2s.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173668/baodiosainframundotcg.png",
     "attribute": "Oscuridad",
     "type": "Demonio",
     "breed": "Demonio",
@@ -3651,7 +3651,7 @@
   },
   {
     "name": "Arpía Dorada",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737046606/arpiadoradatcg_qlvfwf.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173602/arpiadoradatcg.png",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -4632,7 +4632,7 @@
   },
   {
     "name": "Armadura Rocosa",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736870843/armadurarocosatcg_jsvg9i.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173597/armadurarocosatcg.png",
     "attribute": "none",
     "type": "equipment",
     "description": "Tallada completamente en piedra, la Armadura Rocosa es un artefacto legendario creado por enanos maestros en la forja mágica. Su diseño imita las formas de un guerrero implacable, y se dice que quien la vista obtendrá una protección inhumana y resistencia ante los ataques más feroces. Actualmente, reposa en un pedestal dentro de un antiguo templo subterráneo, protegido por runas arcanas y un silencio solemne. Sin embargo, solo aquellos dignos podrán reclamar y desbloquear su verdadero poder.",
@@ -5071,7 +5071,7 @@
   },
   {
     "name": "Arboleda",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736939483/arboledatcg_qrxvyi.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173568/arboledatcg.png",
     "attribute": "none",
     "type": "field",
     "description": "Un rincón natural y sereno con una pequeña cascada desemboca en un río cristalino que serpentea entre las raíces expuestas de los árboles. La arboleda parece un lugar apartado del tiempo, donde la naturaleza reina en su estado más puro. Todo en el entorno invita a la calma y también a la reflexión.",
@@ -5299,7 +5299,7 @@
   },
   {
     "name": "Atalaya del Bosque Oscuro",
-    "image": "/assets/CardImg/generated/atalaya-del-bosque-oscuro.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173924/atalayaBosqueOscuroTCG.jpg",
     "attribute": "Tierra",
     "type": "Hada",
     "breed": "Hada",
@@ -5973,7 +5973,7 @@
   },
   {
     "name": "Bala de Plata",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738958235/balaplatatcg_ruxmvc.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173663/balaplatatcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Forjada con la pureza de la plata, esta bala es más que un proyectil: es un símbolo de esperanza contra la oscuridad. En leyendas de cazadores y hechiceros, se dice que solo una bala de plata puede atravesar la piel maldita de los licántropos, deshaciendo su regeneración sobrenatural y asegurando su caída. Pero su poder va más allá, afectando a criaturas mágicas, espíritus oscuros y seres vulnerables a lo sagrado. Se la bendice con rituales, se la carga con determinación y, en manos expertas, es la última defensa contra la bestia en la noche. Una sola bala… y el destino de la caza se decide.",
