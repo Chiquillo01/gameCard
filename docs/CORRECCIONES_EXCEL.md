@@ -61,7 +61,6 @@ Los efectos buscan por nombre: si no coincide, el efecto no encuentra la carta.
 
 **Nombres de carta:**
 
-- 192 «Can del Infireno» → Infierno
 - 191 «Solar, el Vergudo de los Cielos» → Verdugo
 - 110 «Intercanvio del Pequeño» → Intercambio
 - 9 «Safira, la Dragóna Real» → Dragona, sin tilde
