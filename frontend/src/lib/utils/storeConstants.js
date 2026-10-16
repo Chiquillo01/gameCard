@@ -3,6 +3,10 @@
 // tuned independently.
 export const BULK_QUANTITY = 5;
 
+// The two currencies' icons, used wherever a balance or a price is shown.
+export const PIXELCOIN_ICON = 'https://res.cloudinary.com/dmngr7jkp/image/upload/v1792172681/cointcg.png';
+export const PIXELGEM_ICON = 'https://res.cloudinary.com/dmngr7jkp/image/upload/v1792172702/gemtcg.png';
+
 // The store's filters, in order; `id` is the product category ('all' shows everything).
 export const STORE_CATEGORIES = [
   { id: 'all', label: 'Todos los productos' },

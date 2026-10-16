@@ -3,6 +3,7 @@ import { getUserOrders } from '../../../../lib/utils/apiOrder';
 import PageTitle from '../Generic/PageTitle';
 import styles from './purchasehistory.module.css';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { PIXELCOIN_ICON, PIXELGEM_ICON } from '../../../../lib/utils/storeConstants';
 
 const PurchaseHistory = () => {
   const [orders, setOrders] = useState([]);
@@ -126,7 +127,7 @@ const PurchaseHistory = () => {
                       {order.totalPrice.pixelcoins > 0 && (
                         <span className={styles.priceItem}>
                           <img
-                            src='https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png'
+                            src={PIXELCOIN_ICON}
                             alt='Pixelcoins'
                             className={styles.coinIcon}
                           />
@@ -136,7 +137,7 @@ const PurchaseHistory = () => {
                       {order.totalPrice.pixelgems > 0 && (
                         <span className={styles.priceItem}>
                           <img
-                            src='https://res.cloudinary.com/dsd7efrba/image/upload/v1739100320/gema4tcg_laiqk5.png'
+                            src={PIXELGEM_ICON}
                             alt='Pixelgems'
                             className={styles.gemIcon}
                           />

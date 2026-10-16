@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from './balancebar.module.css';
+import { PIXELCOIN_ICON, PIXELGEM_ICON } from '../../../../../lib/utils/storeConstants';
 
 const BalanceBar = ({ balance }) => {
   return (
@@ -7,7 +8,7 @@ const BalanceBar = ({ balance }) => {
       <div className={styles.balanceItems}>
         <div className={styles.balanceitem}>
           <img
-            src='https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png'
+            src={PIXELCOIN_ICON}
             alt='Pixelcoins'
             className={styles.icon}
           />
@@ -15,7 +16,7 @@ const BalanceBar = ({ balance }) => {
         </div>
         <div className={styles.balanceitem}>
           <img
-            src='https://res.cloudinary.com/dsd7efrba/image/upload/v1739100320/gema4tcg_laiqk5.png'
+            src={PIXELGEM_ICON}
             alt='Pixelgems'
             className={styles.icon}
           />

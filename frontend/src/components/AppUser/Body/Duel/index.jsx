@@ -13,8 +13,8 @@ import { isDeckPlayable } from '../../../../lib/utils/deckRules';
 import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
 import { ChoiceOptionList } from './ChoiceOptions';
 import CompileModal from './CompileModal';
+import { PIXELCOIN_ICON } from '../../../../lib/utils/storeConstants';
 
-const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
 
 const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', extra: 'Mazo-C' };
 

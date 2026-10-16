@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import StoreModal from '../StoreModal';
-import { BULK_QUANTITY } from '../../../../../lib/utils/storeConstants';
+import { BULK_QUANTITY, PIXELCOIN_ICON, PIXELGEM_ICON } from '../../../../../lib/utils/storeConstants';
 import styles from './productcard.module.css';
 
 const PAYMENT_OPTIONS = [
   {
     method: 'pixelcoins',
-    icon: 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png',
+    icon: PIXELCOIN_ICON,
     label: 'Pixelcoins',
   },
   {
     method: 'pixelgems',
-    icon: 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100320/gema4tcg_laiqk5.png',
+    icon: PIXELGEM_ICON,
     label: 'Pixelgems',
   },
 ];
