@@ -32,7 +32,7 @@
   },
   {
     "name": "Basilisco",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735476840/basiliscotcg_vsk39a.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173669/basiliscotcg.png",
     "attribute": "Tierra",
     "type": "Reptil",
     "breed": "Reptil",
@@ -629,7 +629,7 @@
   },
   {
     "name": "Chispa",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736717373/chispatcg_zbhbcb.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173686/chispatcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Una chispa pequeña pero brillante descansa en la palma de una mano extendida, iluminando la oscuridad circundante con un destello de esperanza y poder latente. Su color amarillo vibrante insinúa el inicio de algo grande, el preludio de una transformación. En esta sencilla escena, la chispa encarna la promesa de un poder aún por desatar.",
@@ -653,7 +653,7 @@
   },
   {
     "name": "Camino de la Reina",
-    "image": "/assets/CardImg/generated/camino-de-la-reina.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792175177/caminoReinaTCG.jpg",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
@@ -974,7 +974,7 @@
   },
   {
     "name": "Ciudadela de los Verdes",
-    "image": "/assets/CardImg/generated/ciudadela-de-los-verdes.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792176189/ciudadelaVerdesTCG.jpg",
     "attribute": "none",
     "type": "field",
     "description": "-",
@@ -1018,7 +1018,7 @@
   },
   {
     "name": "Catedral de los Goblins",
-    "image": "/assets/CardImg/generated/catedral-de-los-goblins.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792175298/catedralGoblinsTCG.jpg",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
@@ -1113,7 +1113,7 @@
   },
   {
     "name": "Capitán Bandido",
-    "image": "/assets/CardImg/generated/capitan-bandido.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792175223/capitanBandidoTCG.jpg",
     "attribute": "Tierra",
     "type": "Ladrón",
     "breed": "Ladrón",
@@ -1419,7 +1419,7 @@
   },
   {
     "name": "Ciempiés Eterno",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737039665/ciempieseternotcg_flze6n.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173687/ciempieseternotcg.png",
     "attribute": "Tierra",
     "type": "Quilópodos",
     "breed": "Quilópodos",
@@ -1456,7 +1456,7 @@
   },
   {
     "name": "Ciempiés Gigante",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737121234/ciempiesgigantetcg_bwtgil.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173688/ciempiesgigantetcg.png",
     "attribute": "Tierra",
     "type": "Quilópodos",
     "breed": "Quilópodos",
@@ -2309,7 +2309,7 @@
   },
   {
     "name": "Beholder",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736440137/beholdertcg_mitjny.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173672/beholdertcg.png",
     "attribute": "Oscuridad",
     "type": "Demonio",
     "breed": "Demonio",
@@ -2374,7 +2374,7 @@
   },
   {
     "name": "Caballo de Paja",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736627494/caballopajatcg_vctlmb.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173674/caballopajatcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "El Caballo de Paja es una creación artesanal sencilla, elaborada completamente con tallos de paja entrelazados y asegurados con cuerdas. Este objeto decorativo simboliza la nostalgia y la tranquilidad de la vida rural. Su diseño humilde pero detallado refleja el ingenio de los granjeros y artesanos que lo construyen, no para la magia ni el combate, sino como un recordatorio de tiempos más simples. En muchas aldeas, los caballos de paja son símbolos de prosperidad y tradición, colocados en Campos o granjas para atraer buenas cosechas y espantar malos augurios.",
@@ -2633,7 +2633,7 @@
   },
   {
     "name": "Cáliz de Sangre",
-    "image": "/assets/CardImg/generated/caliz-de-sangre.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792175175/calizSangreTCG.jpg",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -3722,7 +3722,7 @@
   },
   {
     "name": "Can del Infireno",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735477255/caninfiernotcg_uhzvnq.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173679/caninfiernotcg.png",
     "attribute": "Fuego",
     "type": "Besti Infernal",
     "breed": "Besti Infernal",
@@ -4062,7 +4062,7 @@
   },
   {
     "name": "Bibliotecaria",
-    "image": "/assets/CardImg/generated/bibliotecaria.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174627/bibliotecariaTCG.jpg",
     "attribute": "Luz",
     "type": "Mago",
     "breed": "Mago",
@@ -4081,7 +4081,7 @@
   },
   {
     "name": "Chatarra",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736713379/chatarratcg_mczpwd.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173685/chatarratcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "En el corazón de un taller enano, una pila de chatarra se alza desordenada, repleta de engranajes, armas rotas y fragmentos de armaduras olvidadas. Bajo el resplandor cálido de las forjas, un grupo de enanos con robustas armaduras y largas barbas trenzadas examinan meticulosamente las piezas, buscando utilidad entre los restos. Con esta chatarra y la técnica y conocimientos apropiados podrían crearse multitud de magníficas máquinas.",
@@ -4221,7 +4221,7 @@
   },
   {
     "name": "Biblioteca Ancestral",
-    "image": "/assets/CardImg/generated/biblioteca-ancestral.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174613/bibliotecaAncestralTCG.jpg",
     "attribute": "none",
     "type": "field",
     "description": "-",
@@ -4288,7 +4288,7 @@
   },
   {
     "name": "Bibliotecario",
-    "image": "/assets/CardImg/generated/bibliotecario.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174655/bibliotecarioTCG.jpg",
     "attribute": "Luz",
     "type": "Mago",
     "breed": "Mago",
@@ -4307,7 +4307,7 @@
   },
   {
     "name": "Catapulta",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737108602/catapultatcg_d3apeq.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173684/catapultatcg.png",
     "attribute": "Metal",
     "type": "Maquina",
     "breed": "Maquina",
@@ -4561,7 +4561,7 @@
   },
   {
     "name": "Cangrejo Archipiélago",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736579498/cangrejoarchipelagotcg_kxnjju.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173678/cangrejoarchipelagotcg.png",
     "attribute": "Agua",
     "type": "Crustaceo",
     "breed": "Crustaceo",
@@ -4584,7 +4584,7 @@
   },
   {
     "name": "Caparazón de Tortuga",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736880305/caparazontortugatcg_bwznzi.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173680/caparazontortugatcg.png",
     "attribute": "none",
     "type": "equipment",
     "description": "Un caparazón natural, robusto y reforzado con toques metálicos estratégicamente colocados, descansa en la arena de una tranquila playa. Rodeado por pequeñas conchas y huellas en la arena, el caparazón transmite una mezcla de ataque y durabilidad, como si fuera un arma y un escudo en uno. Se desconoce si esta reliquia podría pertenecer a una criatura legendaria o haber sido diseñada por una cultura costera guerrera.",
@@ -5099,7 +5099,7 @@
     "category": "fusion",
     "effectCodes": [],
     "name": "Búho del bosque oscuro",
-    "image": "/assets/CardImg/generated/buho-del-bosque-oscuro.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174760/buhoBosqueOscuroTCG.jpg",
     "type": "Bestia Alada",
     "breed": "Bestia Alada",
     "family": "Bestia",
@@ -5126,7 +5126,7 @@
   },
   {
     "name": "Carnívora Come Hombres",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736417040/carnivoracomehumanostcg_goraew.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173683/carnivoracomehumanostcg.png",
     "attribute": "Natura",
     "type": "Mutación",
     "breed": "Mutación",
@@ -5318,7 +5318,7 @@
   },
   {
     "name": "Busgosu del Bosque Oscuro",
-    "image": "/assets/CardImg/generated/busgosu-del-bosque-oscuro.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174824/busgosuBosqueOscuroTCG.jpg",
     "attribute": "Tierra",
     "type": "Hada",
     "breed": "Hada",
@@ -5519,7 +5519,7 @@
   },
   {
     "name": "Clionne, Dama Ramificada del Bosque",
-    "image": "/assets/CardImg/generated/clionne-dama-ramificada-del-bosque.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792176188/clionneTCG.jpg",
     "attribute": "Natura",
     "type": "Flor",
     "breed": "Flor",
@@ -5575,7 +5575,7 @@
   },
   {
     "name": "Cactus Violento",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736414605/cactusviolentotcg_pxrhym.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173675/cactusviolentotcg.png",
     "attribute": "Natura",
     "type": "Mutación",
     "breed": "Mutación",
@@ -5596,7 +5596,7 @@
   },
   {
     "name": "Carnívora Bestia-Moss",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737062455/carnivorabestiamosstcg_rvp6u9.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173681/carnivorabestiamosstcg.png",
     "attribute": "Natura",
     "type": "Mutación",
     "breed": "Mutación",
@@ -6021,7 +6021,7 @@
   },
   {
     "name": "Cadejo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738943095/cadejotcg_bewkjc.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173676/cadejotcg.png",
     "attribute": "Fuego",
     "type": "Licano",
     "breed": "Licano",
@@ -6124,7 +6124,7 @@
   },
   {
     "name": "Búsqueda Normal",
-    "image": "/assets/CardImg/generated/busqueda-normal.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792175064/busquedaNormalTCG.png",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
