@@ -93,7 +93,7 @@
   },
   {
     "name": "Dragón de Fuego Bebe",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736432394/dragonfuegobebetcg_kowhg9.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173719/dragonfuegobebetcg.png",
     "attribute": "Fuego",
     "type": "Dragón",
     "breed": "Dragón",
@@ -114,7 +114,7 @@
   },
   {
     "name": "Dragón de Oscuridad Bebe",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736432125/dragonoscurobebetcg_mqesrl.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173720/dragonoscurobebetcg.png",
     "attribute": "Oscuridad",
     "type": "Dragón",
     "breed": "Dragón",
@@ -135,7 +135,7 @@
   },
   {
     "name": "Dragón de Tierra Bebe",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736432750/dragontierrabebetcg_rhzy91.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173721/dragontierrabebetcg.png",
     "attribute": "Tierra",
     "type": "Dragón",
     "breed": "Dragón",
@@ -156,7 +156,7 @@
   },
   {
     "name": "Dragón de Viento Bebe",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736433079/dragonvientobebetcg_aqrwki.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173722/dragonvientobebetcg.png",
     "attribute": "Viento",
     "type": "Dragón",
     "breed": "Dragón",
@@ -296,7 +296,7 @@
   },
   {
     "name": "Roco, el Dragón de Tierra",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736415382/dirgurdragóntierratcg_cws6am.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173715/dirgurdragontierratcg.png",
     "attribute": "Tierra",
     "type": "Dragón",
     "breed": "Dragón",
@@ -1309,7 +1309,7 @@
   },
   {
     "name": "Conjurador Orco",
-    "image": "/assets/CardImg/generated/conjurador-orco.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792179353/conjuradorOrcoTCG.jpg",
     "attribute": "Arcano",
     "type": "Orco",
     "breed": "Orco",
@@ -1960,7 +1960,7 @@
   },
   {
     "name": "Cofre Esqueleto",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736437067/cofreesqueletotcg_foq2fb.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173690/cofreesqueletotcg.png",
     "attribute": "Oscuridad",
     "type": "Zombi",
     "breed": "Zombi",
@@ -2092,7 +2092,7 @@
   },
   {
     "name": "Doppelganger",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735579791/doppelgangertcg_pze0h4.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173717/doppelgangertcg.png",
     "attribute": "Hipnosis",
     "type": "Cambiaformas",
     "breed": "Cambiaformas",
@@ -2158,7 +2158,7 @@
   },
   {
     "name": "Cubo Gelatinoso",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735478237/cubogelatinosotcg_khg7ox.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173709/cubogelatinosotcg.png",
     "attribute": "Oscuridad",
     "type": "Demonio",
     "breed": "Demonio",
@@ -2444,7 +2444,7 @@
   },
   {
     "name": "Drácula, El primer Inmortal",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737026335/draculaprimerinmortaltcg_wsroph.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173728/draculaprimerinmortaltcg.png",
     "attribute": "Oscuridad",
     "type": "Inmortal",
     "breed": "Inmortal",
@@ -3450,7 +3450,7 @@
   },
   {
     "name": "Deva",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735580704/devatcg_gfp0ku.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173713/devatcg.png",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3812,7 +3812,7 @@
   },
   {
     "name": "Cuenco de Lava",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736880946/cuencolavatcg_hpf0zc.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173712/cuencolavatcg.png",
     "attribute": "none",
     "type": "equipment",
     "description": "Este cuenco rústico, tallado en piedra volcánica, rebosa lava ardiente que parece tener vida propia. Creado por criaturas infernales, este artefacto canaliza el poder del fuego primigenio, ofreciendo a su portador un vínculo directo con la energía de los volcanes. Aunque peligroso, su uso concede un poder devastador a quien lo domine.",
