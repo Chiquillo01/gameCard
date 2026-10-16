@@ -4027,7 +4027,7 @@
   },
   {
     "name": "Anciana de los libros",
-    "image": "/assets/CardImg/generated/anciana-de-los-libros.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173101/ancianadeloslibrostcg.jpg",
     "attribute": "Oscuridad",
     "type": "Mago",
     "breed": "Mago",
