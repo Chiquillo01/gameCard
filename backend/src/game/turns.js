@@ -55,6 +55,7 @@ function runPhaseEntry(state) {
   }
 
   if (state.phase === 'standby') {
+    returnExiledAtStandby(state);
     fireTrigger(state, 'phase', { timing: 'standbyPhase' });
   }
 
@@ -82,14 +83,26 @@ function runPhaseEntry(state) {
   checkWin(state);
 }
 
-// Monsters exiled "hasta la Fase Final" (Traición de Vida, Orco Gigante) come back to their owner's
-// field now, in the position they left in. With no free zone they go to the Cementerio instead;
-// one that already left the Exilio some other way stays wherever it is.
+// Monsters exiled "hasta la Fase Final" come back to their owner's field now (bringBack).
 function returnExiled(state) {
   const all = state.returnAtEndPhase || [];
   // "Hasta el final del siguiente turno" waits for that turn's Fase Final.
   const due = all.filter((r) => (r.returnTurn ?? state.turnNumber) <= state.turnNumber);
   state.returnAtEndPhase = all.filter((r) => !due.includes(r));
+  bringBack(state, due);
+}
+
+// Monsters exiled "hasta tu próxima Fase de Espera" (Araña de Fase) come back in their owner's.
+function returnExiledAtStandby(state) {
+  const all = state.returnAtStandby || [];
+  const due = all.filter((r) => r.ownerIndex === state.turnPlayer);
+  state.returnAtStandby = all.filter((r) => !due.includes(r));
+  bringBack(state, due);
+}
+
+// Back in the position they left in. With no free zone they go to the Cementerio instead; one that
+// already left the Exilio some other way stays wherever it is.
+function bringBack(state, due) {
   due.forEach(({ instanceId, ownerIndex, position }) => {
     const owner = player(state, ownerIndex);
     if (!owner.banished.includes(instanceId)) return;

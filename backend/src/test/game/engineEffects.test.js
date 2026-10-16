@@ -1039,3 +1039,28 @@ describe('Oscuro / Inferno: "destruye una carta boca abajo / boca arriba"', () =
     expect(offered('INFERNO_DRAGON_DESTROY_ON_SUMMON')).toEqual([upMonster, upSupport].sort());
   });
 });
+
+describe('Araña de Fase', () => {
+  it('leaves at the end of every turn and comes back in its owner\'s next Fase de Espera', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const arana = await onField(state, 0, 'Araña de Fase');
+    toPhase(state, 'end', 0);
+    passAll(state);
+    expect(state.players[0].banished).toContain(arana);
+    toPhase(state, 'main1', 1); // the rival's turn: still away
+    expect(monster(state, arana)).toBeUndefined();
+    toPhase(state, 'main1', 0); // its owner's Fase de Espera brings it back
+    expect(monster(state, arana)).toBeDefined();
+    expect(state.players[0].banished).not.toContain(arana);
+  });
+
+  it('can be special summoned only while its owner controls an Insecto', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const arana = await toHand(state, 0, 'Araña de Fase');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: arana }).ok).toBe(false);
+    await onField(state, 0, 'Avispa gigante');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: arana }).ok).toBe(true);
+  });
+});

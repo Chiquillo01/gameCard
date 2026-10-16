@@ -110,9 +110,12 @@ function exileTarget(ctx, args, targets) {
   const { canAffect } = require('../targets');
   const { getEffectiveStats } = require('../effectEngine');
   const nextTurn = args.duration === 'endOfNextTurn';
-  const temporary = nextTurn || END_OF_TURN.includes(args.duration);
+  // "Hasta tu próxima Fase de Espera" (Araña de Fase): back when its owner's Standby comes.
+  const untilStandby = args.duration === 'untilOwnerStandby';
+  const temporary = nextTurn || untilStandby || END_OF_TURN.includes(args.duration);
   ctx.lastTargetsAtk = 0;
-  (targets || []).forEach((instanceId) => {
+  const picked = args.target === 'self' ? [ctx.sourceInstanceId] : targets || [];
+  picked.forEach((instanceId) => {
     const loc = findInstanceLocation(ctx.state, instanceId);
     if (!loc) return;
     const entry = loc.zone.startsWith('field:') ? [...ctx.state.players[loc.ownerIndex].field.monsters, ...ctx.state.players[loc.ownerIndex].field.support, ctx.state.players[loc.ownerIndex].field.territory].find((e) => e && e.instanceId === instanceId) : null;
@@ -120,11 +123,14 @@ function exileTarget(ctx, args, targets) {
     const isMonster = loc.zone === 'field:monster';
     if (isMonster) ctx.lastTargetsAtk += getEffectiveStats(entry).atk;
     moveToZone(ctx.state, instanceId, 'banished');
-    if (temporary && isMonster && !String(instanceId).startsWith('token:')) {
+    if (untilStandby && isMonster && !String(instanceId).startsWith('token:')) {
+      ctx.state.returnAtStandby = ctx.state.returnAtStandby || [];
+      ctx.state.returnAtStandby.push({ instanceId, ownerIndex: ownerOfInstance(instanceId) ?? loc.ownerIndex, position: entry.position });
+    } else if (temporary && isMonster && !String(instanceId).startsWith('token:')) {
       ctx.state.returnAtEndPhase = ctx.state.returnAtEndPhase || [];
       ctx.state.returnAtEndPhase.push({ instanceId, ownerIndex: ownerOfInstance(instanceId) ?? loc.ownerIndex, position: entry.position, returnTurn: ctx.state.turnNumber + (nextTurn ? 1 : 0) });
     }
-    const until = nextTurn ? ' hasta el final del siguiente turno' : ' hasta la Fase Final';
+    const until = untilStandby ? ' hasta la próxima Fase de Espera de su dueño' : nextTurn ? ' hasta el final del siguiente turno' : ' hasta la Fase Final';
     log(ctx.state, `${sourceName(ctx.state, instanceId)} es exiliada${temporary && isMonster ? until : ''} (por ${ctxSource(ctx)}).`);
   });
 }

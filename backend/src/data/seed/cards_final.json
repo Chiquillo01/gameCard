@@ -1498,14 +1498,17 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "CE",
-    "effect": "monstruo sin efecto.",
+    "effect": "Al final del turno:\n• Exilia esta carta hasta tu proxima Fase de Espera.",
     "invocationText": "Si controlas un insecto se puede invocar de forma especial.",
-    "atk": 2,
+    "atk": 3,
     "def": 1,
     "level": 2,
     "state": 4,
     "number": 63,
-    "effectCodes": []
+    "effectCodes": [
+      "ARANA_FASE_PHASES_OUT",
+      "ARANA_FASE_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Avispa de Batalla",

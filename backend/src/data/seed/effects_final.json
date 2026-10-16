@@ -7110,5 +7110,50 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "_id": "ARANA_FASE_PHASES_OUT",
+    "type": "trigger",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "exileTarget",
+        "args": {
+          "target": "self",
+          "duration": "untilOwnerStandby"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ARANA_FASE_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "family": "Insecto"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]
