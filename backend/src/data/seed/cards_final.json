@@ -383,7 +383,7 @@
   },
   {
     "name": "El Jinete Original, Draco",
-    "image": "/assets/CardImg/generated/el-jinete-original-draco.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792185171/jineteOriginalTCG.jpg",
     "attribute": "Fuego",
     "type": "Paladín",
     "breed": "Paladín",
@@ -996,7 +996,7 @@
   },
   {
     "name": "En busca del Goblin",
-    "image": "/assets/CardImg/generated/en-busca-del-goblin.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173726/enbuscadeltrasgotcg.png",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -1397,7 +1397,7 @@
   },
   {
     "name": "El Duende Elegido",
-    "image": "/assets/CardImg/generated/el-duende-elegido.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792185171/duendeElegidoTCG.jpg",
     "attribute": "none",
     "type": "counter",
     "description": "-",
@@ -1715,7 +1715,7 @@
   },
   {
     "name": "Enjambre de Avispas",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736627860/enjambreavispastcg_yeffvp.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173730/enjambreavispastcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "El enjambre de avispas es una invocación mágica druídica utilizada como arma de ataque en grupo. Sus movimientos coordinados y su letalidad hacen de esta nube zumbante una amenaza temida en el Campo de batalla. Sus rayas amarillas y negras destacan mientras avanzan hacia su objetivo, llenando el aire de caos y peligro. Este enjambre se despliega en vastos Campos abiertos, donde su velocidad y alcance resultan implacables contra cualquier oponente.",
@@ -1778,7 +1778,7 @@
   },
   {
     "name": "Draña",
-    "image": "/assets/CardImg/generated/drana.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792185171/dranaTCG.jpg",
     "attribute": "Oscuridad",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -3203,7 +3203,7 @@
   },
   {
     "name": "Dríada",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735478480/driadatcg_nggrvg.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173724/driadatcg.png",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3519,7 +3519,7 @@
   },
   {
     "name": "Espectro",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736934938/espectrotcg_lblbbx.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173732/espectrotcg.png",
     "attribute": "none",
     "type": "continuous",
     "description": "Un espectro furioso y humanoide flota en el Campo, envuelto en sombras y con una expresión de ira eterna. Su figura es translúcida, con fragmentos de energía oscura que emanan de su cuerpo, despojando de vida todo lo que toca. Flores se marchitan y pequeños animales caen sin vida a su paso, dejando un rastro de desolación. Este no-muerto, condenado por un destino cruel, busca venganza contra los vivos, consumiendo su esencia para aumentar su poder.",
@@ -4269,7 +4269,7 @@
   },
   {
     "name": "Enano Constructor",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736433931/enanoconstructortcg_fjapas.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173727/enanoconstructortcg.png",
     "attribute": "Fuego",
     "type": "Enano",
     "breed": "Enano",
@@ -4503,7 +4503,7 @@
   },
   {
     "name": "Duérgar",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736583792/duergartcg_uodza8.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173725/duergartcg.png",
     "attribute": "Oscuridad",
     "type": "Enano",
     "breed": "Enano",
@@ -5363,7 +5363,7 @@
   },
   {
     "name": "Ent",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735479562/enttcg_i7swf2.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173731/enttcg.png",
     "attribute": "Natura",
     "type": "Mutación",
     "breed": "Mutación",
@@ -5481,7 +5481,7 @@
   },
   {
     "name": "El Bosque Oscuro",
-    "image": "/assets/CardImg/generated/el-bosque-oscuro.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792185171/bosqueOscuroTCG.jpg",
     "attribute": "none",
     "type": "field",
     "description": "-",
