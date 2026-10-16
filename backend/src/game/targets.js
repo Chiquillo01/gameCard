@@ -70,6 +70,9 @@ function selectRows(ctx, args) {
   const VISIBLE_KEYS = ['faceDown', 'faceUp', 'position'];
   const asksWhatItIs = hasFilter && Object.entries(filter).some(([k, v]) => !VISIBLE_KEYS.includes(k) && v !== undefined && v !== null && v !== '');
   if (asksWhatItIs) rows = rows.filter((r) => !(r.entry.faceDown && r.ownerIndex !== ctx.controllerIndex));
+  // "Boca abajo" / "boca arriba" is the card's state on the field, not something its data says.
+  if (filter && filter.faceDown) rows = rows.filter((r) => r.entry.faceDown);
+  if (filter && filter.faceUp) rows = rows.filter((r) => !r.entry.faceDown);
   if (hasFilter) {
     rows = rows.filter((r) => (r.kind === 'monster' ? matchesFilter(r.entry, filter) : !r.entry.isToken && matchesCardFilter(getCard(r.entry.cardId), filter)));
   }

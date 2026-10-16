@@ -308,7 +308,7 @@
     "effect": "Cuando esta carta es invocada especial:\n• Añade a tu Mano un Dragón de tu Cementerio o Exilio.",
     "invocationText": "Descarta 2 Dragones de tu Mano para invocar especial esta carta, desde la Mano o Cementerio.",
     "atk": 5,
-    "def": 11,
+    "def": 8,
     "level": 5,
     "state": 3,
     "number": 14,

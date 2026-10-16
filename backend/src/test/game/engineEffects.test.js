@@ -1011,3 +1011,22 @@ describe('Deva', () => {
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: deva }).ok).toBe(true);
   });
 });
+
+describe('Oscuro / Inferno: "destruye una carta boca abajo / boca arriba"', () => {
+  it('only offers face-down cards to Oscuro and face-up cards to Inferno, monsters and supports alike', async () => {
+    const { selectRows } = require('../../game/targets');
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const oscuro = await onField(state, 0, 'Oscuro, el Dragón de Oscuridad');
+    const downMonster = await onField(state, 1, 'Slime', { position: 'defense', faceDown: true });
+    const upMonster = await onField(state, 1, 'Kraken');
+    const downSupport = placeSupport(state, await instance(1, 'Trampa de Madera'), 1, { faceDown: true }).instanceId;
+    const upSupport = placeSupport(state, await instance(1, 'Arboleda'), 1, { faceDown: false }).instanceId;
+    const offered = (effectId) => {
+      const effect = getEffect(effectId);
+      return selectRows({ state, controllerIndex: 0, sourceInstanceId: oscuro, effect }, effect.actions[0].args).map((r) => r.entry.instanceId).sort();
+    };
+    expect(offered('OSCURO_DRAGON_DESTROY_FACEDOWN')).toEqual([downMonster, downSupport].sort());
+    expect(offered('INFERNO_DRAGON_DESTROY_ON_SUMMON')).toEqual([upMonster, upSupport].sort());
+  });
+});
