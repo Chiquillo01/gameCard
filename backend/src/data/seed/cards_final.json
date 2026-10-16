@@ -4119,7 +4119,7 @@
     "expansion": "NdM",
     "effect": "En activación:\n• Agrega a la mano una carta \"Equipo Sunne\" excepto \"Equipo Sunne - Plan Maestro\", después si controlas un \"Armadura Sunne\" roba 1 carta.\nExilia esta carta en Cementerio, selecciona \"Equipo Sunne\" en Cementerio:\n• Devuelvelos al Mazo, si lo hacer, levanta a la Mano una carta del Campo de tu oponente por cada una.",
     "invocationText": "Activación - 1 Píxel",
-    "state": 4,
+    "state": 2,
     "number": 212,
     "activationCost": {
       "fn": "payPixels",

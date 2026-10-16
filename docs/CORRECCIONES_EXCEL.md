@@ -40,7 +40,6 @@ State distinto del normal de su rareza (¿a propósito?):
 | 51 | Orco Lanzador de Dardos | Raro | 4 | 3 |
 | 52 | Orco Conjurador | Raro | 4 | 3 |
 | 199 | Cuenco de Lava | Raro | 4 | 3 |
-| 212 | Equipo Sunne - Plan Maestro | Épico | 4 | 2 |
 | 280 | Clionne, Dama Ramificada del Bosque | Raro | 4 | 3 |
 | 281 | Grook, el Árbol Guardián | Raro | 4 | 3 |
 
