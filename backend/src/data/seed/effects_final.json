@@ -3465,22 +3465,6 @@
     "choice": true
   },
   {
-    "_id": "ORCO_GIGANTE_EXILE",
-    "type": "quick",
-    "oncePerTurn": true,
-    "conditions": [],
-    "requiresTarget": true,
-    "actions": [
-      {
-        "fn": "exileTarget",
-        "args": {
-          "target": "Monstruo",
-          "duration": "endOfTurn"
-        }
-      }
-    ]
-  },
-  {
     "_id": "ARPIA_DORADA_ALL_BUFF",
     "type": "continuous",
     "oncePerTurn": false,
@@ -7098,6 +7082,30 @@
         "args": {
           "card": "self",
           "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ORCO_GIGANTE_GROWS_PER_ORCO_DESTROYED",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "scope": "destroyedThisTurn",
+          "filter": {
+            "nameContains": "Orco"
+          },
+          "atk": 2,
+          "target": "self"
         }
       }
     ],

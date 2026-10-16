@@ -264,6 +264,12 @@ function announceSentToGraveyard(state, instanceId, ownerIndex, { from, reason }
 // card an event is about when it has just left the field ("cuando es enviada al Cementerio",
 // "si es destruida"). A negated card's triggers don't fire.
 function fireTrigger(state, eventName, eventArgs = {}) {
+  // Every monster destroyed this turn (in battle, by an effect or as a cost), for "por cada X
+  // destruido este turno" (Orco Gigante). Tokens aren't cards and don't count.
+  if (eventName === 'onMonsterDestroyed' && eventArgs.cardId) {
+    if (!state.destroyedThisTurn || state.destroyedThisTurn.turn !== state.turnNumber) state.destroyedThisTurn = { turn: state.turnNumber, cardIds: [] };
+    state.destroyedThisTurn.cardIds.push(eventArgs.cardId);
+  }
   const order = [state.turnPlayer, state.turnPlayer === 0 ? 1 : 0];
   order.forEach((controllerIndex) => {
     const pl = player(state, controllerIndex);

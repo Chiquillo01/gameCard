@@ -450,6 +450,7 @@ function cannotBeNegated() {
 //   scope "field"         : count the matches on the whole field (else only the controller's);
 //   scope "opponentField" : count and buff the rival's monsters;
 //   scope "equippedToSelf": count the cards equipped to this one (Carnívora Bestia-Moss);
+//   scope "destroyedThisTurn": count the matching monsters destroyed this turn (Orco Gigante);
 //   target "self"         : the buff lands on the card that has the effect;
 //   excludeSelf           : that card doesn't count itself ("excepto el mismo").
 // The buff it applied is kept on ctx.lastScaledBuff for a following mirrorStatToOpponent step.
@@ -462,6 +463,9 @@ function applyScaledBuff(ctx, args, targets) {
   let scaleBy;
   if (args.scope === 'equippedToSelf') {
     scaleBy = equipsOn(ctx.state, ctx.sourceInstanceId).length;
+  } else if (args.scope === 'destroyedThisTurn') {
+    const log = ctx.state.destroyedThisTurn;
+    scaleBy = log && log.turn === ctx.state.turnNumber ? log.cardIds.filter((id) => matchesCardFilter(getCard(id), filter)).length : 0;
   } else if (args.scope === 'ownGraveyard') {
     scaleBy = player(ctx.state, ctx.controllerIndex).graveyard.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), filter)).length;
   } else {

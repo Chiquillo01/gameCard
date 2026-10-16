@@ -1349,7 +1349,7 @@
     "rarity": "rare",
     "category": "fusion",
     "expansion": "CdG",
-    "effect": "Una vez por turno, como efecto rápido:\n• Exilia un monstruo en el Campo hasta el final del Turno.",
+    "effect": "Gana +2 Atk por cada \"Orco\" destruido este turno.",
     "invocationText": "Compilación - 2 Orcos",
     "atk": 11,
     "def": 5,
@@ -1368,7 +1368,7 @@
       }
     },
     "effectCodes": [
-      "ORCO_GIGANTE_EXILE"
+      "ORCO_GIGANTE_GROWS_PER_ORCO_DESTROYED"
     ]
   },
   {

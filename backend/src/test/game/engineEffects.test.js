@@ -384,17 +384,26 @@ describe('Espora Venenosa', () => {
   });
 });
 
-describe('Exiled "hasta la Fase Final"', () => {
-  it('Orco Gigante: the monster it exiles comes back at the end of the turn', async () => {
+describe('Orco Gigante', () => {
+  it('gains +2 Atk for each "Orco" destroyed this turn, on either side; other monsters do not count, and it resets next turn', async () => {
     const state = await makeDuel();
-    const gigante = await onField(state, 0, 'Orco Gigante');
-    const cactus = await onField(state, 1, 'Cactus Violento');
     toPhase(state, 'main1', 0);
-    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ORCO_GIGANTE_EXILE', sourceInstanceId: gigante, targets: [cactus] }).ok).toBe(true);
-    passAll(state);
-    expect(state.players[1].banished).toContain(cactus);
-    toPhase(state, 'end', 0);
-    expect(monster(state, cactus)).toBeTruthy();
+    const gigante = await onField(state, 0, 'Orco Gigante');
+    const base = monster(state, gigante).baseAtk;
+    const atk = () => { recomputeContinuous(state); const m = monster(state, gigante); return m.baseAtk + m.tempBuff.atk; };
+    const relampago = async (target) => {
+      const card = await toHand(state, 0, 'Relámpago');
+      expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [target] }).ok).toBe(true);
+      passAll(state);
+    };
+    await relampago(await onField(state, 1, 'Orco Guerrero'));
+    expect(atk()).toBe(base + 2);
+    await relampago(await onField(state, 0, 'Orco Gladiador'));
+    expect(atk()).toBe(base + 4);
+    await relampago(await onField(state, 1, 'Slime'));
+    expect(atk()).toBe(base + 4);
+    toPhase(state, 'main1', 1);
+    expect(atk()).toBe(base);
   });
 });
 
