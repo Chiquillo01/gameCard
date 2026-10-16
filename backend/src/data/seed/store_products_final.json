@@ -505,9 +505,51 @@
     ]
   },
   {
+    "name": "Pack de 100 pixelcoins",
+    "description": "100 pixelcoins para gastar en la tienda.",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792172462/monedastcg.png",
+    "price": {
+      "pixelgems": 10
+    },
+    "reward": {
+      "cards": 0,
+      "pixelgems": 0,
+      "pixelcoins": 100
+    },
+    "category": "pixelcoins"
+  },
+  {
+    "name": "Pack de 500 pixelcoins",
+    "description": "500 pixelcoins para gastar en la tienda.",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792172462/monedastcg.png",
+    "price": {
+      "pixelgems": 50
+    },
+    "reward": {
+      "cards": 0,
+      "pixelgems": 0,
+      "pixelcoins": 500
+    },
+    "category": "pixelcoins"
+  },
+  {
+    "name": "Pack de 1000 pixelcoins",
+    "description": "1000 pixelcoins para gastar en la tienda.",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792172462/monedastcg.png",
+    "price": {
+      "pixelgems": 100
+    },
+    "reward": {
+      "cards": 0,
+      "pixelgems": 0,
+      "pixelcoins": 1000
+    },
+    "category": "pixelcoins"
+  },
+  {
     "name": "Pack de 10 pixelgems",
     "description": "10 pixelgems para gastar en la tienda.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1739835342/gemastiendatcg_hq2kds.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792172559/gemastcg.png",
     "price": {
       "euros": 0.99
     },
@@ -533,7 +575,7 @@
   {
     "name": "Pack de 120 pixelgems",
     "description": "120 pixelgems para gastar en la tienda.",
-    "imageUrl": "https://res.cloudinary.com/dsd7efrba/image/upload/v1739835337/cofregemastiendatcg_trepm6.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792172537/cofregemastcg.png",
     "price": {
       "euros": 9.99
     },

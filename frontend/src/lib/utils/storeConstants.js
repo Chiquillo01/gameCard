@@ -9,5 +9,6 @@ export const STORE_CATEGORIES = [
   { id: 'chest', label: 'Cofres' },
   { id: 'spEdition', label: 'Ediciones Especiales' },
   { id: 'structure', label: 'Mazos de Estructura' },
+  { id: 'pixelcoins', label: 'Packs de Pixelcoins' },
   { id: 'pixelgems', label: 'Packs de Pixelgems' },
 ];

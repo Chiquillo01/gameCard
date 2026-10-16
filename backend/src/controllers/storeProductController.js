@@ -223,10 +223,12 @@ const buyCurrency = async (req, res) => {
     const quantity = parseQuantity(req.body.quantity);
     if (quantity === null) return res.status(400).json({ error: 'Cantidad inválida.' });
 
-    const { product, status, error } = await productFor(req, ['pixelgems']);
+    // A currency pack's category is the currency it gives (pixelgems or pixelcoins).
+    const { product, status, error } = await productFor(req, PAYMENT_METHODS);
     if (!product) return res.status(status).json({ error });
-    if (!product.reward.pixelgems || product.reward.pixelgems <= 0) {
-      return res.status(400).json({ error: 'Este producto no es un pack de pixelgems válido.' });
+    const given = product.category;
+    if (!product.reward[given] || product.reward[given] <= 0) {
+      return res.status(400).json({ error: `Este producto no es un pack de ${given} válido.` });
     }
 
     // A pack is only handed out once it's actually been paid for. Packs priced in in-game currency
@@ -241,15 +243,15 @@ const buyCurrency = async (req, res) => {
     if (!canAfford(user, product, paymentMethod, quantity)) return res.status(410).json({ error: 'Saldo insuficiente' });
 
     const cost = product.price[paymentMethod] * quantity;
-    const credit = { pixelgems: product.reward.pixelgems * quantity };
+    const credit = { [given]: product.reward[given] * quantity };
     const charged = await charge(userId, paymentMethod, cost, credit);
     if (!charged) return res.status(410).json({ error: 'Saldo insuficiente' });
 
     const order = orderFor(charged, product, quantity, balanceBefore(charged, paymentMethod, cost, credit));
     await order.save();
-    res.status(200).json({ message: 'Compra de pixelgems realizada con éxito', newBalance: balanceOf(charged), order });
+    res.status(200).json({ message: `Compra de ${given} realizada con éxito`, newBalance: balanceOf(charged), order });
   } catch (error) {
-    res.status(500).json({ error: 'Error al procesar la compra de pixelgems' });
+    res.status(500).json({ error: 'Error al procesar la compra' });
   }
 };
 

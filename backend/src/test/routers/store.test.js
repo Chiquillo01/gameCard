@@ -421,6 +421,26 @@ describe('Store Controller TEST', () => {
       expect(response.body.newBalance).toEqual({ pixelcoins: before.pixelcoins - 100, pixelgems: before.pixelgems + 10 });
     });
 
+    it('a pixelcoin pack, paid with pixelgems, credits pixelcoins', async () => {
+      const pack = await new StoreProduct({
+        name: 'Coins for gems',
+        description: 'Pixelcoins bought with pixelgems',
+        price: { pixelgems: 1 },
+        reward: { pixelcoins: 100 },
+        imageUrl: 'coins.png',
+        category: 'pixelcoins',
+      }).save();
+      const before = await balanceOf(userToken);
+
+      const response = await fakeRequest
+        .post(`/store/products/${pack._id}/buy-currency`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ paymentMethod: 'pixelgems', quantity: 2 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.newBalance).toEqual({ pixelcoins: before.pixelcoins + 200, pixelgems: before.pixelgems - 2 });
+    });
+
     it('refuses an in-game-priced pack the user cannot afford', async () => {
       const pack = await new StoreProduct({
         name: 'Pricey Pack',

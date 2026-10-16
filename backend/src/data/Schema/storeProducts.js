@@ -11,13 +11,15 @@ const StoreProductSchema = new Schema({
   reward: {
     cards: { type: Number, default: 0 },
     pixelgems: { type: Number, default: 0 },
+    pixelcoins: { type: Number, default: 0 },
   },
   imageUrl: { type: String, required: true },
   expansion: { type: String },
   category: {
     type: String,
     required: true,
-    enum: ['chest', 'structure', 'pixelgems', 'spEdition'],
+    // 'pixelgems' / 'pixelcoins': currency packs, whose reward is that currency.
+    enum: ['chest', 'structure', 'pixelgems', 'pixelcoins', 'spEdition'],
   },
   // What a chest (category 'chest'/'spEdition') gives, slot by slot: `count` cards each, with the
   // relative odds of each rarity. The cards themselves are drawn from the product's expansion
