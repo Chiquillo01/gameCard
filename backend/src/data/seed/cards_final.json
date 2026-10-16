@@ -1582,7 +1582,7 @@
   },
   {
     "name": "Cucaracha de Combate",
-    "image": "/assets/CardImg/generated/cucaracha-de-combate.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792185318/cucarachaCombateTCG.jpg",
     "attribute": "Tierra",
     "type": "Blattidae",
     "breed": "Blattidae",
@@ -3327,7 +3327,7 @@
   },
   {
     "name": "Des - Compilación",
-    "image": "/assets/CardImg/generated/des-compilacion.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792185318/descompilacionTCG.jpg",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -5151,7 +5151,7 @@
   },
   {
     "name": "Cuélebre del Bosque Oscuro",
-    "image": "/assets/CardImg/generated/cuelebre-del-bosque-oscuro.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792185318/cuelebreBosqueOscuroTCG.jpg",
     "attribute": "Tierra",
     "type": "Reptil",
     "breed": "Reptil",
