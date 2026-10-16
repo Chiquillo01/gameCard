@@ -218,7 +218,7 @@
   {
     "name": "Nacimiento de la Magia",
     "description": "Contiene 2 cartas comunes y 2 carta raras y 1 épica. Probabilidad del 2% de obtener una carta legendaria.",
-    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098371/Chest.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792130757/ChestNdM.png",
     "price": {
       "pixelcoins": 100,
       "pixelgems": 10
@@ -326,7 +326,7 @@
   {
     "name": "Ediocion Espacial Tokens",
     "description": "Seis tokens para disfrutar.",
-    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792098371/Chest.png",
+    "imageUrl": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792130757/ChestEET.png",
     "price": {
       "pixelcoins": 30,
       "pixelgems": 3
