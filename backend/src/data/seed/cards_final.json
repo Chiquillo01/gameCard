@@ -3543,7 +3543,7 @@
   },
   {
     "name": "El Vacío",
-    "image": "/assets/CardImg/generated/el-vacio.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792256926/vacioTCG.jpg",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -5637,7 +5637,7 @@
   },
   {
     "name": "El poder de las plantas",
-    "image": "/assets/CardImg/generated/el-poder-de-las-plantas.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792256847/poderPlantasTCG.jpg",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -5954,7 +5954,7 @@
   },
   {
     "name": "Barrida de Licántropos",
-    "image": "/assets/CardImg/generated/barrida-de-licantropos.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792256797/barridoLicantroposTCG.jpg",
     "attribute": "none",
     "type": "counter",
     "description": "-",

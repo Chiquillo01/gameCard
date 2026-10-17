@@ -607,3 +607,11 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 ```text
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: an ivory horn sounding a call. Setting: a dark red background.
 ```
+
+# Prompts nuevos (para cartas que ya tenían imagen)
+
+## 149 · Héroe de la Esperanza
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: the Hero of Hope, a legendary armoured champion of light with huge blazing wings of golden fire, wielding a titanic halberd engraved with the heroes' emblem, sparks of pure light radiating from every movement, a determined heroic stance. Setting: a dark, desperate battlefield where his light breaks through the storm clouds and scatters the shadows, fallen banners and allies looking up at him with hope.
+```
