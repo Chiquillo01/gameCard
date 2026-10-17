@@ -1,7 +1,7 @@
 [
   {
     "name": "LenguAcida, Dragón Venenoso",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737041520/lenguainfamedragonveneradotcg_ixnpfk.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173808/lenguainfamedragonveneradotcg.png",
     "attribute": "Veneno",
     "type": "Dragón",
     "breed": "Dragón",
@@ -53,7 +53,7 @@
   },
   {
     "name": "Gárgola",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735578319/gargolatcg_howfyv.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173761/gargolatcg.png",
     "attribute": "Oscuridad",
     "type": "Bestia Alada",
     "breed": "Bestia Alada",
@@ -339,7 +339,7 @@
   },
   {
     "name": "Serpiente de Muelle",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736436376/serpientedemuelletcg_njhd14.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173885/serpientedemuelletcg.png",
     "attribute": "Hipnosis",
     "type": "Reptil",
     "breed": "Reptil",
@@ -440,7 +440,7 @@
   },
   {
     "name": "Maestro de Dragones",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736330846/maestrodragónestcg_qgm0oq.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173835/maestrodragonestcg.png",
     "attribute": "Luz",
     "type": "Paladín",
     "breed": "Paladín",
@@ -461,7 +461,7 @@
   },
   {
     "name": "Templo del Dragón",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736937657/templodragontcg_mniqkf.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173890/templodragontcg.png",
     "attribute": "none",
     "type": "field",
     "description": "En lo alto de una montaña imponente, rodeado de nubes que acarician su base, se alza el Templo del Dragón. Este santuario ancestral refleja la influencia de las poderosas criaturas a las que rinde homenaje. Cuentan las leyendas que quienes logran alcanzar este templo tras un arduo ascenso son bendecidos con un fragmento del conocimiento eterno de los dragones.",
@@ -485,7 +485,7 @@
   },
   {
     "name": "Trampa de Madera",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736789938/trampamaderatcg_blrpw1.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173898/trampamaderatcg.png",
     "attribute": "none",
     "type": "instant",
     "description": "En el oscuro laberinto de un calabozo olvidado, una trampa ingeniosa de madera yace oculta en el suelo. Su mecanismo se activa cuando una intrépida aventurera, desconociendo el peligro, pisa el panel de activación, liberando una estructura que se cierra con precisión mortal. Las tablas de madera robusta, reforzadas con clavos oxidados, se ensamblan Rápidamente, atrapando su pierna con fuerza.",
@@ -509,7 +509,7 @@
   },
   {
     "name": "Fuegos Fatuos",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736868980/fuegofatuotcg_svsrb4.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173756/fuegofatuotcg.png",
     "attribute": "none",
     "type": "equipment",
     "description": "Los fuegos fatuos son espíritus vengativos atrapados entre la vida y la muerte, adoptando formas luminosas que atraen a los curiosos a su perdición. Drenan la fuerza vital de todo ser que sucumba a su mortal juego lumínico. Aunque pequeños, su poder para consumir vidas enteras los convierte en una amenaza aterradora. Entidades formadas por la magia oscura y deseos de venganza.",
@@ -557,7 +557,7 @@
   },
   {
     "name": "Sello Temporal",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736625155/sellotemporaltcg_kdqwe4.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173883/sellotemporaltcg.png",
     "attribute": "none",
     "type": "instant",
     "description": "El Sello Temporal, un artefacto ancestral usado por magos de épocas remotas, descansa sobre un pedestal en el corazón de un templo olvidado. Su diseño circular icónico emite una tenue luz mágica, rodeado de un aura que distorsiona el tiempo y el espacio a su alrededor. Forjado para detener el tiempo o crear Campos temporales, su activación irradia un poder que evoca tanto respeto como temor. Los muros del templo guardan el secreto de su creación, convirtiéndolo en un objeto de inmenso poder y misterio.",
@@ -581,7 +581,7 @@
   },
   {
     "name": "Viaje de Unión",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736782936/viajeuniontcg_lnnwpm.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173920/viajeuniontcg.png",
     "attribute": "none",
     "type": "instant",
     "description": "Un viaje de unión por un sendero rodeado de árboles y vegetación mística. Este momento refleja no solo la esperanza del viaje, sino también el vínculo que fortalece sus pasos hacia lo desconocido. Es un homenaje al compañerismo y al amor eterno.",
@@ -603,7 +603,7 @@
   },
   {
     "name": "Loto de Obsidiana",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735653496/lotoobsidianatcg_xepbjd.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173833/lotoobsidianatcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Estos lotos son flores raras que se encuentran en los pantanos de la jungla. Su jugo es un veneno mortal, al igual que su forma en polvo, y el aroma de sus flores trae sueños malignos. Es infamemente utilizado por algunos magos, quienes queman el polen e inhalan el humo verde. Aunque esto causa un sueño similar al coma, las pesadillas carmesí en su interior restauran sus poderes mágicos.",
@@ -675,7 +675,7 @@
   },
   {
     "name": "Relámpago",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735655230/relampagotcg_qmx4jk.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173871/relampagotcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Tormenta de rayos fulminantes que causan un daño severo a aquellos a quien van dirigidos. Invocada desde la furia profunda de un poderoso hechicero.",
@@ -793,7 +793,7 @@
   },
   {
     "name": "Matón",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736581321/matontcg_u6jti3.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173838/matontcg.png",
     "attribute": "Tierra",
     "type": "Ladrón",
     "breed": "Ladrón",
@@ -854,7 +854,7 @@
   },
   {
     "name": "Orco Gladiador",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736580181/orcogladiadortcg_meyxdd.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173849/orcogladiadortcg.png",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -875,7 +875,7 @@
   },
   {
     "name": "Orco Guerrero",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735577049/orcotcg_chsw22.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173850/orcoguerrerotcg.png",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -1064,7 +1064,7 @@
   },
   {
     "name": "Refuerzos",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736711327/refuerzostcg_fxc8pf.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173870/refuerzostcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Cuando la batalla parece perdida, el resonar de un cuerno de guerra rompe la tensión del Campo. Guerreros de todas las razas y habilidades acuden a la llamada, liderados por un imponente comandante. Su postura heroica y su determinación inspiran esperanza en los corazones de los combatientes. Unidos por una causa mayor, marchan como un solo ejército para enfrentarse a la amenaza. Este despliegue de fuerza y valentía marca un punto de inflexión en la batalla, mostrando que incluso en la desesperación, la unidad puede prevalecer.",
@@ -1089,7 +1089,7 @@
   },
   {
     "name": "Tormenta de Relámpagos",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736626065/tormentarelampagostcg_njtspu.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173892/tormentarelampagostcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "La Tormenta de Relámpagos es una defensa mágica devastadora, creada por poderosos magos para proteger fortalezas y castillos de enemigos temibles. Los rayos ramificados iluminan la noche oscura, destruyendo todo a su paso. Este fenómeno es tanto un espectáculo aterrador como un arma letal, encarnando el caos y la ira de la naturaleza, amplificada por la magia.",
@@ -1158,7 +1158,7 @@
   },
   {
     "name": "Orco Lanzador de Dardos",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736588386/orcolanzadordardostcg_g017je.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173852/orcolanzadordardostcg.png",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -1245,7 +1245,7 @@
   },
   {
     "name": "Goblin Astuto",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735576450/goblintcg_fvw2gh.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173771/goblinastutotcg.png",
     "attribute": "Tierra",
     "type": "Goblin",
     "breed": "Goblin",
@@ -1340,7 +1340,7 @@
   },
   {
     "name": "Orco Gigante",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737044439/orcogigantetcg_sgt37i.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173848/orcogigantetcg.png",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -1373,7 +1373,7 @@
   },
   {
     "name": "Espíritu de batalla",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736885039/espiritubatallatcg_ikejbj.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173735/espiritubatallatcg.png",
     "attribute": "none",
     "type": "equipment",
     "description": "En medio del campamento militar, el espíritu de un guerrero legendario surge con un resplandor etéreo, llamando a la carga con un grito silencioso que llena de coraje a las tropas. Su figura es espectral y está envuelta en un aura brillante y armadura traslúcida. Los soldados mortales, inspirados por su presencia, se preparan para la batalla.",
@@ -1873,7 +1873,7 @@
   },
   {
     "name": "Esqueleto Parásito",
-    "image": "/assets/CardImg/generated/esqueleto-parasito.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173740/esqueletoparasitotcg.png",
     "attribute": "Oscuridad",
     "type": "Zombi",
     "breed": "Zombi",
@@ -1904,7 +1904,7 @@
   },
   {
     "name": "Mimeto",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736582599/mimetotcg_exgyoj.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173837/mimetotcg.png",
     "attribute": "Hipnosis",
     "type": "Demonio",
     "breed": "Demonio",
@@ -1923,7 +1923,7 @@
   },
   {
     "name": "Recipiente Engañoso",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736590589/recipienteenganosotcg_rgcmnx.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173869/recipienteenganosotcg.png",
     "attribute": "Oscuridad",
     "type": "Cambiaformas",
     "breed": "Cambiaformas",
@@ -1942,7 +1942,7 @@
   },
   {
     "name": "Slime",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736591118/slimetcg_ptudjz.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173886/slimetcg.png",
     "attribute": "Oscuridad",
     "type": "Demonio",
     "breed": "Demonio",
@@ -1985,7 +1985,7 @@
   },
   {
     "name": "Esqueleto",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735479839/esqueletotcg_ol8txl.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173746/esqueletotcg.png",
     "attribute": "Oscuridad",
     "type": "Zombi",
     "breed": "Zombi",
@@ -2004,7 +2004,7 @@
   },
   {
     "name": "Perro Esqueleto",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736590171/perroesqueletotcg_omja81.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173859/perroesqueletotcg.png",
     "attribute": "Oscuridad",
     "type": "Zombi",
     "breed": "Zombi",
@@ -2119,7 +2119,7 @@
   },
   {
     "name": "Lich",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736883310/lichetcg_a7lvxv.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173829/lichetcg.png",
     "attribute": "Oscuridad",
     "type": "Zombi",
     "breed": "Zombi",
@@ -2182,7 +2182,7 @@
   },
   {
     "name": "Perro de la Muerte",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736429817/perrodelamuertetcg_yj2nrd.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173858/perrodelamuertetcg.png",
     "attribute": "Oscuridad",
     "type": "Besti Infernal",
     "breed": "Besti Infernal",
@@ -2201,7 +2201,7 @@
   },
   {
     "name": "Esqueleto de relámpago",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736414977/esqueletorelampagotcg_wiin0i.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173743/esqueletorelampagotcg.png",
     "attribute": "Electricidad",
     "type": "Zombi",
     "breed": "Zombi",
@@ -2222,7 +2222,7 @@
   },
   {
     "name": "Héroe Montado",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736584215/Héroemontadotcg_spiqcs.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173796/heroemontadotcg.png",
     "attribute": "Tierra",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2243,7 +2243,7 @@
   },
   {
     "name": "Héroe Silencioso",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736430277/Héroesilenciosotcg_db7zck.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173795/heroesilenciosotcg.png",
     "attribute": "Oscuridad",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2265,7 +2265,7 @@
   },
   {
     "name": "Murcielago",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736589426/murcielagotcg_qfzcg3.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173843/murcielagotcg.png",
     "attribute": "Oscuridad",
     "type": "Bestia Alada",
     "breed": "Bestia Alada",
@@ -2354,7 +2354,7 @@
   },
   {
     "name": "Héroe Corrupto",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736418310/Héroecorruptotcg_gdztnq.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173789/heroecorruptotcg.png",
     "attribute": "Oscuridad",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2423,7 +2423,7 @@
   },
   {
     "name": "Sacrificio memorable",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736780574/sacrificiomemorabletcg_xweba6.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173875/sacrificiomemorabletcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Un elegido se prepara para su último acto de honor. Arrodillado frente a un pedestal desgastado por el tiempo, con una daga sencilla pero afilada sostenida firmemente en sus manos, realiza un sacrificio memorable. Su expresión transmite determinación y serenidad, consciente de que este acto salvará a quienes dejó atrás. Este acto heroico será recordado como un símbolo de abnegación y lealtad, un gesto que trascenderá durante generaciones.",
@@ -2480,7 +2480,7 @@
   },
   {
     "name": "Héroe del Caos",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737028407/heroecaostcg_ledu8l.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173792/heroecaostcg.png",
     "attribute": "Oscuridad",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2519,7 +2519,7 @@
   },
   {
     "name": "Héroe del Viento",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736093428/Héroevientotcg_x7cdnu.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173800/heroevientotcg.png",
     "attribute": "Viento",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2541,7 +2541,7 @@
   },
   {
     "name": "Vampiro",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736415832/vampirotcg_pbc5uw.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173919/vampirotcg.png",
     "attribute": "Oscuridad",
     "type": "Inmortal",
     "breed": "Inmortal",
@@ -2565,7 +2565,7 @@
   },
   {
     "name": "Llamada al Héroe",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736712071/llamadaheroetcg_asehox.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173830/llamadaheroetcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Con un amuleto místico sobrenatural, aquél que sea digno puede llamar e invocar al exótico héroe. Los símbolos arcanos y las luces danzan en el aire, reflejando la importancia de su misión. Este guerrero, destinado a grandes hazañas, acepta el desafío con determinación, sabiendo que el destino del reino depende de su valentía. La atmósfera está cargada de energía mágica, mientras el templo se convierte en el epicentro de un evento que cambiará el curso de la historia.",
@@ -2614,7 +2614,7 @@
   },
   {
     "name": "Héroe de Marfil",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736416557/Héroemarfiltcg_cj7e0l.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173798/heroemarfiltcg.png",
     "attribute": "Luz",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2658,7 +2658,7 @@
   },
   {
     "name": "Héroe de la Esperanza",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736955457/heroeesperanzatcg_vzqfir.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173794/heroeesperanzatcg.png",
     "attribute": "Luz",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2697,7 +2697,7 @@
   },
   {
     "name": "Guarida del Ser Oscuro",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736884508/guaridaoscurotcg_kfcjzy.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173782/guaridaoscurotcg.png",
     "attribute": "none",
     "type": "field",
     "description": "En las profundidades de una caverna tenebrosa y amenazante, esta guarida se alza como un lugar de terror y poder habitado por criaturas oscuras. Las paredes de la caverna están decoradas con estatuas demoníacas que parecen vigilar cada movimiento de los incautos. La atmósfera está impregnada de un aura opresiva, con sombras que parecen cobrar vida entre los brillos mágicos que se filtran por las grietas de la roca.",
@@ -2722,7 +2722,7 @@
   },
   {
     "name": "Héroe Fénix",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737047012/heroefenixtcg_wrvyqt.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173817/heroefenixtcg.png",
     "attribute": "Fuego",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2796,7 +2796,7 @@
   },
   {
     "name": "Héroe Berserker",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737050260/heroeberserkertcg_lmvemp.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173788/heroeberserkertcg.png",
     "attribute": "Oscuridad",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2830,7 +2830,7 @@
   },
   {
     "name": "Héroe de Escarcha",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736582994/Héroeescarchatcg_aiw94q.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173791/heroeescarchatcg.png",
     "attribute": "Hielo",
     "type": "Héroe",
     "breed": "Héroe",
@@ -2852,7 +2852,7 @@
   },
   {
     "name": "Íncubo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735577621/incubotcg_h8jh3i.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173807/incubotcg.png",
     "attribute": "Oscuridad",
     "type": "Pecador",
     "breed": "Pecador",
@@ -2876,7 +2876,7 @@
   },
   {
     "name": "Súcubo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736417985/sucubotcg_ysfp8x.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173888/sucubotcg.png",
     "attribute": "Oscuridad",
     "type": "Pecador",
     "breed": "Pecador",
@@ -2900,7 +2900,7 @@
   },
   {
     "name": "Vampiresa",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735578093/vampirotcg_ov2zgi.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173917/vampiresatcg.png",
     "attribute": "Oscuridad",
     "type": "Inmortal",
     "breed": "Inmortal",
@@ -3111,7 +3111,7 @@
   },
   {
     "name": "Gigante de Fuego",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736526894/giganteescarchatcg_nv9cqn.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173766/gigantefuegotcg.png",
     "attribute": "Fuego",
     "type": "Roca",
     "breed": "Roca",
@@ -3133,7 +3133,7 @@
   },
   {
     "name": "Olla de la Usura",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736625647/ollausuratcg_jhcjaf.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173845/ollausuratcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Este objeto maldito, conocido como la Olla de la Usura, es una reliquia utilizada por magos y hechiceros para canalizar poder a cambio de un precio terrible. Con un diseño desgastado y grietas que revelan su antigüedad, la olla retiene su rostro icónico con una sonrisa siniestra y ojos que brillan con avaricia. Aquellos que osan usarla son atraídos por su promesa de poder, solo para descubrir que sus deseos siempre vienen acompañados de maldiciones inevitables.",
@@ -3158,7 +3158,7 @@
   },
   {
     "name": "Paseo Temporal",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736705346/paseotemporaltcg_nap6js.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173853/paseotemporaltcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "En tiempos inmemoriales, Ellariel descubrió el secreto del control temporal, un poder ancestral que ha perfeccionado con el paso de los siglos. Este dominio del tiempo le permite proteger a su pueblo y desvelar los misterios más profundos del pasado y los enigmas del futuro. Sin embargo, su vínculo con este arte arcano es tanto un don como una condena: atrapada en un flujo eterno, Ellariel se ve forzada a vagar entre eras, incapaz de pertenecer plenamente a ninguna. Su existencia es un eco constante entre los hilos del tiempo, marcada por la soledad y la responsabilidad de su extraordinario poder.",
@@ -3224,7 +3224,7 @@
   },
   {
     "name": "Sátiro Cantante",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736587529/satirotcg_gwwv5d.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173881/satirotcg.png",
     "attribute": "Natura",
     "type": "Hada",
     "breed": "Hada",
@@ -3265,7 +3265,7 @@
   },
   {
     "name": "Valkiria",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736578962/valkiriatcg_mlb6qe.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173913/valkiriatcg.png",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3284,7 +3284,7 @@
   },
   {
     "name": "Contenedor sospechoso",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736590589/recipienteenganosotcg_rgcmnx.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173869/recipienteenganosotcg.png",
     "attribute": "Oscuridad",
     "type": "Demonio",
     "breed": "Demonio",
@@ -3303,7 +3303,7 @@
   },
   {
     "name": "Fuente de luz",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736938492/fuenteluztcg_xv4mtw.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173759/fuenteluztcg.png",
     "attribute": "none",
     "type": "field",
     "description": "En el corazón de un bosque nocturno, donde las sombras se entrelazan con la luz de la luna, una fuente de luz mágica flota suspendida en el aire. Un aura mística la envuelve, como si la naturaleza misma la protegiera. Alrededor de esta maravilla, pequeñas hadas revolotean, dejando rastros de polvo luminoso en su vuelo.",
@@ -3349,7 +3349,7 @@
   },
   {
     "name": "Homúnculo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736870305/homunculotcg_e2jtpg.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173806/homunculotcg.png",
     "attribute": "none",
     "type": "equipment",
     "description": "En el corazón de una biblioteca arcana, un homúnculo diminuto se posa sobre un libro abierto. Su cuerpo, creado a partir de elementos mágicos y sangre de su creador, emana un leve brillo apagado, mientras observa con ojos curiosos y brillantes. Este constructo, creado mediante rituales antiguos, sirve como fiel asistente para magos y hechiceros, aunque su esencia está ligada a la voluntad de su maestro.",
@@ -3395,7 +3395,7 @@
   },
   {
     "name": "Seraphine",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737027610/seraphinetcg_aowjof.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173882/seraphinetcg.png",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3429,7 +3429,7 @@
   },
   {
     "name": "Pegaso",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1735577256/pegasotcg_nupska.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173856/pegasotcg.png",
     "attribute": "Viento",
     "type": "Bestia Alada",
     "breed": "Bestia Alada",
@@ -3565,7 +3565,7 @@
   },
   {
     "name": "Hoguera",
-    "image": "/assets/CardImg/generated/hoguera.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173804/hogueratcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -3688,7 +3688,7 @@
   },
   {
     "name": "Solar, el Vergudo de los Cielos",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737109159/solarverdugocielotcg_g8jm3q.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173887/solarverdugocielotcg.png",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3745,7 +3745,7 @@
   },
   {
     "name": "Tifón Místico",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736853858/tifonmisticotcg_qyqq4n.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173895/tifonmisticotcg.png",
     "attribute": "none",
     "type": "instant",
     "description": "Un tifón de proporciones colosales, un fenómeno devastador resultado de un antiguo hechizo olvidado, invocado para destruir con fervor. El océano se ve reducido a un caos, con olas violentas que acompañan la furia del tifón, mientras un tenue resplandor en su centro insinúa su naturaleza mágica.",
@@ -3791,7 +3791,7 @@
   },
   {
     "name": "Moneda de la Fortuna",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736779477/monedafortunatcg_pur1qo.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173839/monedafortunatcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Una simple moneda de oro, desgastada por el uso y suspendida en el aire, girando mientras decide el destino con su cara o cruz. Se mezcla la tensión y la casualidad de un momento crucial. Esta moneda encarna la incertidumbre y el poder de las decisiones tomadas por azar, una constante en las vidas de aventureros y mercenarios.",
@@ -3962,7 +3962,7 @@
   },
   {
     "name": "Hechizo de volteo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736787096/hechizovolteotcg_psvvbz.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173784/hechizovolteotcg.png",
     "attribute": "none",
     "type": "instant",
     "description": "En el interior de la opulenta habitación de una hechicera adivina un poderoso hechizo cobra vida. La hechicera, con un gesto cargado de energía, hace girar una carta mágica en el aire, desatando un brillo caótico y destellante. Este acto invoca fuerzas impredecibles, capaces de alterar la fortuna del invocador o de desatar un poder inimaginable. \"Hechizo de Volteo\" no solo decide el destino de una carta, sino que transforma la esencia misma del juego.",
@@ -4131,7 +4131,7 @@
   },
   {
     "name": "Forja de los Herreros",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736933586/forjaherrerostcg_zdhmva.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173751/forjaherrerostcg.png",
     "attribute": "none",
     "type": "continuous",
     "description": "En el corazón de una bulliciosa forja subterránea, enanos hábiles trabajan con una precisión ancestral. Golpes rítmicos de martillos contra yunques resuenan en el taller cerrado, iluminado por el fulgor del fuego y el brillo del metal fundido. Herramientas bien organizadas y armas en distintas etapas de creación llenan el espacio, mostrando la maestría y dedicación de estos artesanos. El ambiente refleja acción, sudor y orgullo, mientras los herreros se esfuerzan por forjar piezas que podrían cambiar el curso de una batalla.",
@@ -4156,7 +4156,7 @@
   },
   {
     "name": "Relicario de Engranaje",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736935635/relicarioengranajestcg_nr1hld.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173872/relicarioengranajestcg.png",
     "attribute": "none",
     "type": "continuous",
     "description": "Una obra maestra de la ingeniería enana, este cofre mecánico está construido con una compleja red de engranajes visibles que giran con precisión. Abierto, revela un interior cuidadosamente compartimentado, diseñado para proteger artefactos de inmenso valor. Su superficie de metal bruñido y cobre está decorada con delicadas incrustaciones y marcas enanas, reflejando tanto funcionalidad como estética. Situado en una mesa de taller, el relicario evoca un aire de misterio y maestría, como si guardara secretos que solo un verdadero artesano podría comprender.",
@@ -4246,7 +4246,7 @@
   },
   {
     "name": "Motor de Engranaje",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736589131/motorengranajetcg_ckmwif.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173840/motorengranajetcg.png",
     "attribute": "Metal",
     "type": "Maquina",
     "breed": "Maquina",
@@ -4344,7 +4344,7 @@
   },
   {
     "name": "Fortaleza Rodante",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737038181/fortalezarodantetcg_oryn7u.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173754/fortalezarodantetcg.png",
     "attribute": "Metal",
     "type": "Maquina",
     "breed": "Maquina",
@@ -4469,7 +4469,7 @@
   },
   {
     "name": "Trituradora de Batalla",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737040670/trituradorabatallatcg_okfgvv.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173900/trituradorabatallatcg.png",
     "attribute": "Metal",
     "type": "Maquina",
     "breed": "Maquina",
@@ -4611,7 +4611,7 @@
   },
   {
     "name": "Oceano",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736939125/oceanotcg_t4cyzv.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173841/oceanotcg.png",
     "attribute": "none",
     "type": "field",
     "description": "Un vasto océano se extiende más allá del horizonte, su superficie ondulante refleja el brillo de un sol cálido. Este océano tranquilo, aunque en constante movimiento, guarda en sus profundidades secretos desconocidos e infinidad de criaturas y bestias marinas.",
@@ -4659,7 +4659,7 @@
   },
   {
     "name": "Gigante de Hielo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736577237/gigantenubetcg_qh9qm5.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173765/giganteescarchatcg.png",
     "attribute": "Hielo",
     "type": "Roca",
     "breed": "Roca",
@@ -4681,7 +4681,7 @@
   },
   {
     "name": "Gigante de las Nubes",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736578265/gigantefuegotcg_qjlu01.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173767/gigantenubetcg.png",
     "attribute": "Viento",
     "type": "Roca",
     "breed": "Roca",
@@ -4703,7 +4703,7 @@
   },
   {
     "name": "Gigante de Rocas",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736536299/gigantepiedratcg_imrxw1.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173768/gigantepiedratcg.png",
     "attribute": "Tierra",
     "type": "Roca",
     "breed": "Roca",
@@ -4725,7 +4725,7 @@
   },
   {
     "name": "Gigante del Trueno",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736577787/giganterayos_erc4a9.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173770/giganterayostcg.png",
     "attribute": "Electricidad",
     "type": "Roca",
     "breed": "Roca",
@@ -4747,7 +4747,7 @@
   },
   {
     "name": "Protector del Mar, Amooth",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737029059/protectormaramoothtcg_dw9hrt.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173866/protectormaramoothtcg.png",
     "attribute": "Agua",
     "type": "Guerrero Aquatíco",
     "breed": "Guerrero Aquatíco",
@@ -4804,7 +4804,7 @@
   },
   {
     "name": "HipoCampo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736329488/hipoCampotcg_iqflh9.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173802/hipocampotcg.png",
     "attribute": "Agua",
     "type": "Serpiente Marina",
     "breed": "Serpiente Marina",
@@ -4845,7 +4845,7 @@
   },
   {
     "name": "Kraken",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736592200/krakentcg_j5jwl1.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173809/krakentcg.png",
     "attribute": "Agua",
     "type": "Monstruo Maríno",
     "breed": "Monstruo Maríno",
@@ -4886,7 +4886,7 @@
   },
   {
     "name": "Xorn",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1737107876/uxorntcg_mf5kf1.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173915/uxorntcg.png",
     "attribute": "Tierra",
     "type": "Roca",
     "breed": "Roca",
@@ -4919,7 +4919,7 @@
   },
   {
     "name": "Pez Dorado de la Suerte",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736958962/pezdoradosuertetcg_ck0ggz.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173861/pezdoradosuertetcg.png",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -4953,7 +4953,7 @@
   },
   {
     "name": "Gigante Elemental",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736951269/giganteelementaltcg_lpfgkx.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173764/giganteelementaltcg.png",
     "attribute": "Tierra",
     "type": "Roca",
     "breed": "Roca",
@@ -5011,7 +5011,7 @@
   },
   {
     "name": "Pez Leviatán",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736428766/pezleviatantcg_n7fpvg.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173862/pezleviatantcg.png",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -5170,7 +5170,7 @@
   },
   {
     "name": "Espora Venenosa",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736589815/esporavenenosatcg_wrr8mi.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173738/esporavenenosatcg.png",
     "attribute": "Natura",
     "type": "Flor",
     "breed": "Flor",
@@ -5255,7 +5255,7 @@
   },
   {
     "name": "Poder de las Plantas",
-    "image": "/assets/CardImg/generated/poder-de-las-plantas.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792256847/poderPlantasTCG.jpg",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
@@ -5415,7 +5415,7 @@
   },
   {
     "name": "Rakshasa",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736331401/rakshasatcg_ovhk4d.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173867/rakshasatcg.png",
     "attribute": "Tiempo",
     "type": "Demonio",
     "breed": "Demonio",
@@ -5503,7 +5503,7 @@
   },
   {
     "name": "Hada del Bosque Oscuro",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736328306/hadabosqueoscurotcg_y0wcwu.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173784/hadabosqueoscurotcg.png",
     "attribute": "Oscuridad",
     "type": "Hada",
     "breed": "Hada",
@@ -5728,7 +5728,7 @@
   },
   {
     "name": "Sacrificio Innecesario",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736715533/sacrificioinnecesariotcg_r6iu2e.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173874/sacrificioinnecesariotcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "En el centro de un círculo mágico de símbolos oscuros y brillantes, rodeado por llamas danzantes, un sacrificio innecesario yace inmóvil, envuelto en misterio. Un grupo de cultistas encapuchados, vestidos con tunicas ceremoniales, alzan sus manos hacia el cielo, invocando un poder desconocido. El fuego ilumina sus rostros en sombras inquietantes, mientras el círculo irradia una energía ominosa que parece desgarrar el aire.",
@@ -5812,7 +5812,7 @@
   },
   {
     "name": "Licántropo Feroz",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738939730/licantropoferoztcg_btjgoo.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173818/licantropoferoztcg.png",
     "attribute": "Tierra",
     "type": "Licano",
     "breed": "Licano",
@@ -5847,7 +5847,7 @@
   },
   {
     "name": "Licántropo Beta",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738920082/licantropobetatcg_d3elbd.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173814/licantropobetatcg.png",
     "attribute": "Oscuridad",
     "type": "Licano",
     "breed": "Licano",
@@ -5866,7 +5866,7 @@
   },
   {
     "name": "Licántropo Cazador",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738920510/licantropocazadortcg_vl717e.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173815/licantropocazadortcg.png",
     "attribute": "Tierra",
     "type": "Licano",
     "breed": "Licano",
@@ -5888,7 +5888,7 @@
   },
   {
     "name": "Licántropo de Hielo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738920624/licantropohielotcg_xbt2jm.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173824/licantropohielotcg.png",
     "attribute": "Hielo",
     "type": "Licano",
     "breed": "Licano",
@@ -5910,7 +5910,7 @@
   },
   {
     "name": "Licántropo Gigante",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738920380/licantropogigantetcg_scvgqj.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173820/licantropogigantetcg.png",
     "attribute": "Tierra",
     "type": "Licano",
     "breed": "Licano",
@@ -5932,7 +5932,7 @@
   },
   {
     "name": "Licántropo Zombie",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738920233/licantropozombietcg_hvmu4a.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173828/licantropozombietcg.png",
     "attribute": "Oscuridad",
     "type": "Licano",
     "breed": "Licano",
@@ -6000,7 +6000,7 @@
   },
   {
     "name": "Gato del Destino",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1739097306/gatodestinotcg_jbbq5d.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173762/gatodestinotcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Adorado por eruditos y aventureros, el Gato del Destino es una criatura mística cuyo pelaje brilla con reflejos arcanos, como si estuviera imbuido de la misma magia del destino. Sentado con majestuosidad, una de sus patas se alza en un gesto enigmático, otorgando bendiciones o prediciendo giros inesperados del destino. Se dice que aquellos que lo encuentran recibirán visiones de su porvenir. Algunos lo buscan como talismán, otros como guía espiritual, pero pocos comprenden su verdadera naturaleza. ¿Es un guardián del destino… o simplemente una criatura observando cómo este se desenvuelve?",
@@ -6090,7 +6090,7 @@
   },
   {
     "name": "Licántropo Rougarou",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738929768/licantroporougaroutcg_std9rt.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173827/licantroporougaroutcg.png",
     "attribute": "Tierra",
     "type": "Licano",
     "breed": "Licano",
@@ -6149,7 +6149,7 @@
   },
   {
     "name": "Hipertricosis",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1739188640/hipertricosistcg_qnzn76.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173799/hipertricosistcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "En las sombras de la noche, el primer signo de la transformación aparece: una mano que ya no es completamente humana. Parches de pelaje oscuro emergen en la piel, los dedos se alargan ligeramente y las uñas comienzan a afilarse, presagio de un cambio irreversible. El resplandor tenue de la luna ilumina la extremidad, resaltando la textura de la piel endurecida y la transición entre lo humano y lo bestial. No es un cambio instantáneo, sino una lenta maldición que se arrastra por el cuerpo. Una fuerza ancestral despierta en su interior, una señal de que la sangre de la bestia ha comenzado a reclamar lo que le pertenece.",
@@ -6177,7 +6177,7 @@
     "category": "fusion",
     "effectCodes": [],
     "name": "Licántropo Guardián",
-    "image": "/assets/CardImg/generated/licantropo-guardian.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173823/licantropoguardiantcg.png",
     "type": "Licano",
     "breed": "Licano",
     "family": "Bestia",
@@ -6208,7 +6208,7 @@
   },
   {
     "name": "Licántropo Alfa",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738924646/licantropoalfatcg_oqsaaf.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173812/licantropoalfatcg.png",
     "attribute": "Oscuridad",
     "type": "Licano",
     "breed": "Licano",
@@ -6230,7 +6230,7 @@
   },
   {
     "name": "Licántropo Mago",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738924739/licantropomagotcg_va47jd.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173825/licantropomagotcg.png",
     "attribute": "Arcano",
     "type": "Licano",
     "breed": "Licano",
@@ -6252,7 +6252,7 @@
   },
   {
     "name": "Licántropo, Bestia de Gévaudan",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738928564/licantropobestiagevaudantcg_ddnjsg.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173816/licantropobestiagevaudantcg.png",
     "attribute": "Tierra",
     "type": "Licano",
     "breed": "Licano",
@@ -6274,7 +6274,7 @@
   },
   {
     "name": "Hermandad de Licántropos",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738922239/hermandadlicantropostcg_pxqjq1.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173786/hermandadlicantropostcg.png",
     "attribute": "none",
     "type": "normal",
     "description": "Sobre un risco elevado, un grupo de imponentes licántropos se alza bajo la luz plateada de la luna. Cada uno lleva marcas y armaduras únicas, símbolo de su unión como guerreros de una hermandad indestructible. Sus miradas reflejan honor y compromiso, y su presencia impone respeto incluso en la noche estrellada. Unidos, son una fuerza temible, una manada que protege lo que es suyo y desafía a cualquiera que intente quebrantar su juramento.",
