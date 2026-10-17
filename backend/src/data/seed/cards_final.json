@@ -418,7 +418,7 @@
   },
   {
     "name": "El Primer Ginete",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736330038/primerjinetetcg_n9ajuo.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792259870/primerjinetetcg.png",
     "attribute": "Fuego",
     "type": "Paladín",
     "breed": "Paladín",
@@ -2399,7 +2399,7 @@
   },
   {
     "name": "Contrataque de Batalla",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736941763/fightcountertcg_o6sgko.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792259838/contrataqueBatallaTCG.png",
     "attribute": "none",
     "type": "counter",
     "description": "En la arena, un intrépido guerrero humanoide se enfrenta a una criatura monstruosa, con movimientos cargados de tensión y estrategia. Los ecos de la multitud se mezclan con el sonido del acero al chocar, mientras ambos combatientes muestran su destreza y resistencia.",
@@ -5341,7 +5341,7 @@
   },
   {
     "name": "Engranaje maestro",
-    "image": "/assets/CardImg/generated/engranaje-maestro.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260179/engranajeMaestroTCG.jpg",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -6055,7 +6055,7 @@
   },
   {
     "name": "El Primer Infectado, padre de licántropos",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1738929893/primerinfectadopadrelicantropostcg_citmpa.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173864/primerinfectadopadrelicantropostcg.png",
     "attribute": "Oscuridad",
     "type": "Licano",
     "breed": "Licano",
