@@ -250,7 +250,7 @@
   },
   {
     "name": "Inferno, el Dragón de Fuego",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736332646/arashindragónfuegotcg_a2bf0c.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792258808/infernoTCG.png",
     "attribute": "Fuego",
     "type": "Dragón",
     "breed": "Dragón",
@@ -1620,7 +1620,7 @@
   },
   {
     "name": "Nido de Avispas",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736936924/avisperotcg_ktsowz.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792258841/nidoAvispaTCG.png",
     "attribute": "none",
     "type": "continuous",
     "description": "Incrustado en una roca antigua, este avispero mágico es un espectáculo curioso en el corazón del bosque. Su estructura vibrante y brillante contrasta con el entorno tranquilo, mientras algunas avispas revolotean a su alrededor. Rastros de miel escurren por la roca, atrayendo todo tipo de criaturas. Aunque aparenta tranquilidad, el avispero es hogar de criaturas mágicas, cuya curiosidad puede volverse peligrosa si se sienten amenazadas.",
@@ -4379,7 +4379,7 @@
   },
   {
     "name": "Golpeador de Engranaje",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736437879/aporreadorengranajetcg_ucpe7f.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792258772/golpeadorEngranajeTCG.png",
     "attribute": "Metal",
     "type": "Maquina",
     "breed": "Maquina",
