@@ -74,7 +74,7 @@
   },
   {
     "name": "Safira, Bebé Dragón",
-    "image": "/assets/CardImg/generated/safira-bebe-dragon.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792261231/safiraBebeTCG.jpg",
     "attribute": "Luz",
     "type": "Dragón",
     "breed": "Dragón",
@@ -177,7 +177,7 @@
   },
   {
     "name": "Safira, la Dragóna Real",
-    "image": "/assets/CardImg/generated/safira-la-dragona-real.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792261232/safiraRealTCG.jpg",
     "attribute": "Luz",
     "type": "Dragón",
     "breed": "Dragón",
@@ -197,7 +197,7 @@
   },
   {
     "name": "Safira, la Reina Dragón",
-    "image": "/assets/CardImg/generated/safira-la-reina-dragon.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792261230/safiraReinaTCG.jpg",
     "attribute": "Luz",
     "type": "Dragón",
     "breed": "Dragón",
