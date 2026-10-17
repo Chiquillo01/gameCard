@@ -2760,7 +2760,7 @@
   },
   {
     "name": "Héroe Frío Polar",
-    "image": "/assets/CardImg/generated/heroe-frio-polar.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792261139/heroeFrioPolarTCG.jpg",
     "attribute": "Hielo",
     "type": "Héroe",
     "breed": "Héroe",
@@ -3905,7 +3905,7 @@
   },
   {
     "name": "Familiar Mágico - Gus",
-    "image": "/assets/CardImg/generated/familiar-magico-gus.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260934/gusTCG.jpg",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -3924,7 +3924,7 @@
   },
   {
     "name": "Familiar Mágico - Mochi",
-    "image": "/assets/CardImg/generated/familiar-magico-mochi.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260935/mochiTCG.jpg",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3943,7 +3943,7 @@
   },
   {
     "name": "Familiar Mágico - Monin",
-    "image": "/assets/CardImg/generated/familiar-magico-monin.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260936/moninTCG.jpg",
     "attribute": "Fuego",
     "type": "Fuego",
     "breed": "Fuego",
@@ -5437,7 +5437,7 @@
   },
   {
     "name": "Extensor de Vida",
-    "image": "/assets/CardImg/generated/extensor-de-vida.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260834/extensorVidaTCG.jpg",
     "attribute": "none",
     "type": "normal",
     "description": "-",
