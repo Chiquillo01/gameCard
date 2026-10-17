@@ -296,7 +296,7 @@
   },
   {
     "name": "Roco, el Dragón de Tierra",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173715/dirgurdragontierratcg.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792259204/rocoTCG.png",
     "attribute": "Tierra",
     "type": "Dragón",
     "breed": "Dragón",
@@ -1040,7 +1040,7 @@
   },
   {
     "name": "Djinni",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736941146/djinnitcg_vv1lho.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173716/djinnitcg.png",
     "attribute": "none",
     "type": "counter",
     "description": "Un humanoide de piel azulada y aspecto vaporoso, que desde un mágico recipiente aparece envuelto en perfumes y sedas. Incluso su cimitarra es una pieza de lujo. Se muestra agradecido por servir con su magia a amos ingeniosos y divertidos, aunque su eterna verborrea denota que anhela la libertad.",
