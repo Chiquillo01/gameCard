@@ -3839,7 +3839,7 @@
   },
   {
     "name": "Equipo Sunne - Astas de Combate",
-    "image": "/assets/CardImg/generated/equipo-sunne-astas-de-combate.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260376/esAstasCombateTCG.jpg",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -3861,7 +3861,7 @@
   },
   {
     "name": "Equipo Sunne - Espada Solar",
-    "image": "/assets/CardImg/generated/equipo-sunne-espada-solar.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260377/esEspadaSolarTCG.jpg",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -3883,7 +3883,7 @@
   },
   {
     "name": "Equipo Sunne - Resonador",
-    "image": "/assets/CardImg/generated/equipo-sunne-resonador.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260373/esResonadorTCG.jpg",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -4109,7 +4109,7 @@
   },
   {
     "name": "Equipo Sunne - Plan Maestro",
-    "image": "/assets/CardImg/generated/equipo-sunne-plan-maestro.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260375/esPlanMaestroTCG.jpg",
     "attribute": "none",
     "type": "normal",
     "description": "-",
