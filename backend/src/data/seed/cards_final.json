@@ -319,7 +319,7 @@
   },
   {
     "name": "Safira, la Joven Heredera",
-    "image": "/assets/CardImg/generated/safira-la-joven-heredera.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792312203/safiraJovenHerederaTCG.jpg",
     "attribute": "Luz",
     "type": "Dragón",
     "breed": "Dragón",
@@ -703,7 +703,7 @@
     "category": "fusion",
     "effectCodes": [],
     "name": "Grover, el Goblin Guardián",
-    "image": "/assets/CardImg/generated/grover-el-goblin-guardian.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313568/groverGoblinGuardianTCG.jpg",
     "type": "Goblin",
     "breed": "Goblin",
     "family": "Grokkar",
@@ -755,7 +755,7 @@
   },
   {
     "name": "Goblin Ardiente",
-    "image": "/assets/CardImg/generated/goblin-ardiente.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313569/goblinArfdienteTCG.jpg",
     "attribute": "Fuego",
     "type": "Goblin",
     "breed": "Goblin",
@@ -774,7 +774,7 @@
   },
   {
     "name": "Goblin Guardián",
-    "image": "/assets/CardImg/generated/goblin-guardian.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313570/goblinGuardianTCG.jpg",
     "attribute": "Tierra",
     "type": "Goblin",
     "breed": "Goblin",
@@ -814,7 +814,7 @@
   },
   {
     "name": "Orco Traicionero",
-    "image": "/assets/CardImg/generated/orco-traicionero.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313572/orcoTraicioneroTCG.jpg",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -834,7 +834,7 @@
   },
   {
     "name": "Orcos del primer Batallón",
-    "image": "/assets/CardImg/generated/orcos-del-primer-batallon.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313573/orcosPrimerBatallonTCG.jpg",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -920,7 +920,7 @@
   },
   {
     "name": "Grover, el Goblin Solitario",
-    "image": "/assets/CardImg/generated/grover-el-goblin-solitario.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313575/groverGoblinSolitarioTCG.jpg",
     "attribute": "Tierra",
     "type": "Goblin",
     "breed": "Goblin",
@@ -955,7 +955,7 @@
   },
   {
     "name": "Grover, el Goblin",
-    "image": "/assets/CardImg/generated/grover-el-goblin.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313576/graverGoblinTCG.jpg",
     "attribute": "Viento",
     "type": "Goblin",
     "breed": "Goblin",
