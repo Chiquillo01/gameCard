@@ -5,7 +5,7 @@ const { compileInfo } = require('../../game/compileInfo');
 const { recomputeContinuous, getEffectiveStats } = require('../../game/effectEngine');
 const { placeMonster, placeSupport } = require('../../game/zones');
 const { isNegated } = require('../../game/negation');
-const { seedCatalog, makeDuel, instance, toHand, onField, toPhase, passAll, monster } = require('./engineHelpers');
+const { seedCatalog, makeDuel, instance, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
 const { placePending } = require('./chainHelpers');
 
 beforeAll(async () => {
@@ -29,6 +29,58 @@ describe('Solar, el Vergudo de los Cielos', () => {
     expect(getEffectiveStats(monster(state, vampiro))).toEqual({ atk: 0, def: 0 });
     expect(getEffectiveStats(monster(state, kraken)).atk).toBeGreaterThan(0);
     expect(getEffectiveStats(monster(state, solar)).atk).toBeGreaterThan(0);
+  });
+});
+
+// Answers the pending choices of player `p` in order: `picks` (then the first option).
+const answer = (state, p, picks) => {
+  let guard = 0;
+  while (guard++ < 10) {
+    const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
+    if (!pending) return;
+    if (pending.kind === 'slot') { placePending(state); continue; }
+    const view = viewFor(state, p).pendingTriggerChoice;
+    const res = applyAction(state, p, { type: 'RESOLVE_TRIGGER_CHOICE', targets: picks.length ? picks : [view.options[0].instanceId] });
+    if (res.reason === 'choose-target') picks = [...picks, res.options[0].instanceId];
+    passAll(state);
+  }
+};
+
+describe('Planetar', () => {
+  it('on summon: sacrifices itself to summon an Hada from the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const deva = await toGraveyard(state, 0, 'Valkiria');
+    const planetar = await toHand(state, 0, 'Planetar');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: planetar }).ok).toBe(true);
+    const pending = viewFor(state, 0).pendingTriggerChoice;
+    expect(pending.options.map((o) => o.instanceId)).toEqual(['choice:0', 'choice:1', 'choice:skip']);
+    answer(state, 0, ['choice:0']);
+    expect(state.players[0].graveyard).toContain(planetar);
+    expect(monster(state, deva)).toBeDefined();
+  });
+
+  it('on summon: or adds an Hada monster from the Mazo to the hand; it may also do nothing', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const valkiria = await toDeckTop(state, 0, 'Valkiria');
+    const planetar = await toHand(state, 0, 'Planetar');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: planetar }).ok).toBe(true);
+    answer(state, 0, ['choice:1']);
+    expect(state.players[0].hand).toContain(valkiria);
+    expect(monster(state, planetar)).toBeDefined();
+  });
+
+  it('used as material for an Hada Compilación, draws 1 card', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const seraphine = await instance(0, 'Seraphine');
+    state.players[0].extra.push(seraphine);
+    const mats = [await onField(state, 0, 'Planetar'), await onField(state, 0, 'Deva'), await onField(state, 0, 'Valkiria')];
+    const hand = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: seraphine, materialInstanceIds: mats }).ok).toBe(true);
+    answer(state, 0, []);
+    expect(state.players[0].hand.length).toBeGreaterThanOrEqual(hand + 1);
   });
 });
 

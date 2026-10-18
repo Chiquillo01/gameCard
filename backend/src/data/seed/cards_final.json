@@ -3575,7 +3575,10 @@
     "level": 4,
     "state": 2,
     "number": 183,
-    "effectCodes": []
+    "effectCodes": [
+      "PLANETAR_ONSUMMON_CHOICE",
+      "PLANETAR_MATERIAL_DRAW"
+    ]
   },
   {
     "name": "Bálor",

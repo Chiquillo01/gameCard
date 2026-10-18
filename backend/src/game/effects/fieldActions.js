@@ -266,6 +266,15 @@ function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx
 // summonFromDeck / specialSummonFromDeck / summonFromHand / specialSummonFromGY / summonFromZones /
 // summon. `targets` are the picks resolveActions handed this step (already inside its pool).
 function summonPicked(ctx, args, targets) {
+  // "Sacrifica esta carta para invocar un X" (Planetar): it goes to the Cementerio first, freeing its
+  // zone (only when there's a card to bring out).
+  if (args.sacrificeSelf && (targets || []).length) {
+    const self = player(ctx.state, ctx.controllerIndex).field.monsters.find((m) => m && m.instanceId === ctx.sourceInstanceId);
+    if (!self) return;
+    moveToZone(ctx.state, self.instanceId, 'graveyard');
+    log(ctx.state, `${getCard(self.cardId).name} es sacrificada.`);
+    require('../effectEngine').announceSentToGraveyard(ctx.state, self.instanceId, ctx.controllerIndex, { from: 'field', reason: 'cost' });
+  }
   // "Invoca especial esta carta del Cementerio" (Héroe Fénix).
   const picks = args.target === 'self' ? [ctx.sourceInstanceId].filter((id) => player(ctx.state, ctx.controllerIndex).graveyard.includes(id)) : targets || [];
   ctx.lastSummoned = picks.filter((id) => summonByEffect(ctx, id, { position: args.position || 'attack' }));
