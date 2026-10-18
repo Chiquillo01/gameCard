@@ -1138,7 +1138,7 @@
   },
   {
     "name": "Orco Jefe",
-    "image": "/assets/CardImg/generated/orco-jefe.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313858/orcoJefeTCG.jpg",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -1210,7 +1210,7 @@
   },
   {
     "name": "Grover, el Goblin Ardiente",
-    "image": "/assets/CardImg/generated/grover-el-goblin-ardiente.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313860/graverGoblinArdienteTCG.jpg",
     "attribute": "Fuego",
     "type": "Goblin",
     "breed": "Goblin",
@@ -2947,7 +2947,7 @@
   },
   {
     "name": "Venganza de los Héroes",
-    "image": "/assets/CardImg/generated/venganza-de-los-heroes.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313861/venganzaHeroesTCG.jpg",
     "attribute": "none",
     "type": "counter",
     "description": "-",
