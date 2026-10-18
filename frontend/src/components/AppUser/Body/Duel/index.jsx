@@ -846,9 +846,14 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
               {m.isToken ? <div className={styles.tokenFace}>{m.name}</div> : <img src={m.image} alt={m.name} title={m.name} />}
               <StatBar m={m} />
               <SlotTags m={m} />
-              {m.statuses && m.statuses.length > 0 && (
+              {((m.statuses && m.statuses.length > 0) || m.negated) && (
                 <span className={styles.statusBadges}>
-                  {m.statuses.map((st) => (
+                  {m.negated && (
+                    <span className={`${styles.statusBadge} ${styles.statusNegado}`} title="Efectos negados">
+                      ⊘
+                    </span>
+                  )}
+                  {(m.statuses || []).map((st) => (
                     <span key={st} className={`${styles.statusBadge} ${styles['status' + st]}`} title={st}>
                       {STATUS_ICONS[st] || st}
                     </span>

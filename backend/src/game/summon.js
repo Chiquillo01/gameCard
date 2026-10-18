@@ -206,9 +206,17 @@ function materialLocationSatisfies(loc, controllerIndex, req, defaultZones = ['f
     if (z === 'hand') return loc.zone === 'hand';
     if (z === 'graveyard') return loc.zone === 'graveyard';
     if (z === 'banished') return loc.zone === 'banished';
-    if (z === 'field') return loc.zone === 'field:monster' || loc.zone === 'field:support' || loc.zone === 'field:territory';
+    // On the field, only what sits in a monster zone (a monster equipped as an Equipo doesn't count).
+    if (z === 'field') return loc.zone === 'field:monster';
     return false;
   });
+}
+
+// Rulebook: a Compilación's materials are monsters — a recipe like "2 \"Avispa\"" doesn't take an
+// Apoyo such as Nido de Avispas.
+function materialMatches(state, id, req) {
+  const card = materialCard(state, id);
+  return !!card && (card.isToken || ['monster', 'fusion'].includes(card.category)) && matchesCardFilter(card, req);
 }
 
 // What a material is for a recipe's filter: its card — or, for a token (Catapulta's "2 Tokens
@@ -244,7 +252,7 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
       // and have it moved into the summoner's own graveyard.
       const loc = findInstanceLocation(state, id);
       if (!materialLocationSatisfies(loc, controllerIndex, req, defaultZones)) continue;
-      if (matchesCardFilter(materialCard(state, id), req)) { usedIds.add(id); matched++; }
+      if (materialMatches(state, id, req)) { usedIds.add(id); matched++; }
       if (matched >= req.count) break;
     }
     if (matched < req.count) return { ok: false, reason: `missing-material:${JSON.stringify(req)}` };
@@ -315,10 +323,14 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   const free = pl.field.monsters.filter((m, i) => !blocked.includes(i) && (m === null || m.instanceId === instanceId)).length;
   if (free < entry.materials.length) return { ok: false, reason: 'no-field-space' };
 
-  const materials = entry.materials;
+  // Only monsters come back to the field (an Apoyo that ended up under it goes to the Cementerio).
+  const isMonster = (id) => ['monster', 'fusion'].includes(getCard(cardIdFromInstance(id)).category);
+  const materials = entry.materials.filter(isMonster);
+  const others = entry.materials.filter((id) => !isMonster(id));
   entry.materials = []; // keep them out of the release-to-Mazo path in moveToZone
   moveToZone(state, instanceId, 'extra', controllerIndex);
   log(state, `${pl.userId} descompila a ${card.name}.`);
+  others.forEach((id) => moveToZone(state, id, 'graveyard', controllerIndex));
   // Each material back on the field where the player says, one at a time (placement.js).
   const { requestPlacement } = require('./placement');
   materials.forEach((id) => requestPlacement(state, {
@@ -341,4 +353,4 @@ function summonRequirementsMet(state, controllerIndex, instanceId, card) {
   return steps.every((a) => checkConditions({ state, controllerIndex, sourceInstanceId: instanceId }, (a.args && a.args.conditions) || []));
 }
 
-module.exports = { summonRequirementsMet, materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };
+module.exports = { summonRequirementsMet, materialMatches, materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };

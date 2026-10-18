@@ -1,8 +1,9 @@
 // IdL cards fixed after play-testing.
 const { connectDB, disconnectDB } = require('../../mongo/connection');
-const { applyAction } = require('../../game/engine');
+const { applyAction, viewFor } = require('../../game/engine');
+const { compileInfo } = require('../../game/compileInfo');
 const { recomputeContinuous, getEffectiveStats } = require('../../game/effectEngine');
-const { placeMonster } = require('../../game/zones');
+const { placeMonster, placeSupport } = require('../../game/zones');
 const { isNegated } = require('../../game/negation');
 const { seedCatalog, makeDuel, instance, toHand, onField, toPhase, passAll, monster } = require('./engineHelpers');
 const { placePending } = require('./chainHelpers');
@@ -53,5 +54,18 @@ describe('Des - Compilación', () => {
       expect(monster(state, id)).toBeDefined();
       expect(isNegated(state, monster(state, id))).toBe(true);
     });
+    expect(viewFor(state, 0).players[1].field.monsters.filter(Boolean).every((m) => m.negated)).toBe(true);
+  });
+
+  it('a recipe of monsters never takes an Apoyo: Avispa Arquera ("2 Avispa") ignores Nido de Avispas', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    placeSupport(state, await instance(0, 'Nido de Avispas'), 0, { faceDown: false });
+    const arquera = await instance(0, 'Avispa Arquera');
+    state.players[0].extra.push(arquera);
+    const avispa = await onField(state, 0, 'Avispa Rosa');
+    expect(compileInfo(state, 0, arquera).ready).toBe(false);
+    const nido = state.players[0].field.support.find(Boolean).instanceId;
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: arquera, materialInstanceIds: [avispa, nido] }).ok).toBe(false);
   });
 });

@@ -9,6 +9,7 @@ const { changePosition } = require('./position');
 const { isOwnActivation, activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand, getEffectiveStats } = require('./effectEngine');
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
 const { checkConditions } = require('./effects/conditions');
+const { isNegated } = require('./negation');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
 const { rules } = require('./rules');
 const { describeEffect } = require('./effectLabels');
@@ -308,6 +309,7 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
     hasAttacked: m.hasAttacked,
     counters: m.counters,
     statuses: statusesOf(state, m.instanceId),
+    negated: !m.faceDown && (isNegated(state, m) || !!m.effectsLost),
     materialCount: (m.materials || []).length,
     // Only a compiled monster from an earlier turn can be decompiled from the UI (Pez dorado's
     // same-turn exception is left to the server to accept or reject).
