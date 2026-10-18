@@ -235,3 +235,26 @@ describe('El Primer Ginete', () => {
     expect(monster(state, theirs).tempBuff.atk).toBe(2);
   });
 });
+
+describe('The four big dragons: "puedes activar el siguiente efecto"', () => {
+  it('Sky, special summoned, asks whether to search; saying no leaves the Mazo alone', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const sky = await toHand(state, 0, 'Sky, el Dragón de Viento');
+    await toHand(state, 0, 'Dragón de Fuego Bebe');
+    await toHand(state, 0, 'Dragón de Tierra Bebe');
+    await toDeckTop(state, 0, 'Dragón de Viento Bebe');
+    const hand = () => state.players[0].hand.length;
+    let res = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: sky });
+    let guard = 0;
+    while (res.reason === 'choose-target' && guard++ < 4) res = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: sky, targets: res.options.slice(0, 2).map((o) => o.instanceId) });
+    expect(res.ok).toBe(true);
+    placePending(state);
+    const pending = viewFor(state, 0).pendingTriggerChoice;
+    expect(pending.options.map((o) => o.instanceId)).toEqual(['optional:yes', 'optional:no']);
+    const before = hand();
+    applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: ['optional:no'] });
+    passAll(state);
+    expect(hand()).toBe(before);
+  });
+});

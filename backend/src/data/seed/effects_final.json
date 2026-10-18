@@ -3713,7 +3713,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "onSummon"
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
     },
     "conditions": [],
     "requiresTarget": true,
@@ -3728,7 +3731,8 @@
           }
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "_id": "INFERNO_DRAGON_ALT_SUMMON",
@@ -3769,7 +3773,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "onSummon"
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
     },
     "conditions": [],
     "requiresTarget": false,
@@ -3785,7 +3792,8 @@
           ]
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "_id": "ROCO_DRAGON_ALT_SUMMON",
@@ -4846,7 +4854,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "onSummon"
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
     },
     "conditions": [],
     "actions": [
@@ -4857,7 +4868,8 @@
           "count": 1
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "_id": "SKY_DRAGON_VIENTO_ALT_SUMMON",
@@ -5735,7 +5747,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "onSummon"
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
     },
     "conditions": [],
     "requiresTarget": true,
@@ -5750,7 +5765,8 @@
           }
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "oncePerTurn": false,
