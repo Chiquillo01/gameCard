@@ -48,6 +48,17 @@ function protectedFromRemoval(ctx, row) {
   return !!row.entry.immuneToOpponentEffects && row.ownerIndex !== ctx.controllerIndex;
 }
 
+// Safira's "no puede ser seleccionada por efectos de monstruos (o de cartas), excepto Dragón".
+function untargetableFor(ctx, entry) {
+  const rule = entry.untargetableBy;
+  if (!rule || !ctx.sourceInstanceId || String(ctx.sourceInstanceId).startsWith('token:')) return false;
+  if (entry.instanceId === ctx.sourceInstanceId) return false;
+  const source = getCard(cardIdFromInstance(ctx.sourceInstanceId));
+  const fromMonster = ['monster', 'fusion'].includes(source.category);
+  if (rule.by === 'monster' && !fromMonster) return false;
+  return !(rule.unless && fromMonster && matchesCardFilter(source, rule.unless));
+}
+
 // Where a "selected" step looks for its card: the side and zone its args (or the effect's own
 // targetSelector) name, defaulting to any card on the field.
 function selectRows(ctx, args) {
@@ -62,6 +73,7 @@ function selectRows(ctx, args) {
   if (args.target === 'Compilado') rows = rows.filter((r) => (r.entry.materials || []).length > 0);
   if (args.target === 'fieldMonsterInAttackPosition') rows = rows.filter((r) => r.entry.position === 'attack' && !r.entry.faceDown);
   if (args.excludeSelf !== false) rows = rows.filter((r) => r.entry.instanceId !== ctx.sourceInstanceId);
+  rows = rows.filter((r) => !untargetableFor(ctx, r.entry));
   const filter = args.filter ? { ...args.filter, category: undefined } : null;
   const hasFilter = filter && Object.values(filter).some((v) => v !== undefined && v !== null && v !== '');
   // A rival's face-down card shows nothing: a pick that depends on what it is (a breed, an
@@ -171,6 +183,8 @@ function stepPool(ctx, step) {
       const side = args.filter && args.filter.controller === 'opponent' ? 'opponent' : 'any';
       return ids(selectRows(ctx, { ...args, side, target: 'fieldMonsterInAttackPosition', filter: undefined }).filter((r) => !r.entry.isToken));
     }
+    case 'setFaceDownDefense':
+      return isSelect(args) ? ids(selectRows(ctx, { ...args, zone: 'monster' })) : null;
     case 'destroyAndCopyEffect':
     case 'destroyAndGainVP':
       return ids(selectRows(ctx, { ...args, target: 'selected' }).filter((r) => !protectedFromRemoval(ctx, r)));
@@ -274,6 +288,7 @@ const STEP_PROMPTS = {
   excavate: 'Elige la carta excavada que añades a tu Mano',
   setAtk: 'Elige el monstruo cuyo Atk cambia',
   destroyAndGainVP: 'Elige la carta que se destruye',
+  setFaceDownDefense: 'Elige el monstruo que pasa a defensa boca abajo',
   destroyUpToHeroCount: 'Elige las cartas que se destruyen',
   exileTarget: 'Elige la carta que se exilia',
   negateEffect: 'Elige la carta cuyos efectos se niegan',

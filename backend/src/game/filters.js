@@ -1,4 +1,4 @@
-const { getCard, isEffectless, extraAttributesOf } = require('./cardIndex');
+const { getCard, isEffectless, extraAttributesOf, extraBreedsOf } = require('./cardIndex');
 
 // Card text has drifted slightly across data-entry passes (accents dropped/added, e.g. "Marino"
 // vs "Maríno"), while meaning the same thing. Effect/fusion filters compare accent-insensitively
@@ -70,8 +70,9 @@ function matchesCardFilter(card, filter = {}) {
   const contains = filter.nameContains || filter.nameIncludes;
   if (contains && !normalize(card.name).includes(normalize(contains))) return false;
   if (filter.excludeName && sameText(card.name, filter.excludeName)) return false;
-  if (filter.breed && !sameText(card.breed, filter.breed)) return false;
-  if (filter.breedIn && !filter.breedIn.some((b) => sameText(card.breed, b))) return false;
+  const breeds = [card.breed, ...extraBreedsOf(card)];
+  if (filter.breed && !breeds.some((b) => sameText(b, filter.breed))) return false;
+  if (filter.breedIn && !filter.breedIn.some((b) => breeds.some((own) => sameText(own, b)))) return false;
   if (filter.family && !sameText(card.family, filter.family)) return false;
   if (filter.category && !categoryMatches(card.category, filter.category)) return false;
   if (filter.attribute && ![card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, filter.attribute))) return false;

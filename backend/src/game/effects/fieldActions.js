@@ -67,7 +67,7 @@ function sendToGraveyard(ctx, row) {
   if (!entry.isToken) {
     const { fireTrigger } = require('../effectEngine');
     fireTrigger(ctx.state, 'sentToGraveyard', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, from: 'field', reason: 'effect' });
-    if (wasMonster) fireTrigger(ctx.state, 'onMonsterDestroyed', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, reason: 'effect' });
+    if (wasMonster) fireTrigger(ctx.state, 'onMonsterDestroyed', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, reason: 'effect', byPlayer: ctx.controllerIndex });
   }
 }
 
@@ -253,7 +253,7 @@ function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx
 // summonFromDeck / specialSummonFromDeck / summonFromHand / specialSummonFromGY / summonFromZones /
 // summon. `targets` are the picks resolveActions handed this step (already inside its pool).
 function summonPicked(ctx, args, targets) {
-  (targets || []).forEach((id) => summonByEffect(ctx, id, { position: args.position || 'attack' }));
+  ctx.lastSummoned = (targets || []).filter((id) => summonByEffect(ctx, id, { position: args.position || 'attack' }));
 }
 
 // "Envía al Cementerio un [filter] de tu Mazo" (Héroe de Marfil) — the one the player picks.
@@ -277,7 +277,7 @@ function preventBattleDestruction(ctx, args) {
 // "Otros monstruos [filter] en tu Campo no pueden ser destruidos por efectos de cartas" (Clionne).
 function protectFromEffectDestruction(ctx, args) {
   player(ctx.state, ctx.controllerIndex).field.monsters
-    .filter((m) => m && !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId) && matchesFilter(m, args.filter || {}))
+    .filter((m) => m && (args.target === 'self' ? m.instanceId === ctx.sourceInstanceId : !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId) && matchesFilter(m, args.filter || {})))
     .forEach((m) => { m.cannotBeDestroyedByEffects = true; });
 }
 

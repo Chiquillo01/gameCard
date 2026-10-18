@@ -89,7 +89,10 @@
     "level": 2,
     "state": 4,
     "number": 4,
-    "effectCodes": []
+    "effectCodes": [
+      "SAFIRA_BEBE_EVOLVE",
+      "SAFIRA_UNTARGETABLE_BY_MONSTERS"
+    ]
   },
   {
     "name": "Dragón de Fuego Bebe",
@@ -193,7 +196,11 @@
     "level": 6,
     "state": 2,
     "number": 9,
-    "effectCodes": []
+    "effectCodes": [
+      "SAFIRA_REAL_EVOLVE",
+      "SAFIRA_REAL_ONSUMMON",
+      "SAFIRA_UNTARGETABLE_BY_MONSTERS"
+    ]
   },
   {
     "name": "Safira, la Reina Dragón",
@@ -213,7 +220,11 @@
     "level": 8,
     "state": 1,
     "number": 10,
-    "effectCodes": []
+    "effectCodes": [
+      "SAFIRA_REINA_ONSUMMON",
+      "SAFIRA_REINA_UNTARGETABLE",
+      "SAFIRA_REINA_DRAGON_BUFF"
+    ]
   },
   {
     "name": "Anciano Dragon",
@@ -335,7 +346,11 @@
     "level": 4,
     "state": 3,
     "number": 15,
-    "effectCodes": []
+    "effectCodes": [
+      "SAFIRA_JOVEN_EVOLVE",
+      "SAFIRA_JOVEN_ONSUMMON",
+      "SAFIRA_UNTARGETABLE_BY_MONSTERS"
+    ]
   },
   {
     "name": "Serpiente de Muelle",
@@ -414,7 +429,11 @@
         ]
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "PRIMER_GINETE_GY_RECOVER",
+      "DRACO_IS_DRAGON",
+      "DRACO_DRAGON_BUFF"
+    ]
   },
   {
     "name": "El Primer Ginete",
@@ -552,7 +571,8 @@
       }
     },
     "effectCodes": [
-      "ANILLO_BODA_TURNO"
+      "ANILLO_BODA_TURNO",
+      "ANILLO_BODA_CEMENTERIO"
     ]
   },
   {
@@ -572,7 +592,9 @@
     "level": 3,
     "state": 3,
     "number": 25,
-    "effectCodes": []
+    "effectCodes": [
+      "GRIFO_SUMMON_BEAST"
+    ]
   },
   {
     "name": "Viaje de Unión",
@@ -594,7 +616,9 @@
         "amount": 1
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "VIAJE_UNION_DRAW_ON_SEARCH"
+    ]
   },
   {
     "name": "Loto de Obsidiana",
@@ -639,7 +663,9 @@
     "level": 3,
     "state": 3,
     "number": 28,
-    "effectCodes": []
+    "effectCodes": [
+      "HIPOGRIFO_SUMMON_BEAST"
+    ]
   },
   {
     "name": "Camino de la Reina",
@@ -682,7 +708,10 @@
     "level": 6,
     "state": 3,
     "number": 30,
-    "effectCodes": []
+    "effectCodes": [
+      "MANTICORA_DOUBLES_BEAST_GAINS",
+      "MANTICORA_PROTECTED"
+    ]
   },
   {
     "name": "Grover, el Goblin Guardián",

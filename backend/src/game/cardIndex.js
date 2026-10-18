@@ -60,4 +60,16 @@ function extraAttributesOf(card) {
   return attrs;
 }
 
-module.exports = { loadCardIndex, getCard, getEffect, isIndexLoaded, effectCodesOf, isEffectless, extraAttributesOf };
+// Breeds a card counts as on top of its own (Draco: "siempre es tratada como un Dragón"), read from
+// its `rule` effects' gainBreed actions.
+function extraBreedsOf(card) {
+  const breeds = [];
+  (card && card.effectCodes ? card.effectCodes : []).forEach((id) => {
+    const effect = getEffect(id);
+    if (!effect || effect.type !== 'rule') return;
+    (effect.actions || []).forEach((a) => { if (a.fn === 'gainBreed' && a.args && a.args.breed) breeds.push(a.args.breed); });
+  });
+  return breeds;
+}
+
+module.exports = { loadCardIndex, getCard, getEffect, isIndexLoaded, effectCodesOf, isEffectless, extraAttributesOf, extraBreedsOf };

@@ -213,6 +213,8 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   if (eventName === 'allySummoned' && eventArgs.cardId && !matchesCardFilter(getCard(eventArgs.cardId), args.filter || {})) return false;
   // "Cuando es invocado por el efecto de un Licano".
   const bySource = eventArgs.bySourceCardId ? getCard(eventArgs.bySourceCardId) : null;
+  // "En invocación normal" / "En invocación especial".
+  if (eventName === 'onSummon' && args.kind && args.kind !== (eventArgs.kind || 'special')) return false;
   if (eventName === 'onSummon' && args.by === 'effect') {
     if (!eventArgs.byEffect) return false;
     if (args.filter && !(bySource && matchesCardFilter(bySource, args.filter))) return false;
@@ -259,6 +261,25 @@ function announceSentToGraveyard(state, instanceId, ownerIndex, { from, reason }
   fireTrigger(state, 'sentToGraveyard', { instanceId, cardId: cardIdFromInstance(instanceId), ownerIndex, from, reason });
 }
 
+// Anillo de Boda: when a player who has its Cementerio effect this turn loses a monster to the rival
+// (destroyed or exiled), that rival has to destroy/exile one of their own, picked by themselves.
+function answerLoss(state, event, ownerIndex, byPlayer) {
+  if (byPlayer === undefined || byPlayer === null || byPlayer === ownerIndex) return;
+  const active = (state.mirrors || []).some((m) => m.event === event && m.ownerIndex === ownerIndex && m.expiresTurn === state.turnNumber);
+  if (!active) return;
+  const own = player(state, byPlayer).field.monsters.filter((m) => m && !m.isToken);
+  if (!own.length) return;
+  const { describeCandidate } = require('./targets');
+  state.pendingTriggerChoices = state.pendingTriggerChoices || [];
+  state.pendingTriggerChoices.push({
+    kind: 'ownMonster',
+    action: event === 'banishedByOpponent' ? 'banish' : 'destroy',
+    controllerIndex: byPlayer,
+    options: own.map((m) => describeCandidate(state, m.instanceId)),
+    prompt: event === 'banishedByOpponent' ? 'Anillo de Boda: elige un monstruo tuyo para exiliarlo' : 'Anillo de Boda: elige un monstruo tuyo para destruirlo',
+  });
+}
+
 // Fires every triggered/trigger effect on the board that matches, in field order (turn player's
 // first). Sources are the face-up monsters and face-up Apoyo/Territorio cards on the field — plus the
 // card an event is about when it has just left the field ("cuando es enviada al Cementerio",
@@ -269,6 +290,7 @@ function fireTrigger(state, eventName, eventArgs = {}) {
   if (eventName === 'onMonsterDestroyed' && eventArgs.cardId) {
     if (!state.destroyedThisTurn || state.destroyedThisTurn.turn !== state.turnNumber) state.destroyedThisTurn = { turn: state.turnNumber, cardIds: [] };
     state.destroyedThisTurn.cardIds.push(eventArgs.cardId);
+    answerLoss(state, 'destroyedByOpponent', eventArgs.ownerIndex, eventArgs.byPlayer);
   }
   const order = [state.turnPlayer, state.turnPlayer === 0 ? 1 : 0];
   order.forEach((controllerIndex) => {
@@ -361,6 +383,26 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     return { ok: true };
   }
 
+  if (pending.kind === 'ownMonster') {
+    const chosen = picks.find((id) => pending.options.some((o) => o.instanceId === id) && player(state, controllerIndex).field.monsters.some((m) => m && m.instanceId === id));
+    if (!chosen) {
+      // The monsters offered may have left meanwhile: with none left there is nothing to do.
+      const still = pending.options.filter((o) => player(state, controllerIndex).field.monsters.some((m) => m && m.instanceId === o.instanceId));
+      if (still.length) return { ok: false, reason: 'choose-target', options: still, prompt: pending.prompt };
+      state.pendingTriggerChoices.shift();
+      return { ok: true };
+    }
+    state.pendingTriggerChoices.shift();
+    const ctx = makeCtx(state, controllerIndex, null, null);
+    if (pending.action === 'banish') require('./effects/actions').registry.exileTarget(ctx, {}, [chosen]);
+    else require('./effects/fieldActions').destroy(ctx, { target: 'selected' }, [chosen]);
+    recomputeContinuous(state);
+    checkWin(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
+
   if (pending.kind === 'discard') {
     const pl = player(state, controllerIndex);
     const chosen = picks.filter((id) => pl.hand.includes(id));
@@ -423,6 +465,8 @@ function recomputeContinuous(state) {
       m.gainsAllTypes = false;
       m.equipLimit = 0;
       m.immuneAttributes = null;
+      m.untargetableBy = null;
+      m.doublesPositiveMods = false;
     });
     [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => { s.negatedByContinuous = false; });
   });
@@ -443,6 +487,13 @@ function recomputeContinuous(state) {
       });
     });
   });
+  // "Duplica los cambios positivos" (Mantícora): every gain the monster carries counts twice.
+  state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => {
+    if (!m.doublesPositiveMods) return;
+    const gains = [...(m.statMods || []), ...(m.permanentMods || [])];
+    const sum = (k) => gains.reduce((s, mod) => s + Math.max(0, mod[k] || 0), 0);
+    addTempMod(m, { atk: sum('atk'), def: sum('def') }, 'Mantícora (doble)');
+  }));
   // "El Atk de esta carta se convierte en X hasta el final del turno" wins over every other change.
   state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => {
     if (!m.atkOverride) return;
@@ -528,4 +579,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { announceEffectActivated, announceSentToGraveyard, isOwnActivation, activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };
+module.exports = { answerLoss, announceEffectActivated, announceSentToGraveyard, isOwnActivation, activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };

@@ -15,6 +15,7 @@ function changePosition(state, controllerIndex, instanceId, newPosition) {
   if (!monster) return { ok: false, reason: 'monster-not-found' };
   if (monster.summonedTurn === state.turnNumber) return { ok: false, reason: 'summoned-this-turn' };
   if (monster.positionChangedTurn === state.turnNumber) return { ok: false, reason: 'already-changed-position' };
+  if (monster.positionLocked) return { ok: false, reason: 'position-locked' };
 
   const wasFaceDown = monster.faceDown;
   if (!wasFaceDown && monster.position === newPosition) return { ok: false, reason: 'same-position' };

@@ -4144,15 +4144,19 @@
   },
   {
     "_id": "BASILISCO_BATTLE_DEBUFF",
-    "type": "trigger",
+    "type": "continuous",
     "oncePerTurn": false,
-    "trigger": {
-      "fn": "phase",
-      "args": {
-        "timing": "battlePhase"
+    "conditions": [
+      {
+        "fn": "faceUp"
+      },
+      {
+        "fn": "inOwnPhase",
+        "args": {
+          "phase": "battle"
+        }
       }
-    },
-    "conditions": [],
+    ],
     "requiresTarget": false,
     "actions": [
       {
@@ -5826,7 +5830,8 @@
             "breed": "Dragón"
           },
           "atk": 1,
-          "scope": "field"
+          "scope": "field",
+          "applyTo": "field"
         }
       }
     ]
@@ -7183,6 +7188,450 @@
         "fn": "generatePixels",
         "args": {
           "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "ownTurn"
+      },
+      {
+        "fn": "onFieldSinceLastTurn"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_BEBE_EVOLVE",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "standbyPhase"
+      }
+    },
+    "cost": {
+      "fn": "tributeSelf"
+    },
+    "actions": [
+      {
+        "fn": "summonFromZones",
+        "args": {
+          "filter": {
+            "name": "Safira, la Joven Heredera"
+          },
+          "zones": [
+            "deck",
+            "hand"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "ownTurn"
+      },
+      {
+        "fn": "onFieldSinceLastTurn"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_JOVEN_EVOLVE",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "standbyPhase"
+      }
+    },
+    "cost": {
+      "fn": "tributeSelf"
+    },
+    "actions": [
+      {
+        "fn": "summonFromZones",
+        "args": {
+          "filter": {
+            "name": "Safira, la Dragóna Real"
+          },
+          "zones": [
+            "deck",
+            "graveyard",
+            "hand"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "ownTurn"
+      },
+      {
+        "fn": "onFieldSinceLastTurn"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_REAL_EVOLVE",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "standbyPhase"
+      }
+    },
+    "cost": {
+      "fn": "tributeSelf"
+    },
+    "actions": [
+      {
+        "fn": "summonFromZones",
+        "args": {
+          "filter": {
+            "name": "Safira, la Reina Dragón"
+          },
+          "zones": [
+            "deck",
+            "graveyard",
+            "hand"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_UNTARGETABLE_BY_MONSTERS",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "untargetableBy",
+        "args": {
+          "by": "monster",
+          "unless": {
+            "breed": "Dragón"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "SAFIRA_JOVEN_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
+    },
+    "actions": [
+      {
+        "fn": "setFaceDownDefense",
+        "args": {
+          "target": "selected",
+          "side": "opponent"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "SAFIRA_REAL_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
+    },
+    "actions": [
+      {
+        "fn": "setFaceDownDefense",
+        "args": {
+          "target": "selected",
+          "side": "opponent",
+          "lockPosition": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "SAFIRA_REINA_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
+    },
+    "actions": [
+      {
+        "fn": "setFaceDownDefense",
+        "args": {
+          "target": "allEnemyMonsters",
+          "lockPosition": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_REINA_UNTARGETABLE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "untargetableBy",
+        "args": {
+          "by": "any",
+          "unless": {
+            "breed": "Dragón"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_REINA_DRAGON_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "breed": "Dragón"
+          },
+          "buff": {
+            "atk": 2,
+            "def": 2
+          },
+          "scope": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "DRACO_IS_DRAGON",
+    "type": "rule",
+    "actions": [
+      {
+        "fn": "gainBreed",
+        "args": {
+          "breed": "Dragón"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "DRACO_DRAGON_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "filter": {
+            "breed": "Dragón"
+          },
+          "atk": 2,
+          "scope": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GRIFO_SUMMON_BEAST",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "normal"
+      }
+    },
+    "actions": [
+      {
+        "fn": "summonFromHand",
+        "args": {
+          "filter": {
+            "family": "Bestia",
+            "category": "monster"
+          }
+        }
+      },
+      {
+        "fn": "gainStatsOfSummoned"
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "HIPOGRIFO_SUMMON_BEAST",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "normal"
+      }
+    },
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "player": "self",
+          "filter": {
+            "family": "Bestia",
+            "category": "monster"
+          }
+        }
+      },
+      {
+        "fn": "gainStatsOfSummoned"
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "MANTICORA_DOUBLES_BEAST_GAINS",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "doublePositiveMods",
+        "args": {
+          "filter": {
+            "family": "Bestia"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      },
+      {
+        "fn": "controlsAnotherOfFamily",
+        "args": {
+          "family": "Bestia"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "MANTICORA_PROTECTED",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
+        }
+      },
+      {
+        "fn": "protectFromEffectDestruction",
+        "args": {
+          "target": "self"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "VIAJE_UNION_DRAW_ON_SEARCH",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "actions": [
+      {
+        "fn": "afterOpponentSearch"
+      }
+    ]
+  },
+  {
+    "_id": "ANILLO_BODA_CEMENTERIO",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "graveyard"
+      }
+    },
+    "conditions": [],
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "mirrorEvent",
+        "args": {
+          "event": "destroyedByOpponent"
+        }
+      },
+      {
+        "fn": "mirrorEvent",
+        "args": {
+          "event": "banishedByOpponent"
         }
       }
     ],

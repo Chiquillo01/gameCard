@@ -123,6 +123,10 @@ function exileTarget(ctx, args, targets) {
     const isMonster = loc.zone === 'field:monster';
     if (isMonster) ctx.lastTargetsAtk += getEffectiveStats(entry).atk;
     moveToZone(ctx.state, instanceId, 'banished');
+    if (isMonster) {
+      const owner = ownerOfInstance(instanceId) ?? loc.ownerIndex;
+      require('../effectEngine').answerLoss(ctx.state, 'banishedByOpponent', owner, ctx.controllerIndex);
+    }
     if (untilStandby && isMonster && !String(instanceId).startsWith('token:')) {
       ctx.state.returnAtStandby = ctx.state.returnAtStandby || [];
       ctx.state.returnAtStandby.push({ instanceId, ownerIndex: ownerOfInstance(instanceId) ?? loc.ownerIndex, position: entry.position });
@@ -458,7 +462,8 @@ function cannotBeNegated() {
 //   scope "equippedToSelf": count the cards equipped to this one (Carnívora Bestia-Moss);
 //   scope "destroyedThisTurn": count the matching monsters destroyed this turn (Orco Gigante);
 //   target "self"         : the buff lands on the card that has the effect;
-//   excludeSelf           : that card doesn't count itself ("excepto el mismo").
+//   excludeSelf           : that card doesn't count itself ("excepto el mismo");
+//   applyTo "field"       : the buff lands on the matching monsters of both sides.
 // The buff it applied is kept on ctx.lastScaledBuff for a following mirrorStatToOpponent step.
 function applyScaledBuff(ctx, args, targets) {
   const filter = args.filter || { name: args.name, nameContains: args.nameContains, breed: args.breed, family: args.family, attribute: args.attribute };
@@ -481,7 +486,9 @@ function applyScaledBuff(ctx, args, targets) {
   }
   // Explicit targets (an equipped monster, a picked one) always win over the filter-based default.
   let targetSet = targets && targets.length ? allFieldMonsters(ctx.state).filter((m) => targets.includes(m.instanceId)) : hasFilter ? controllerMonsters.filter((m) => monsterMatches(m, filter)) : controllerMonsters;
-  if (!(targets && targets.length)) {
+  // `applyTo: 'field'`: the matching monsters on both sides get it ("los monstruos Dragón en el Campo").
+  if (!(targets && targets.length) && args.applyTo === 'field') targetSet = allFieldMonsters(ctx.state).filter((m) => monsterMatches(m, filter));
+  if (!(targets && targets.length) && args.applyTo !== 'field') {
     if (args.target === 'self' || args.scope === 'equippedToSelf') targetSet = controllerMonsters.filter((m) => m.instanceId === ctx.sourceInstanceId);
     else if (args.scope === 'opponentField') targetSet = enemyMonsters;
   }

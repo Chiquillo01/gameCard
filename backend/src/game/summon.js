@@ -39,7 +39,7 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
 
   pl.normalSummonUsed = true;
   log(state, `${pl.userId} invoca a ${card.name}.`);
-  announceSummon(state, controllerIndex, instanceId, card, faceDown);
+  announceSummon(state, controllerIndex, instanceId, card, faceDown, { kind: 'normal' });
   recomputeContinuous(state);
   return { ok: true };
 }
@@ -123,9 +123,10 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
 // Tells the board a monster was summoned: its own 'onSummon' effects fire, then the controller's
 // other cards get 'allySummoned' (a face-down Set isn't a summon). A summon made by a card's effect
 // (`by`: { byEffect, bySourceInstanceId, bySourceCardId }) also fires the summoned card's own
-// "cuando es invocado por el efecto de un Licano" effects.
+// "cuando es invocado por el efecto de un Licano" effects. `kind` is 'normal' for a Normal Summon,
+// 'special' for every other way (the default).
 function announceSummon(state, controllerIndex, instanceId, card, faceDown = false, by = {}) {
-  const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown, ...by };
+  const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown, kind: 'special', ...by };
   if (!faceDown) fireTrigger(state, 'onSummon', event);
   fireTrigger(state, 'allySummoned', event);
   if (by.byEffect && !faceDown) {

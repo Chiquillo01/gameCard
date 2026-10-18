@@ -252,6 +252,51 @@ function imposeActivationCost(ctx, args) {
 // Static rules read straight from the card data elsewhere (cardIndex.extraAttributesOf,
 // summon.allowsSameTurnDecompile): nothing to do when "run".
 function gainAttribute() {}
+function gainBreed() {}
+
+// Safira: "no puede ser seleccionada por efectos de monstruos, excepto Dragón" (by: 'monster') or
+// "por efectos de cartas, excepto Monstruos Dragón" (by: 'any'). targets.selectRows reads the flag.
+function untargetableBy(ctx, args) {
+  const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
+  if (m) m.untargetableBy = { by: args.by || 'any', unless: args.unless || null };
+}
+
+// "Duplica los cambios positivos de los monstruos Bestia en tu Campo" (Mantícora): marks them;
+// recomputeContinuous doubles their gains once every other change is in.
+function doublePositiveMods(ctx, args) {
+  const { matchesFilter } = require('../filters');
+  player(ctx.state, ctx.controllerIndex).field.monsters
+    .filter((m) => m && matchesFilter(m, args.filter || {}))
+    .forEach((m) => { m.doublesPositiveMods = true; });
+}
+
+// "Pon al monstruo en defensa boca abajo (y este no puede cambiar su posición de batalla)" — the
+// picked monsters, or all of the rival's with `target: 'allEnemyMonsters'` (Safira, la Reina Dragón).
+function setFaceDownDefense(ctx, args, targets) {
+  const { canAffect } = require('../targets');
+  const list = args.target === 'allEnemyMonsters'
+    ? player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean)
+    : (targets || []).map((id) => getFieldMonster(ctx.state, id)).filter(Boolean);
+  list.filter((m) => canAffect(ctx, m)).forEach((m) => {
+    m.position = 'defense';
+    m.faceDown = true;
+    if (args.lockPosition) m.positionLocked = true;
+  });
+  if (list.length) log(ctx.state, `${list.length === 1 ? 'Un monstruo pasa' : `${list.length} monstruos pasan`} a defensa boca abajo${args.lockPosition ? ' y no pueden cambiar su posición' : ''}.`);
+}
+
+// "Si lo haces, esta carta gana su Atk y Vida" (Grifo, Hipogrifo): the printed stats of what the
+// previous step summoned, for good.
+function gainStatsOfSummoned(ctx) {
+  const { addPermanentMod } = require('../statMods');
+  const self = getFieldMonster(ctx.state, ctx.sourceInstanceId);
+  if (!self) return;
+  (ctx.lastSummoned || []).forEach((id) => {
+    const card = getCard(cardIdFromInstance(id));
+    addPermanentMod(self, { atk: card.atk || 0, def: card.def || 0 }, card.name);
+    log(ctx.state, `${getCard(self.cardId).name} gana el Atk y la Vida de ${card.name}.`);
+  });
+}
 function allowDecompileSameTurn() {}
 
 // Drácula: "Destruye una carta en el Campo y recupera VP igual a su Atk".
@@ -315,6 +360,11 @@ module.exports = {
   target,
   fairyLeaveBonus,
   afterOpponentSearch,
+  gainBreed,
+  untargetableBy,
+  doublePositiveMods,
+  setFaceDownDefense,
+  gainStatsOfSummoned,
   copyNameAndLevel,
   equipMonster,
   equipMonsterToSelf,

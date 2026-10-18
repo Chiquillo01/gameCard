@@ -237,7 +237,26 @@ function isEquippedToRace(ctx, args) {
   return !args.breed || matchesFilter(target, { breed: args.breed });
 }
 
+// "En tu siguiente Fase de Espera": it's the controller's own turn, and the card has been on the
+// field since before this turn (Safira's "en la siguiente fase de espera tributa esta carta").
+function ownTurn(ctx) {
+  return ctx.state.turnPlayer === ctx.controllerIndex;
+}
+
+// "En la fase de batalla" (Basilisco): during that phase of its controller's turn.
+function inOwnPhase(ctx, args) {
+  return ctx.state.turnPlayer === ctx.controllerIndex && ctx.state.phase === args.phase;
+}
+
+function onFieldSinceLastTurn(ctx) {
+  const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
+  return !!m && m.summonedTurn < ctx.state.turnNumber;
+}
+
 const registry = {
+  ownTurn,
+  inOwnPhase,
+  onFieldSinceLastTurn,
   wasOnField,
   faceUp,
   opponentHasMorePixels,
