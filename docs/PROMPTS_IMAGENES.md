@@ -618,4 +618,6 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 
 ## 175 · Contenedor sospechoso
 
-\
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a suspicious old wooden crate bound with rusty chains and padlocks, a small demon of darkness hiding inside, its glowing purple eyes and claws peeking through the gaps between the planks; the lid bursts open and a swirling dark purple vortex sucks a startled monster back into it. It is a crate, not a treasure chest and not a mimic with a tongue. Setting: the cluttered, dimly lit storeroom of a dungeon, with barrels, sacks and cobwebs, purple shadows.
+```
