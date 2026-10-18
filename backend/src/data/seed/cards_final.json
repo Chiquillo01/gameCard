@@ -3427,7 +3427,9 @@
         "amount": 2
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "DES_COMPILACION_DECOMPILE"
+    ]
   },
   {
     "name": "Homúnculo",

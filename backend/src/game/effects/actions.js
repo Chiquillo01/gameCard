@@ -215,11 +215,20 @@ function corrodeZone(ctx, args, targets) {
   log(ctx.state, 'Una zona del rival queda corroída.');
 }
 
+// "Descompílala" — the picked Compilación, by its owner, whatever the phase or turn. With
+// `negateMaterials` (Des - Compilación: "y si lo haces, niega los efectos de los materiales
+// invocados") the materials that come back have their effects negated.
 function decompileMonster(ctx, args, targets) {
   const { decompile } = require('../summon');
   (Array.isArray(targets) ? targets : []).forEach((id) => {
     const loc = findInstanceLocation(ctx.state, id);
-    if (loc) decompile(ctx.state, loc.ownerIndex, id, { force: true });
+    const entry = loc && getFieldMonster(ctx.state, id);
+    if (!entry) return;
+    const materials = [...(entry.materials || [])];
+    if (!decompile(ctx.state, loc.ownerIndex, id, { force: true }).ok) return;
+    if (!args.negateMaterials) return;
+    materials.forEach((m) => negateCard(ctx.state, m, { sourceInstanceId: ctx.sourceInstanceId }));
+    if (materials.length) log(ctx.state, `Se niegan los efectos de ${materials.map((m) => sourceName(ctx.state, m)).join(', ')}.`);
   });
 }
 
@@ -711,8 +720,18 @@ function setAtk(ctx, args, targets) {
   });
 }
 
+// "Todos los monstruos del Inframundo pasan a tener 0 de Atk y Vida" (Solar): from a continuous
+// effect with a filter, every matching monster (`scope: 'field'`: both sides) while it lasts —
+// recomputeContinuous applies it after every other change. Otherwise it's setAtk.
 function setStatValue(ctx, args, targets) {
-  setAtk(ctx, args, targets);
+  if (!isContinuous(ctx) || !args.filter) {
+    setAtk(ctx, args, targets);
+    return;
+  }
+  const list = args.scope === 'field' ? allFieldMonsters(ctx.state) : allOwnedMonsters(ctx.state, ctx.controllerIndex);
+  list.filter((m) => m.instanceId !== ctx.sourceInstanceId && monsterMatches(m, args.filter)).forEach((m) => {
+    m.statOverride = { atk: args.atk, def: args.def, source: ctxSource(ctx) };
+  });
 }
 
 function damageMonster(ctx, args, targets) {

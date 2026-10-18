@@ -140,6 +140,15 @@ describe('Battle events', () => {
     expect(state.players[1].vp).toBe(STARTING_VP);
   });
 
+  it('Serpiente de Muelle attacking directly stays on the field and deals its damage', async () => {
+    const state = await makeDuel();
+    const serpiente = await onField(state, 0, 'Serpiente de Muelle');
+    toPhase(state, 'battle', 0);
+    attack(state, 0, serpiente);
+    expect(monster(state, serpiente)).toBeDefined();
+    expect(state.players[1].vp).toBeLessThan(STARTING_VP);
+  });
+
   it('Relicario de Engranaje gains an Engranaje when a TIERRA monster of yours deals direct damage', async () => {
     const state = await makeDuel();
     const relicarioId = await instance(0, 'Relicario de Engranaje');

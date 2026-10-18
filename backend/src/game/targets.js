@@ -162,6 +162,9 @@ function stepPool(ctx, step) {
       const found = require('./effects/fieldActions').excavateCandidates(ctx.state, ctx.controllerIndex, args);
       return found.length ? found : null;
     }
+    // Des - Compilación: "selecciona una Compilación en el Campo".
+    case 'decompileMonster':
+      return ids(selectRows(ctx, { ...args, target: 'Compilado' }).filter((r) => !r.entry.faceDown));
     case 'compileFromExtra':
       return require('./effects/extraActions').compilableFromExtra(ctx, args);
     case 'applyStatus':
@@ -291,6 +294,7 @@ const STEP_PROMPTS = {
   destroyCards: 'Elige la carta que se destruye',
   destroyAndCopyEffect: 'Elige la carta que se destruye',
   compileFromExtra: 'Elige la Compilación que compilas',
+  decompileMonster: 'Elige la Compilación que se descompila',
   excavate: 'Elige la carta excavada que añades a tu Mano',
   setAtk: 'Elige el monstruo cuyo Atk cambia',
   destroyAndGainVP: 'Elige la carta que se destruye',

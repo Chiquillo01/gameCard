@@ -240,6 +240,9 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
     if (!fits(args)) return false;
     if (args.anyOf && !args.anyOf.some(fits)) return false;
   }
+  // "Antes de la fase de daño: sube a la Mano esta carta y al defensor" (Serpiente de Muelle): with
+  // no defender (a direct attack) there's nothing to do.
+  if (eventName === 'beforeDamageCalculation' && args.requiresDefender && !eventArgs.defenderInstanceId) return false;
   if (eventName === 'direct_damage_dealt') {
     if (eventArgs.controllerIndex !== m.controllerIndex) return false;
     if (args.source === 'self' && m.instanceId !== eventArgs.instanceId) return false;
@@ -506,6 +509,7 @@ function recomputeContinuous(state) {
       m.effectsLost = false;
       m.continuousAbilities = [];
       m.forcedAttack = false;
+      m.statOverride = null;
     });
     [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => { s.negatedByContinuous = false; });
   });
@@ -546,6 +550,14 @@ function recomputeContinuous(state) {
     if (!m.atkOverride) return;
     m.tempBuff.atk = m.atkOverride.value - m.baseAtk;
     m.statMods.push({ source: m.atkOverride.source || 'Efecto', atk: 0, def: 0, kind: 'set', value: m.atkOverride.value });
+  }));
+  // "Pasan a tener 0 de Atk y Vida" (Solar): set by a continuous effect, after everything else.
+  state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => {
+    const o = m.statOverride;
+    if (!o) return;
+    if (o.atk != null) m.tempBuff.atk = o.atk - m.baseAtk;
+    if (o.def != null) m.tempBuff.def = o.def - m.baseDef;
+    m.statMods.push({ source: o.source || 'Efecto', atk: 0, def: 0, kind: 'set', value: o.atk ?? o.def });
   }));
   const { canStillAttack } = require('./combat');
   state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => { m.hasAttacked = !canStillAttack(state, m); }));

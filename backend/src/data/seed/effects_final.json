@@ -1879,7 +1879,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "beforeDamageCalculation"
+      "fn": "beforeDamageCalculation",
+      "args": {
+        "requiresDefender": true
+      }
     },
     "conditions": [],
     "actions": [
@@ -4575,7 +4578,8 @@
             "family": "Inframundo"
           },
           "scope": "field",
-          "atk": 0
+          "atk": 0,
+          "def": 0
         }
       }
     ]
@@ -8756,6 +8760,28 @@
         "fn": "gainVP",
         "args": {
           "amountFrom": "eventAtk"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "DES_COMPILACION_DECOMPILE",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "decompileMonster",
+        "args": {
+          "negateMaterials": true
         }
       }
     ],
