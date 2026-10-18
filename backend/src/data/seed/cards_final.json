@@ -661,7 +661,9 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "CAMINO_REINA_SAFIRA_DRAW_PIXEL"
+    ]
   },
   {
     "name": "Mantícora",

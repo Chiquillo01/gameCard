@@ -7155,5 +7155,37 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "_id": "CAMINO_REINA_SAFIRA_DRAW_PIXEL",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "allySummoned",
+      "args": {
+        "filter": {
+          "nameContains": "Safira",
+          "category": "monster"
+        }
+      }
+    },
+    "conditions": [],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1
+        }
+      },
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

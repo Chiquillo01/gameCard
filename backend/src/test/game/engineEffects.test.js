@@ -1064,3 +1064,21 @@ describe('Araña de Fase', () => {
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: arana }).ok).toBe(true);
   });
 });
+
+describe('Camino de la Reina', () => {
+  it('each "Safira" its controller summons draws 1 card and generates 1 pixel; other monsters do not', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    placeSupport(state, await instance(0, 'Camino de la Reina'), 0, { faceDown: false });
+    state.players[0].pixelcoins = 3;
+    const safira = await toHand(state, 0, 'Safira, Bebé Dragón');
+    const hand = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: safira }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].hand).toHaveLength(hand - 1 + 1); // Safira left the hand, one card drawn
+    expect(state.players[0].pixelcoins).toBe(4);
+
+    await onField(state, 1, 'Slime'); // a rival's monster: nothing
+    expect(state.players[0].pixelcoins).toBe(4);
+  });
+});
