@@ -34,14 +34,16 @@ const resolveChoices = (state, p, pick = () => null) => {
 };
 
 describe('Safira', () => {
-  it('Bebé Dragón becomes la Joven Heredera in the next Fase de Espera, even the rival\'s; the Joven turns a rival monster face down', async () => {
+  it('Bebé Dragón becomes la Joven Heredera in its owner\'s next Fase de Espera (not the rival\'s); the Joven turns a rival monster face down', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const bebe = await onField(state, 0, 'Safira, Bebé Dragón');
     const joven = await toDeckTop(state, 0, 'Safira, la Joven Heredera');
     const slime = await onField(state, 1, 'Slime');
+    toPhase(state, 'main1', 1); // the rival's turn: nothing yet
+    expect(monster(state, bebe)).toBeDefined();
     let guard = 0;
-    while (!(state.turnPlayer === 1 && state.phase === 'main1') && guard++ < 20) {
+    while (!(state.turnPlayer === 0 && state.phase === 'main1') && guard++ < 20) {
       applyAction(state, state.turnPlayer, { type: 'ADVANCE_PHASE' });
       resolveChoices(state, 0, (pending) => (pending.options.find((o) => o.instanceId === slime) || {}).instanceId);
     }

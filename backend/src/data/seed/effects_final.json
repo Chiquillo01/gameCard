@@ -7197,6 +7197,9 @@
     "oncePerTurn": false,
     "conditions": [
       {
+        "fn": "ownTurn"
+      },
+      {
         "fn": "onFieldSinceLastTurn"
       }
     ],
