@@ -5384,7 +5384,7 @@
   },
   {
     "name": "Guardián del Bosque Oscuro",
-    "image": "/assets/CardImg/generated/guardian-del-bosque-oscuro.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792315265/274.jpg",
     "attribute": "Natura",
     "type": "Mutación",
     "breed": "Mutación",
@@ -5556,7 +5556,7 @@
   },
   {
     "name": "Grook, el Árbol Guardián",
-    "image": "/assets/CardImg/generated/grook-el-arbol-guardian.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792315199/281.jpg",
     "attribute": "Natura",
     "type": "Mutación",
     "breed": "Mutación",
