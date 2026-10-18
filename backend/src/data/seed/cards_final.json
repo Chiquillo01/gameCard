@@ -339,7 +339,7 @@
     "rarity": "rare",
     "category": "monster",
     "expansion": "AdB",
-    "effect": "En tu siguiente fase de espera tributa esta carta y selecciona un monstruo en el Campo:\n• Invoca especial a \"Safira, la Dragóna Real\" del Mazo, Cementerio o la Mano.\nEn invocación especial, selecciona un monstruo en el Campo de tu oponente: \n• Pon al monstruo seleccionado en posición de defensa boca abajo.\nNo puede ser seleccionada por efectos de monstruos, excepto Dragón.",
+    "effect": "En tu siguiente fase de espera tributa esta carta:\n• Invoca especial a \"Safira, la Dragóna Real\" del Mazo, Cementerio o la Mano.\nEn invocación especial, selecciona un monstruo en el Campo de tu oponente: \n• Pon al monstruo seleccionado en posición de defensa boca abajo.\nNo puede ser seleccionada por efectos de monstruos, excepto Dragón.",
     "invocationText": "Solo puede ser Invocada especial por el efecto de \"Safira\"",
     "atk": 4,
     "def": 2,
