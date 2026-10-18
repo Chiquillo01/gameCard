@@ -1601,7 +1601,7 @@
   },
   {
     "name": "Insecto Buscador",
-    "image": "/assets/CardImg/generated/insecto-buscador.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792315846/68.jpg",
     "attribute": "Tierra",
     "type": "Himenóptero",
     "breed": "Himenóptero",
@@ -2332,7 +2332,7 @@
   },
   {
     "name": "Herida Sangrante",
-    "image": "/assets/CardImg/generated/herida-sangrante.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792315959/136.jpg",
     "attribute": "none",
     "type": "normal",
     "description": "-",
