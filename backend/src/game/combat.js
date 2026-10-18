@@ -12,7 +12,7 @@ function isWater(entry) {
   return attributeMatches(attribute, require('./rules').rules().freezeBreakerAttribute);
 }
 
-const hasAbility = (m, name) => (m.abilities || []).some((a) => a.name === name);
+const hasAbility = (m, name) => (m.abilities || []).some((a) => a.name === name) || (m.continuousAbilities || []).includes(name);
 
 // How many attacks a monster gets this turn: 1, plus a turn's extra (Bálor, Orco Gladiador) and a
 // standing one (Héroe del Caos "puede pegar dos veces", Damarco one per material).
@@ -226,8 +226,10 @@ function damageStep(state, link) {
     // Defending in defense position (rulebook): ATK > Vida destroys the defender with no VP loss;
     // ATK = Vida destroys nothing; ATK < Vida leaves both alive and the attacker's owner loses
     // the difference (Vida - ATK) in VP.
-    if (attackerStats.atk > defenderStats.def) destroyedDefender = true;
-    else if (attackerStats.atk < defenderStats.def) {
+    if (attackerStats.atk > defenderStats.def) {
+      destroyedDefender = true;
+      if (hasAbility(attacker, 'piercing')) damageToDefenderSide = loseVp(oppPl, attackerStats.atk - defenderStats.def, defender);
+    } else if (attackerStats.atk < defenderStats.def) {
       damageToAttackerSide = loseVp(attackerPl, defenderStats.def - attackerStats.atk, attacker);
     }
   }

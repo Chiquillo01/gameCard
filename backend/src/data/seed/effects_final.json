@@ -2022,7 +2022,7 @@
         "fn": "summonFromZones",
         "args": {
           "filter": {
-            "breed": "Trasgo"
+            "family": "Grokkar"
           },
           "zones": [
             "graveyard",
@@ -2640,14 +2640,7 @@
     "trigger": {
       "fn": "onActivation"
     },
-    "conditions": [
-      {
-        "fn": "noCardsControlled",
-        "args": {
-          "scope": "monsters"
-        }
-      }
-    ],
+    "conditions": [],
     "requiresTarget": false,
     "actions": [
       {
@@ -7709,5 +7702,771 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "GROVER_GUARDIAN_WALL",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
+        }
+      },
+      {
+        "fn": "grantAbility",
+        "args": {
+          "target": "self",
+          "ability": "attackInDefense"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GOBLIN_ARDIENTE_SWITCH",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "changePosition",
+        "args": {
+          "target": "selected",
+          "side": "opponent",
+          "zone": "monster",
+          "position": "toggle"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GOBLIN_ARDIENTE_MATERIAL_BURN",
+    "type": "triggered",
+    "trigger": {
+      "fn": "usedAsCompileMaterial"
+    },
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "enemyMonster",
+          "count": 1,
+          "status": "Quemadura"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "GOBLIN_GUARDIAN_BATTLE_IMMUNE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "ORCO_TRAICIONERO_SACRIFICED",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "reason": "cost",
+        "bySource": {
+          "nameContains": "Orco"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "scope": "field",
+          "filter": {
+            "excludeFamily": "Grokkar"
+          },
+          "buff": {
+            "atk": -1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Orco"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_TRAICIONERO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "ORCOS_BATALLON_SACRIFICED",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "reason": "cost",
+        "bySource": {
+          "nameContains": "Orco"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "scope": "field",
+          "filter": {
+            "family": "Grokkar"
+          },
+          "buff": {
+            "atk": 1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Orco"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCOS_BATALLON_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_SOLITARIO_NEGATE_SUPPORT",
+    "type": "quick",
+    "trigger": {
+      "fn": "card_effect_activated",
+      "args": {
+        "phase": "all",
+        "source": "any",
+        "cardType": "support"
+      }
+    },
+    "cost": {
+      "fn": "discart",
+      "args": {
+        "count": 1
+      }
+    },
+    "requiresTarget": true,
+    "targetSelector": "triggeredEffect",
+    "actions": [
+      {
+        "fn": "negateAndSendToGraveyard",
+        "args": {
+          "sendCard": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_SEARCH_CATEDRAL",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Catedral de los Goblins"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_QUICK_COMPILE",
+    "type": "quick",
+    "actions": [
+      {
+        "fn": "compileFromExtra",
+        "args": {
+          "filter": {
+            "recipeIncludes": "Grover, el Goblin"
+          },
+          "zones": [
+            "field",
+            "hand"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "CIUDADELA_SUMMON_GROKKAR",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "actions": [
+      {
+        "fn": "summonFromDeck",
+        "args": {
+          "filter": {
+            "family": "Grokkar",
+            "category": "monster"
+          },
+          "destination": "field",
+          "sendCard": false
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "CIUDADELA_ORCOS_PIERCE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantAbility",
+        "args": {
+          "filter": {
+            "nameContains": "Orco"
+          },
+          "ability": "piercing"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "EN_BUSCA_GOBLIN_SEARCH",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Goblin",
+            "excludeName": "En busca del Goblin"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Grover, el Goblin"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "EN_BUSCA_GOBLIN_GY_RETURN",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "count": 3,
+          "filter": {
+            "breedIn": [
+              "Orco",
+              "Goblin"
+            ],
+            "category": "monster"
+          },
+          "required": true,
+          "prompt": "Elige los 3 Orcos y/o Goblins del Cementerio que devuelves al Mazo"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "CATEDRAL_DESTROY_ON_COMPILE",
+    "type": "triggered",
+    "trigger": {
+      "fn": "allySummoned",
+      "args": {
+        "filter": {
+          "category": "Compilado"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "zone": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Grover, el Goblin"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "CATEDRAL_BACK_FROM_GY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromGraveyard",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Catedral de los Goblins"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "CATEDRAL_GROVER_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "scope": "field",
+          "filter": {
+            "textIncludes": "Grover, el Goblin"
+          },
+          "buff": {
+            "atk": 2,
+            "def": 2
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "ORCO_JEFE_SUMMON_GROKKAR",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "summonFromDeck",
+        "args": {
+          "filter": {
+            "family": "Grokkar",
+            "category": "monster"
+          },
+          "destination": "field",
+          "sendCard": false,
+          "position": "attack"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "ownTurn"
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_JEFE_END_PHASE_RECOVER",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromGraveyard",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Orco",
+            "category": "monster"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_JEFE_ORCOS_BATTLE_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "nameContains": "Orco"
+          },
+          "buff": {
+            "atk": 3
+          },
+          "phase": "battle"
+        }
+      },
+      {
+        "fn": "untargetableBy",
+        "args": {
+          "by": "any",
+          "filter": {
+            "nameContains": "Orco"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Orco"
+          },
+          "count": 4
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_JEFE_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_CONJURADOR_FIELD",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "side": "opponent"
+        }
+      },
+      {
+        "fn": "forceAttackPosition",
+        "args": {
+          "filter": {
+            "excludeBreed": "Orco"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_ARDIENTE_ONSUMMON_BURN",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "count": 1,
+          "status": "Quemadura"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_ARDIENTE_LEAVES_BURN",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field"
+      }
+    },
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "count": 1,
+          "status": "Quemadura"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_ARDIENTE_END_BURN",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "count": 1,
+          "status": "Quemadura"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GOBLIN_SOLITARIO_SUMMON",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "summonFromHand",
+        "args": {
+          "filter": {
+            "breed": "Goblin",
+            "category": "monster"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "CONJURADOR_ORCO_FIELD",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "side": "opponent"
+        }
+      },
+      {
+        "fn": "protectFromEffectDestruction",
+        "args": {
+          "side": "opponent"
+        }
+      },
+      {
+        "fn": "forceAttackPosition",
+        "args": {
+          "filter": {
+            "excludeNameContains": "Orco"
+          }
+        }
+      },
+      {
+        "fn": "grantBuff",
+        "args": {
+          "scope": "field",
+          "filter": {
+            "excludeNameContains": "Orco"
+          },
+          "buff": {
+            "atk": -3
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "effectIncludes",
+        "args": {
+          "effects": [
+            "summonFromDeck",
+            "specialSummonFromGraveyard",
+            "summonFromHand",
+            "summonFromExtra"
+          ]
+        }
+      },
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "breed": "Goblin",
+            "category": "Compilado"
+          }
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DUENDE_ELEGIDO_COUNTER",
+    "type": "activated",
+    "trigger": {
+      "fn": "card_effect_activated",
+      "args": {
+        "phase": "all",
+        "source": "opponent"
+      }
+    },
+    "requiresTarget": true,
+    "targetSelector": "triggeredEffect",
+    "actions": [
+      {
+        "fn": "negateDestroyAndBan"
+      }
+    ]
   }
 ]

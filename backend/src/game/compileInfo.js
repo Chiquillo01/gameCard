@@ -27,7 +27,7 @@ function requirementLabel(req) {
   return `${count} × ${parts.join(' ')}`;
 }
 
-const zonesOf = (req) => (req.zone ? [].concat(req.zone) : ['field']);
+const zonesOf = (req, defaultZones = ['field']) => (req.zone ? [].concat(req.zone) : defaultZones);
 
 // Every card the player owns that could serve as a material, with where it is.
 function ownCards(state, controllerIndex) {
@@ -67,7 +67,9 @@ function materialCost(state, id) {
   return 20;
 }
 
-function compileInfo(state, controllerIndex, instanceId) {
+// `defaultZones`: where a material whose recipe names no zone may come from (the Campo; Grover, el
+// Goblin's effect also takes them from the Mano).
+function compileInfo(state, controllerIndex, instanceId, { defaultZones = ['field'] } = {}) {
   const card = getCard(instanceId.split(':')[1]);
   const reqs = (card.activationCost && card.activationCost.args && card.activationCost.args.materials) || [];
   const owned = ownCards(state, controllerIndex).filter((id) => id !== instanceId);
@@ -75,10 +77,10 @@ function compileInfo(state, controllerIndex, instanceId) {
   let complete = reqs.length > 0;
   const requirements = reqs.map((req) => {
     const count = req.count || 1;
-    const zones = zonesOf(req);
+    const zones = zonesOf(req, defaultZones);
     const candidates = owned.filter((id) => {
       const loc = findInstanceLocation(state, id);
-      return materialLocationSatisfies(loc, controllerIndex, req) && matchesCardFilter(materialCard(state, id), req);
+      return materialLocationSatisfies(loc, controllerIndex, req, defaultZones) && matchesCardFilter(materialCard(state, id), req);
     });
     const suggested = candidates.filter((id) => !used.has(id)).sort((a, b) => materialCost(state, a) - materialCost(state, b)).slice(0, count);
     suggested.forEach((id) => used.add(id));

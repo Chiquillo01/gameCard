@@ -90,7 +90,8 @@ function payFromPool(ctx, pool, count, picks, toZone, { destroyed = false } = {}
     const { fireTrigger } = require('../effectEngine');
     moved.forEach(({ id, loc }) => {
       const from = loc.zone.startsWith('field') ? 'field' : loc.zone;
-      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex, from, reason: 'cost' };
+      const by = ctx.sourceInstanceId && !String(ctx.sourceInstanceId).startsWith('token:') ? cardIdFromInstance(ctx.sourceInstanceId) : null;
+      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex, from, reason: 'cost', bySourceCardId: by };
       fireTrigger(ctx.state, 'sentToGraveyard', event);
       if (destroyed && loc.zone === 'field:monster') fireTrigger(ctx.state, 'onMonsterDestroyed', { ...event, reason: 'effect' });
     });

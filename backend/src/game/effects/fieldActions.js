@@ -91,7 +91,8 @@ function destroy(ctx, args, targets) {
     const filter = wantsSupport && args.filter ? { ...args.filter, category: undefined } : args.filter;
     rows = fieldEntries(ctx, side, zone).filter((r) => rowMatches(r, { ...args, filter }) && !(wantSelf && r.entry.instanceId === ctx.sourceInstanceId));
     // With nothing chosen and no side given, go for the rival's cards first.
-    if (side === 'any' && rows.some((r) => r.ownerIndex !== ctx.controllerIndex)) rows = rows.filter((r) => r.ownerIndex !== ctx.controllerIndex);
+    // ("Todos los monstruos" means both sides.)
+    if (!all && side === 'any' && rows.some((r) => r.ownerIndex !== ctx.controllerIndex)) rows = rows.filter((r) => r.ownerIndex !== ctx.controllerIndex);
     rows = pickRows(rows, { pick: own ? 'weakest' : 'strongest', ...args, count: all ? 999 : args.count });
   }
   rows.forEach((row) => {
@@ -273,14 +274,15 @@ function sendFromDeckToGY(ctx, args, targets) {
 // "No puede ser destruido en batalla": flags are recomputed every board change (see
 // effectEngine.recomputeContinuous), so they vanish with the effect.
 function preventBattleDestruction(ctx, args) {
-  const mine = player(ctx.state, ctx.controllerIndex).field.monsters.filter(Boolean);
+  const side = args.side === 'opponent' ? (ctx.controllerIndex === 0 ? 1 : 0) : ctx.controllerIndex;
+  const mine = player(ctx.state, side).field.monsters.filter(Boolean);
   const targets = args.target === 'self' ? mine.filter((m) => m.instanceId === ctx.sourceInstanceId) : mine.filter((m) => !args.attribute || matchesFilter(m, { attribute: args.attribute }));
   targets.forEach((m) => { m.cannotBeDestroyedByBattle = true; });
 }
 
 // "Otros monstruos [filter] en tu Campo no pueden ser destruidos por efectos de cartas" (Clionne).
 function protectFromEffectDestruction(ctx, args) {
-  player(ctx.state, ctx.controllerIndex).field.monsters
+  player(ctx.state, args.side === 'opponent' ? (ctx.controllerIndex === 0 ? 1 : 0) : ctx.controllerIndex).field.monsters
     .filter((m) => m && (args.target === 'self' ? m.instanceId === ctx.sourceInstanceId : !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId) && matchesFilter(m, args.filter || {})))
     .forEach((m) => { m.cannotBeDestroyedByEffects = true; });
 }

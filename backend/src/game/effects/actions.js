@@ -148,6 +148,11 @@ function changePosition(ctx, args, targets) {
       m.position = 'defense';
       m.faceDown = true;
       releaseEquipment(ctx.state, instanceId); // "volteado boca abajo" also releases its Equipo cards
+    } else if (args.position === 'toggle') {
+      // "Cambia la posición de batalla" (Goblin Ardiente): attack <-> defense, staying face-up.
+      if (m.positionLocked) return;
+      m.position = m.position === 'attack' ? 'defense' : 'attack';
+      log(ctx.state, `${sourceName(ctx.state, instanceId)} pasa a ${m.position === 'attack' ? 'ataque' : 'defensa'} (por ${ctxSource(ctx)}).`);
     } else if (args.position === 'defense') m.position = 'defense';
     else if (args.position === 'attack') { m.position = 'attack'; m.faceDown = false; }
   });
@@ -713,8 +718,15 @@ function damageMonster(ctx, args, targets) {
 // "Tus monstruos de Metal pueden atacar este turno en Posición de Defensa" (Relicario): an ability
 // kept on each monster until the turn ends (combat.js reads `attackInDefense`).
 function grantAbility(ctx, args, targets) {
-  const filter = { attribute: args.attribute || args.atribute, breed: args.breed, name: args.name };
-  const list = targets && targets.length ? targets.map((id) => getFieldMonster(ctx.state, id)).filter(Boolean) : allOwnedMonsters(ctx.state, ctx.controllerIndex).filter((m) => monsterMatches(m, filter));
+  const filter = args.filter || { attribute: args.attribute || args.atribute, breed: args.breed, name: args.name };
+  const list = targets && targets.length ? targets.map((id) => getFieldMonster(ctx.state, id)).filter(Boolean)
+    : args.target === 'self' ? [getFieldMonster(ctx.state, ctx.sourceInstanceId)].filter(Boolean)
+      : allOwnedMonsters(ctx.state, ctx.controllerIndex).filter((m) => monsterMatches(m, filter));
+  // From a continuous effect (Ciudadela, Grover Guardián): only while it lasts, rebuilt every recompute.
+  if (isContinuous(ctx)) {
+    list.forEach((m) => { m.continuousAbilities = [...(m.continuousAbilities || []), args.ability]; });
+    return;
+  }
   const expiresTurn = END_OF_TURN.includes(args.duration) ? ctx.state.turnNumber : null;
   list.forEach((m) => {
     m.abilities = (m.abilities || []).filter((a) => a.name !== args.ability);

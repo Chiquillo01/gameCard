@@ -74,14 +74,20 @@ function matchesCardFilter(card, filter = {}) {
   if (filter.breed && !breeds.some((b) => sameText(b, filter.breed))) return false;
   if (filter.breedIn && !filter.breedIn.some((b) => breeds.some((own) => sameText(own, b)))) return false;
   if (filter.family && !sameText(card.family, filter.family)) return false;
+  // "Que no sea Orco / Grokkar / un \"Orco\"" (the Conjuradores, Orco Traicionero).
+  if (filter.excludeBreed && breeds.some((b) => sameText(b, filter.excludeBreed))) return false;
+  if (filter.excludeFamily && sameText(card.family, filter.excludeFamily)) return false;
+  if (filter.excludeNameContains && normalize(card.name).includes(normalize(filter.excludeNameContains))) return false;
+  // "Que mencione a X como uno de sus materiales" (Grover, el Goblin): a name in its recipe.
+  if (filter.recipeIncludes && !((card.activationCost && card.activationCost.args && card.activationCost.args.materials) || []).some((m) => m.name && sameText(m.name, filter.recipeIncludes))) return false;
   if (filter.category && !categoryMatches(card.category, filter.category)) return false;
   if (filter.attribute && ![card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, filter.attribute))) return false;
   if (filter.level != null && card.level !== filter.level) return false;
   if (filter.minLevel != null && (card.level || 0) < filter.minLevel) return false;
   // An Apoyo's kind, by its Spanish name or the stored one ("Contraataque" = counter).
   if (filter.subtype && ![].concat(filter.subtype).some((s) => normalize(card.subtype) === (SUBTYPE_LABELS[normalize(s)] || normalize(s)))) return false;
-  // "Que menciona X en su texto": its name or its effect text.
-  if (filter.textIncludes && !normalize(`${card.name} ${card.effect || ''}`).includes(normalize(filter.textIncludes))) return false;
+  // "Que menciona X en su texto": its name, its effect or its invocation text (a recipe counts).
+  if (filter.textIncludes && !normalize(`${card.name} ${card.effect || ''} ${card.invocationText || ''}`).includes(normalize(filter.textIncludes))) return false;
   if (filter.maxLevel != null && (card.level || 0) > filter.maxLevel) return false;
   // "De nivel N o menor" as the effect data also spells it.
   if (filter.levelOrLower != null && (card.level || 0) > filter.levelOrLower) return false;

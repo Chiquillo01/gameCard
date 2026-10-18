@@ -117,10 +117,17 @@ function actionTags(step) {
     case 'specialSummonFromGY':
       tags.push('specialSummonFromGraveyard');
       break;
+    case 'summonFromHand':
+      tags.push('summonFromHand');
+      break;
+    case 'compileFromExtra':
+      tags.push('summonFromExtra');
+      break;
     case 'summon':
     case 'summonFromZones':
       if (!zones.length || has('graveyard')) tags.push('specialSummonFromGraveyard');
       if (has('deck')) tags.push('summonFromDeck');
+      if (has('hand')) tags.push('summonFromHand');
       break;
     case 'millDeck':
     case 'sendFromDeckToGY':

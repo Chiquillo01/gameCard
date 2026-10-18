@@ -198,9 +198,9 @@ function finishHandTrigger(state, controllerIndex, instanceId, effect, slot) {
 // "field" only — Compilación is meant to be harder to pull off than just discarding cards from
 // hand — unless the card's own recipe names a different zone, e.g. Héroe Fénix's "en Campo" or
 // Gigante Elemental's "de tu Campo o Cementerio").
-function materialLocationSatisfies(loc, controllerIndex, req) {
+function materialLocationSatisfies(loc, controllerIndex, req, defaultZones = ['field']) {
   if (!loc || loc.ownerIndex !== controllerIndex) return false;
-  const allowed = req.zone ? (Array.isArray(req.zone) ? req.zone : [req.zone]) : ['field'];
+  const allowed = req.zone ? (Array.isArray(req.zone) ? req.zone : [req.zone]) : defaultZones;
   return allowed.some((z) => {
     if (z === 'hand') return loc.zone === 'hand';
     if (z === 'graveyard') return loc.zone === 'graveyard';
@@ -220,7 +220,7 @@ function materialCard(state, id) {
 
 // Fusion/compilado summon. `materialInstanceIds` must satisfy every requirement in
 // card.activationCost.args.materials (see backend game docs / compilate_costs.json).
-function compileSummon(state, controllerIndex, compiladoInstanceId, materialInstanceIds, slot = null) {
+function compileSummon(state, controllerIndex, compiladoInstanceId, materialInstanceIds, slot = null, { defaultZones = ['field'] } = {}) {
   const pl = player(state, controllerIndex);
   const zonesWithCompilado = [...pl.hand, ...pl.extra];
   if (!zonesWithCompilado.includes(compiladoInstanceId)) return { ok: false, reason: 'not-available' };
@@ -241,7 +241,7 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
       // opponent owns (or one that's already on the field/graveyard for a hand-only recipe)
       // and have it moved into the summoner's own graveyard.
       const loc = findInstanceLocation(state, id);
-      if (!materialLocationSatisfies(loc, controllerIndex, req)) continue;
+      if (!materialLocationSatisfies(loc, controllerIndex, req, defaultZones)) continue;
       if (matchesCardFilter(materialCard(state, id), req)) { usedIds.add(id); matched++; }
       if (matched >= req.count) break;
     }

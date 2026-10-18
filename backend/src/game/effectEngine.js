@@ -224,6 +224,8 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   if (eventName === 'sentToGraveyard') {
     if (args.from && eventArgs.from && args.from !== eventArgs.from) return false;
     if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
+    // "Si es sacrificado para activar el efecto de un monstruo \"Orco\"".
+    if (args.bySource && !(eventArgs.bySourceCardId && matchesCardFilter(getCard(eventArgs.bySourceCardId), args.bySource))) return false;
   }
   if (eventName === 'effectActivated') {
     if (args.excludeSelf && eventArgs.instanceId === m.instanceId) return false;
@@ -468,6 +470,8 @@ function recomputeContinuous(state) {
       m.untargetableBy = null;
       m.doublesPositiveMods = false;
       m.effectsLost = false;
+      m.continuousAbilities = [];
+      m.forcedAttack = false;
     });
     [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => { s.negatedByContinuous = false; });
   });

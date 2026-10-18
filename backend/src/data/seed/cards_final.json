@@ -749,7 +749,9 @@
         ]
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "GROVER_GUARDIAN_WALL"
+    ]
   },
   {
     "name": "Goblin Reptante",
@@ -762,7 +764,7 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "CdG",
-    "effect": "Cuando esta carta es enviada al Cementerio por batalla: \n• Todos los monstruos de tu oponentes pierden -2 Atk.",
+    "effect": "Cuando esta carta es enviada al Cementerio por batalla: \n• Todos los monstruos de tu oponente pierden -2 Atk.",
     "atk": 2,
     "def": 1,
     "level": 2,
@@ -789,7 +791,10 @@
     "level": 2,
     "state": 4,
     "number": 33,
-    "effectCodes": []
+    "effectCodes": [
+      "GOBLIN_ARDIENTE_SWITCH",
+      "GOBLIN_ARDIENTE_MATERIAL_BURN"
+    ]
   },
   {
     "name": "Goblin Guardián",
@@ -808,7 +813,9 @@
     "level": 2,
     "state": 4,
     "number": 34,
-    "effectCodes": []
+    "effectCodes": [
+      "GOBLIN_GUARDIAN_BATTLE_IMMUNE"
+    ]
   },
   {
     "name": "Matón",
@@ -842,14 +849,17 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "CdG",
-    "effect": "Si es sacrificado para activar el efecto de 1 monstruo \"Orco\":\n• Todos los Montruos en el Campo que no seean Grokkar pierden -1 Atk.",
+    "effect": "Si es sacrificado para activar el efecto de 1 monstruo \"Orco\":\n• Todos los Monstruos en el Campo que no sean Grokkar pierden -1 Atk.",
     "invocationText": "Si controlas un Orco se puede invocar especial.",
     "atk": 3,
     "def": 5,
     "level": 4,
     "state": 4,
     "number": 36,
-    "effectCodes": []
+    "effectCodes": [
+      "ORCO_TRAICIONERO_SACRIFICED",
+      "ORCO_TRAICIONERO_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Orcos del primer Batallón",
@@ -862,14 +872,17 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "CdG",
-    "effect": "Si es sacrificado para activar el efecto de 1 monstruo \"Orco\":\n• Todos los Montruos Grokkar ganan +1 Atk.",
+    "effect": "Si es sacrificado para activar el efecto de 1 monstruo \"Orco\":\n• Todos los Monstruos Grokkar ganan +1 Atk.",
     "invocationText": "Si controlas un Orco se puede invocar especial.",
     "atk": 5,
     "def": 1,
     "level": 4,
     "state": 4,
     "number": 37,
-    "effectCodes": []
+    "effectCodes": [
+      "ORCOS_BATALLON_SACRIFICED",
+      "ORCOS_BATALLON_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Orco Gladiador",
@@ -970,7 +983,9 @@
         ]
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "GROVER_SOLITARIO_NEGATE_SUPPORT"
+    ]
   },
   {
     "name": "Grover, el Goblin",
@@ -983,13 +998,16 @@
     "rarity": "epic",
     "category": "monster",
     "expansion": "CdG",
-    "effect": "Cuando es invocada:\n• Añade a tu Mano 1 \"Catedral Goblin\" del Mazo.\nUna vez por turno como efecto rápido: \n• Invoca 1 monstruo Compilación del Mazo-C, que mencione a \"Grover, el Goblin\" como uno de sus materiales, usando monstruos del Campo o la Mano.",
+    "effect": "Cuando es invocada:\n• Añade a tu Mano 1 \"Catedral de los Goblins\" del Mazo.\nUna vez por turno como efecto rápido: \n• Invoca 1 monstruo Compilación del Mazo-C, que mencione a \"Grover, el Goblin\" como uno de sus materiales, usando monstruos del Campo o la Mano.",
     "atk": 2,
     "def": 1,
     "level": 2,
     "state": 2,
     "number": 42,
-    "effectCodes": []
+    "effectCodes": [
+      "GROVER_SEARCH_CATEDRAL",
+      "GROVER_QUICK_COMPILE"
+    ]
   },
   {
     "name": "Ciudadela de los Verdes",
@@ -1011,7 +1029,10 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "CIUDADELA_SUMMON_GROKKAR",
+      "CIUDADELA_ORCOS_PIERCE"
+    ]
   },
   {
     "name": "En busca del Goblin",
@@ -1033,7 +1054,10 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "EN_BUSCA_GOBLIN_SEARCH",
+      "EN_BUSCA_GOBLIN_GY_RETURN"
+    ]
   },
   {
     "name": "Catedral de los Goblins",
@@ -1055,7 +1079,11 @@
         "amount": 4
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "CATEDRAL_DESTROY_ON_COMPILE",
+      "CATEDRAL_BACK_FROM_GY",
+      "CATEDRAL_GROVER_BUFF"
+    ]
   },
   {
     "name": "Djinni",
@@ -1142,7 +1170,7 @@
     "category": "monster",
     "expansion": "CdG",
     "effect": "Una vez por turno, selecciona un monstruo en el Campo de tu oponente:\n• Toma el control de ese monstruo, y si lo haces, pasa a ser un Ladrón y destruye los otros monstruos que controle.\nEsta carta no puede ser destruida en batalla.\nLos monstruos \"Matón\" ganan +4 Atk/Vida.",
-    "invocationText": "Solo puede se invocado especial si controlas 3 \"Matón\" en Campo.",
+    "invocationText": "Solo puede ser invocado especial si controlas 3 \"Matón\" en Campo.",
     "atk": 7,
     "def": 5,
     "level": 6,
@@ -1166,14 +1194,19 @@
     "rarity": "legendary",
     "category": "monster",
     "expansion": "CdG",
-    "effect": "Una vez por turno:\n• Invoca especial un Grokkar desde tu Mazo en posicion de ataque.\nEn la fase final, selecciona un \"Orco\" en tu cementerio:\n• Agregalo a tu Mano.\nTodos los \"Orco\" que controles ganan +3 Atk en la fase de batalla y no pueden ser seleccionados por efectos de cartas.",
-    "invocationText": "Solo puede se invocado especial si controlas 4 \"Orco\" en Campo.",
+    "effect": "Una vez por turno:\n• Invoca especial un Grokkar desde tu Mazo en posición de ataque.\nEn la fase final, selecciona un \"Orco\" en tu Cementerio:\n• Agrégalo a tu Mano.\nTodos los \"Orco\" que controles ganan +3 Atk en la fase de batalla y no pueden ser seleccionados por efectos de cartas.",
+    "invocationText": "Solo puede ser invocado especial si controlas 4 \"Orco\" en Campo.",
     "atk": 10,
     "def": 9,
     "level": 8,
     "state": 1,
     "number": 50,
-    "effectCodes": []
+    "effectCodes": [
+      "ORCO_JEFE_SUMMON_GROKKAR",
+      "ORCO_JEFE_END_PHASE_RECOVER",
+      "ORCO_JEFE_ORCOS_BATTLE_BUFF",
+      "ORCO_JEFE_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Orco Lanzador de Dardos",
@@ -1225,7 +1258,9 @@
         ]
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "ORCO_CONJURADOR_FIELD"
+    ]
   },
   {
     "name": "Grover, el Goblin Ardiente",
@@ -1260,7 +1295,11 @@
         ]
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "GROVER_ARDIENTE_ONSUMMON_BURN",
+      "GROVER_ARDIENTE_LEAVES_BURN",
+      "GROVER_ARDIENTE_END_BURN"
+    ]
   },
   {
     "name": "Goblin Astuto",
@@ -1302,7 +1341,9 @@
     "level": 2,
     "state": 3,
     "number": 55,
-    "effectCodes": []
+    "effectCodes": [
+      "GOBLIN_SOLITARIO_SUMMON"
+    ]
   },
   {
     "name": "Acechador Invisible",
@@ -1355,7 +1396,9 @@
         ]
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "CONJURADOR_ORCO_FIELD"
+    ]
   },
   {
     "name": "Orco Gigante",
@@ -1424,7 +1467,7 @@
     "category": "support",
     "subtype": "counter",
     "expansion": "CdG",
-    "effect": "Si tu oponente activa un efecto que Invoca un monstruo al Campo y tú controlas un Compilation Goblin en el Campo:\n• Niega ese efecto, destruye la carta y, durante el resto del turno, no se pueden activar efectos con el mismo nombre que la carta negada.",
+    "effect": "Si tu oponente activa un efecto que Invoca un monstruo al Campo y tú controlas un Compilación Goblin en el Campo:\n• Niega ese efecto, destruye la carta y, durante el resto del turno, no se pueden activar efectos con el mismo nombre que la carta negada.",
     "invocationText": "Activación - 3 Píxel",
     "state": 3,
     "number": 60,
@@ -1434,7 +1477,9 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "DUENDE_ELEGIDO_COUNTER"
+    ]
   },
   {
     "name": "Ciempiés Eterno",

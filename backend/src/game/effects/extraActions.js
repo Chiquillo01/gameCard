@@ -258,8 +258,38 @@ function onlySummonedBy() {}
 // Safira: "no puede ser seleccionada por efectos de monstruos, excepto Dragón" (by: 'monster') or
 // "por efectos de cartas, excepto Monstruos Dragón" (by: 'any'). targets.selectRows reads the flag.
 function untargetableBy(ctx, args) {
+  const rule = { by: args.by || 'any', unless: args.unless || null };
+  // With a filter it covers the controller's matching monsters (Orco Jefe: "los Orco que controles").
+  if (args.filter) {
+    const { matchesFilter } = require('../filters');
+    player(ctx.state, ctx.controllerIndex).field.monsters.filter((m) => m && matchesFilter(m, args.filter)).forEach((m) => { m.untargetableBy = rule; });
+    return;
+  }
   const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
-  if (m) m.untargetableBy = { by: args.by || 'any', unless: args.unless || null };
+  if (m) m.untargetableBy = rule;
+}
+
+// "Todos los monstruos que no sean Orco en el Campo cambian a Posición de Ataque".
+function forceAttackPosition(ctx, args) {
+  const { matchesFilter } = require('../filters');
+  ctx.state.players.flatMap((p) => p.field.monsters).filter((m) => m && !m.faceDown && matchesFilter(m, args.filter || {})).forEach((m) => {
+    m.position = 'attack';
+    m.forcedAttack = true;
+  });
+}
+
+// El Duende Elegido: "niega ese efecto, destruye la carta y, durante el resto del turno, no se pueden
+// activar efectos con el mismo nombre que la carta negada".
+function negateDestroyAndBan(ctx) {
+  const actions = lazy();
+  const negated = actions.registry.negateActivation(ctx);
+  if (!negated) return;
+  const name = getCard(cardIdFromInstance(negated.sourceInstanceId)).name;
+  const { moveToZone } = require('../zones');
+  moveToZone(ctx.state, negated.sourceInstanceId, 'graveyard');
+  ctx.state.bannedNames = (ctx.state.bannedNames || []).filter((b) => b.turn === ctx.state.turnNumber);
+  ctx.state.bannedNames.push({ name, turn: ctx.state.turnNumber });
+  log(ctx.state, `Durante el resto del turno no se pueden activar efectos de "${name}".`);
 }
 
 // "Duplica los cambios positivos de los monstruos Bestia en tu Campo" (Mantícora): marks them;
@@ -330,7 +360,7 @@ function compilableFromExtra(ctx, args) {
   const { matchesCardFilter } = require('../filters');
   const { compileInfo } = require('../compileInfo');
   const pl = player(ctx.state, ctx.controllerIndex);
-  return pl.extra.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {}) && compileInfo(ctx.state, ctx.controllerIndex, id).ready);
+  return pl.extra.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {}) && compileInfo(ctx.state, ctx.controllerIndex, id, { defaultZones: args.zones }).ready);
 }
 
 // Compiles the picked one (the only one, if there's no choice) with the materials it suggests —
@@ -343,7 +373,7 @@ function compileFromExtra(ctx, args, targets) {
     return;
   }
   const { compileInfo } = require('../compileInfo');
-  const materials = compileInfo(ctx.state, ctx.controllerIndex, chosen).suggested;
+  const materials = compileInfo(ctx.state, ctx.controllerIndex, chosen, { defaultZones: args.zones }).suggested;
   const freeing = materials.filter((id) => player(ctx.state, ctx.controllerIndex).field.monsters.some((m) => m && m.instanceId === id));
   require('../placement').requestPlacement(ctx.state, {
     purpose: 'effectCompile',
@@ -352,6 +382,7 @@ function compileFromExtra(ctx, args, targets) {
     sourceInstanceId: chosen,
     materials,
     freeing,
+    defaultZones: args.zones,
     prompt: `Elige dónde compilas ${getCard(cardIdFromInstance(chosen)).name}`,
   });
 }
@@ -364,6 +395,8 @@ module.exports = {
   gainBreed,
   onlySummonedBy,
   untargetableBy,
+  forceAttackPosition,
+  negateDestroyAndBan,
   doublePositiveMods,
   setFaceDownDefense,
   gainStatsOfSummoned,

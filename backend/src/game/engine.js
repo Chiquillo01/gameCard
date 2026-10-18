@@ -112,6 +112,11 @@ function dispatchAction(state, playerIndex, action) {
     return { ok: false, reason: 'not-your-turn' };
   }
 
+  const activating = (action.type === 'ACTIVATE_SUPPORT' && !action.setFaceDown) || action.type === 'ACTIVATE_SET_SUPPORT' ? action.instanceId : action.type === 'ACTIVATE_EFFECT' ? action.sourceInstanceId : null;
+  if (activating && !String(activating).startsWith('token:') && (state.bannedNames || []).some((b) => b.turn === state.turnNumber && b.name === getCard(activating.split(':')[1]).name)) {
+    return { ok: false, reason: 'name-banned' };
+  }
+
   switch (action.type) {
     case 'ADVANCE_PHASE':
       return advancePhase(state);

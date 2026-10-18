@@ -70,7 +70,7 @@ const nameOf = (instanceId) => getCard(cardIdFromInstance(instanceId)).name;
 function finishPlacement(state, pending, slot) {
   // Avispa de Respaldo: the Compilación it brings out, with its materials, in the zone picked.
   if (pending.purpose === 'effectCompile') {
-    const res = require('./summon').compileSummon(state, pending.controllerIndex, pending.instanceId, pending.materials, slot);
+    const res = require('./summon').compileSummon(state, pending.controllerIndex, pending.instanceId, pending.materials, slot, { defaultZones: pending.defaultZones });
     if (!res.ok) log(state, `No se pudo compilar ${nameOf(pending.instanceId)}.`);
     return;
   }
