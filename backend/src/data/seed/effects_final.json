@@ -7161,30 +7161,6 @@
     "source": "authored"
   },
   {
-    "_id": "ORCO_GIGANTE_GROWS_PER_ORCO_DESTROYED",
-    "type": "continuous",
-    "oncePerTurn": false,
-    "conditions": [
-      {
-        "fn": "faceUp"
-      }
-    ],
-    "actions": [
-      {
-        "fn": "buffPerCount",
-        "args": {
-          "scope": "destroyedThisTurn",
-          "filter": {
-            "nameContains": "Orco"
-          },
-          "atk": 2,
-          "target": "self"
-        }
-      }
-    ],
-    "source": "authored"
-  },
-  {
     "_id": "ARANA_FASE_PHASES_OUT",
     "type": "trigger",
     "oncePerTurn": false,
@@ -8405,51 +8381,6 @@
     "oncePerTurn": false,
     "conditions": [
       {
-        "fn": "faceUp"
-      }
-    ],
-    "source": "authored",
-    "_id": "CONJURADOR_ORCO_FIELD",
-    "type": "continuous",
-    "actions": [
-      {
-        "fn": "preventBattleDestruction",
-        "args": {
-          "side": "opponent"
-        }
-      },
-      {
-        "fn": "protectFromEffectDestruction",
-        "args": {
-          "side": "opponent"
-        }
-      },
-      {
-        "fn": "forceAttackPosition",
-        "args": {
-          "filter": {
-            "excludeNameContains": "Orco"
-          }
-        }
-      },
-      {
-        "fn": "grantBuff",
-        "args": {
-          "scope": "field",
-          "filter": {
-            "excludeNameContains": "Orco"
-          },
-          "buff": {
-            "atk": -3
-          }
-        }
-      }
-    ]
-  },
-  {
-    "oncePerTurn": false,
-    "conditions": [
-      {
         "fn": "effectIncludes",
         "args": {
           "effects": [
@@ -8837,6 +8768,332 @@
         "args": {
           "player": "self",
           "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "RECIPIENTE_ENGANOSO_MILL",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "flipped"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "millDeck",
+        "args": {
+          "target": "opponent",
+          "amount": 2
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CONTENEDOR_SOSPECHOSO_BOUNCE",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "flipped"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "bounceToHand",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "prompt": "Elige el monstruo que vuelve a la Mano"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "EL_VACIO_EXILE_ALL",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "exileTarget",
+        "args": {
+          "target": "allMonsters"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SOMBRA_DESTROY_ALL_TOKENS",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "allMonsters",
+          "side": "any",
+          "replaceWithToken": {
+            "name": "Ficha Sombra",
+            "family": "Inframundo",
+            "breed": "Cambiaformas",
+            "attribute": "Oscuridad",
+            "level": 2,
+            "atk": 1,
+            "def": 1
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CAN_INFIERNO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {}
+    },
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CAN_INFIERNO_CHOICE",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "choice": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "damageOpponent",
+        "args": {
+          "amount": 5
+        }
+      },
+      {
+        "fn": "generatePixelsPerCreature",
+        "args": {
+          "amount": 1,
+          "status": "Quemadura",
+          "scope": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SATIRO_VENGADOR_VP",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "gainVPFromGraveyard",
+        "args": {
+          "filter": {
+            "category": "monster",
+            "breed": "Hada"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "VIRTUD_DEBIL_EQUIP",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileEquipped",
+      "args": {
+        "maxAtk": 0
+      }
+    },
+    "conditions": [],
+    "actions": [],
+    "source": "authored"
+  },
+  {
+    "_id": "VIRTUD_DEBIL_ATTACKED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "involvedInBattle",
+      "args": {
+        "equippedDefends": true
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "target": "equipped",
+          "amountFrom": "attackerAtk",
+          "duration": "endOfTurn"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HOGUERA_SEARCH",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "attributeIn": [
+              "Fuego",
+              "Lava"
+            ]
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HOGUERA_GY_RECYCLE",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "conditions": [],
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "count": 2,
+          "filter": {
+            "category": "monster",
+            "attributeIn": [
+              "Fuego",
+              "Lava"
+            ]
+          },
+          "required": true,
+          "prompt": "Elige los 2 monstruos de Fuego y/o Lava que barajas en el Mazo"
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "conditionalOn": "previousActionSucceeded"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ORCO_GIGANTE_GROWS_PER_ORCO_SACRIFICED",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "scope": "sacrificedThisTurn",
+          "filter": {
+            "nameContains": "Orco"
+          },
+          "atk": 2,
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ORCO_MAGO_BATTLE_SHIELD",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "side": "opponent"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ORCO_MAGO_RANDOM_STATUS",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "enemyMonster",
+          "status": "random",
+          "prompt": "Elige el monstruo del oponente"
         }
       }
     ],

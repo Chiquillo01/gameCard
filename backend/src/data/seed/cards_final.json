@@ -1368,7 +1368,7 @@
     ]
   },
   {
-    "name": "Conjurador Orco",
+    "name": "Orco Mago",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792179353/conjuradorOrcoTCG.jpg",
     "attribute": "Arcano",
     "type": "Orco",
@@ -1378,7 +1378,7 @@
     "rarity": "rare",
     "category": "fusion",
     "expansion": "CdG",
-    "effect": "Los monstruos de tu oponente no pueden ser destruidos en batalla ni por efectos de cartas.\nTodos los monstruos que no sean \"Orco\" en el Campo cambian a Posición de Ataque.\nTodos los monstruos que no sean \"Orco\" pierden -3 Atk.",
+    "effect": "Los monstruos de tu oponente no pueden ser destruidos en batalla.\nUna vez por turno, selecciona un monstruo en el Campo de tu oponente:\n• Aplica un efecto aleatorio a ese monstruo.",
     "invocationText": "Compilación - 3 \"Orco\"",
     "atk": 5,
     "def": 6,
@@ -1397,7 +1397,8 @@
       }
     },
     "effectCodes": [
-      "CONJURADOR_ORCO_FIELD"
+      "ORCO_MAGO_BATTLE_SHIELD",
+      "ORCO_MAGO_RANDOM_STATUS"
     ]
   },
   {
@@ -1411,7 +1412,7 @@
     "rarity": "rare",
     "category": "fusion",
     "expansion": "CdG",
-    "effect": "Gana +2 Atk por cada \"Orco\" destruido este turno.",
+    "effect": "Gana +2 Atk por cada \"Orco\" sacrificado este turno.",
     "invocationText": "Compilación - 2 Orcos",
     "atk": 11,
     "def": 5,
@@ -1430,7 +1431,7 @@
       }
     },
     "effectCodes": [
-      "ORCO_GIGANTE_GROWS_PER_ORCO_DESTROYED"
+      "ORCO_GIGANTE_GROWS_PER_ORCO_SACRIFICED"
     ]
   },
   {
@@ -2002,7 +2003,9 @@
     "level": 1,
     "state": 4,
     "number": 103,
-    "effectCodes": []
+    "effectCodes": [
+      "RECIPIENTE_ENGANOSO_MILL"
+    ]
   },
   {
     "name": "Slime",
@@ -3336,14 +3339,16 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "IdL",
-    "effect": "Una vez por turno:\n• Recupera VP iguales al ATK de un monstruo de Hada en tu Cementerio.",
+    "effect": "Una vez por turno:\n• Recupera VP iguales al Atk de un monstruo de Hada en tu Cementerio.",
     "invocationText": "Si controaslas 1 \"Sátiro\" se puede invocar especial.",
     "atk": 3,
     "def": 1,
     "level": 3,
     "state": 4,
     "number": 173,
-    "effectCodes": []
+    "effectCodes": [
+      "SATIRO_VENGADOR_VP"
+    ]
   },
   {
     "name": "Valkiria",
@@ -3375,13 +3380,15 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "IdL",
-    "effect": "Al modificar su posicion de boca abajo a boca arriba, selecciona 1 montruo en Campo:\n• Devuelve a la Mano el monstruo seleccionado.",
+    "effect": "Al modificar su posición de boca abajo a boca arriba, selecciona 1 monstruo en Campo:\n• Devuelve a la Mano el monstruo seleccionado.",
     "atk": 0,
     "def": 1,
     "level": 1,
     "state": 4,
     "number": 175,
-    "effectCodes": []
+    "effectCodes": [
+      "CONTENEDOR_SOSPECHOSO_BOUNCE"
+    ]
   },
   {
     "name": "Fuente de luz",
@@ -3475,7 +3482,10 @@
         "amount": 2
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "VIRTUD_DEBIL_EQUIP",
+      "VIRTUD_DEBIL_ATTACKED"
+    ]
   },
   {
     "name": "Seraphine",
@@ -3648,7 +3658,9 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "EL_VACIO_EXILE_ALL"
+    ]
   },
   {
     "name": "Hoguera",
@@ -3660,7 +3672,7 @@
     "category": "support",
     "subtype": "normal",
     "expansion": "IdL",
-    "effect": "En activación:\n• Añade a tu Mano 1 monstruo Fuego o Lava desde tu Mazo.\nExilia esta carta en el Cementerio y selecciona 2 monstruos de Fuego y/o Lava en el Cementerio:\n• Baraja esos monstruos en el Mazo y, si lo haces, roba 1 carta.",
+    "effect": "En activación:\n• Añade a tu Mano 1 monstruo Fuego o Lava desde tu Mazo.\nExilia esta carta del Cementerio y selecciona 2 monstruos de Fuego y/o Lava en el Cementerio:\n• Baraja esos monstruos en el Mazo y, si lo haces, roba 1 carta.",
     "invocationText": "Activación - 2 Píxel",
     "state": 2,
     "number": 187,
@@ -3670,7 +3682,10 @@
         "amount": 2
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "HOGUERA_SEARCH",
+      "HOGUERA_GY_RECYCLE"
+    ]
   },
   {
     "name": "Ba-o la diosa del Inframundo",
@@ -3828,7 +3843,10 @@
     "level": 5,
     "state": 3,
     "number": 192,
-    "effectCodes": []
+    "effectCodes": [
+      "CAN_INFIERNO_CHOICE",
+      "CAN_INFIERNO_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Tifón Místico",
@@ -3864,7 +3882,7 @@
     "category": "support",
     "subtype": "normal",
     "expansion": "IdL",
-    "effect": "En activación:\n• Destruye todos los monstruos en el Campo y, si destruyes alguno, Invoca un Ficha Sombra (Inframundo / Cambiaformas / Oscuridad / Nivel 2 / ATK 1 / Vida 1) por cada monstruo destruido, en la zona donde fue destruido dicho monstruo.",
+    "effect": "En activación:\n• Destruye todos los monstruos en el Campo y, si destruyes alguno, Invoca una Ficha Sombra (Inframundo / Cambiaformas / Oscuridad / Nivel 2 / ATK 1 / Vida 1) por cada monstruo destruido, en la zona donde fue destruido dicho monstruo.",
     "invocationText": "Activación - 3 Píxel",
     "state": 3,
     "number": 194,
@@ -3874,7 +3892,9 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "SOMBRA_DESTROY_ALL_TOKENS"
+    ]
   },
   {
     "name": "Moneda de la Fortuna",

@@ -156,12 +156,15 @@ function stepPool(ctx, step) {
     case 'destroyCards':
       return isSelect(args) ? ids(selectRows(ctx, args).filter((r) => !protectedFromRemoval(ctx, r))) : null;
     case 'exileTarget':
-      return args.target === 'self' ? null : ids(selectRows(ctx, { ...args, target: args.target || 'selected' }).filter((r) => !protectedFromRemoval(ctx, r)));
+      return args.target === 'self' || args.target === 'allMonsters' ? null : ids(selectRows(ctx, { ...args, target: args.target || 'selected' }).filter((r) => !protectedFromRemoval(ctx, r)));
     case 'excavate': {
       // Nothing found is a fine result (it was a dig), so an empty dig is no pick, not "no target".
       const found = require('./effects/fieldActions').excavateCandidates(ctx.state, ctx.controllerIndex, args);
       return found.length ? found : null;
     }
+    // Sátiro Vengador: "un monstruo de Hada en tu Cementerio".
+    case 'gainVPFromGraveyard':
+      return player(ctx.state, ctx.controllerIndex).graveyard.filter((id) => matchesCardFilter(cardOf(id), args.filter || {}));
     // Des - Compilación: "selecciona una Compilación en el Campo".
     case 'decompileMonster':
       return ids(selectRows(ctx, { ...args, target: 'Compilado' }).filter((r) => !r.entry.faceDown));
@@ -295,6 +298,7 @@ const STEP_PROMPTS = {
   destroyAndCopyEffect: 'Elige la carta que se destruye',
   compileFromExtra: 'Elige la Compilación que compilas',
   decompileMonster: 'Elige la Compilación que se descompila',
+  gainVPFromGraveyard: 'Elige el monstruo de tu Cementerio',
   excavate: 'Elige la carta excavada que añades a tu Mano',
   setAtk: 'Elige el monstruo cuyo Atk cambia',
   destroyAndGainVP: 'Elige la carta que se destruye',

@@ -107,8 +107,14 @@ function destroy(ctx, args, targets) {
       log(ctx.state, `${row.entry.isToken ? row.entry.tokenDef.name : getCard(row.entry.cardId).name} no puede ser destruido por efectos de cartas.`);
       return;
     }
+    const slot = row.kind === 'monster' ? player(ctx.state, row.ownerIndex).field.monsters.indexOf(row.entry) : -1;
     sendToGraveyard(ctx, row);
     ctx.destroyedCount += 1;
+    // Sombra: "invoca una Ficha Sombra por cada monstruo destruido, en la zona donde fue destruido".
+    if (args.replaceWithToken && slot !== -1 && player(ctx.state, row.ownerIndex).field.monsters[slot] === null) {
+      player(ctx.state, row.ownerIndex).field.monsters[slot] = require('../placement').tokenEntry(ctx.state, args.replaceWithToken);
+      log(ctx.state, `Aparece una ficha ${args.replaceWithToken.name} en su lugar.`);
+    }
   });
 }
 
@@ -272,6 +278,7 @@ function summonPicked(ctx, args, targets) {
     const self = player(ctx.state, ctx.controllerIndex).field.monsters.find((m) => m && m.instanceId === ctx.sourceInstanceId);
     if (!self) return;
     moveToZone(ctx.state, self.instanceId, 'graveyard');
+    require('../zones').markSacrificed(ctx.state, self.cardId);
     log(ctx.state, `${getCard(self.cardId).name} es sacrificada.`);
     require('../effectEngine').announceSentToGraveyard(ctx.state, self.instanceId, ctx.controllerIndex, { from: 'field', reason: 'cost' });
   }

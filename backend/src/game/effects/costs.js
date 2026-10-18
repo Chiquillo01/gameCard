@@ -86,6 +86,8 @@ function payFromPool(ctx, pool, count, picks, toZone, { destroyed = false } = {}
     .filter(({ id, loc }) => loc && !String(id).startsWith('token:'));
   chosen.forEach((id) => moveToZone(ctx.state, id, toZone));
   record(ctx, chosen);
+  // A monster of the field paid into the Cementerio is a sacrifice (unless the cost destroys it).
+  if (toZone === 'graveyard' && !destroyed) moved.filter(({ loc }) => loc.zone === 'field:monster').forEach(({ id }) => require('../zones').markSacrificed(ctx.state, cardIdFromInstance(id)));
   if (toZone === 'graveyard') {
     const { fireTrigger } = require('../effectEngine');
     moved.forEach(({ id, loc }) => {

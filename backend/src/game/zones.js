@@ -104,6 +104,13 @@ function log(state, message) {
 // explicit owner it goes to its real owner's zone (a stolen monster goes back to its owner's
 // Cementerio/Mano), falling back to whoever holds it now for ids that carry no owner.
 // `deckPosition: 'shuffle'` inserts it at a random spot ("baraja/regresa al Mazo") instead of on top.
+// "Por cada X sacrificado este turno" (Orco Gigante): the cards of the monsters sacrificed this
+// turn — as a cost, a summon's tribute or by an effect that says "sacrifica".
+function markSacrificed(state, cardId) {
+  if (!state.sacrificedThisTurn || state.sacrificedThisTurn.turn !== state.turnNumber) state.sacrificedThisTurn = { turn: state.turnNumber, cardIds: [] };
+  state.sacrificedThisTurn.cardIds.push(cardId);
+}
+
 function moveToZone(state, instanceId, toZone, ownerIndexOverride, { deckPosition = 'top' } = {}) {
   const loc = findInstanceLocation(state, instanceId);
   // A token that leaves the field stops existing — it never reaches a hand, Mazo or Cementerio.
@@ -219,7 +226,7 @@ function placeTerritory(state, instanceId, ownerIndex) {
   return true;
 }
 
-module.exports = {
+module.exports = { markSacrificed,
   player,
   opponentIndex,
   ownerOfInstance,

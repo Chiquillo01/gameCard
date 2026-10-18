@@ -122,23 +122,42 @@ describe('Grover, el Goblin Guardián', () => {
   });
 });
 
-describe('Conjurador Orco', () => {
-  it('the rival\'s monsters can\'t be destroyed (battle or effects); non-"Orco" monsters go to attack and lose 3 Atk', async () => {
+describe('Orco Mago', () => {
+  it('the rival\'s monsters can\'t be destroyed in battle; once per turn a random state on one of them', async () => {
     const state = await makeDuel();
-    toPhase(state, 'main1', 1);
-    const theirs = await onField(state, 1, 'Kraken', { position: 'defense' });
     toPhase(state, 'main1', 0);
-    const conj = await instance(0, 'Conjurador Orco');
-    require('../../game/zones').placeMonster(state, conj, 0, { position: 'attack' });
+    const theirs = await onField(state, 1, 'Kraken');
+    const mago = await instance(0, 'Orco Mago');
+    require('../../game/zones').placeMonster(state, mago, 0, { position: 'attack' });
     recomputeContinuous(state);
-    expect(monster(state, theirs).position).toBe('attack');
-    expect(atk(state, theirs)).toBe(Math.max(0, getCard(monster(state, theirs).cardId).atk - 3));
-    const relampago = await toHand(state, 0, 'Relámpago');
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: relampago, targets: [theirs] }).ok).toBe(true);
+    expect(monster(state, theirs).cannotBeDestroyedByBattle).toBe(true);
+    expect(activate(state, 0, 'ORCO_MAGO_RANDOM_STATUS', mago, [theirs]).ok).toBe(true);
     passAll(state);
-    expect(monster(state, theirs)).toBeDefined();
-    toPhase(state, 'main1', 1);
-    expect(applyAction(state, 1, { type: 'CHANGE_POSITION', instanceId: theirs, position: 'defense' })).toMatchObject({ ok: false, reason: 'forced-attack-position' });
+    const { statusesOf } = require('../../game/statuses');
+    expect(statusesOf(state, theirs)).toHaveLength(1);
+    expect(['Congelado', 'Quemadura', 'Veneno']).toContain(statusesOf(state, theirs)[0]);
+    expect(activate(state, 0, 'ORCO_MAGO_RANDOM_STATUS', mago, [theirs]).ok).toBe(false);
+  });
+});
+
+describe('Orco Gigante', () => {
+  it('+2 Atk for each "Orco" sacrificed this turn (not destroyed)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const gigante = await instance(0, 'Orco Gigante');
+    require('../../game/zones').placeMonster(state, gigante, 0, { position: 'attack' });
+    recomputeContinuous(state);
+    const base = atk(state, gigante);
+    const gladiador = await onField(state, 0, 'Orco Gladiador');
+    const traidor = await onField(state, 0, 'Orco Traicionero');
+    expect(activate(state, 0, 'ORCO_GLADIADOR_EXTRA_ATTACK', gladiador, [traidor]).ok).toBe(true);
+    passAll(state);
+    recomputeContinuous(state);
+    expect(atk(state, gigante)).toBe(base + 2);
+    const guerrero = await onField(state, 1, 'Orco Guerrero');
+    require('../../game/effects/fieldActions').sendToGraveyard({ state, controllerIndex: 0, sourceInstanceId: null }, { entry: monster(state, guerrero), ownerIndex: 1 });
+    recomputeContinuous(state);
+    expect(atk(state, gigante)).toBe(base + 2);
   });
 });
 

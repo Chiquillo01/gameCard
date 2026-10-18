@@ -63,10 +63,25 @@ function generatePixels(ctx, args) {
   log(ctx.state, `${pl.userId} genera ${args.amount} pixel(es).`);
 }
 
+// "Genera N píxel por cada monstruo (que controlas / en el Campo / con un estado)": `scope: 'field'`
+// counts both sides, `status` only the monsters that have it (Can del Infierno: QUEMADURA).
 function generatePixelsPerCreature(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
-  const count = pl.field.monsters.filter(Boolean).length;
-  pl.pixelcoins += (args.amount || 0) * count;
+  const { hasStatus } = require('../statuses');
+  const pool = args.scope === 'field' ? allFieldMonsters(ctx.state) : pl.field.monsters.filter(Boolean);
+  const count = pool.filter((m) => !args.status || hasStatus(ctx.state, m.instanceId, args.status)).length;
+  const amount = (args.amount || 0) * count;
+  pl.pixelcoins += amount;
+  log(ctx.state, `${pl.userId} genera ${amount} pixel(es).`);
+}
+
+// Sátiro Vengador: "Recupera VP iguales al Atk de un monstruo de Hada en tu Cementerio" — the
+// picked one (targets.js pools them).
+function gainVPFromGraveyard(ctx, args, targets) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const id = (targets || []).find((t) => pl.graveyard.includes(t));
+  if (!id) return;
+  gainVP(ctx, { amount: getCard(cardIdFromInstance(id)).atk || 0 });
 }
 
 function banishSelf(ctx) {
@@ -119,7 +134,9 @@ function exileTarget(ctx, args, targets) {
   const untilStandby = args.duration === 'untilOwnerStandby';
   const temporary = nextTurn || untilStandby || END_OF_TURN.includes(args.duration);
   ctx.lastTargetsAtk = 0;
-  const picked = args.target === 'self' ? [ctx.sourceInstanceId] : targets || [];
+  const picked = args.target === 'self' ? [ctx.sourceInstanceId]
+    : args.target === 'allMonsters' ? allFieldMonsters(ctx.state).map((m) => m.instanceId)
+      : targets || [];
   picked.forEach((instanceId) => {
     const loc = findInstanceLocation(ctx.state, instanceId);
     if (!loc) return;
@@ -180,6 +197,11 @@ function sourceIsCompiled(ctx) {
 // Rulebook "Estados": Congelado / Quemadura / Envenenado(Veneno). Lasts until the end of the
 // turn, or 2 turns when it comes from a compiled monster (see statuses.js).
 function applyStatus(ctx, args, targets) {
+  if (args.status === 'random') {
+    const all = [FREEZE, BURN, POISON];
+    applyStatus(ctx, { ...args, status: all[Math.floor(Math.random() * all.length)] }, targets);
+    return;
+  }
   if (![FREEZE, BURN, POISON].includes(args.status)) {
     log(ctx.state, `[motor] estado "${args.status}" desconocido — se ignora.`);
     return;
@@ -309,7 +331,12 @@ function negateAndSendToGraveyard(ctx, args) {
 }
 
 function grantBuff(ctx, args, targets) {
-  const buff = args.buff || { atk: args.atk, def: args.def };
+  let buff = args.buff || { atk: args.atk, def: args.def };
+  if (args.amountFrom === 'attackerAtk') {
+    const attacker = ctx.event && getFieldMonster(ctx.state, ctx.event.attackerInstanceId);
+    if (!attacker) return;
+    buff = { atk: require('../effectEngine').getEffectiveStats(attacker).atk, def: 0 };
+  }
   // "whileStatus": the penalty lives on the status itself, so it ends when the status does.
   if (args.duration === 'whileStatus' && args.status) {
     resolveStatusTargets(ctx, args, targets).forEach((id) => setStatusDebuff(ctx.state, id, args.status, buff));
@@ -371,6 +398,10 @@ function columnMonsters(state, instanceId) {
 function buffTargets(ctx, args, targets) {
   const all = allFieldMonsters(ctx.state);
   if (targets && targets.length) return all.filter((m) => targets.includes(m.instanceId));
+  if (args.target === 'equipped') {
+    const equip = ctx.state.players.flatMap((p) => p.field.support).find((s) => s && s.instanceId === ctx.sourceInstanceId);
+    return all.filter((m) => equip && m.instanceId === equip.equippedTo);
+  }
   if (args.target === 'self') return all.filter((m) => m.instanceId === ctx.sourceInstanceId);
   // "El monstruo Compilación gana..." (Avispa de Respaldo used as a material).
   if (args.target === 'compiled') return all.filter((m) => ctx.event && m.instanceId === ctx.event.compiledInstanceId);
@@ -496,8 +527,8 @@ function applyScaledBuff(ctx, args, targets) {
   let scaleBy;
   if (args.scope === 'equippedToSelf') {
     scaleBy = equipsOn(ctx.state, ctx.sourceInstanceId).length;
-  } else if (args.scope === 'destroyedThisTurn') {
-    const log = ctx.state.destroyedThisTurn;
+  } else if (args.scope === 'destroyedThisTurn' || args.scope === 'sacrificedThisTurn') {
+    const log = ctx.state[args.scope];
     scaleBy = log && log.turn === ctx.state.turnNumber ? log.cardIds.filter((id) => matchesCardFilter(getCard(id), filter)).length : 0;
   } else if (args.scope === 'ownGraveyard') {
     scaleBy = player(ctx.state, ctx.controllerIndex).graveyard.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), filter)).length;
@@ -845,6 +876,7 @@ function payPenalty(state, playerIndex, action, ids) {
   ids.forEach((id) => {
     if (action === 'sacrifice') {
       const name = sourceName(state, id);
+      if (!String(id).startsWith('token:')) require('../zones').markSacrificed(state, cardIdFromInstance(id));
       moveToZone(state, id, 'graveyard');
       log(state, `${pl.userId} sacrifica a ${name}.`);
       require('../effectEngine').announceSentToGraveyard(state, id, playerIndex, { from: 'field', reason: 'cost' });
@@ -915,6 +947,7 @@ const registry = {
   destroyAndCopyEffect,
   chooseEffect,
   opponentChoosesEffect,
+  gainVPFromGraveyard,
 };
 
 const fieldActions = require('./fieldActions');

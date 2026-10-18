@@ -131,4 +131,4 @@ function noRoom(state, pending) {
   } else log(state, 'No hay espacio en el Campo.');
 }
 
-module.exports = { requestPlacement, settlePlacements, finishPlacement, freeMonsterSlots, isPlacement };
+module.exports = { tokenEntry, requestPlacement, settlePlacements, finishPlacement, freeMonsterSlots, isPlacement };

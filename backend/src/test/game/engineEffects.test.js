@@ -385,23 +385,26 @@ describe('Espora Venenosa', () => {
 });
 
 describe('Orco Gigante', () => {
-  it('gains +2 Atk for each "Orco" destroyed this turn, on either side; other monsters do not count, and it resets next turn', async () => {
+  it('gains +2 Atk for each "Orco" sacrificed this turn; a destroyed one or a non-Orco does not count, and it resets next turn', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const gigante = await onField(state, 0, 'Orco Gigante');
     const base = monster(state, gigante).baseAtk;
     const atk = () => { recomputeContinuous(state); const m = monster(state, gigante); return m.baseAtk + m.tempBuff.atk; };
-    const relampago = async (target) => {
-      const card = await toHand(state, 0, 'Relámpago');
-      expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [target] }).ok).toBe(true);
+    const sacrifice = async (name) => {
+      const gladiador = await onField(state, 0, 'Orco Gladiador');
+      const fodder = await onField(state, 0, name);
+      expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ORCO_GLADIADOR_EXTRA_ATTACK', sourceInstanceId: gladiador, targets: [fodder] }).ok).toBe(true);
       passAll(state);
     };
-    await relampago(await onField(state, 1, 'Orco Guerrero'));
+    await sacrifice('Orco Guerrero');
     expect(atk()).toBe(base + 2);
-    await relampago(await onField(state, 0, 'Orco Gladiador'));
-    expect(atk()).toBe(base + 4);
-    await relampago(await onField(state, 1, 'Slime'));
-    expect(atk()).toBe(base + 4);
+    await sacrifice('Slime');
+    expect(atk()).toBe(base + 2);
+    const card = await toHand(state, 0, 'Relámpago');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [await onField(state, 1, 'Orco Guerrero')] }).ok).toBe(true);
+    passAll(state);
+    expect(atk()).toBe(base + 2);
     toPhase(state, 'main1', 1);
     expect(atk()).toBe(base);
   });

@@ -166,7 +166,10 @@ function legalEquipTargets(state, controllerIndex, card) {
   const filter = { breed: restriction.breed, family: restriction.family, attribute: restriction.attribute };
   const hasFilter = Object.values(filter).some(Boolean);
   const { canAffect } = require('./targets');
-  return player(state, side).field.monsters.filter((m) => m && !m.faceDown && (!hasFilter || matchesFilter(m, filter)) && canAffect({ state, controllerIndex, sourceInstanceId: null }, m));
+  const { getEffectiveStats } = require('./effectEngine');
+  return player(state, side).field.monsters.filter((m) => m && !m.faceDown && (!hasFilter || matchesFilter(m, filter))
+    && (restriction.maxAtk == null || getEffectiveStats(m).atk <= restriction.maxAtk)
+    && canAffect({ state, controllerIndex, sourceInstanceId: null }, m));
 }
 
 function describeFieldTarget(m) {

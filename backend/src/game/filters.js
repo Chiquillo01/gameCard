@@ -82,6 +82,8 @@ function matchesCardFilter(card, filter = {}) {
   if (filter.recipeIncludes && !((card.activationCost && card.activationCost.args && card.activationCost.args.materials) || []).some((m) => m.name && sameText(m.name, filter.recipeIncludes))) return false;
   if (filter.category && !categoryMatches(card.category, filter.category)) return false;
   if (filter.attribute && ![card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, filter.attribute))) return false;
+  // "Un monstruo de Fuego o Lava" (Hoguera).
+  if (filter.attributeIn && !filter.attributeIn.some((w) => [card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, w)))) return false;
   if (filter.level != null && card.level !== filter.level) return false;
   if (filter.minLevel != null && (card.level || 0) < filter.minLevel) return false;
   // An Apoyo's kind, by its Spanish name or the stored one ("Contraataque" = counter).

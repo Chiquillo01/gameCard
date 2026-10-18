@@ -249,6 +249,7 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
     if (args.filter && !(eventCard && matchesCardFilter(eventCard, args.filter))) return false;
   }
   if (eventName === 'involvedInBattle') {
+    if (args.equippedDefends && eventArgs.defenderInstanceId !== m.equippedTo) return false;
     const involved = [eventArgs.attackerInstanceId, eventArgs.defenderInstanceId].filter((id) => id && !(args.excludeSelf && id === m.instanceId));
     if (!involved.some((id) => { const e = getFieldMonster(state, id); return e && matchesFilter(e, args.filter || {}); })) return false;
   }
