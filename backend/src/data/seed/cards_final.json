@@ -199,7 +199,8 @@
     "effectCodes": [
       "SAFIRA_REAL_EVOLVE",
       "SAFIRA_REAL_ONSUMMON",
-      "SAFIRA_UNTARGETABLE_BY_MONSTERS"
+      "SAFIRA_UNTARGETABLE_BY_MONSTERS",
+      "SAFIRA_ONLY_BY_SAFIRA"
     ]
   },
   {
@@ -223,7 +224,8 @@
     "effectCodes": [
       "SAFIRA_REINA_ONSUMMON",
       "SAFIRA_REINA_UNTARGETABLE",
-      "SAFIRA_REINA_DRAGON_BUFF"
+      "SAFIRA_REINA_DRAGON_BUFF",
+      "SAFIRA_ONLY_BY_SAFIRA"
     ]
   },
   {
@@ -349,7 +351,8 @@
     "effectCodes": [
       "SAFIRA_JOVEN_EVOLVE",
       "SAFIRA_JOVEN_ONSUMMON",
-      "SAFIRA_UNTARGETABLE_BY_MONSTERS"
+      "SAFIRA_UNTARGETABLE_BY_MONSTERS",
+      "SAFIRA_ONLY_BY_SAFIRA"
     ]
   },
   {

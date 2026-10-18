@@ -273,3 +273,35 @@ describe('The four big dragons: "desde la Mano o Cementerio"', () => {
     payers.forEach((id) => expect(state.players[0].graveyard).toContain(id));
   });
 });
+
+describe('Safira: "solo puede ser invocada especial por el efecto de Safira"', () => {
+  it('Hipogrifo can\'t bring la Reina Dragón back from the Cementerio; another Bestia it can', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const hipo = await toHand(state, 0, 'Hipogrifo');
+    const reina = await toGraveyard(state, 0, 'Safira, la Reina Dragón');
+    const beast = await toGraveyard(state, 0, 'Dragón de Tierra Bebe');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: hipo }).ok).toBe(true);
+    let offered = [];
+    resolveChoices(state, 0, (pending) => { offered = pending.options.map((o) => o.instanceId); return null; });
+    expect(offered).not.toContain(reina);
+    expect(monster(state, reina)).toBeUndefined();
+    expect(monster(state, beast)).toBeDefined();
+  });
+});
+
+describe('Fuegos Fatuos', () => {
+  it('the equipped monster loses its continuous effects too (Dríada stops gaining Atk)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const driada = await onField(state, 1, 'Dríada');
+    await onField(state, 1, 'Arpía');
+    recomputeContinuous(state);
+    expect(monster(state, driada).tempBuff.atk).toBeGreaterThan(0);
+    const fuegos = await toHand(state, 0, 'Fuegos Fatuos');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: fuegos, targets: [driada] }).ok).toBe(true);
+    passAll(state);
+    recomputeContinuous(state);
+    expect(monster(state, driada).tempBuff.atk).toBe(0);
+  });
+});

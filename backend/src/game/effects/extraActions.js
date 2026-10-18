@@ -253,6 +253,7 @@ function imposeActivationCost(ctx, args) {
 // summon.allowsSameTurnDecompile): nothing to do when "run".
 function gainAttribute() {}
 function gainBreed() {}
+function onlySummonedBy() {}
 
 // Safira: "no puede ser seleccionada por efectos de monstruos, excepto Dragón" (by: 'monster') or
 // "por efectos de cartas, excepto Monstruos Dragón" (by: 'any'). targets.selectRows reads the flag.
@@ -361,6 +362,7 @@ module.exports = {
   fairyLeaveBonus,
   afterOpponentSearch,
   gainBreed,
+  onlySummonedBy,
   untargetableBy,
   doublePositiveMods,
   setFaceDownDefense,

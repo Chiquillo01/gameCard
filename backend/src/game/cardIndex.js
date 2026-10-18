@@ -72,4 +72,24 @@ function extraBreedsOf(card) {
   return breeds;
 }
 
-module.exports = { loadCardIndex, getCard, getEffect, isIndexLoaded, effectCodesOf, isEffectless, extraAttributesOf, extraBreedsOf };
+// "Solo puede ser invocada especial por el efecto de X" (Safira): the filter the summoning card has to
+// match, from the card's onlySummonedBy rule — or null when any effect may summon it.
+function summonedOnlyBy(card) {
+  for (const id of (card && card.effectCodes) || []) {
+    const effect = getEffect(id);
+    const step = effect && effect.type === 'rule' && (effect.actions || []).find((a) => a.fn === 'onlySummonedBy');
+    if (step) return (step.args && step.args.filter) || {};
+  }
+  return null;
+}
+
+// Whether the card behind `sourceInstanceId` may summon `card` with one of its effects.
+function maySummon(card, sourceInstanceId) {
+  const only = summonedOnlyBy(card);
+  if (!only) return true;
+  if (!sourceInstanceId || String(sourceInstanceId).startsWith('token:')) return false;
+  const { cardIdFromInstance } = require('./deckUtils');
+  return require('./filters').matchesCardFilter(getCard(cardIdFromInstance(sourceInstanceId)), only);
+}
+
+module.exports = { loadCardIndex, getCard, getEffect, isIndexLoaded, effectCodesOf, isEffectless, extraAttributesOf, extraBreedsOf, summonedOnlyBy, maySummon };

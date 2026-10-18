@@ -106,6 +106,7 @@ function summonZonePool(ctx, zones, args) {
     const card = cardOf(id);
     if (!['monster', 'fusion'].includes(card.category)) return false;
     if (excludedName && card.name === excludedName) return false;
+    if (!require('./cardIndex').maySummon(card, ctx.sourceInstanceId)) return false;
     return matchesCardFilter(card, filter);
   });
 }

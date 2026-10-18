@@ -230,6 +230,10 @@ const SEARCH_FNS = ['addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck',
 // summon *by an effect*, which "cuando es invocado por el efecto de un Licano" cards react to.
 function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx.controllerIndex } = {}) {
   const { requestPlacement, freeMonsterSlots } = require('../placement');
+  if (!require('../cardIndex').maySummon(getCard(cardIdFromInstance(instanceId)), ctx.sourceInstanceId)) {
+    log(ctx.state, `${getCard(cardIdFromInstance(instanceId)).name} no puede ser invocada por este efecto.`);
+    return false;
+  }
   if (!freeMonsterSlots(ctx.state, ownerIndex).length) {
     log(ctx.state, 'No hay espacio en el Campo para invocar.');
     return false;

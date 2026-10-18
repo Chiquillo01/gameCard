@@ -467,16 +467,25 @@ function recomputeContinuous(state) {
       m.immuneAttributes = null;
       m.untargetableBy = null;
       m.doublesPositiveMods = false;
+      m.effectsLost = false;
     });
     [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => { s.negatedByContinuous = false; });
   });
   applyTimedBuffs(state);
-  state.players.forEach((pl, controllerIndex) => {
+  // Two passes: first the effects that take others' effects away (Fuegos Fatuos, Seraphine, Sello
+  // Temporal...), then the rest — skipping every card that has lost its effects, so a negated
+  // Dríada stops buffing itself. Espectro only stops activations: it doesn't count here.
+  const NEGATING = ['disableEffects', 'negateEffect', 'negateEffects'];
+  const negates = (effect) => (effect.actions || []).some((a) => NEGATING.includes(a.fn));
+  const lostEffects = (entry) => entry.effectsLost || (state.negations || []).some((n) => n.targetInstanceId === entry.instanceId && (n.expiresTurn === null || n.expiresTurn >= state.turnNumber));
+  [true, false].forEach((negatingPass) => state.players.forEach((pl, controllerIndex) => {
     [...pl.field.monsters, ...pl.field.support, pl.field.territory].filter(Boolean).forEach((entry) => {
       if (entry.faceDown || entry.isToken || entry.isMonsterEquip || hasStatus(state, entry.instanceId, FREEZE)) return;
+      if (lostEffects(entry)) return;
       effectCodesOf(entry).forEach((effectId) => {
         const effect = getEffect(effectId);
         if (!effect || effect.type !== 'continuous') return;
+        if (negates(effect) !== negatingPass) return;
         // An Equipo card's effect only runs for the monster it's equipped to; with none (or that
         // monster gone) it does nothing until the field-leave cleanup sends the card to the graveyard.
         const isEquip = effect.trigger && effect.trigger.fn === 'whileEquipped';
@@ -486,7 +495,7 @@ function recomputeContinuous(state) {
         resolveActions(ctx, effect, isEquip ? [entry.equippedTo] : []);
       });
     });
-  });
+  }));
   // "Duplica los cambios positivos" (Mantícora): every gain the monster carries counts twice.
   state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => {
     if (!m.doublesPositiveMods) return;

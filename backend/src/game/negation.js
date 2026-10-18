@@ -5,8 +5,9 @@
 //     (effectEngine.recomputeContinuous sets `negatedByContinuous` fresh each time);
 //   - nothing said: permanent, for as long as the negated card stays on the field (a card that
 //     leaves and comes back is a new card — zones.removeFromZone clears it).
-// For now a negated card only stops firing its triggered effects (effectEngine.fireTrigger);
-// blocking its continuous effects and activations is still to come.
+// A negated card doesn't fire its triggered effects (effectEngine.fireTrigger), and one that has
+// lost its effects (`effectsLost`, or a negation here) doesn't run its continuous ones either
+// (effectEngine.recomputeContinuous).
 
 // `endOfTurn`-style durations the effect data uses.
 const END_OF_TURN = ['endOfTurn', 'thisTurn'];

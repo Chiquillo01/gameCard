@@ -7692,5 +7692,22 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "_id": "SAFIRA_ONLY_BY_SAFIRA",
+    "type": "rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "onlySummonedBy",
+        "args": {
+          "filter": {
+            "nameContains": "Safira"
+          }
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

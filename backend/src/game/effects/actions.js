@@ -221,7 +221,7 @@ function negateEffect(ctx, args, targets) {
   (targets || []).forEach((instanceId) => {
     const entry = fieldEntry(ctx.state, instanceId);
     if (!entry || !canAffect(ctx, entry)) return;
-    if (isContinuous(ctx)) entry.negatedByContinuous = true;
+    if (isContinuous(ctx)) { entry.negatedByContinuous = true; entry.effectsLost = true; }
     else negateCard(ctx.state, instanceId, { sourceInstanceId: ctx.sourceInstanceId, duration: args.duration });
     if (!isContinuous(ctx)) log(ctx.state, `Se niegan los efectos de ${entry.isToken ? 'una ficha' : getCard(entry.cardId).name}${END_OF_TURN.includes(args.duration) ? ' hasta el final del turno' : ''}.`);
     if (args.destroyIfControls && controlsNamed(ctx, args.destroyIfControls)) {
@@ -514,7 +514,7 @@ function disableEffects(ctx, args, targets) {
       ? allFieldMonsters(ctx.state).filter((m) => monsterMatches(m, filter))
       : [];
   list.filter((m) => canAffect(ctx, m)).forEach((m) => {
-    if (isContinuous(ctx)) m.negatedByContinuous = true;
+    if (isContinuous(ctx)) { m.negatedByContinuous = true; m.effectsLost = true; }
     else negateCard(ctx.state, m.instanceId, { sourceInstanceId: ctx.sourceInstanceId, duration: args.duration });
   });
 }
