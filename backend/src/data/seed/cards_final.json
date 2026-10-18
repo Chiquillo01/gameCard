@@ -1166,7 +1166,7 @@
     "rarity": "legendary",
     "category": "monster",
     "expansion": "CdG",
-    "effect": "-",
+    "effect": "Una vez por turno:\n• Invoca especial un Grokkar desde tu Mazo en posicion de ataque.\nEn la fase final, selecciona un \"Orco\" en tu cementerio:\n• Agregalo a tu Mano.\nTodos los \"Orco\" que controles ganan +3 Atk en la fase de batalla y no pueden ser seleccionados por efectos de cartas.",
     "invocationText": "Solo puede se invocado especial si controlas 4 \"Orco\" en Campo.",
     "atk": 10,
     "def": 9,
@@ -1190,7 +1190,7 @@
     "atk": 1,
     "def": 2,
     "level": 4,
-    "state": 4,
+    "state": 3,
     "number": 51,
     "effectCodes": [
       "ORCO_DARDOS_POISON"
@@ -1198,7 +1198,7 @@
   },
   {
     "name": "Orco Conjurador",
-    "image": "/assets/CardImg/generated/orco-conjurador.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792340001/52.jpg",
     "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
@@ -1212,7 +1212,7 @@
     "atk": 7,
     "def": 5,
     "level": 5,
-    "state": 4,
+    "state": 3,
     "number": 52,
     "activationCost": {
       "fn": "compileFrom",
