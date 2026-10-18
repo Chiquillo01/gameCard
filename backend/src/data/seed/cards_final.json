@@ -3545,7 +3545,7 @@
     "expansion": "IdL",
     "effect": "Los monstruos en el Campo no pueden activar sus efectos.",
     "invocationText": "Activación - 30 VP",
-    "state": 2,
+    "state": 3,
     "number": 185,
     "activationCost": {
       "fn": "payVP",

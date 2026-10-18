@@ -311,7 +311,7 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 ## 194 · Sombra
 
 ```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a hooded shadow figure with red eyes spreading black smoke over everything. Setting: a dark violet dusk.
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a vast living shadow with burning red eyes sweeping across a battlefield like a black tide, swallowing every monster in its path; where each monster stood, a small shadow creature with glowing red eyes rises from the darkness in its place. Setting: a ruined battlefield at dusk under a dark violet sky, weapons and banners half sunk into the spreading shadow. Not a ghost or spectre: a wave of pure shadow.
 ```
 
 ## 200 · Equipo Sunne - Astas de Combate
