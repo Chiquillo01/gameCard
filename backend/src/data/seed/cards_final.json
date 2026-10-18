@@ -273,7 +273,7 @@
   },
   {
     "name": "Oscuro, el Dragón de Oscuridad",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736333399/ugindragónoscurotcg_igcj3j.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792318345/13.png",
     "attribute": "Oscuridad",
     "type": "Dragón",
     "breed": "Dragón",
@@ -360,7 +360,7 @@
   },
   {
     "name": "Sky, el Dragón de Viento",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736417337/ojutaidragónvientotcg_qw4byc.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792318347/17.png",
     "attribute": "Viento",
     "type": "Dragón",
     "breed": "Dragón",
@@ -2969,7 +2969,7 @@
   },
   {
     "name": "Noche Eterna",
-    "image": "/assets/CardImg/generated/noche-eterna.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792318072/160.jpg",
     "attribute": "none",
     "type": "continuous",
     "description": "-",
