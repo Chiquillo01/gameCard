@@ -3785,7 +3785,7 @@
   },
   {
     "name": "Sombra",
-    "image": "/assets/CardImg/generated/sombra.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792333408/194.jpg",
     "attribute": "none",
     "type": "normal",
     "description": "-",
