@@ -556,28 +556,23 @@
     ]
   },
   {
-    "name": "Sello Temporal",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173883/sellotemporaltcg.png",
-    "attribute": "none",
-    "type": "instant",
-    "description": "El Sello Temporal, un artefacto ancestral usado por magos de épocas remotas, descansa sobre un pedestal en el corazón de un templo olvidado. Su diseño circular icónico emite una tenue luz mágica, rodeado de un aura que distorsiona el tiempo y el espacio a su alrededor. Forjado para detener el tiempo o crear Campos temporales, su activación irradia un poder que evoca tanto respeto como temor. Los muros del templo guardan el secreto de su creación, convirtiéndolo en un objeto de inmenso poder y misterio.",
-    "rarity": "epic",
-    "category": "support",
-    "subtype": "instant",
+    "name": "Grifo",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792328253/25.jpg",
+    "attribute": "Viento",
+    "type": "Bestia Alada",
+    "breed": "Bestia Alada",
+    "family": "Bestia",
+    "description": "-",
+    "rarity": "rare",
+    "category": "monster",
     "expansion": "AdB",
-    "effect": "En activación, selecciona un monstruo en el Campo:\n• Niega sus efectos hasta el final del turno.\nSi no controlas cartas, esta carta puede ser usada en el turno de tu oponente desde tu Mano.",
-    "invocationText": "Activación - 2 Píxel",
-    "state": 2,
+    "effect": "En invocación normal:\n• Invoca un monstruo Bestia de la Mano, si lo haces, esta carta gana su Atk y Vida.",
+    "atk": 3,
+    "def": 2,
+    "level": 3,
+    "state": 3,
     "number": 25,
-    "activationCost": {
-      "fn": "payPixels",
-      "args": {
-        "amount": 2
-      }
-    },
-    "effectCodes": [
-      "SELLO_TEMPORAL"
-    ]
+    "effectCodes": []
   },
   {
     "name": "Viaje de Unión",
@@ -628,28 +623,23 @@
     ]
   },
   {
-    "name": "Chispa",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173686/chispatcg.png",
-    "attribute": "none",
-    "type": "normal",
-    "description": "Una chispa pequeña pero brillante descansa en la palma de una mano extendida, iluminando la oscuridad circundante con un destello de esperanza y poder latente. Su color amarillo vibrante insinúa el inicio de algo grande, el preludio de una transformación. En esta sencilla escena, la chispa encarna la promesa de un poder aún por desatar.",
+    "name": "Hipogrifo",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792328252/28.jpg",
+    "attribute": "Viento",
+    "type": "Bestia Alada",
+    "breed": "Bestia Alada",
+    "family": "Bestia",
+    "description": "-",
     "rarity": "rare",
-    "category": "support",
-    "subtype": "normal",
+    "category": "monster",
     "expansion": "AdB",
-    "effect": "En activación:\n• Haz 6 VP a tu oponente.",
-    "invocationText": "Activación - 2 Píxel",
+    "effect": "En invocación normal:\n• Invoca un monstruo Bestia del Cementerio, si lo haces, esta carta gana su Atk y Vida.",
+    "atk": 3,
+    "def": 2,
+    "level": 3,
     "state": 3,
     "number": 28,
-    "activationCost": {
-      "fn": "payPixels",
-      "args": {
-        "amount": 2
-      }
-    },
-    "effectCodes": [
-      "CHISPA_BURN"
-    ]
+    "effectCodes": []
   },
   {
     "name": "Camino de la Reina",
@@ -674,40 +664,34 @@
     "effectCodes": []
   },
   {
-    "name": "Relámpago",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173871/relampagotcg.png",
-    "attribute": "none",
-    "type": "normal",
-    "description": "Tormenta de rayos fulminantes que causan un daño severo a aquellos a quien van dirigidos. Invocada desde la furia profunda de un poderoso hechicero.",
-    "rarity": "rare",
-    "category": "support",
-    "subtype": "normal",
+    "name": "Mantícora",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792328255/30.jpg",
+    "attribute": "Fuego",
+    "type": "Besti Infernal",
+    "breed": "Besti Infernal",
+    "family": "Bestia",
+    "description": "-",
+    "rarity": "epic",
+    "category": "monster",
     "expansion": "AdB",
-    "effect": "En activación:\n• Destruye un monstruo en el Campo.",
-    "invocationText": "Activación - 2 Píxel",
+    "effect": "Duplica los cambios positivos de los monstruos Bestai en tu Campo.\nMientras controles otra Bestia en Campo esa carta no puede ser destruida por batalla o efectos de cartas.",
+    "atk": 6,
+    "def": 4,
+    "level": 6,
     "state": 3,
     "number": 30,
-    "activationCost": {
-      "fn": "payPixels",
-      "args": {
-        "amount": 2
-      }
-    },
-    "effectCodes": [
-      "RELAMPAGO_DESTROY"
-    ]
+    "effectCodes": []
   },
   {
-    "attribute": "Tierra",
-    "description": "-",
-    "category": "fusion",
-    "effectCodes": [],
     "name": "Grover, el Goblin Guardián",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792313568/groverGoblinGuardianTCG.jpg",
+    "attribute": "Tierra",
     "type": "Goblin",
     "breed": "Goblin",
     "family": "Grokkar",
+    "description": "-",
     "rarity": "common",
+    "category": "fusion",
     "expansion": "CdG",
     "effect": "Esta carta no puede ser destruida en Batalla.\nEsta carta puede atacar en Posición de Defensa.",
     "invocationText": "Compilación - \"Grover, el Goblin\" + \"Goblin Guardián\"",
@@ -730,7 +714,8 @@
           }
         ]
       }
-    }
+    },
+    "effectCodes": []
   },
   {
     "name": "Goblin Reptante",
@@ -1178,16 +1163,15 @@
     ]
   },
   {
-    "attribute": "Tierra",
-    "description": "-",
-    "category": "fusion",
-    "effectCodes": [],
     "name": "Orco Conjurador",
     "image": "/assets/CardImg/generated/orco-conjurador.png",
+    "attribute": "Tierra",
     "type": "Orco",
     "breed": "Orco",
     "family": "Grokkar",
+    "description": "-",
     "rarity": "rare",
+    "category": "fusion",
     "expansion": "CdG",
     "effect": "Los monstruos de tu adversario no pueden ser destruidos en batalla.\nTodos los monstruos que no sean Orco en el Campo cambian a Posición de Ataque.",
     "invocationText": "Compilación - 2 Orco",
@@ -1206,7 +1190,8 @@
           }
         ]
       }
-    }
+    },
+    "effectCodes": []
   },
   {
     "name": "Grover, el Goblin Ardiente",
@@ -5097,16 +5082,15 @@
     ]
   },
   {
-    "attribute": "Viento",
-    "description": "-",
-    "category": "fusion",
-    "effectCodes": [],
     "name": "Búho del bosque oscuro",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792174760/buhoBosqueOscuroTCG.jpg",
+    "attribute": "Viento",
     "type": "Bestia Alada",
     "breed": "Bestia Alada",
     "family": "Bestia",
+    "description": "-",
     "rarity": "common",
+    "category": "fusion",
     "expansion": "SBE",
     "effect": "Puedes exiliar esta carta en tu Cementerio:\n• Devuelve al Mazo hasta 3 monstruos \"Bosque Oscuro\" desde el Cementerio.",
     "invocationText": "Compilación - 2 \"Bosque Oscuro\"",
@@ -5125,7 +5109,8 @@
           }
         ]
       }
-    }
+    },
+    "effectCodes": []
   },
   {
     "name": "Carnívora Come Hombres",
@@ -5468,16 +5453,16 @@
     "subtype": "equipment",
     "expansion": "SBE",
     "effect": "El monstruo equipado con esta carta  no puede declarar ataques ni activar sus efectos mientras tenga esta carta equipada.\nEsta carta se puede equipar a cualquier monstruo en el Campo.",
+    "invocationText": "Activación - 2 Píxel",
     "state": 2,
     "number": 277,
-    "effectCodes": [],
-    "invocationText": "Activación - 2 Píxel",
     "activationCost": {
       "fn": "payPixels",
       "args": {
         "amount": 2
       }
-    }
+    },
+    "effectCodes": []
   },
   {
     "name": "El Bosque Oscuro",
@@ -5754,13 +5739,12 @@
     "category": "fusion",
     "expansion": "SBE",
     "effect": "Una vez por turno: \n• Destruye los monstruos con menos Atk que este monstruo y esta carta gana 2 de Atk permanentemente por cada monstruo destruido por este efecto.",
+    "invocationText": "Compilación - 3 Bestia",
     "atk": 7,
     "def": 7,
     "level": 8,
     "state": 2,
     "number": 290,
-    "effectCodes": [],
-    "invocationText": "Compilación - 3 Bestia",
     "activationCost": {
       "fn": "compileFrom",
       "args": {
@@ -5771,7 +5755,8 @@
           }
         ]
       }
-    }
+    },
+    "effectCodes": []
   },
   {
     "name": "Damarco, licántropo luchador",
@@ -6172,16 +6157,15 @@
     ]
   },
   {
-    "attribute": "Tierra",
-    "description": "-",
-    "category": "fusion",
-    "effectCodes": [],
     "name": "Licántropo Guardián",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173823/licantropoguardiantcg.png",
+    "attribute": "Tierra",
     "type": "Licano",
     "breed": "Licano",
     "family": "Bestia",
+    "description": "-",
     "rarity": "rare",
+    "category": "fusion",
     "expansion": "TP",
     "effect": "Una vez por turno selecciona dos cartas en el campodel oponente: \n• Destruyelas.",
     "invocationText": "Compilación - \"Licántropo Beta\" + 2 Licano",
@@ -6204,7 +6188,8 @@
           }
         ]
       }
-    }
+    },
+    "effectCodes": []
   },
   {
     "name": "Licántropo Alfa",
@@ -6339,5 +6324,77 @@
       }
     },
     "effectCodes": []
+  },
+  {
+    "name": "Sello Temporal",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173883/sellotemporaltcg.png",
+    "attribute": "none",
+    "type": "instant",
+    "description": "El Sello Temporal, un artefacto ancestral usado por magos de épocas remotas, descansa sobre un pedestal en el corazón de un templo olvidado. Su diseño circular icónico emite una tenue luz mágica, rodeado de un aura que distorsiona el tiempo y el espacio a su alrededor. Forjado para detener el tiempo o crear Campos temporales, su activación irradia un poder que evoca tanto respeto como temor. Los muros del templo guardan el secreto de su creación, convirtiéndolo en un objeto de inmenso poder y misterio.",
+    "rarity": "epic",
+    "category": "support",
+    "subtype": "instant",
+    "expansion": "IdL",
+    "effect": "En activación, selecciona un monstruo en el Campo:\n• Niega sus efectos hasta el final del turno.\nSi no controlas cartas, esta carta puede ser usada en el turno de tu oponente desde tu Mano.",
+    "invocationText": "Activación - 2 Píxel",
+    "state": 2,
+    "number": 901,
+    "activationCost": {
+      "fn": "payPixels",
+      "args": {
+        "amount": 2
+      }
+    },
+    "effectCodes": [
+      "SELLO_TEMPORAL"
+    ]
+  },
+  {
+    "name": "Chispa",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173686/chispatcg.png",
+    "attribute": "none",
+    "type": "normal",
+    "description": "Una chispa pequeña pero brillante descansa en la palma de una mano extendida, iluminando la oscuridad circundante con un destello de esperanza y poder latente. Su color amarillo vibrante insinúa el inicio de algo grande, el preludio de una transformación. En esta sencilla escena, la chispa encarna la promesa de un poder aún por desatar.",
+    "rarity": "rare",
+    "category": "support",
+    "subtype": "normal",
+    "expansion": "IdL",
+    "effect": "En activación:\n• Haz 6 VP a tu oponente.",
+    "invocationText": "Activación - 2 Píxel",
+    "state": 3,
+    "number": 902,
+    "activationCost": {
+      "fn": "payPixels",
+      "args": {
+        "amount": 2
+      }
+    },
+    "effectCodes": [
+      "CHISPA_BURN"
+    ]
+  },
+  {
+    "name": "Relámpago",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173871/relampagotcg.png",
+    "attribute": "none",
+    "type": "normal",
+    "description": "Tormenta de rayos fulminantes que causan un daño severo a aquellos a quien van dirigidos. Invocada desde la furia profunda de un poderoso hechicero.",
+    "rarity": "rare",
+    "category": "support",
+    "subtype": "normal",
+    "expansion": "IdL",
+    "effect": "En activación:\n• Destruye un monstruo en el Campo.",
+    "invocationText": "Activación - 2 Píxel",
+    "state": 3,
+    "number": 903,
+    "activationCost": {
+      "fn": "payPixels",
+      "args": {
+        "amount": 2
+      }
+    },
+    "effectCodes": [
+      "RELAMPAGO_DESTROY"
+    ]
   }
 ]
