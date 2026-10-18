@@ -3261,7 +3261,7 @@
   },
   {
     "name": "Sátiro Vengador",
-    "image": "/assets/CardImg/generated/satiro-vengador.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792332164/172.jpg",
     "attribute": "Natura",
     "type": "Hada",
     "breed": "Hada",
@@ -3309,7 +3309,7 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "IdL",
-    "effect": "Al modificar su posición de boca abajo a boca arriba, selecciona 1 Montruo en Campo:\n• Devuelve a la Mano el monstruo seleccionado.",
+    "effect": "Al modificar su posicion de boca abajo a boca arriba, selecciona 1 montruo en Campo:\n• Devuelve a la Mano el monstruo seleccionado.",
     "atk": 0,
     "def": 1,
     "level": 1,
@@ -3389,7 +3389,7 @@
   },
   {
     "name": "La Virtud del Más Débil",
-    "image": "/assets/CardImg/generated/la-virtud-del-mas-debil.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792332162/179.jpg",
     "attribute": "none",
     "type": "equipment",
     "description": "-",
@@ -3492,7 +3492,7 @@
   },
   {
     "name": "Planetar",
-    "image": "/assets/CardImg/generated/planetar.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792332166/183.jpg",
     "attribute": "Luz",
     "type": "Hada",
     "breed": "Hada",
@@ -3539,7 +3539,7 @@
     "attribute": "none",
     "type": "continuous",
     "description": "Un espectro furioso y humanoide flota en el Campo, envuelto en sombras y con una expresión de ira eterna. Su figura es translúcida, con fragmentos de energía oscura que emanan de su cuerpo, despojando de vida todo lo que toca. Flores se marchitan y pequeños animales caen sin vida a su paso, dejando un rastro de desolación. Este no-muerto, condenado por un destino cruel, busca venganza contra los vivos, consumiendo su esencia para aumentar su poder.",
-    "rarity": "epic",
+    "rarity": "rare",
     "category": "support",
     "subtype": "continuous",
     "expansion": "IdL",
@@ -3559,7 +3559,7 @@
   },
   {
     "name": "El Vacío",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792256926/vacioTCG.jpg",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792318075/186.jpg",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -3841,8 +3841,8 @@
     "expansion": "IdL",
     "effect": "Aumenta el Atk del monstruo equipado en +2 puntos.\nSolo puede ser equipada a un monstruo de Fuego.",
     "invocationText": "Activación - 1 Píxel",
-    "state": 4,
-    "number": 199,
+    "state": 3,
+    "number": 196,
     "activationCost": {
       "fn": "payPixels",
       "args": {
@@ -3851,6 +3851,78 @@
     },
     "effectCodes": [
       "CUENCO_LAVA_EQUIP_ATK"
+    ]
+  },
+  {
+    "name": "Sello Temporal",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173883/sellotemporaltcg.png",
+    "attribute": "none",
+    "type": "instant",
+    "description": "El Sello Temporal, un artefacto ancestral usado por magos de épocas remotas, descansa sobre un pedestal en el corazón de un templo olvidado. Su diseño circular icónico emite una tenue luz mágica, rodeado de un aura que distorsiona el tiempo y el espacio a su alrededor. Forjado para detener el tiempo o crear Campos temporales, su activación irradia un poder que evoca tanto respeto como temor. Los muros del templo guardan el secreto de su creación, convirtiéndolo en un objeto de inmenso poder y misterio.",
+    "rarity": "epic",
+    "category": "support",
+    "subtype": "instant",
+    "expansion": "IdL",
+    "effect": "En activación, selecciona un monstruo en el Campo:\n• Niega sus efectos hasta el final del turno.\nSi no controlas cartas, esta carta puede ser usada en el turno de tu oponente desde tu Mano.",
+    "invocationText": "Activación - 2 Píxel",
+    "state": 2,
+    "number": 197,
+    "activationCost": {
+      "fn": "payPixels",
+      "args": {
+        "amount": 2
+      }
+    },
+    "effectCodes": [
+      "SELLO_TEMPORAL"
+    ]
+  },
+  {
+    "name": "Chispa",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173686/chispatcg.png",
+    "attribute": "none",
+    "type": "normal",
+    "description": "Una chispa pequeña pero brillante descansa en la palma de una mano extendida, iluminando la oscuridad circundante con un destello de esperanza y poder latente. Su color amarillo vibrante insinúa el inicio de algo grande, el preludio de una transformación. En esta sencilla escena, la chispa encarna la promesa de un poder aún por desatar.",
+    "rarity": "rare",
+    "category": "support",
+    "subtype": "normal",
+    "expansion": "IdL",
+    "effect": "En activación:\n• Haz 6 VP a tu oponente.",
+    "invocationText": "Activación - 2 Píxel",
+    "state": 3,
+    "number": 198,
+    "activationCost": {
+      "fn": "payPixels",
+      "args": {
+        "amount": 2
+      }
+    },
+    "effectCodes": [
+      "CHISPA_BURN"
+    ]
+  },
+  {
+    "name": "Relámpago",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173871/relampagotcg.png",
+    "attribute": "none",
+    "type": "normal",
+    "description": "Tormenta de rayos fulminantes que causan un daño severo a aquellos a quien van dirigidos. Invocada desde la furia profunda de un poderoso hechicero.",
+    "rarity": "rare",
+    "category": "support",
+    "subtype": "normal",
+    "expansion": "IdL",
+    "effect": "En activación:\n• Destruye un monstruo en el Campo.",
+    "invocationText": "Activación - 2 Píxel",
+    "state": 3,
+    "number": 199,
+    "activationCost": {
+      "fn": "payPixels",
+      "args": {
+        "amount": 2
+      }
+    },
+    "effectCodes": [
+      "RELAMPAGO_DESTROY"
     ]
   },
   {
@@ -6355,77 +6427,5 @@
       }
     },
     "effectCodes": []
-  },
-  {
-    "name": "Sello Temporal",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173883/sellotemporaltcg.png",
-    "attribute": "none",
-    "type": "instant",
-    "description": "El Sello Temporal, un artefacto ancestral usado por magos de épocas remotas, descansa sobre un pedestal en el corazón de un templo olvidado. Su diseño circular icónico emite una tenue luz mágica, rodeado de un aura que distorsiona el tiempo y el espacio a su alrededor. Forjado para detener el tiempo o crear Campos temporales, su activación irradia un poder que evoca tanto respeto como temor. Los muros del templo guardan el secreto de su creación, convirtiéndolo en un objeto de inmenso poder y misterio.",
-    "rarity": "epic",
-    "category": "support",
-    "subtype": "instant",
-    "expansion": "IdL",
-    "effect": "En activación, selecciona un monstruo en el Campo:\n• Niega sus efectos hasta el final del turno.\nSi no controlas cartas, esta carta puede ser usada en el turno de tu oponente desde tu Mano.",
-    "invocationText": "Activación - 2 Píxel",
-    "state": 2,
-    "number": 901,
-    "activationCost": {
-      "fn": "payPixels",
-      "args": {
-        "amount": 2
-      }
-    },
-    "effectCodes": [
-      "SELLO_TEMPORAL"
-    ]
-  },
-  {
-    "name": "Chispa",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173686/chispatcg.png",
-    "attribute": "none",
-    "type": "normal",
-    "description": "Una chispa pequeña pero brillante descansa en la palma de una mano extendida, iluminando la oscuridad circundante con un destello de esperanza y poder latente. Su color amarillo vibrante insinúa el inicio de algo grande, el preludio de una transformación. En esta sencilla escena, la chispa encarna la promesa de un poder aún por desatar.",
-    "rarity": "rare",
-    "category": "support",
-    "subtype": "normal",
-    "expansion": "IdL",
-    "effect": "En activación:\n• Haz 6 VP a tu oponente.",
-    "invocationText": "Activación - 2 Píxel",
-    "state": 3,
-    "number": 902,
-    "activationCost": {
-      "fn": "payPixels",
-      "args": {
-        "amount": 2
-      }
-    },
-    "effectCodes": [
-      "CHISPA_BURN"
-    ]
-  },
-  {
-    "name": "Relámpago",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173871/relampagotcg.png",
-    "attribute": "none",
-    "type": "normal",
-    "description": "Tormenta de rayos fulminantes que causan un daño severo a aquellos a quien van dirigidos. Invocada desde la furia profunda de un poderoso hechicero.",
-    "rarity": "rare",
-    "category": "support",
-    "subtype": "normal",
-    "expansion": "IdL",
-    "effect": "En activación:\n• Destruye un monstruo en el Campo.",
-    "invocationText": "Activación - 2 Píxel",
-    "state": 3,
-    "number": 903,
-    "activationCost": {
-      "fn": "payPixels",
-      "args": {
-        "amount": 2
-      }
-    },
-    "effectCodes": [
-      "RELAMPAGO_DESTROY"
-    ]
   }
 ]
