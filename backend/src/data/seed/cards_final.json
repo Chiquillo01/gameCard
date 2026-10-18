@@ -1268,7 +1268,7 @@
   },
   {
     "name": "Goblin Solitario",
-    "image": "/assets/CardImg/generated/goblin-solitario.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792314122/goblinSolitarioTCG.jpg",
     "attribute": "Tierra",
     "type": "Goblin",
     "breed": "Goblin",
