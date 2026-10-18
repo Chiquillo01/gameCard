@@ -2328,7 +2328,7 @@
     ]
   },
   {
-    "name": "Murcielago",
+    "name": "Murciélago",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173843/murcielagotcg.png",
     "attribute": "Oscuridad",
     "type": "Bestia Alada",
@@ -2352,7 +2352,7 @@
   },
   {
     "name": "Llanuras para el Heroísmo",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736940217/terrenoheroismotcg_votha4.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792341768/134.png",
     "attribute": "none",
     "type": "field",
     "description": "Un majestuoso puente de piedra se alza sobre un abismo infinito, sus extremos guardados por estatuas colosales de héroes y heroínas legendarios. Cada figura, esculpida con detalles impecables, sostiene armas, estandartes o escudos, símbolos de su valentía inmortal. El entorno está envuelto en una atmósfera solemne, invitando a los valientes a cruzar y probar su valía. Este terreno, diseñado para inspirar heroísmo, no solo cuenta historias de glorias pasadas, sino que también llama a los nuevos campeones a forjar su propia leyenda. Es un lugar donde el coraje y el destino convergen.",
@@ -2385,14 +2385,17 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "EdC",
-    "effect": "Cuando esta carta es invocada, tu oponente elige uno de estos efectos: \n• Sacrifica 1 monstruos que controles.\n• Exilia 1 cartas de tu Cementerio.\n• Descarta 1 carta de tu Mano.",
+    "effect": "Cuando esta carta es invocada, tu oponente elige uno de estos efectos: \n• Sacrifica 1 monstruo que controles.\n• Exilia 1 carta de tu Cementerio.\n• Descarta 1 carta de tu Mano.",
     "invocationText": "Tienes que controlar un Demonio para invocar esta carta.",
     "atk": 3,
     "def": 1,
     "level": 4,
     "state": 4,
     "number": 135,
-    "effectCodes": []
+    "effectCodes": [
+      "BEHOLDER_ONSUMMON_CHOICE",
+      "BEHOLDER_NEEDS_DEMON"
+    ]
   },
   {
     "name": "Herida Sangrante",
@@ -2404,7 +2407,7 @@
     "category": "support",
     "subtype": "normal",
     "expansion": "EdC",
-    "effect": "En activación:\n• Destruye un monstruo en el Campo y recupera una cantidad de VP igual a su ATK.",
+    "effect": "En activación:\n• Destruye un monstruo en el Campo y recupera una cantidad de VP igual a su Atk.",
     "invocationText": "Activación - 5 Píxel",
     "state": 4,
     "number": 136,
@@ -2414,7 +2417,9 @@
         "amount": 5
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "HERIDA_SANGRANTE_DESTROY"
+    ]
   },
   {
     "name": "Héroe Corrupto",
@@ -2459,10 +2464,12 @@
         "amount": 1
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "CABALLO_PAJA_GIFT"
+    ]
   },
   {
-    "name": "Contrataque de Batalla",
+    "name": "Contraataque de Batalla",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792259838/contrataqueBatallaTCG.png",
     "attribute": "none",
     "type": "counter",
@@ -2520,7 +2527,7 @@
     "rarity": "epic",
     "category": "fusion",
     "expansion": "EdC",
-    "effect": "Una vez por turno, cómo efecto rápido puedes activar uno de estos efectos pagando 10 VP:\n• Genera 2 píxel.\n• Destruye una carta en el Campo y recupera VP igual a su Atk.",
+    "effect": "Una vez por turno, como efecto rápido puedes activar uno de estos efectos pagando 10 VP:\n• Genera 2 píxel.\n• Destruye una carta en el Campo y recupera VP igual a su Atk.",
     "invocationText": "Compilación - 2 Inmortal",
     "atk": 10,
     "def": 5,
@@ -2614,8 +2621,8 @@
     "rarity": "epic",
     "category": "monster",
     "expansion": "EdC",
-    "effect": "Una vez por turno, cómo efecto rápido puedes activar 1 de estos 2 efectos:\n• Genera 1 Píxel.\n• Destruye una carta en el Campo, que su Atk actual sea diferente a su Atk original.",
-    "invocationText": "Esta carta solo puede ser Invocada de forma especial pagando 5 VP y coantrolando a \"Murcielago\" en Campo o Cementerio.",
+    "effect": "Una vez por turno, como efecto rápido puedes activar 1 de estos 2 efectos:\n• Genera 1 Píxel.\n• Destruye una carta en el Campo, que su Atk actual sea diferente a su Atk original.",
+    "invocationText": "Esta carta solo puede ser Invocada de forma especial pagando 5 VP y controlando a \"Murciélago\" en Campo o Cementerio.",
     "atk": 5,
     "def": 4,
     "level": 6,
@@ -2637,7 +2644,7 @@
     "category": "support",
     "subtype": "normal",
     "expansion": "EdC",
-    "effect": "En activación:\n• Invoca un monstruo \"Héroe\" de nivel 4 o menor desde tu Mazo.\nExiliar esta carta del Cementerio si tus VP son 40 o menos:\n• Agrega a tu Mano un Héroe del Cementerio.",
+    "effect": "En activación:\n• Invoca un monstruo \"Héroe\" de nivel 4 o menor desde tu Mazo.\nExilia esta carta del Cementerio si tus VP son 40 o menos:\n• Agrega a tu Mano un Héroe del Cementerio.",
     "invocationText": "Activación - 4 VP",
     "state": 2,
     "number": 145,
@@ -2654,16 +2661,16 @@
   },
   {
     "name": "Rey Demonio",
-    "image": "https://res.cloudinary.com/dsd7efrba/image/upload/v1736329337/onitcg_hkfnco.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792341789/146.png",
     "attribute": "Fuego",
     "type": "Demonio",
     "breed": "Demonio",
     "family": "Inframundo",
-    "description": "En las sombras del bosque bajo la luz de la luna, el Oni acecha con una presencia que hiela la sangre. Con su piel azul como la noche, ojos rojos llameantes y colmillos afilados, encarna el terror y la magia oscura. Envuelto en tunicas desgarradas con símbolos arcanos, porta un gigantesco garrote cubierto de púas, listo para aplastar a quienes osen desafiarlo. Los susurros de los árboles cuentan historias de aventureros desaparecidos, víctimas de su astucia y brutalidad. Este demonio ancestral combina fuerza descomunal con hechicería letal, dominando su territorio con una mezcla de poder y misterio.",
+    "description": "En las sombras del bosque bajo la luz de la luna, el Oni acecha con una presencia que hiela la sangre. Con su piel azul como la noche, ojos rojos llameantes y colmillos afilados, encarna el terror y la magia oscura. Envuelto en túnicas desgarradas con símbolos arcanos, porta un gigantesco garrote cubierto de púas, listo para aplastar a quienes osen desafiarlo. Los susurros de los árboles cuentan historias de aventureros desaparecidos, víctimas de su astucia y brutalidad. Este demonio ancestral combina fuerza descomunal con hechicería letal, dominando su territorio con una mezcla de poder y misterio.",
     "rarity": "epic",
     "category": "monster",
     "expansion": "EdC",
-    "effect": "Una vez por turno como efecto rápido: \n• Destruye 1 monstruo Demonio en el Campo, y si lo haces, esta carta gana +2 Atk y Vida.\nEste monstruo no puede ser destruido por efectos de cartas de tu oponente.,",
+    "effect": "Una vez por turno como efecto rápido: \n• Destruye 1 monstruo Demonio en el Campo, y si lo haces, esta carta gana +2 Atk y Vida.\nEste monstruo no puede ser destruido por efectos de cartas de tu oponente.",
     "invocationText": "Puede ser invocado de forma especial si controlas un Demonio.",
     "atk": 2,
     "def": 4,
@@ -2708,7 +2715,7 @@
     "category": "support",
     "subtype": "normal",
     "expansion": "EdC",
-    "effect": "En activación:\n• Añade a tu Mano 1 carta Inmortal de tu Mazo.\nNo puedes activar el siguiente efecto el mismo turno en que esta carta fue enviada al Cementerio.\nExilia esta carta en el Cementerio:\n• Gana 5 VP por cada Inmortal que controles en el Campo.",
+    "effect": "En activación:\n• Añade a tu Mano 1 carta Inmortal de tu Mazo.\nNo puedes activar el siguiente efecto el mismo turno en que esta carta fue enviada al Cementerio.\nExilia esta carta del Cementerio:\n• Gana 5 VP por cada Inmortal que controles en el Campo.",
     "invocationText": "Activación - 15 VP",
     "state": 2,
     "number": 148,
@@ -2718,7 +2725,10 @@
         "amount": 15
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "CALIZ_SANGRE_SEARCH",
+      "CALIZ_SANGRE_GY_VP"
+    ]
   },
   {
     "name": "Héroe de la Esperanza",
@@ -2731,7 +2741,7 @@
     "rarity": "legendary",
     "category": "fusion",
     "expansion": "EdC",
-    "effect": "Al ser Invocado:\n• Puedes destruir cartas que controle tu oponente hasta el número de monstruos Héroe con diferente nombre en el Campo, y si lo haces, roba 1 carta por cada carta destruida.\nEn la fase de batalla si se involucra a un monstruo Héroe en una batalla, que no sea esa carta:\n• Destruye una carta en el Campo, y si lo haces, genera 1 pixel.\nNo puede ser Destruido ni Exiliado por efectos de cartas.",
+    "effect": "Al ser Invocado:\n• Puedes destruir cartas que controle tu oponente hasta el número de monstruos Héroe con diferente nombre en el Campo, y si lo haces, roba 1 carta por cada carta destruida.\nEn la fase de batalla si se involucra a un monstruo Héroe en una batalla, que no sea esta carta:\n• Destruye una carta en el Campo, y si lo haces, genera 1 Píxel.\nNo puede ser Destruido ni Exiliado por efectos de cartas.",
     "invocationText": "Compilación - \"Héroe Berserker\" + 2 Héroe",
     "atk": 10,
     "def": 6,
@@ -2769,7 +2779,7 @@
     "category": "support",
     "subtype": "field",
     "expansion": "EdC",
-    "effect": "Una vez por turno: \n• Agrega a tu mano dos monstruos que sean Demonio, Inmortal, Pecador y/o Cambiaformas  de tu Mazo, y si lo haces, descarta una carta.\nLos monstruos Demonio, Inmortal, Pecador y Cambiaformas ganan +4 Atk y Vida.",
+    "effect": "Una vez por turno: \n• Agrega a tu mano dos monstruos que sean Demonio, Inmortal, Pecador y/o Cambiaformas de tu Mazo, y si lo haces, descarta una carta.\nLos monstruos Demonio, Inmortal, Pecador y Cambiaformas ganan +4 Atk y Vida.",
     "invocationText": "Activación - 3 Píxel",
     "state": 1,
     "number": 150,
@@ -2856,7 +2866,10 @@
         ]
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "HEROE_FRIO_POLAR_ONSUMMON_FREEZE",
+      "HEROE_FRIO_POLAR_LEAVES_FREEZE"
+    ]
   },
   {
     "name": "Héroe Berserker",
@@ -2903,7 +2916,7 @@
     "rarity": "rare",
     "category": "monster",
     "expansion": "EdC",
-    "effect": "En invocación: \n• Invoca un monstruo \"Héroe\" desde la Mano.\nSi es usado como material de un monstruo Compilación:\n• Aplica el efecto de CONGELAR a un monstruo del Campo 0ponente.",
+    "effect": "En invocación: \n• Invoca un monstruo \"Héroe\" desde la Mano.\nSi es usado como material de un monstruo Compilación:\n• Aplica el efecto de CONGELAR a un monstruo del Campo oponente.",
     "atk": 2,
     "def": 2,
     "level": 4,
@@ -2945,7 +2958,7 @@
     "type": "Pecador",
     "breed": "Pecador",
     "family": "Inframundo",
-    "description": "En el umbral de un portal infernal, envuelta en llamas y sombras, se alza una figura de encantos letales. Su piel, de un tono rojizo pálido, y sus alas demoníacas desplegadas reflejan su naturaleza infernal. Con un movimiento hipnótico de su mano, manipula las mentes de quienes osan acercarse, prometiendo deseos imposibles a cambio de sus almas. Creada en los fuegos del abismo, está súcubo es una maestra de la seducción y la manipulación, capaz de sembrar caos con una sola mirada. Su sonrisa velada es un preludio a su peligro, un recordatorio de que el deseo puede ser una trampa mortal.",
+    "description": "En el umbral de un portal infernal, envuelta en llamas y sombras, se alza una figura de encantos letales. Su piel, de un tono rojizo pálido, y sus alas demoníacas desplegadas reflejan su naturaleza infernal. Con un movimiento hipnótico de su mano, manipula las mentes de quienes osan acercarse, prometiendo deseos imposibles a cambio de sus almas. Creada en los fuegos del abismo, esta súcubo es una maestra de la seducción y la manipulación, capaz de sembrar caos con una sola mirada. Su sonrisa velada es un preludio a su peligro, un recordatorio de que el deseo puede ser una trampa mortal.",
     "rarity": "rare",
     "category": "monster",
     "expansion": "EdC",
@@ -2969,12 +2982,12 @@
     "type": "Inmortal",
     "breed": "Inmortal",
     "family": "Inframundo",
-    "description": "La oscura señora de la noche, Lady Aisha, es una guerrera de blanca piel, largos colmillos, regia apariencia y ojos de mirada lobuna. Se alimenta de sangre y tal es su maldad que el mismo sol la aborrece tanto que hace que su piel arda, por lo que solo actua bajo el manto nocturno.",
+    "description": "La oscura señora de la noche, Lady Aisha, es una guerrera de blanca piel, largos colmillos, regia apariencia y ojos de mirada lobuna. Se alimenta de sangre y tal es su maldad que el mismo sol la aborrece tanto que hace que su piel arda, por lo que solo actúa bajo el manto nocturno.",
     "rarity": "rare",
     "category": "monster",
     "expansion": "EdC",
-    "effect": "Una vez por turno, cómo puedes activar 1 de estos 2 efectos:\n• Genera 1 Píxel.\n• Resta -3 puntos de Atk a un monstruo enemigo hasta el final del turno.",
-    "invocationText": "Esta carta solo puede ser Invocada de forma especial pagando 4 VP y coantrolando a \"Murcielago\" en Campo o Cementerio.",
+    "effect": "Una vez por turno, puedes activar 1 de estos 2 efectos:\n• Genera 1 Píxel.\n• Resta -3 puntos de Atk a un monstruo enemigo hasta el final del turno.",
+    "invocationText": "Esta carta solo puede ser Invocada de forma especial pagando 4 VP y controlando a \"Murciélago\" en Campo o Cementerio.",
     "atk": 4,
     "def": 5,
     "level": 5,
@@ -2995,7 +3008,7 @@
     "category": "support",
     "subtype": "normal",
     "expansion": "EdC",
-    "effect": "En activación:\n• Invocar un monstruo \"Héroe\" de tu Cementerio.\nSolo puede ser activada si controlas un monstruo \"Héroe\".",
+    "effect": "En activación:\n• Invoca un monstruo \"Héroe\" de tu Cementerio.\nSolo puede ser activada si controlas un monstruo \"Héroe\".",
     "invocationText": "Activación - 4 VP",
     "state": 3,
     "number": 158,
@@ -3029,7 +3042,9 @@
         "amount": 2
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "VENGANZA_HEROES_COMPILE"
+    ]
   },
   {
     "name": "Noche Eterna",
@@ -3051,7 +3066,10 @@
         "amount": 20
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "NOCHE_ETERNA_RECYCLE",
+      "NOCHE_ETERNA_VP"
+    ]
   },
   {
     "name": "Perla de Fuego",

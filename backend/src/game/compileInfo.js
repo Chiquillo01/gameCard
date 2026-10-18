@@ -7,7 +7,7 @@ const { matchesCardFilter } = require('./filters');
 const { materialCard, materialLocationSatisfies } = require('./summon');
 const { violatesUnique, getEffectiveStats } = require('./effectEngine');
 
-const ZONE_LABELS = { field: 'Campo', hand: 'Mano', graveyard: 'Cementerio' };
+const ZONE_LABELS = { field: 'Campo', hand: 'Mano', graveyard: 'Cementerio', banished: 'Exilio' };
 
 // "2 × monstruo Insecto", "1 × \"Valkiria\"", "5 × monstruo con «Gigante» en el nombre"...
 function requirementLabel(req) {
@@ -38,6 +38,7 @@ function ownCards(state, controllerIndex) {
     ...(pl.field.territory ? [pl.field.territory.instanceId] : []),
     ...pl.hand,
     ...pl.graveyard,
+    ...pl.banished,
   ];
 }
 
@@ -57,7 +58,7 @@ function describeMaterial(state, id) {
 // the field, then cards from hand.
 function materialCost(state, id) {
   const loc = findInstanceLocation(state, id);
-  if (loc.zone === 'graveyard') return 0;
+  if (loc.zone === 'graveyard' || loc.zone === 'banished') return 0;
   if (loc.zone === 'field:monster') {
     const m = state.players[loc.ownerIndex].field.monsters[loc.slot];
     if (m.isToken) return 0.5;

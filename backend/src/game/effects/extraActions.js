@@ -254,6 +254,7 @@ function imposeActivationCost(ctx, args) {
 function gainAttribute() {}
 function gainBreed() {}
 function onlySummonedBy() {}
+function summonRequires() {}
 
 // Safira: "no puede ser seleccionada por efectos de monstruos, excepto Dragón" (by: 'monster') or
 // "por efectos de cartas, excepto Monstruos Dragón" (by: 'any'). targets.selectRows reads the flag.
@@ -394,6 +395,7 @@ module.exports = {
   afterOpponentSearch,
   gainBreed,
   onlySummonedBy,
+  summonRequires,
   untargetableBy,
   forceAttackPosition,
   negateDestroyAndBan,

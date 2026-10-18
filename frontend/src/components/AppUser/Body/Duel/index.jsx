@@ -1245,6 +1245,7 @@ function humanizeReason(reason) {
     'unknown-effect': 'Ese efecto no existe.',
     'cannot-be-summoned': 'Esa carta no puede ser invocada.',
     'special-summon-only': 'Esa carta solo puede invocarse de forma especial: cumple el requisito de su método de invocación.',
+    'summon-requirement': 'No cumples lo que esa carta necesita para ser invocada (mira su método de invocación).',
     'cannot-set-territory': 'Un Territorio no se puede colocar boca abajo.',
     'not-set-support': 'Ese apoyo no está colocado boca abajo.',
     'use-its-effect': 'Ese apoyo se activa con su efecto.',

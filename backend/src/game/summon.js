@@ -24,6 +24,7 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
   if (card.category !== 'monster') return { ok: false, reason: 'not-a-monster' };
   if (cannotBeSummoned(card)) return { ok: false, reason: 'cannot-be-summoned' };
   if (!canBeNormalSummoned(card)) return { ok: false, reason: 'special-summon-only' };
+  if (!summonRequirementsMet(state, controllerIndex, instanceId, card)) return { ok: false, reason: 'summon-requirement' };
   if (violatesUnique(state, controllerIndex, card)) return { ok: false, reason: 'unique-card' };
 
   const cost = card.summonCost;
@@ -204,6 +205,7 @@ function materialLocationSatisfies(loc, controllerIndex, req, defaultZones = ['f
   return allowed.some((z) => {
     if (z === 'hand') return loc.zone === 'hand';
     if (z === 'graveyard') return loc.zone === 'graveyard';
+    if (z === 'banished') return loc.zone === 'banished';
     if (z === 'field') return loc.zone === 'field:monster' || loc.zone === 'field:support' || loc.zone === 'field:territory';
     return false;
   });
@@ -330,4 +332,13 @@ function decompile(state, controllerIndex, instanceId, { force = false } = {}) {
   return { ok: true };
 }
 
-module.exports = { materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };
+// "Tienes que controlar un Demonio para invocar esta carta" (Beholder): a rule effect whose
+// summonRequires step lists the conditions any summon of the card needs.
+function summonRequirementsMet(state, controllerIndex, instanceId, card) {
+  const steps = ((card && card.effectCodes) || []).map(getEffect)
+    .filter((e) => e && e.type === 'rule')
+    .flatMap((e) => (e.actions || []).filter((a) => a.fn === 'summonRequires'));
+  return steps.every((a) => checkConditions({ state, controllerIndex, sourceInstanceId: instanceId }, (a.args && a.args.conditions) || []));
+}
+
+module.exports = { summonRequirementsMet, materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };

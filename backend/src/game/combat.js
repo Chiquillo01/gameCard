@@ -312,9 +312,11 @@ function destroyInBattle(state, ownerIndex, victim, destroyer) {
   if (victim.isToken) {
     pl.field.monsters[idx] = null;
   } else {
+    const atk = getEffectiveStats(victim).atk;
     // moveToZone also releases the materials under a compiled monster and ends its burning.
     moveToZone(state, victim.instanceId, 'graveyard');
-    const event = { instanceId: victim.instanceId, cardId: cardIdFromInstance(victim.instanceId), ownerIndex: require('./zones').ownerOfInstance(victim.instanceId) ?? ownerIndex, reason: 'battle', from: 'field', byPlayer: ownerIndex === 0 ? 1 : 0 };
+    const bySourceCardId = destroyer && !destroyer.isToken ? destroyer.cardId : null;
+    const event = { instanceId: victim.instanceId, cardId: cardIdFromInstance(victim.instanceId), ownerIndex: require('./zones').ownerOfInstance(victim.instanceId) ?? ownerIndex, reason: 'battle', from: 'field', byPlayer: ownerIndex === 0 ? 1 : 0, atk, bySourceCardId };
     fireTrigger(state, 'sentToGraveyard', event);
     fireTrigger(state, 'onMonsterDestroyed', event);
   }

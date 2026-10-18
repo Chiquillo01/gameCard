@@ -56,6 +56,9 @@ function sendToGraveyard(ctx, row) {
   const { entry, ownerIndex } = row;
   const card = entry.isToken ? null : getCard(entry.cardId);
   const wasMonster = row.kind !== 'support' && !!player(ctx.state, ownerIndex).field.monsters.includes(entry);
+  // Its Atk as it left, and the card whose effect destroyed it (Noche Eterna).
+  const atk = wasMonster && !entry.isToken ? require('../effectEngine').getEffectiveStats(entry).atk : 0;
+  const bySourceCardId = ctx.sourceInstanceId && !String(ctx.sourceInstanceId).startsWith('token:') ? cardIdFromInstance(ctx.sourceInstanceId) : null;
   if (entry.isToken) {
     const pl = player(ctx.state, ownerIndex);
     const i = pl.field.monsters.indexOf(entry);
@@ -67,7 +70,7 @@ function sendToGraveyard(ctx, row) {
   if (!entry.isToken) {
     const { fireTrigger } = require('../effectEngine');
     fireTrigger(ctx.state, 'sentToGraveyard', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, from: 'field', reason: 'effect' });
-    if (wasMonster) fireTrigger(ctx.state, 'onMonsterDestroyed', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, reason: 'effect', byPlayer: ctx.controllerIndex });
+    if (wasMonster) fireTrigger(ctx.state, 'onMonsterDestroyed', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, reason: 'effect', byPlayer: ctx.controllerIndex, atk, bySourceCardId });
   }
 }
 
@@ -231,7 +234,12 @@ const SEARCH_FNS = ['addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck',
 // summon *by an effect*, which "cuando es invocado por el efecto de un Licano" cards react to.
 function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx.controllerIndex } = {}) {
   const { requestPlacement, freeMonsterSlots } = require('../placement');
-  if (!require('../cardIndex').maySummon(getCard(cardIdFromInstance(instanceId)), ctx.sourceInstanceId)) {
+  const card = getCard(cardIdFromInstance(instanceId));
+  if (!require('../summon').summonRequirementsMet(ctx.state, ownerIndex, instanceId, card)) {
+    log(ctx.state, `No se cumple lo que ${card.name} necesita para ser invocada.`);
+    return false;
+  }
+  if (!require('../cardIndex').maySummon(card, ctx.sourceInstanceId)) {
     log(ctx.state, `${getCard(cardIdFromInstance(instanceId)).name} no puede ser invocada por este efecto.`);
     return false;
   }
@@ -258,7 +266,9 @@ function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx
 // summonFromDeck / specialSummonFromDeck / summonFromHand / specialSummonFromGY / summonFromZones /
 // summon. `targets` are the picks resolveActions handed this step (already inside its pool).
 function summonPicked(ctx, args, targets) {
-  ctx.lastSummoned = (targets || []).filter((id) => summonByEffect(ctx, id, { position: args.position || 'attack' }));
+  // "Invoca especial esta carta del Cementerio" (Héroe Fénix).
+  const picks = args.target === 'self' ? [ctx.sourceInstanceId].filter((id) => player(ctx.state, ctx.controllerIndex).graveyard.includes(id)) : targets || [];
+  ctx.lastSummoned = picks.filter((id) => summonByEffect(ctx, id, { position: args.position || 'attack' }));
 }
 
 // "Envía al Cementerio un [filter] de tu Mazo" (Héroe de Marfil) — the one the player picks.

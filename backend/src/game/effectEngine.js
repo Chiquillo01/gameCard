@@ -233,7 +233,12 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   }
   if (eventName === 'onMonsterDestroyed') {
     if (args.target === 'self' && m.instanceId !== eventArgs.instanceId) return false;
-    if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
+    // `reason` / `bySource` (the card that destroyed it), or any of the `anyOf` alternatives
+    // (Noche Eterna: "destruido en batalla o por efecto de una carta Inmortal").
+    const fits = (alt) => (!alt.reason || [].concat(alt.reason).includes(eventArgs.reason))
+      && (!alt.bySource || (eventArgs.bySourceCardId && matchesCardFilter(getCard(eventArgs.bySourceCardId), alt.bySource)));
+    if (!fits(args)) return false;
+    if (args.anyOf && !args.anyOf.some(fits)) return false;
   }
   if (eventName === 'direct_damage_dealt') {
     if (eventArgs.controllerIndex !== m.controllerIndex) return false;
@@ -398,6 +403,35 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     const ctx = makeCtx(state, controllerIndex, null, null);
     if (pending.action === 'banish') require('./effects/actions').registry.exileTarget(ctx, {}, [chosen]);
     else require('./effects/fieldActions').destroy(ctx, { target: 'selected' }, [chosen]);
+    recomputeContinuous(state);
+    checkWin(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
+
+  // Beholder: the rival picks which penalty, then (kind 'ownPick') which of their cards.
+  if (pending.kind === 'penalty') {
+    const index = picks.map((t) => (typeof t === 'string' && t.startsWith('choice:') ? Number(t.split(':')[1]) : NaN)).find((i) => pending.penalties[i]);
+    if (index === undefined) return chooseTarget({ options: pending.options, prompt: pending.prompt });
+    state.pendingTriggerChoices.shift();
+    require('./effects/actions').applyPenalty(state, controllerIndex, pending.penalties[index]);
+    recomputeContinuous(state);
+    checkWin(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
+
+  if (pending.kind === 'ownPick') {
+    const { PENALTY_POOLS, payPenalty } = require('./effects/actions');
+    const pool = PENALTY_POOLS[pending.action](player(state, controllerIndex));
+    const still = pending.options.filter((o) => pool.includes(o.instanceId));
+    const chosen = picks.filter((id) => still.some((o) => o.instanceId === id));
+    const need = Math.min(pending.count, still.length);
+    if (chosen.length < need) return chooseTarget({ options: still.filter((o) => !chosen.includes(o.instanceId)), prompt: pending.prompt });
+    state.pendingTriggerChoices.shift();
+    payPenalty(state, controllerIndex, pending.action, chosen.slice(0, need));
     recomputeContinuous(state);
     checkWin(state);
     require('./placement').settlePlacements(state);

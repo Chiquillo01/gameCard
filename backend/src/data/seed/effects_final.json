@@ -1976,7 +1976,7 @@
   {
     "_id": "HEROE_MARFIL_SEND_HERO",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -1985,8 +1985,11 @@
       {
         "fn": "sendFromDeckToGY",
         "args": {
-          "breed": "Héroe",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "breed": "Héroe"
+          }
         }
       }
     ]
@@ -2000,11 +2003,12 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
+          "count": 1,
           "filter": {
-            "subtype": "Contraataque",
+            "category": "support",
+            "subtype": "Contraefecto",
             "textIncludes": "Héroe"
-          },
-          "count": 1
+          }
         }
       }
     ]
@@ -2494,11 +2498,8 @@
       {
         "fn": "specialSummonFromGY",
         "args": {
-          "player": "self",
-          "filter": {
-            "name": "Héroe Fénix"
-          },
-          "scope": "ownGY"
+          "target": "self",
+          "ifPreviousSucceeded": true
         }
       }
     ]
@@ -3126,30 +3127,34 @@
       "fn": "onSummon"
     },
     "conditions": [],
-    "requiresTarget": false,
     "actions": [
       {
         "fn": "opponentChoosesEffect",
         "args": {
           "options": [
             {
-              "fn": "sacrificeMonsters",
+              "fn": "sacrifice",
               "args": {
-                "count": 1,
-                "player": "self"
+                "count": 1
               }
             },
             {
-              "fn": "banishFromGraveyard",
+              "fn": "exileFromGraveyard",
               "args": {
-                "count": 3,
-                "player": "self"
+                "count": 1
+              }
+            },
+            {
+              "fn": "discard",
+              "args": {
+                "count": 1
               }
             }
           ]
         }
       }
-    ]
+    ],
+    "source": "authored"
   },
   {
     "_id": "LICANTROPO_GEVAUDAN_ONSUMMON_SEARCH",
@@ -3407,7 +3412,7 @@
   },
   {
     "_id": "HEROE_ESPERANZA_BATTLE_DESTROY",
-    "type": "trigger",
+    "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
       "fn": "involvedInBattle",
@@ -3426,6 +3431,13 @@
         "args": {
           "target": "selected",
           "zone": "field"
+        }
+      },
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1,
+          "ifPreviousSucceeded": true
         }
       }
     ]
@@ -4116,7 +4128,11 @@
     "_id": "SUCUBO_COLUMN_DEBUFF",
     "type": "continuous",
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
     "requiresTarget": false,
     "actions": [
       {
@@ -4955,18 +4971,17 @@
         "fn": "destroy",
         "args": {
           "target": "support",
-          "zone": "field",
-          "amount": {
-            "perControlledBreed": "Héroe"
-          },
-          "exclude": "self"
+          "prompt": "Elige la carta de Apoyo que se destruye"
         }
       },
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "breed": "Héroe",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "nameContains": "Héroe"
+          }
         }
       }
     ],
@@ -6558,7 +6573,7 @@
       {
         "fn": "hasCardIn",
         "args": {
-          "name": "Murcielago",
+          "name": "Murciélago",
           "zones": [
             "field",
             "graveyard"
@@ -6637,7 +6652,7 @@
       {
         "fn": "hasCardIn",
         "args": {
-          "name": "Murcielago",
+          "name": "Murciélago",
           "zones": [
             "field",
             "graveyard"
@@ -8468,5 +8483,282 @@
         "fn": "negateDestroyAndBan"
       }
     ]
+  },
+  {
+    "_id": "BEHOLDER_NEEDS_DEMON",
+    "type": "rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "summonRequires",
+        "args": {
+          "conditions": [
+            {
+              "fn": "controlsMonster",
+              "args": {
+                "breed": "Demonio"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HERIDA_SANGRANTE_DESTROY",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "destroyAndGainVP",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "prompt": "Elige el monstruo que se destruye"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CABALLO_PAJA_GIFT",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "summonToken",
+        "args": {
+          "side": "opponent",
+          "token": {
+            "name": "Caballo de Paja",
+            "breed": "Planta",
+            "attribute": "Tierra",
+            "level": 2,
+            "atk": 0,
+            "def": 0
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CALIZ_SANGRE_SEARCH",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "breed": "Inmortal"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CALIZ_SANGRE_GY_VP",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "conditions": [
+      {
+        "fn": "notSameTurnSentToGraveyard"
+      }
+    ],
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "gainVP",
+        "args": {
+          "amount": 5,
+          "perControlled": {
+            "breed": "Inmortal"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HEROE_FRIO_POLAR_ONSUMMON_FREEZE",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "status": "Congelado",
+          "prompt": "Elige el monstruo que queda Congelado"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HEROE_FRIO_POLAR_LEAVES_FREEZE",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "status": "Congelado",
+          "prompt": "Elige el monstruo que queda Congelado"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "VENGANZA_HEROES_COMPILE",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "card_effect_activated",
+      "args": {
+        "phase": "all",
+        "source": "opponent"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "compileFromExtra",
+        "args": {
+          "filter": {
+            "breed": "Héroe"
+          },
+          "zones": [
+            "hand",
+            "field",
+            "graveyard",
+            "banished"
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "NOCHE_ETERNA_RECYCLE",
+    "type": "activated",
+    "oncePerTurn": true,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": [
+            "graveyard",
+            "banished"
+          ],
+          "count": 1,
+          "filter": {
+            "breed": "Inmortal"
+          },
+          "required": true,
+          "prompt": "Elige la carta Inmortal que barajas en el Mazo"
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "conditionalOn": "previousActionSucceeded"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "NOCHE_ETERNA_VP",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onMonsterDestroyed",
+      "args": {
+        "anyOf": [
+          {
+            "reason": "battle"
+          },
+          {
+            "reason": "effect",
+            "bySource": {
+              "breed": "Inmortal"
+            }
+          }
+        ]
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "gainVP",
+        "args": {
+          "amountFrom": "eventAtk"
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

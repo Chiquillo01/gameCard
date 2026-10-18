@@ -206,7 +206,7 @@ function hasCounter(ctx, args) {
   return !!entry && ((entry.counters || {})[args.counter] || 0) >= (args.min || 1);
 }
 
-// "Controlando a X en Campo o Cementerio" (Vampiro, Vampiresa: "Murcielago"): one of the player's
+// "Controlando a X en Campo o Cementerio" (Vampiro, Vampiresa: "Murciélago"): one of the player's
 // own cards named X face-up on their field, or in their Cementerio (args.zones picks which).
 function hasCardIn(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);

@@ -43,8 +43,13 @@ function damageSelf(ctx, args) {
 function gainVP(ctx, args) {
   const idx = resolvePlayerIndex(ctx, args.player);
   const pl = player(ctx.state, idx);
-  // "Gana VP igual a su Atk": the Atk of what the step before exiled.
-  const amount = args.amountFrom === 'previousTargetsAtk' ? ctx.lastTargetsAtk || 0 : args.amount || 0;
+  // "Gana VP igual a su Atk": the Atk of what the step before exiled — or of the monster whose
+  // destruction set the effect off (Noche Eterna). "Gana N VP por cada X que controles" (Cáliz de
+  // Sangre): N times the controller's face-up monsters that match.
+  let amount = args.amountFrom === 'previousTargetsAtk' ? ctx.lastTargetsAtk || 0
+    : args.amountFrom === 'eventAtk' ? (ctx.event && ctx.event.atk) || 0
+      : args.amount || 0;
+  if (args.perControlled) amount *= player(ctx.state, ctx.controllerIndex).field.monsters.filter((m) => m && !m.faceDown && matchesFilter(m, args.perControlled)).length;
   pl.vp += amount;
   log(ctx.state, `${pl.userId} gana ${amount} VP (VP: ${pl.vp}).`);
   // Anillo de Boda: "si tu oponente gana VP, tú también lo harás".
@@ -371,15 +376,18 @@ function allOwnedMonsters(state, controllerIndex) {
   return state.players[controllerIndex].field.monsters.filter(Boolean);
 }
 
-function summonTokenEntry(ctx, tokenDef) {
+// `side: 'opponent'`: the token goes to the rival's field, and they pick its zone (Caballo de Paja:
+// "dale a tu oponente esta carta como un monstruo").
+function summonTokenEntry(ctx, tokenDef, side) {
   const { requestPlacement, freeMonsterSlots } = require('../placement');
-  if (!freeMonsterSlots(ctx.state, ctx.controllerIndex).length) {
+  const ownerIndex = side === 'opponent' ? opponentIndex(ctx.controllerIndex) : ctx.controllerIndex;
+  if (!freeMonsterSlots(ctx.state, ownerIndex).length) {
     log(ctx.state, `No hay espacio para la ficha ${tokenDef.name}.`);
     return;
   }
   requestPlacement(ctx.state, {
     purpose: 'token',
-    controllerIndex: ctx.controllerIndex,
+    controllerIndex: ownerIndex,
     tokenDef,
     sourceInstanceId: ctx.sourceInstanceId,
     prompt: `Elige dónde colocas la ficha ${tokenDef.name}`,
@@ -388,11 +396,11 @@ function summonTokenEntry(ctx, tokenDef) {
 
 function summonTokens(ctx, args) {
   const count = args.count || 1;
-  for (let i = 0; i < count; i++) summonTokenEntry(ctx, args.token);
+  for (let i = 0; i < count; i++) summonTokenEntry(ctx, args.token, args.side);
 }
 
 function summonToken(ctx, args) {
-  summonTokenEntry(ctx, args.token);
+  summonTokenEntry(ctx, args.token, args.side);
 }
 
 // addCardToHandFromDeck / searchDeck / searchFromDeck / recoverCardsToHand / addCardToHandFromGraveyard
@@ -584,9 +592,11 @@ function returnFromGraveyardToDeck(ctx, args, targets) {
 function returnToDeck(ctx, args, targets) {
   // "Selecciona N ... del Cementerio: barájalos al Mazo" (Gato del Destino): the picked cards, never
   // the card itself.
-  if (args.from === 'graveyard') {
+  // Noche Eterna: "desde el Cementerio o Exilio" (`from` a list of zones).
+  const zones = [].concat(args.from || []);
+  if (zones.length && zones.every((z) => z === 'graveyard' || z === 'banished')) {
     const pl = player(ctx.state, ctx.controllerIndex);
-    const picked = (targets || []).filter((id) => pl.graveyard.includes(id));
+    const picked = (targets || []).filter((id) => zones.some((z) => pl[z].includes(id)));
     picked.forEach((id) => moveToZone(ctx.state, id, 'deck', undefined, { deckPosition: 'shuffle' }));
     if (picked.length) log(ctx.state, `${pl.userId} baraja en el Mazo ${picked.map((id) => sourceName(ctx.state, id)).join(', ')}.`);
     ctx.previousSucceeded = picked.length === (args.count || 1);
@@ -756,8 +766,74 @@ function chooseEffect() {
   // "uno de estos efectos": handled by effect.choice (targets.js / effectEngine.resolveActions)
 }
 
-function opponentChoosesEffect() {
-  // same as chooseEffect — kept so an authored effect naming it doesn't hit the fallback
+// Beholder: "tu oponente elige uno de estos efectos" — each alternative is something the rival does
+// to their own cards: sacrifice a monster, exile a card from their Cementerio, discard. They pick
+// which (only among the ones they can actually do), then which card.
+const PENALTY_POOLS = {
+  sacrifice: (pl) => pl.field.monsters.filter(Boolean).map((m) => m.instanceId),
+  exileFromGraveyard: (pl) => [...pl.graveyard],
+  discard: (pl) => [...pl.hand],
+};
+const PENALTY_PROMPTS = {
+  sacrifice: 'Elige el monstruo que sacrificas',
+  exileFromGraveyard: 'Elige la carta de tu Cementerio que exilias',
+  discard: 'Elige qué carta descartas',
+};
+
+function opponentChoosesEffect(ctx, args) {
+  const rival = opponentIndex(ctx.controllerIndex);
+  const pl = player(ctx.state, rival);
+  const labels = require('../targets').choiceLabels(ctx, { actions: args.options || [] });
+  const options = (args.options || []).map((o, i) => ({ ...o, label: labels[i] }))
+    .filter((o) => PENALTY_POOLS[o.fn] && PENALTY_POOLS[o.fn](pl).length);
+  if (!options.length) {
+    log(ctx.state, `${pl.userId} no puede aplicar ninguno de los efectos.`);
+    return;
+  }
+  if (options.length === 1) {
+    applyPenalty(ctx.state, rival, options[0]);
+    return;
+  }
+  ctx.state.pendingTriggerChoices = ctx.state.pendingTriggerChoices || [];
+  ctx.state.pendingTriggerChoices.push({
+    kind: 'penalty',
+    controllerIndex: rival,
+    penalties: options,
+    options: options.map((o, i) => ({ instanceId: `choice:${i}`, name: o.label, image: null })),
+    prompt: `${ctxSource(ctx)}: elige qué efecto aplicas`,
+  });
+}
+
+// The penalty the rival chose: done at once when there's no card to choose between.
+function applyPenalty(state, playerIndex, option) {
+  const count = (option.args && option.args.count) || 1;
+  if (option.fn === 'discard') {
+    requestDiscard(state, playerIndex, count, PENALTY_PROMPTS.discard);
+    return;
+  }
+  const pool = PENALTY_POOLS[option.fn](player(state, playerIndex));
+  if (pool.length <= count) {
+    payPenalty(state, playerIndex, option.fn, pool);
+    return;
+  }
+  const { describeCandidate } = require('../targets');
+  state.pendingTriggerChoices = state.pendingTriggerChoices || [];
+  state.pendingTriggerChoices.push({ kind: 'ownPick', action: option.fn, count, controllerIndex: playerIndex, options: pool.map((id) => describeCandidate(state, id)), prompt: PENALTY_PROMPTS[option.fn] });
+}
+
+function payPenalty(state, playerIndex, action, ids) {
+  const pl = player(state, playerIndex);
+  ids.forEach((id) => {
+    if (action === 'sacrifice') {
+      const name = sourceName(state, id);
+      moveToZone(state, id, 'graveyard');
+      log(state, `${pl.userId} sacrifica a ${name}.`);
+      require('../effectEngine').announceSentToGraveyard(state, id, playerIndex, { from: 'field', reason: 'cost' });
+    } else if (action === 'exileFromGraveyard') {
+      moveToZone(state, id, 'banished');
+      log(state, `${pl.userId} exilia ${sourceName(state, id)} de su Cementerio.`);
+    }
+  });
 }
 
 const registry = {
@@ -835,7 +911,10 @@ function runAction(ctx, step, targets) {
   }
   // "...y si lo haces, X": X only runs when the step before it did its job.
   if (step.args && step.args.conditionalOn && ctx.previousSucceeded === false) return;
+  // "Destruye ..., y si lo haces, X" (Héroe Fénix, Héroe de la Esperanza): the destroy before it
+  // destroyed something.
+  if (step.args && step.args.ifPreviousSucceeded && !(ctx.destroyedCount > 0)) return;
   impl(ctx, step.args || {}, targets);
 }
 
-module.exports = { runAction, registry, checkWin, requestDiscard, relocateSelfFromChoice, equipsOn, columnMonsters, allFieldMonsters, fieldEntry, graveyardMonstersToReturn };
+module.exports = { applyPenalty, payPenalty, PENALTY_POOLS, runAction, registry, checkWin, requestDiscard, relocateSelfFromChoice, equipsOn, columnMonsters, allFieldMonsters, fieldEntry, graveyardMonstersToReturn };

@@ -107,6 +107,7 @@ function summonZonePool(ctx, zones, args) {
     if (!['monster', 'fusion'].includes(card.category)) return false;
     if (excludedName && card.name === excludedName) return false;
     if (!require('./cardIndex').maySummon(card, ctx.sourceInstanceId)) return false;
+    if (!require('./summon').summonRequirementsMet(ctx.state, ctx.controllerIndex, id, card)) return false;
     return matchesCardFilter(card, filter);
   });
 }
@@ -126,9 +127,12 @@ function stepPool(ctx, step) {
     case 'takeControl':
       return ids(selectRows(ctx, { ...args, side: 'opponent', zone: 'monster', target: 'selected' }));
     // Gato del Destino: "selecciona 3 Licántropo del Cementerio: barájalos al Mazo".
-    case 'returnToDeck':
-      if (args.from !== 'graveyard') return null;
-      return player(ctx.state, ctx.controllerIndex).graveyard.filter((id) => id !== ctx.sourceInstanceId && matchesCardFilter(cardOf(id), args.filter || {}));
+    case 'returnToDeck': {
+      const zones = [].concat(args.from || []);
+      if (!zones.length || !zones.every((z) => z === 'graveyard' || z === 'banished')) return null;
+      const pl = player(ctx.state, ctx.controllerIndex);
+      return zones.flatMap((z) => pl[z]).filter((id) => id !== ctx.sourceInstanceId && matchesCardFilter(cardOf(id), args.filter || {}));
+    }
     case 'returnFromGraveyardToDeck':
       return require('./effects/actions').graveyardMonstersToReturn(ctx.state, ctx.controllerIndex, ctx.sourceInstanceId);
     case 'sendFromDeckToGY': {
@@ -141,7 +145,8 @@ function stepPool(ctx, step) {
     case 'summonFromHand':
       return summonZonePool(ctx, ['hand'], args);
     case 'specialSummonFromGY':
-      return args.player === 'opponent' ? null : summonZonePool(ctx, ['graveyard'], args);
+      // "Invoca especial esta carta del Cementerio" (Héroe Fénix): nothing to pick.
+      return args.player === 'opponent' || args.target === 'self' ? null : summonZonePool(ctx, ['graveyard'], args);
     case 'summonFromZones':
       return summonZonePool(ctx, args.zones || ['graveyard'], args);
     case 'summon':
@@ -374,4 +379,4 @@ function hasNoLegalTarget(ctx, effect) {
 }
 const TARGET_REQUIRED = new Set(['negateEffect', 'negateEffects', 'target', 'changeBeed', 'equipMonster', 'equipMonsterToSelf', 'destroyAndCopyEffect', 'destroyAndGainVP']);
 
-module.exports = { stepPool, stepCount, assignPicks, activeSteps, chosenIndex, pendingEffectChoice, pendingOptionalChoice, declined, isToken, isUpTo, hasNoLegalTarget, canAffect, selectRows, fieldRows, describeCandidate, getEffect };
+module.exports = { choiceLabels, stepPool, stepCount, assignPicks, activeSteps, chosenIndex, pendingEffectChoice, pendingOptionalChoice, declined, isToken, isUpTo, hasNoLegalTarget, canAffect, selectRows, fieldRows, describeCandidate, getEffect };
