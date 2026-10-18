@@ -621,3 +621,21 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 ```text
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a suspicious old wooden crate bound with rusty chains and padlocks, a small demon of darkness hiding inside, its glowing purple eyes and claws peeking through the gaps between the planks; the lid bursts open and a swirling dark purple vortex sucks a startled monster back into it. It is a crate, not a treasure chest and not a mimic with a tongue. Setting: the cluttered, dimly lit storeroom of a dungeon, with barrels, sacks and cobwebs, purple shadows.
 ```
+
+## 196 · Grifo
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a majestic griffin with the head, wings and front talons of a golden eagle and the body of a powerful lion, wings spread wide, screeching as it lands on a rocky crag. Setting: high windswept mountain peaks above the clouds at sunrise, an eyrie with scattered feathers.
+```
+
+## 197 · Hipogrifo
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a proud hippogriff with the head, wings and front legs of a white eagle and the hindquarters of a dappled grey horse, rearing up with its wings half open. Setting: a green highland meadow by a waterfall, a distant castle, soft morning light.
+```
+
+## 198 · Mantícora
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a fearsome manticore with a lion's body and mane, a snarling face with rows of sharp teeth, bat-like wings and a scorpion tail bristling with poisoned spikes, ready to strike. Setting: a desolate desert canyon at dusk, bones scattered on the red rocks, a hellish orange sky.
+```
