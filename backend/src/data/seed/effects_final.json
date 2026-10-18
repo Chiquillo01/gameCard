@@ -6134,7 +6134,17 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "canBeSummonedFrom",
+        "args": {
+          "zones": [
+            "hand",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6157,7 +6167,17 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "canBeSummonedFrom",
+        "args": {
+          "zones": [
+            "hand",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6180,7 +6200,17 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "canBeSummonedFrom",
+        "args": {
+          "zones": [
+            "hand",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6203,7 +6233,17 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "canBeSummonedFrom",
+        "args": {
+          "zones": [
+            "hand",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",

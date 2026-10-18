@@ -258,3 +258,18 @@ describe('The four big dragons: "puedes activar el siguiente efecto"', () => {
     expect(hand()).toBe(before);
   });
 });
+
+describe('The four big dragons: "desde la Mano o Cementerio"', () => {
+  it('Oscuro can be special summoned from the Cementerio by discarding 2 Dragones', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const oscuro = await toGraveyard(state, 0, 'Oscuro, el Dragón de Oscuridad');
+    const payers = [await toHand(state, 0, 'Dragón de Fuego Bebe'), await toHand(state, 0, 'Dragón de Tierra Bebe')];
+    expect(viewFor(state, 0).players[0].graveyard.find((c) => c.instanceId === oscuro)).toMatchObject({ specialSummonAvailable: true });
+    let res = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: oscuro });
+    if (res.reason === 'choose-target') res = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: oscuro, targets: payers });
+    expect(res.ok).toBe(true);
+    expect(monster(state, oscuro)).toBeDefined();
+    payers.forEach((id) => expect(state.players[0].graveyard).toContain(id));
+  });
+});
