@@ -21,7 +21,7 @@ const answer = (state, picks = []) => {
   while (guard++ < 15) {
     const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
     if (!pending) return;
-    if (pending.kind === 'slot') { placePending(state); sent = []; continue; }
+    if (pending.kind === 'slot') { applyAction(state, pending.controllerIndex, { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] }); sent = []; continue; }
     const p = pending.controllerIndex;
     const view = viewFor(state, p).pendingTriggerChoice;
     const next = picks.find((id) => view.options.some((o) => o.instanceId === id) && !sent.includes(id)) || view.options[0].instanceId;
@@ -167,5 +167,44 @@ describe('Hoguera', () => {
     expect(state.players[0].banished).toContain(hoguera);
     expect(state.players[0].graveyard).not.toContain(f1);
     expect(state.players[0].hand.length).toBe(hand + 1);
+  });
+});
+
+describe('Special summons: the player picks attack or defense', () => {
+  it('by its own method (Vampiro): asked before anything else, and it can land in face-up defense', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const vampiro = await toHand(state, 0, 'Vampiro');
+    await toGraveyard(state, 0, 'Murciélago');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiro }).ok).toBe(true);
+    const ask = viewFor(state, 0).pendingTriggerChoice;
+    expect(ask.options.map((o) => o.instanceId)).toEqual(['position:attack', 'position:defense']);
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: await toHand(state, 0, 'Slime'), position: 'attack' }).ok).toBe(false);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: ['position:defense'] }).ok).toBe(true);
+    expect(monster(state, vampiro)).toMatchObject({ position: 'defense', faceDown: false });
+  });
+
+  it('by an effect (Planetar\'s Hada from the Cementerio) the player picks too', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const valkiria = await toGraveyard(state, 0, 'Valkiria');
+    const planetar = await toHand(state, 0, 'Planetar');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: planetar, position: 'attack' }).ok).toBe(true);
+    answer(state, ['choice:0', 'position:defense']);
+    expect(monster(state, valkiria)).toMatchObject({ position: 'defense' });
+  });
+
+  it('unless the card says the position (Orco Jefe: "en posición de ataque")', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const jefe = await onField(state, 0, 'Orco Jefe');
+    const grokkar = await toDeckTop(state, 0, 'Goblin Guardián');
+    let res = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ORCO_JEFE_SUMMON_GROKKAR', sourceInstanceId: jefe });
+    if (res.reason === 'choose-target') res = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ORCO_JEFE_SUMMON_GROKKAR', sourceInstanceId: jefe, targets: [grokkar] });
+    expect(res.ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    expect(monster(state, grokkar)).toMatchObject({ position: 'attack' });
+    expect((state.pendingTriggerChoices || []).some((p) => p.kind === 'position')).toBe(false);
   });
 });

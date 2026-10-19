@@ -26,6 +26,13 @@ function runBotTurn(state, botIndex) {
     const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
     if (pending) {
       if (pending.controllerIndex !== botIndex) return; // the human's pick
+      // A special summon's position: defense when its Vida is higher than its Atk.
+      if (pending.kind === 'position') {
+        const m = state.players[botIndex].field.monsters.find((e) => e && e.instanceId === pending.instanceId);
+        const stats = m ? require('./effectEngine').getEffectiveStats(m) : { atk: 1, def: 0 };
+        applyAction(state, botIndex, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [stats.def > stats.atk ? 'position:defense' : 'position:attack'] });
+        continue;
+      }
       const choice = chooseAction(state, botIndex, banned);
       if (!(choice && act(choice)) && !answerFirst(state, pending)) return;
       continue;

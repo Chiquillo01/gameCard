@@ -114,6 +114,7 @@ function destroy(ctx, args, targets) {
     if (args.replaceWithToken && slot !== -1 && player(ctx.state, row.ownerIndex).field.monsters[slot] === null) {
       player(ctx.state, row.ownerIndex).field.monsters[slot] = require('../placement').tokenEntry(ctx.state, args.replaceWithToken);
       log(ctx.state, `Aparece una ficha ${args.replaceWithToken.name} en su lugar.`);
+      require('../placement').askPosition(ctx.state, row.ownerIndex, player(ctx.state, row.ownerIndex).field.monsters[slot].instanceId);
     }
   });
 }
@@ -238,7 +239,7 @@ const SEARCH_FNS = ['addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck',
 // Every one of these brings out exactly the cards the player picked (targets.js pools them), then
 // announces the summon like any other — so its "en invocación" effects fire — and marks it as a
 // summon *by an effect*, which "cuando es invocado por el efecto de un Licano" cards react to.
-function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx.controllerIndex } = {}) {
+function summonByEffect(ctx, instanceId, { position = 'attack', positionFixed = false, ownerIndex = ctx.controllerIndex } = {}) {
   const { requestPlacement, freeMonsterSlots } = require('../placement');
   const card = getCard(cardIdFromInstance(instanceId));
   if (!require('../summon').summonRequirementsMet(ctx.state, ownerIndex, instanceId, card)) {
@@ -262,6 +263,7 @@ function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx
     instanceId,
     sourceInstanceId: instanceId,
     position,
+    positionFixed,
     bySourceInstanceId: by,
     prompt: `Elige dónde invocas ${getCard(cardIdFromInstance(instanceId)).name}`,
   });
@@ -284,7 +286,8 @@ function summonPicked(ctx, args, targets) {
   }
   // "Invoca especial esta carta del Cementerio" (Héroe Fénix).
   const picks = args.target === 'self' ? [ctx.sourceInstanceId].filter((id) => player(ctx.state, ctx.controllerIndex).graveyard.includes(id)) : targets || [];
-  ctx.lastSummoned = picks.filter((id) => summonByEffect(ctx, id, { position: args.position || 'attack' }));
+  // "En posición de Defensa/Ataque" when the card says so; otherwise the player picks.
+  ctx.lastSummoned = picks.filter((id) => summonByEffect(ctx, id, { position: args.position || 'attack', positionFixed: !!args.position }));
 }
 
 // "Envía al Cementerio un [filter] de tu Mazo" (Héroe de Marfil) — the one the player picks.

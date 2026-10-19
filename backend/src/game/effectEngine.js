@@ -414,6 +414,18 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     return { ok: true };
   }
 
+  // Attack or defense for a monster just special summoned (placement.askPosition).
+  if (pending.kind === 'position') {
+    const pick = picks.find((t) => t === 'position:attack' || t === 'position:defense');
+    if (!pick) return chooseTarget({ options: pending.options, prompt: pending.prompt });
+    state.pendingTriggerChoices.shift();
+    require('./placement').setChosenPosition(state, pending, pick);
+    recomputeContinuous(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
+
   // Beholder: the rival picks which penalty, then (kind 'ownPick') which of their cards.
   if (pending.kind === 'penalty') {
     const index = picks.map((t) => (typeof t === 'string' && t.startsWith('choice:') ? Number(t.split(':')[1]) : NaN)).find((i) => pending.penalties[i]);

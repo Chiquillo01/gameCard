@@ -10,7 +10,7 @@ const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { placeMonster, moveToZone } = require('../../game/zones');
-const { passChain } = require('./chainHelpers');
+const { passChain, placePending } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -65,6 +65,7 @@ describe('SPECIAL_SUMMON', () => {
 
     const res = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: avispa });
     expect(res.ok).toBe(true);
+    placePending(state);
     expect(monsterOf(state, 0, avispa)).toBeDefined();
     expect(state.players[0].graveyard).toContain(insect);
     expect(state.players[0].hand).toContain(other);
@@ -171,6 +172,7 @@ describe('SPECIAL_SUMMON', () => {
     expect(ask.options.map((o) => o.instanceId).sort()).toEqual([water1, water2].sort());
 
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth, targets: [water2] })).toMatchObject({ ok: true });
+    placePending(state);
     expect(state.players[0].graveyard).toContain(water2);
     expect(monsterOf(state, 0, water1)).toBeDefined();
     expect(monsterOf(state, 0, aboleth)).toBeDefined();
@@ -230,7 +232,8 @@ describe('SPECIAL_SUMMON', () => {
     state.players[0].hand.push(mutanteId);
     const { fireHandTrigger } = require('../../game/summon');
     fireHandTrigger(state, 'addedToHand', mutanteId, 0);
-    expect(state.pendingTriggerChoices || []).toHaveLength(0);
+    // No zone to ask about — only the position it lands in.
+    expect((state.pendingTriggerChoices || []).map((p) => p.kind)).toEqual(['position']);
     expect(state.players[0].field.monsters[2]).toMatchObject({ instanceId: mutanteId });
   });
 

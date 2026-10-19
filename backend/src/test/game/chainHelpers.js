@@ -21,13 +21,16 @@ function attackAndResolve(state, playerIndex, attackerInstanceId, targetInstance
 }
 
 // Answers every queued "where does it go" choice (a card an effect puts on the field) with the
-// first free zone — for tests that aren't about where it lands.
+// first free zone, and every "attack or defense" of a special summon with attack — for tests that
+// aren't about where or how it lands.
 function placePending(state) {
   let guard = 0;
   while (guard++ < 20) {
     const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
-    if (!pending || pending.kind !== 'slot') return;
-    const res = applyAction(state, pending.controllerIndex, { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] });
+    if (!pending || !['slot', 'position'].includes(pending.kind)) return;
+    const res = pending.kind === 'position'
+      ? applyAction(state, pending.controllerIndex, { type: 'RESOLVE_TRIGGER_CHOICE', targets: ['position:attack'] })
+      : applyAction(state, pending.controllerIndex, { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] });
     if (!res.ok) throw new Error('placePending: unexpected result ' + JSON.stringify(res));
   }
 }

@@ -136,6 +136,7 @@ describe('Costs the data uses', () => {
     toPhase(state, 'main1', 0);
     const perro = await toGraveyard(state, 0, 'Perro Esqueleto');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: perro }).ok).toBe(true);
+    placePending(state);
     const { moveToZone } = require('../../game/zones');
     moveToZone(state, perro, 'graveyard');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: perro })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });

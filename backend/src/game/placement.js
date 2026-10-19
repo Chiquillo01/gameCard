@@ -66,6 +66,37 @@ function tokenEntry(state, tokenDef) {
 
 const nameOf = (instanceId) => getCard(cardIdFromInstance(instanceId)).name;
 
+// Rulebook: a monster special summoned lands in the position its player picks — attack or face-up
+// defense — unless the card says which. Asked right away (before the choices its own "en
+// invocación" effects queue), after any position already being asked.
+function askPosition(state, controllerIndex, instanceId) {
+  const entry = player(state, controllerIndex).field.monsters.find((m) => m && m.instanceId === instanceId);
+  if (!entry) return;
+  const name = entry.isToken ? entry.tokenDef.name : nameOf(instanceId);
+  const image = entry.isToken ? null : getCard(entry.cardId).image;
+  const queue = (state.pendingTriggerChoices = state.pendingTriggerChoices || []);
+  let at = 0;
+  while (queue[at] && queue[at].kind === 'position') at++;
+  queue.splice(at, 0, {
+    kind: 'position',
+    controllerIndex,
+    instanceId,
+    options: [
+      { instanceId: 'position:attack', name: 'Posición de Ataque', image },
+      { instanceId: 'position:defense', name: 'Posición de Defensa', image },
+    ],
+    prompt: `¿En qué posición queda ${name}?`,
+  });
+}
+
+// The player's answer: the monster turns to that position (face-up either way).
+function setChosenPosition(state, pending, pick) {
+  const entry = player(state, pending.controllerIndex).field.monsters.find((m) => m && m.instanceId === pending.instanceId);
+  if (!entry) return;
+  entry.position = pick === 'position:defense' ? 'defense' : 'attack';
+  log(state, `${entry.isToken ? entry.tokenDef.name : nameOf(entry.instanceId)} queda en posición de ${entry.position === 'defense' ? 'Defensa' : 'Ataque'}.`);
+}
+
 // Puts the card in `slot` and does what comes with it.
 function finishPlacement(state, pending, slot) {
   // Avispa de Respaldo: the Compilación it brings out, with its materials, in the zone picked.
@@ -79,6 +110,7 @@ function finishPlacement(state, pending, slot) {
     case 'token': {
       pl.field.monsters[slot] = tokenEntry(state, pending.tokenDef);
       log(state, `${pl.userId} invoca la ficha ${pending.tokenDef.name}.`);
+      askPosition(state, pending.controllerIndex, pl.field.monsters[slot].instanceId);
       return true;
     }
     case 'effectSummon': {
@@ -86,6 +118,7 @@ function finishPlacement(state, pending, slot) {
       const card = getCard(cardIdFromInstance(pending.instanceId));
       log(state, `${pl.userId} invoca a ${card.name} por un efecto.`);
       require('./summon').announceSummon(state, pending.controllerIndex, pending.instanceId, card, false, {
+        positionFixed: !!pending.positionFixed,
         byEffect: true,
         bySourceInstanceId: pending.bySourceInstanceId || null,
         bySourceCardId: pending.bySourceInstanceId ? cardIdFromInstance(pending.bySourceInstanceId) : null,
@@ -131,4 +164,4 @@ function noRoom(state, pending) {
   } else log(state, 'No hay espacio en el Campo.');
 }
 
-module.exports = { tokenEntry, requestPlacement, settlePlacements, finishPlacement, freeMonsterSlots, isPlacement };
+module.exports = { askPosition, setChosenPosition, tokenEntry, requestPlacement, settlePlacements, finishPlacement, freeMonsterSlots, isPlacement };

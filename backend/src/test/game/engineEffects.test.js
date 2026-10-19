@@ -778,6 +778,7 @@ describe('Murciélago, Vampiro and Vampiresa: special summon only', () => {
 
     await toGraveyard(state, 0, 'Murciélago');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiro }).ok).toBe(true);
+    placePending(state);
     expect(state.players[0].vp).toBe(STARTING_VP - 5);
 
     state.players[0].graveyard = [];

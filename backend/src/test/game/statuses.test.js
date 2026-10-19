@@ -76,6 +76,7 @@ async function compiled() {
   ctx.state.players[0].hand = ctx.state.players[0].hand.filter((id) => !mats.includes(id));
   const res = applyAction(ctx.state, 0, { type: 'COMPILE_SUMMON', instanceId: fusionId, materialInstanceIds: mats });
   expect(res.ok).toBe(true);
+  placePending(ctx.state); // attack position
   return { ...ctx, fusionId, mats };
 }
 
@@ -164,11 +165,16 @@ describe('Decompiling', () => {
     expect(first.slots.length).toBeGreaterThan(1);
     expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: 4 }).ok).toBe(true);
     expect(state.players[0].field.monsters[4]).toMatchObject({ instanceId: mats[0] });
+    // Each one comes back in the position its player picks.
+    expect(viewFor(state, 0).pendingTriggerChoice.options.map((o) => o.instanceId)).toEqual(['position:attack', 'position:defense']);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: ['position:defense'] }).ok).toBe(true);
+    expect(state.players[0].field.monsters[4]).toMatchObject({ position: 'defense', faceDown: false });
     // The next one is asked with the zones still free (4 is taken now).
     const second = viewFor(state, 0).pendingTriggerChoice;
     expect(second).toMatchObject({ card: { instanceId: mats[1] } });
     expect(second.slots).not.toContain(4);
     expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: second.slots[0] }).ok).toBe(true);
+    placePending(state);
     expect(viewFor(state, 0).pendingTriggerChoice).toBeNull();
   });
 

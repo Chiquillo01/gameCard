@@ -127,7 +127,10 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
 // "cuando es invocado por el efecto de un Licano" effects. `kind` is 'normal' for a Normal Summon,
 // 'special' for every other way (the default).
 function announceSummon(state, controllerIndex, instanceId, card, faceDown = false, by = {}) {
-  const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown, kind: 'special', ...by };
+  const { positionFixed, ...rest } = by;
+  const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown, kind: 'special', ...rest };
+  // A special summon: its player picks attack or defense, unless the card fixed it.
+  if (event.kind === 'special' && !faceDown && !positionFixed) require('./placement').askPosition(state, controllerIndex, instanceId);
   if (!faceDown) fireTrigger(state, 'onSummon', event);
   fireTrigger(state, 'allySummoned', event);
   if (by.byEffect && !faceDown) {

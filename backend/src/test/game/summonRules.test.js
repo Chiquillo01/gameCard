@@ -227,6 +227,7 @@ describe('Effect values follow the card text', () => {
     placeMonster(state, mutante, 0, { position: 'attack' });
     state.players[0].hand = state.players[0].hand.filter((id) => id !== gigante && id !== mutante);
     expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: fusion, materialInstanceIds: [gigante, mutante] }).ok).toBe(true);
+    placePending(state);
     expect(state.players[0].pixelcoins).toBe(1);
     expect(monsterOf(state, 0, fusion).tempBuff.atk).toBe(0);
 
