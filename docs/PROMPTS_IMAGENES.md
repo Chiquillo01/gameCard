@@ -639,3 +639,10 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 ```text
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a fearsome manticore with a lion's body and mane, a snarling face with rows of sharp teeth, bat-like wings and a scorpion tail bristling with poisoned spikes, ready to strike. Setting: a desolate desert canyon at dusk, bones scattered on the red rocks, a hellish orange sky.
 ```
+# Prompts para cartas que aún no están en la BD
+
+## Otyugh
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: an otyugh, a huge bloated aberration beast with a round, leathery, mottled grey-green body covered in warts and filth, standing on three short, thick elephant-like legs; a gaping mouth split across the whole front of its body, full of jagged yellow teeth and dripping slime; two long muscular tentacles ending in flat leaf-shaped pads covered in sharp spikes, lashing out; a third, thinner tentacle rising from its top with a cluster of three glowing yellow eyes. Setting: a dark, flooded dungeon sewer piled with rotting garbage, bones and broken barrels, green toxic mist rising from the murky water, flies buzzing, a faint torch glow from a distant tunnel.
+```
