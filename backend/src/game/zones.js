@@ -136,6 +136,10 @@ function moveToZone(state, instanceId, toZone, ownerIndexOverride, { deckPositio
     markSentToGraveyard(state, instanceId);
   } else if (toZone === 'banished') pl.banished.push(instanceId);
   else return false;
+  if (leaving && !leaving.isToken) {
+    state.leftField = state.leftField || [];
+    state.leftField.push({ cardId: leaving.cardId, ownerIndex: loc.ownerIndex });
+  }
   if (leaving) {
     // A burning monster that is destroyed stops burning; other statuses stay with the card.
     clearStatus(state, instanceId, BURN);

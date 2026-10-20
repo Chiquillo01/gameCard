@@ -81,6 +81,8 @@ function matchesCardFilter(card, filter = {}) {
   // "Que mencione a X como uno de sus materiales" (Grover, el Goblin): a name in its recipe.
   if (filter.recipeIncludes && !((card.activationCost && card.activationCost.args && card.activationCost.args.materials) || []).some((m) => m.name && sameText(m.name, filter.recipeIncludes))) return false;
   if (filter.category && !categoryMatches(card.category, filter.category)) return false;
+  // "Monstruos \"Bosque Oscuro\"": monsters and Compilaciones alike.
+  if (filter.isMonster && !['monster', 'fusion', 'token'].includes(card.category)) return false;
   if (filter.attribute && ![card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, filter.attribute))) return false;
   // "Un monstruo de Fuego o Lava" (Hoguera).
   if (filter.attributeIn && !filter.attributeIn.some((w) => [card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, w)))) return false;

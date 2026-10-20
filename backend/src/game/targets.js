@@ -137,7 +137,7 @@ function stepPool(ctx, step) {
       return require('./effects/actions').graveyardMonstersToReturn(ctx.state, ctx.controllerIndex, ctx.sourceInstanceId);
     case 'sendFromDeckToGY': {
       const pl = player(ctx.state, ctx.controllerIndex);
-      return pl.deck.filter((id) => matchesCardFilter(cardOf(id), args.filter || { breed: args.breed, family: args.family }));
+      return (args.zones || ['deck']).flatMap((z) => pl[z] || []).filter((id) => matchesCardFilter(cardOf(id), args.filter || { breed: args.breed, family: args.family }));
     }
     case 'summonFromDeck':
     case 'specialSummonFromDeck':

@@ -38,6 +38,7 @@ function attackBlockReason(state, controllerIndex, attacker, targetInstanceId) {
   if (state.turnPlayer !== controllerIndex) return 'not-your-turn';
   // Paseo Temporal: "no puedes atacar este turno".
   if (state.attackBans && state.attackBans[controllerIndex] === state.turnNumber) return 'attacks-disabled';
+  if (attacker.cannotAttack) return 'cannot-attack';
   if (!canStillAttack(state, attacker)) return 'already-attacked';
   // Relicario de Engranaje: "pueden atacar este turno en Posición de Defensa boca arriba".
   const canAttackFromDefense = attacker.position === 'defense' && !attacker.faceDown && hasAbility(attacker, 'attackInDefense');

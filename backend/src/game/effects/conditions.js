@@ -85,9 +85,15 @@ function controlsAnotherOfFamily(ctx, args) {
   return pl.field.monsters.some((m) => m && m.instanceId !== ctx.sourceInstanceId && !m.faceDown && matchesFilter(m, filter));
 }
 
+// `side: 'any'`: on either side ("si \"Hada del Bosque Oscuro\" está en el Campo").
 function controlsCard(ctx, args) {
-  const pl = player(ctx.state, ctx.controllerIndex);
-  return [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name);
+  const players = args.side === 'any' ? ctx.state.players : [player(ctx.state, ctx.controllerIndex)];
+  return players.some((pl) => [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name));
+}
+
+// Extensor de Vida: "si tu oponente tiene más VP que tú".
+function opponentHasMoreVP(ctx) {
+  return player(ctx.state, opponentIndex(ctx.controllerIndex)).vp > player(ctx.state, ctx.controllerIndex).vp;
 }
 
 // What an effect "includes", in the words Kraken/Rakshasa use ("si se activa un efecto que incluya
@@ -261,6 +267,7 @@ function onFieldSinceLastTurn(ctx) {
 }
 
 const registry = {
+  opponentHasMoreVP,
   ownTurn,
   inOwnPhase,
   onFieldSinceLastTurn,

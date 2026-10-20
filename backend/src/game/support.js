@@ -121,7 +121,16 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   };
   if (cost && cost.fn && !payCost(ctx, cost, targets)) return fail('cannot-pay-cost');
   // Some cards add a cost inside their effect ("destruye un monstruo en tu Campo:").
-  if (!runningEffects.every((effect) => !effect.cost || payCost({ ...ctx, effect }, effect.cost, targets))) return fail('cannot-pay-cost');
+  const paidByEffects = [];
+  const paysAll = runningEffects.every((effect) => {
+    if (!effect.cost) return true;
+    const effectCtx = { ...ctx, effect, paidCards: [] };
+    if (!payCost(effectCtx, effect.cost, targets)) return false;
+    paidByEffects.push(...effectCtx.paidCards);
+    return true;
+  });
+  if (!paysAll) return fail('cannot-pay-cost');
+  ctx.paidCards = [...(ctx.paidCards || []), ...paidByEffects];
 
   // Rulebook: activating ANY Apoyo card places it on the Campo right away — that's the cost of
   // activating it, not the effect — Normal/Veloz/Contraataque included, which is what actually
@@ -162,12 +171,12 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
 function legalEquipTargets(state, controllerIndex, card) {
   const equipEffect = (card.effectCodes || []).map(getEffect).find((e) => e && e.trigger && e.trigger.fn === 'whileEquipped');
   const restriction = (equipEffect && equipEffect.trigger.args) || {};
-  const side = restriction.side === 'opponent' ? opponentIndex(controllerIndex) : controllerIndex;
+  const sides = restriction.side === 'any' ? [controllerIndex, opponentIndex(controllerIndex)] : [restriction.side === 'opponent' ? opponentIndex(controllerIndex) : controllerIndex];
   const filter = { breed: restriction.breed, family: restriction.family, attribute: restriction.attribute };
   const hasFilter = Object.values(filter).some(Boolean);
   const { canAffect } = require('./targets');
   const { getEffectiveStats } = require('./effectEngine');
-  return player(state, side).field.monsters.filter((m) => m && !m.faceDown && (!hasFilter || matchesFilter(m, filter))
+  return sides.flatMap((side) => player(state, side).field.monsters).filter((m) => m && !m.faceDown && (!hasFilter || matchesFilter(m, filter))
     && (restriction.maxAtk == null || getEffectiveStats(m).atk <= restriction.maxAtk)
     && canAffect({ state, controllerIndex, sourceInstanceId: null }, m));
 }

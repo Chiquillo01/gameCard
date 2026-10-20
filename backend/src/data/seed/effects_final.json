@@ -9098,5 +9098,877 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "BUHO_BO_GY_RETURN",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "count": 3,
+          "upTo": true,
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "prompt": "Elige los monstruos \"Bosque Oscuro\" que devuelves al Mazo"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "CUELEBRE_BO_GY_SUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard"
+    },
+    "actions": [
+      {
+        "fn": "summonFromHand",
+        "args": {
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "ignoreCost": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro",
+          "side": "any"
+        }
+      }
+    ],
+    "_id": "CUELEBRE_BO_DRAW",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "NUBERU_BO_GY_SUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard"
+    },
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "exclude": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro",
+          "side": "any"
+        }
+      }
+    ],
+    "_id": "NUBERU_BO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "PANTANO_BO_RECYCLE",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": [
+            "graveyard",
+            "banished"
+          ],
+          "count": 1,
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "required": true,
+          "prompt": "Elige el monstruo \"Bosque Oscuro\" que barajas en el Mazo"
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "conditionalOn": "previousActionSucceeded"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "PETALOS_ROSA_COUNT",
+    "type": "triggered",
+    "trigger": {
+      "fn": "opponentSummoned"
+    },
+    "actions": [
+      {
+        "fn": "addCounter",
+        "args": {
+          "counter": "petal",
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "PETALOS_ROSA_EQUIP",
+    "type": "continuous",
+    "trigger": {
+      "fn": "whileEquipped",
+      "args": {}
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "buff": {
+            "atk": 1
+          },
+          "perCounter": "petal"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "RAIZ_CENTENARIA_COUNT",
+    "type": "triggered",
+    "trigger": {
+      "fn": "opponentSummoned"
+    },
+    "actions": [
+      {
+        "fn": "addCounter",
+        "args": {
+          "counter": "root",
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "RAIZ_CENTENARIA_EQUIP",
+    "type": "continuous",
+    "trigger": {
+      "fn": "whileEquipped",
+      "args": {}
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "buff": {
+            "def": 1
+          },
+          "perCounter": "root"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "ATALAYA_BO_SEARCH",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro",
+          "side": "any"
+        }
+      }
+    ],
+    "_id": "ATALAYA_BO_QUICK_COMPILE",
+    "type": "quick",
+    "actions": [
+      {
+        "fn": "compileFromExtra",
+        "args": {
+          "filter": {
+            "nameContains": "Bosque Oscuro"
+          },
+          "zones": [
+            "field",
+            "hand"
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "BUSGOSU_BO_SEARCH",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "support",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro",
+          "side": "any"
+        }
+      }
+    ],
+    "_id": "BUSGOSU_BO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "ENGRANAJE_MAESTRO_SUMMON",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "hand"
+      }
+    },
+    "actions": [
+      {
+        "fn": "summonFromDeck",
+        "args": {
+          "filter": {
+            "nameContains": "Engranaje"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "GUARDIAN_BO_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "sendFromDeckToGY",
+        "args": {
+          "zones": [
+            "deck",
+            "extra"
+          ],
+          "count": 2,
+          "upTo": true,
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "prompt": "Elige los monstruos \"Bosque Oscuro\" que envías al Cementerio"
+        }
+      },
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1,
+          "perMovedCard": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "GUARDIAN_BO_DESTROY",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "side": "self",
+          "zone": "field",
+          "prompt": "Elige la carta de tu Campo que se destruye"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "EXTENSOR_VIDA_GAIN",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "actions": [
+      {
+        "fn": "gainVP",
+        "args": {
+          "amount": 30
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "opponentHasMoreVP"
+      }
+    ],
+    "_id": "EXTENSOR_VIDA_GY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "gainVP",
+        "args": {
+          "amount": 30
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "RAIZ_ASFIXIANTE_LOCK",
+    "type": "continuous",
+    "trigger": {
+      "fn": "whileEquipped",
+      "args": {
+        "side": "any"
+      }
+    },
+    "actions": [
+      {
+        "fn": "preventAttacks"
+      },
+      {
+        "fn": "negateActivationOfEffects",
+        "args": {
+          "target": "equipped"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "EL_BOSQUE_OSCURO_ON_PLAY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onPlay"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "scope": [
+            "deck",
+            "graveyard"
+          ],
+          "filter": {
+            "category": "monster",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      },
+      {
+        "fn": "discart",
+        "args": {
+          "count": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro",
+          "side": "any"
+        }
+      }
+    ],
+    "_id": "EL_BOSQUE_OSCURO_DESTROY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "zone": "field",
+          "prompt": "Elige la carta que se destruye"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro",
+          "side": "any"
+        }
+      }
+    ],
+    "_id": "EL_BOSQUE_OSCURO_END_PIXEL",
+    "type": "triggered",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "actions": [
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "EL_BOSQUE_OSCURO_BUFF",
+    "type": "continuous",
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "nameContains": "Bosque Oscuro"
+          },
+          "buff": {
+            "atk": 2,
+            "def": 2
+          },
+          "scope": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "HADA_BO_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "nameContains": "Bosque Oscuro"
+          },
+          "buff": {
+            "atk": 2
+          },
+          "scope": "field",
+          "excludeSelf": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "HADA_BO_FAIRY_LEAVES",
+    "type": "triggered",
+    "trigger": {
+      "fn": "monstersLeftField",
+      "args": {
+        "filter": {
+          "breed": "Hada"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "fairyLeaveBonus",
+        "args": {
+          "draw": 1,
+          "pixels": 2,
+          "limitPerTurn": 2
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "HADA_BO_FAIRY_SEARCHED",
+    "type": "triggered",
+    "trigger": {
+      "fn": "addedFromDeckToHand",
+      "args": {
+        "filter": {
+          "category": "monster",
+          "breed": "Hada"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "destroyAndGainVP",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "prompt": "Elige el monstruo que se destruye"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "PODER_PLANTAS_PIXELS",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "family": "Planta"
+      }
+    },
+    "actions": [
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1,
+          "perCostLevel": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "SABIO_BO_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "SABIO_BO_GY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "XANA_BO_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "sendFromDeckToGY",
+        "args": {
+          "count": 1,
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro",
+          "side": "any"
+        }
+      }
+    ],
+    "_id": "XANA_BO_QUICK_FLIP",
+    "type": "quick",
+    "actions": [
+      {
+        "fn": "setFaceDownDefense",
+        "args": {
+          "target": "selected",
+          "filter": {
+            "faceUp": true
+          },
+          "prompt": "Elige el monstruo que pasa a defensa boca abajo"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "OTYUGH_END_WEAKEN",
+    "type": "triggered",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "actions": [
+      {
+        "fn": "weakenAllMonsters",
+        "args": {
+          "amount": 2,
+          "destroyAtZero": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "TARASCA_DESTROY_WEAKER",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "allMonsters",
+          "side": "any",
+          "lessAtkThanSelf": true
+        }
+      },
+      {
+        "fn": "growSelf",
+        "args": {
+          "atk": 2,
+          "perDestroyed": true
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

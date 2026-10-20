@@ -57,10 +57,32 @@ function gainVP(ctx, args) {
   checkWin(ctx.state);
 }
 
+// `perCostLevel`: N per level of the monster the cost took (El poder de las plantas);
+// `perMovedCard`: N per card an earlier step moved (Guardián del Bosque Oscuro).
 function generatePixels(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
-  pl.pixelcoins += args.amount || 0;
-  log(ctx.state, `${pl.userId} genera ${args.amount} pixel(es).`);
+  let amount = args.amount || 0;
+  if (args.perCostLevel) amount *= [...(ctx.costPaid || []), ...(ctx.paidCards || [])].reduce((s, id) => s + (getCard(cardIdFromInstance(id)).level || 0), 0);
+  if (args.perMovedCard) amount *= (ctx.movedCards || []).length;
+  pl.pixelcoins += amount;
+  log(ctx.state, `${pl.userId} genera ${amount} pixel(es).`);
+}
+
+// Otyugh: "Aplica -N de Vida a todos los monstruos en el Campo" — for good; one left at 0 Vida is
+// destroyed.
+function weakenAllMonsters(ctx, args) {
+  const { getEffectiveStats } = require('../effectEngine');
+  const all = allFieldMonsters(ctx.state);
+  all.forEach((m) => addPermanentMod(m, { atk: 0, def: -(args.amount || 0) }, ctxSource(ctx)));
+  log(ctx.state, `Todos los monstruos pierden ${args.amount} de Vida (por ${ctxSource(ctx)}).`);
+  require('../effectEngine').recomputeContinuous(ctx.state);
+  const dead = all.filter((m) => getFieldMonster(ctx.state, m.instanceId) && getEffectiveStats(m).def <= 0).map((m) => m.instanceId);
+  if (args.destroyAtZero && dead.length) require('./fieldActions').destroy(ctx, { target: 'selected' }, dead);
+}
+
+// Raiz Asfixiante: "no puede declarar ataques" (the equipped monster, while it lasts).
+function preventAttacks(ctx, args, targets) {
+  (targets || []).map((id) => getFieldMonster(ctx.state, id)).filter(Boolean).forEach((m) => { m.cannotAttack = true; });
 }
 
 // "Genera N píxel por cada monstruo (que controlas / en el Campo / con un estado)": `scope: 'field'`
@@ -349,7 +371,14 @@ function grantBuff(ctx, args, targets) {
   }
   if (!buffPhaseActive(ctx.state, args.phase)) return;
   const filter = args.filter || { attribute: args.attribute || args.atribute, breed: args.breed, family: args.family, name: args.name };
-  const matched = buffTargets(ctx, args, targets).filter((m) => monsterMatches(m, filter));
+  let matched = buffTargets(ctx, args, targets).filter((m) => monsterMatches(m, filter));
+  if (args.excludeSelf) matched = matched.filter((m) => m.instanceId !== ctx.sourceInstanceId);
+  if (args.perCounter) {
+    const source = ctx.state.players.flatMap((p) => [...p.field.support, ...p.field.monsters]).find((e) => e && e.instanceId === ctx.sourceInstanceId);
+    const n = (source && source.counters && source.counters[args.perCounter]) || 0;
+    buff = { atk: (buff.atk || 0) * n, def: (buff.def || 0) * n };
+    if (!n) return;
+  }
   if (args.duration === 'endOfTurn' || args.duration === 'thisTurn') {
     // Recorded on the state so the buff survives the board recomputes until the turn ends.
     require('./fieldActions').grantTimedBuff(ctx, matched.map((m) => m.instanceId), buff, ctx.state.turnNumber);
@@ -575,11 +604,12 @@ function disableEffects(ctx, args, targets) {
 // Continuous negation of a whole group, for as long as its source stays: Espectro ("los monstruos
 // en el Campo"), Héroe del Caos ("los monstruos boca arriba en el Campo del oponente"), Caballo de
 // Paja ("tus Apoyos").
-function negateActivationOfEffects(ctx, args) {
+function negateActivationOfEffects(ctx, args, targets) {
   const opp = player(ctx.state, opponentIndex(ctx.controllerIndex));
   const mine = player(ctx.state, ctx.controllerIndex);
   let list;
-  if (args.target === 'opponentFaceUpMonsters') list = opp.field.monsters.filter((m) => m && !m.faceDown);
+  if (args.target === 'equipped') list = (targets || []).map((id) => getFieldMonster(ctx.state, id)).filter(Boolean);
+  else if (args.target === 'opponentFaceUpMonsters') list = opp.field.monsters.filter((m) => m && !m.faceDown);
   else if (args.target === 'controller' && args.cardType === 'support') list = mine.field.support.filter(Boolean);
   else list = allFieldMonsters(ctx.state);
   list.forEach((m) => { m.negatedByContinuous = true; });
@@ -948,6 +978,8 @@ const registry = {
   chooseEffect,
   opponentChoosesEffect,
   gainVPFromGraveyard,
+  weakenAllMonsters,
+  preventAttacks,
 };
 
 const fieldActions = require('./fieldActions');

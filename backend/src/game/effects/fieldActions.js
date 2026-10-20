@@ -93,6 +93,12 @@ function destroy(ctx, args, targets) {
     const wantSelf = args.excludeSelf !== false && !all;
     const filter = wantsSupport && args.filter ? { ...args.filter, category: undefined } : args.filter;
     rows = fieldEntries(ctx, side, zone).filter((r) => rowMatches(r, { ...args, filter }) && !(wantSelf && r.entry.instanceId === ctx.sourceInstanceId));
+    if (args.lessAtkThanSelf) {
+      const self = player(ctx.state, ctx.controllerIndex).field.monsters.find((m) => m && m.instanceId === ctx.sourceInstanceId);
+      const { getEffectiveStats } = require('../effectEngine');
+      const mine = self ? getEffectiveStats(self).atk : 0;
+      rows = rows.filter((r) => r.kind === 'monster' && r.entry.instanceId !== ctx.sourceInstanceId && getEffectiveStats(r.entry).atk < mine);
+    }
     // With nothing chosen and no side given, go for the rival's cards first.
     // ("Todos los monstruos" means both sides.)
     if (!all && side === 'any' && rows.some((r) => r.ownerIndex !== ctx.controllerIndex)) rows = rows.filter((r) => r.ownerIndex !== ctx.controllerIndex);
@@ -125,7 +131,10 @@ function growSelf(ctx, args) {
   if (args.ifPreviousSucceeded && !(ctx.destroyedCount > 0)) return;
   const entry = player(ctx.state, ctx.controllerIndex).field.monsters.find((m) => m && m.instanceId === ctx.sourceInstanceId);
   if (!entry) return;
-  const delta = { atk: args.atk || 0, def: args.def || 0 };
+  // "Gana N por cada monstruo destruido por este efecto" (Tarasca).
+  const times = args.perDestroyed ? ctx.destroyedCount || 0 : 1;
+  if (!times) return;
+  const delta = { atk: (args.atk || 0) * times, def: (args.def || 0) * times };
   addPermanentMod(entry, delta, ctxSource(ctx));
   logStatChange(ctx, entry.instanceId, delta);
 }
@@ -211,12 +220,14 @@ function runSearch(ctx, fn, args, targets) {
   const candidates = searchCandidates(ctx.state, ctx.controllerIndex, fn, args);
   const picked = (targets && targets.length ? targets.filter((id) => candidates.includes(id)) : candidates).slice(0, count);
   const moved = [];
+  const movedFrom = {};
   picked.forEach((id) => {
     const zone = zones.find((z) => pl[z].includes(id));
     if (!zone || !matchesCardFilter(getCard(cardIdFromInstance(id)), filter)) return;
     pl[zone] = pl[zone].filter((x) => x !== id);
     pl.hand.push(id);
     moved.push(id);
+    movedFrom[id] = zone;
   });
   log(ctx.state, `${pl.userId} añade ${moved.length} carta(s) a la mano.`);
   // Rulebook, Avispa Mutante: "Si es añadida a tu Mano desde el Mazo o Cementerio, invocarlo
@@ -225,6 +236,8 @@ function runSearch(ctx, fn, args, targets) {
   moved.forEach((id) => fireHandTrigger(ctx.state, 'addedToHand', id, ctx.controllerIndex));
   // Viaje de Unión: "si tu oponente añade cartas de su Mazo a su Mano, roba".
   if (moved.length && zones.includes('deck')) require('../draw').runMirrors(ctx.state, 'search', ctx.controllerIndex, moved.length);
+  const fromDeck = moved.filter((id) => movedFrom[id] === 'deck');
+  if (fromDeck.length) require('../effectEngine').fireTrigger(ctx.state, 'addedFromDeckToHand', { controllerIndex: ctx.controllerIndex, cardIds: fromDeck.map(cardIdFromInstance) });
 }
 
 const addCardToHandFromDeck = (ctx, args, targets) => runSearch(ctx, 'addCardToHandFromDeck', args, targets);
@@ -293,9 +306,10 @@ function summonPicked(ctx, args, targets) {
 // "Envía al Cementerio un [filter] de tu Mazo" (Héroe de Marfil) — the one the player picks.
 function sendFromDeckToGY(ctx, args, targets) {
   (targets || []).forEach((id) => {
+    const from = player(ctx.state, ctx.controllerIndex).extra.includes(id) ? 'extra' : 'deck';
     moveToZone(ctx.state, id, 'graveyard');
-    log(ctx.state, `${getCard(cardIdFromInstance(id)).name} es enviada del Mazo al Cementerio.`);
-    require('../effectEngine').announceSentToGraveyard(ctx.state, id, ctx.controllerIndex, { from: 'deck', reason: 'effect' });
+    log(ctx.state, `${getCard(cardIdFromInstance(id)).name} es enviada del ${from === 'extra' ? 'Mazo-C' : 'Mazo'} al Cementerio.`);
+    require('../effectEngine').announceSentToGraveyard(ctx.state, id, ctx.controllerIndex, { from, reason: 'effect' });
   });
   ctx.movedCards = [...(ctx.movedCards || []), ...(targets || [])];
 }

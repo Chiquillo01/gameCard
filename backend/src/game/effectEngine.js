@@ -28,6 +28,7 @@ function makeCtx(state, controllerIndex, effect, sourceInstanceId) {
 // Oscuro). Graveyard/exile effects of a card are separate, and allowed.
 const ONE_SHOT_SUPPORTS = ['normal', 'instant', 'counter'];
 function isOwnActivation(card, effect) {
+  if (card && card.category === 'support' && effect && effect.trigger && effect.trigger.fn === 'onPlay') return true;
   if (!card || card.category !== 'support' || !ONE_SHOT_SUPPORTS.includes(card.subtype)) return false;
   if (!effect || !effect.trigger || effect.trigger.fn !== 'onActivation') return false;
   const from = effect.trigger.args && effect.trigger.args.from;
@@ -248,6 +249,8 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
     if (args.source === 'self' && m.instanceId !== eventArgs.instanceId) return false;
     if (args.filter && !(eventCard && matchesCardFilter(eventCard, args.filter))) return false;
   }
+  // "Si un/os monstruo Hada dejan el Campo" / "si se añade un monstruo Hada del Deck a la Mano".
+  if ((eventName === 'monstersLeftField' || eventName === 'addedFromDeckToHand') && args.filter && !(eventArgs.cardIds || []).some((id) => matchesCardFilter(getCard(id), args.filter))) return false;
   if (eventName === 'involvedInBattle') {
     if (args.equippedDefends && eventArgs.defenderInstanceId !== m.equippedTo) return false;
     const involved = [eventArgs.attackerInstanceId, eventArgs.defenderInstanceId].filter((id) => id && !(args.excludeSelf && id === m.instanceId));
@@ -314,6 +317,9 @@ function fireTrigger(state, eventName, eventArgs = {}) {
       if (m.faceDown || m.isToken || isNegated(state, m) || hasStatus(state, m.instanceId, FREEZE)) return;
       if (SELF_EVENTS.includes(eventName) && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
       if (eventName === 'allySummoned' && (eventArgs.faceDown || eventArgs.controllerIndex !== controllerIndex || m.instanceId === eventArgs.instanceId)) return;
+      if (eventName === 'opponentSummoned' && eventArgs.controllerIndex === controllerIndex) return;
+      // Hada del Bosque Oscuro: "si se añade un monstruo Hada del Deck a la Mano" (its controller's).
+      if (eventName === 'addedFromDeckToHand' && eventArgs.controllerIndex !== controllerIndex) return;
       const card = getCard(m.cardId);
       const codes = m.offField ? (card.effectCodes || []) : effectCodesOf(m);
       codes.forEach((effectId) => {
@@ -497,7 +503,24 @@ function describeHand(state, playerIndex, exclude = []) {
 // Continuous effects aren't stored as applied deltas — every mutation we recompute them fresh
 // from current field state, which avoids "forgot to remove the buff" bugs entirely. That includes
 // every flag a continuous effect can set, reset here first.
+// Monsters that left the field since the last check (zones.moveToZone queues them), announced
+// together — "si un/os monstruo Hada dejan el Campo" fires once for a batch.
+function flushLeftField(state) {
+  let guard = 0;
+  while (state.leftField && state.leftField.length && !state.flushingLeftField && guard++ < 5) {
+    const cardIds = state.leftField.map((l) => l.cardId);
+    state.leftField = [];
+    state.flushingLeftField = true;
+    try {
+      fireTrigger(state, 'monstersLeftField', { cardIds });
+    } finally {
+      state.flushingLeftField = false;
+    }
+  }
+}
+
 function recomputeContinuous(state) {
+  flushLeftField(state);
   releaseCorrosion(state);
   state.players.forEach((pl) => {
     pl.cantLose = false;
@@ -523,6 +546,7 @@ function recomputeContinuous(state) {
       m.continuousAbilities = [];
       m.forcedAttack = false;
       m.statOverride = null;
+      m.cannotAttack = false;
     });
     [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => { s.negatedByContinuous = false; });
   });

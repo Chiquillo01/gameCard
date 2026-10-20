@@ -133,6 +133,7 @@ function announceSummon(state, controllerIndex, instanceId, card, faceDown = fal
   if (event.kind === 'special' && !faceDown && !positionFixed) require('./placement').askPosition(state, controllerIndex, instanceId);
   if (!faceDown) fireTrigger(state, 'onSummon', event);
   fireTrigger(state, 'allySummoned', event);
+  fireTrigger(state, 'opponentSummoned', event);
   if (by.byEffect && !faceDown) {
     fireTrigger(state, 'summonedByEffect', event);
     fireTrigger(state, 'summonedByCardEffect', event);
