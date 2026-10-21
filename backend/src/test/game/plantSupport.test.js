@@ -62,11 +62,11 @@ describe('Grook, el Árbol Guardián', () => {
   });
 });
 
-describe('Poder de las Plantas', () => {
+describe('Elección de Vida', () => {
   it('the rival can only attack the monster with the most Vida', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 1);
-    const poder = await toHand(state, 1, 'Poder de las Plantas');
+    const poder = await toHand(state, 1, 'Elección de Vida');
     expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: poder }).ok).toBe(true);
     passAll(state);
     const tough = await onField(state, 1, 'Ent');

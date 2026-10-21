@@ -251,6 +251,8 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   }
   // "Si un/os monstruo Hada dejan el Campo" / "si se añade un monstruo Hada del Deck a la Mano".
   if ((eventName === 'monstersLeftField' || eventName === 'addedFromDeckToHand') && args.filter && !(eventArgs.cardIds || []).some((id) => matchesCardFilter(getCard(id), args.filter))) return false;
+  // "Si un/os monstruo Hada que controles dejan el Campo": only the effect's controller's ones.
+  if (eventName === 'monstersLeftField' && args.ownOnly && !(eventArgs.left || []).some((l) => l.ownerIndex === m.controllerIndex && (!args.filter || matchesCardFilter(getCard(l.cardId), args.filter)))) return false;
   if (eventName === 'involvedInBattle') {
     if (args.equippedDefends && eventArgs.defenderInstanceId !== m.equippedTo) return false;
     const involved = [eventArgs.attackerInstanceId, eventArgs.defenderInstanceId].filter((id) => id && !(args.excludeSelf && id === m.instanceId));
@@ -508,11 +510,11 @@ function describeHand(state, playerIndex, exclude = []) {
 function flushLeftField(state) {
   let guard = 0;
   while (state.leftField && state.leftField.length && !state.flushingLeftField && guard++ < 5) {
-    const cardIds = state.leftField.map((l) => l.cardId);
+    const left = state.leftField;
     state.leftField = [];
     state.flushingLeftField = true;
     try {
-      fireTrigger(state, 'monstersLeftField', { cardIds });
+      fireTrigger(state, 'monstersLeftField', { cardIds: left.map((l) => l.cardId), left });
     } finally {
       state.flushingLeftField = false;
     }

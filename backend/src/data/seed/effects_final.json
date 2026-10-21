@@ -9162,8 +9162,7 @@
       {
         "fn": "controlsCard",
         "args": {
-          "name": "Hada del Bosque Oscuro",
-          "side": "any"
+          "name": "Hada del Bosque Oscuro"
         }
       }
     ],
@@ -9208,8 +9207,7 @@
       {
         "fn": "controlsCard",
         "args": {
-          "name": "Hada del Bosque Oscuro",
-          "side": "any"
+          "name": "Hada del Bosque Oscuro"
         }
       }
     ],
@@ -9374,8 +9372,7 @@
       {
         "fn": "controlsCard",
         "args": {
-          "name": "Hada del Bosque Oscuro",
-          "side": "any"
+          "name": "Hada del Bosque Oscuro"
         }
       }
     ],
@@ -9422,8 +9419,7 @@
       {
         "fn": "controlsCard",
         "args": {
-          "name": "Hada del Bosque Oscuro",
-          "side": "any"
+          "name": "Hada del Bosque Oscuro"
         }
       }
     ],
@@ -9633,8 +9629,7 @@
       {
         "fn": "controlsCard",
         "args": {
-          "name": "Hada del Bosque Oscuro",
-          "side": "any"
+          "name": "Hada del Bosque Oscuro"
         }
       }
     ],
@@ -9664,8 +9659,7 @@
       {
         "fn": "controlsCard",
         "args": {
-          "name": "Hada del Bosque Oscuro",
-          "side": "any"
+          "name": "Hada del Bosque Oscuro"
         }
       }
     ],
@@ -9748,7 +9742,8 @@
       "args": {
         "filter": {
           "breed": "Hada"
-        }
+        },
+        "ownOnly": true
       }
     },
     "actions": [
@@ -9900,8 +9895,7 @@
       {
         "fn": "controlsCard",
         "args": {
-          "name": "Hada del Bosque Oscuro",
-          "side": "any"
+          "name": "Hada del Bosque Oscuro"
         }
       }
     ],

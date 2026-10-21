@@ -48,23 +48,29 @@ describe('Hada del Bosque Oscuro and the cards that need her', () => {
     toPhase(state, 'main1', 0);
     const nuberu = await toHand(state, 0, 'Nuberu del Bosque Oscuro');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: nuberu }).ok).toBe(false);
+    await onField(state, 1, 'Hada del Bosque Oscuro'); // the rival's doesn't count
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: nuberu }).ok).toBe(false);
     const hada = await onField(state, 0, 'Hada del Bosque Oscuro');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: nuberu }).ok).toBe(true);
     placePending(state);
     recomputeContinuous(state);
-    expect(atk(state, nuberu)).toBe(3 + 2);
-    expect(atk(state, hada)).toBe(12);
+    expect(atk(state, nuberu)).toBe(3 + 2 + 2); // both Hadas buff every "Bosque Oscuro" on the field
+    expect(atk(state, hada)).toBe(12 + 2);
   });
 
-  it('when an Hada leaves the field: draw 1 and 2 Píxel, twice per turn at most', async () => {
+  it('when an Hada of its controller leaves the field: draw 1 and 2 Píxel, twice per turn at most; rival Hadas do not count', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     await onField(state, 0, 'Hada del Bosque Oscuro');
     const pl = state.players[0];
     const [h, px] = [pl.hand.length, pl.pixelcoins];
+    const theirs = await onField(state, 1, 'Xana del Bosque Oscuro');
+    destroy(state, 0, 1, theirs);
+    recomputeContinuous(state);
+    expect(pl.hand.length).toBe(h);
     for (let i = 0; i < 3; i++) {
-      const xana = await onField(state, 1, 'Xana del Bosque Oscuro'); // an Hada, on either side
-      destroy(state, 0, 1, xana);
+      const xana = await onField(state, 0, 'Xana del Bosque Oscuro'); // an Hada
+      destroy(state, 1, 0, xana);
       recomputeContinuous(state);
     }
     expect(pl.hand.length).toBe(h + 2);
