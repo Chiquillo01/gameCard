@@ -38,9 +38,13 @@ function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
   if (loc.zone === 'field:support' && entry && entry.faceDown && card.subtype !== 'instant' && card.subtype !== 'counter') return [];
   if (loc.zone === 'field:monster' && entry && entry.faceDown) return [];
   const setFast = loc.zone === 'field:support' && entry && entry.faceDown;
+  // Set face-down, only what turning it over runs (its "en activación" effects) — never an effect
+  // meant for the Cementerio/Exilio (Anillo de Boda's second one).
+  const onPlay = setFast ? require('./support').onPlayEffects(card).map((e) => e._id) : null;
   return effectIdsAt(state, instanceId).filter((effectId) => {
     const effect = getEffect(effectId);
     if (!effect || !PLAYER_ACTIVATABLE_TYPES.includes(effect.type)) return false;
+    if (setFast && !onPlay.includes(effectId)) return false;
     // A face-up Apoyo's "en activación" effect went on the Pila with the card (a set Veloz still
     // offers it: that's how it's turned face-up).
     if (!setFast && isOwnActivation(card, effect)) return false;

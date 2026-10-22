@@ -221,6 +221,18 @@ describe('Anillo de Boda from the Cementerio', () => {
     expect(monster(state, theirs[1])).toBeUndefined();
     expect(monster(state, theirs[0])).toBeDefined();
   });
+
+  it('set face-down, only its "en activación" effect is offered; the Cementerio one is refused there', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const anillo = await instance(0, 'Anillo de Boda');
+    placeSupport(state, anillo, 0, { faceDown: true });
+    state.players[0].field.support.find((s) => s && s.instanceId === anillo).setTurn = state.turnNumber - 1;
+    const set = viewFor(state, 0).players[0].field.support.find((s) => s && s.instanceId === anillo);
+    expect(set.availableEffects).toEqual(['ANILLO_BODA_TURNO']);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ANILLO_BODA_CEMENTERIO', sourceInstanceId: anillo })).toMatchObject({ ok: false, reason: 'not-in-graveyard' });
+    expect(state.players[0].field.support.some((s) => s && s.instanceId === anillo && s.faceDown)).toBe(true);
+  });
 });
 
 describe('El Primer Ginete', () => {

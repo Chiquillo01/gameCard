@@ -98,6 +98,12 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
   // and going to the Cementerio afterwards — exactly like activating it from the hand.
   const entry = fieldEntryAt(state, loc);
   if (entry && loc.zone === 'field:support' && entry.faceDown) {
+    // Turning it over runs its "en activación" effects: an effect for another zone (Anillo de Boda's
+    // "exilia esta carta en el Cementerio") can't be used from here.
+    if (!require('./support').onPlayEffects(getCard(cardIdFromInstance(sourceInstanceId))).some((e) => e._id === effectId)) {
+      const zone = requiredZoneFor(effect);
+      return { ok: false, reason: zone && zone !== 'field' ? `not-in-${zone === 'banished' ? 'exile' : zone}` : 'face-down' };
+    }
     return require('./support').activateSetSupport(state, controllerIndex, sourceInstanceId, { targets });
   }
   if (entry && entry.faceDown) return { ok: false, reason: 'face-down' };
