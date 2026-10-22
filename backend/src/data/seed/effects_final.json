@@ -9439,30 +9439,6 @@
   {
     "oncePerTurn": false,
     "conditions": [],
-    "_id": "ENGRANAJE_MAESTRO_SUMMON",
-    "type": "activated",
-    "trigger": {
-      "fn": "onActivation",
-      "args": {
-        "phase": "main",
-        "from": "hand"
-      }
-    },
-    "actions": [
-      {
-        "fn": "summonFromDeck",
-        "args": {
-          "filter": {
-            "nameContains": "Engranaje"
-          }
-        }
-      }
-    ],
-    "source": "authored"
-  },
-  {
-    "oncePerTurn": false,
-    "conditions": [],
     "_id": "GUARDIAN_BO_ONSUMMON",
     "type": "triggered",
     "trigger": {

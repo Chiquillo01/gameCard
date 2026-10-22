@@ -5541,27 +5541,34 @@
     ]
   },
   {
-    "name": "Engranaje maestro",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260179/engranajeMaestroTCG.jpg",
+    "name": "Tarasca, el Titán del Reino",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792527046/290.jpg",
     "attribute": "none",
-    "type": "normal",
+    "family": "Bestia",
     "description": "-",
     "rarity": "epic",
-    "category": "support",
-    "subtype": "normal",
+    "category": "fusion",
     "expansion": "SBE",
-    "effect": "En activación:\n• Invoca especial un monstruo \"Engranaje\" desde tu Mazo.",
-    "invocationText": "Activación - 3 Píxel",
+    "effect": "Una vez por turno: \n• Destruye los monstruos con menos Atk que este monstruo y esta carta gana 2 de Atk permanentemente por cada monstruo destruido por este efecto.",
+    "invocationText": "Compilación - 3 Bestia",
+    "atk": 7,
+    "def": 7,
+    "level": 8,
     "state": 2,
     "number": 272,
     "activationCost": {
-      "fn": "payPixels",
+      "fn": "compileFrom",
       "args": {
-        "amount": 3
+        "materials": [
+          {
+            "family": "Bestia",
+            "count": 3
+          }
+        ]
       }
     },
     "effectCodes": [
-      "ENGRANAJE_MAESTRO_SUMMON"
+      "TARASCA_DESTROY_WEAKER"
     ]
   },
   {
@@ -5991,37 +5998,6 @@
     "number": 289,
     "effectCodes": [
       "OTYUGH_END_WEAKEN"
-    ]
-  },
-  {
-    "name": "Tarasca, el Titán del Reino",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792527046/290.jpg",
-    "attribute": "none",
-    "family": "Bestia",
-    "description": "-",
-    "rarity": "epic",
-    "category": "fusion",
-    "expansion": "SBE",
-    "effect": "Una vez por turno: \n• Destruye los monstruos con menos Atk que este monstruo y esta carta gana 2 de Atk permanentemente por cada monstruo destruido por este efecto.",
-    "invocationText": "Compilación - 3 Bestia",
-    "atk": 7,
-    "def": 7,
-    "level": 8,
-    "state": 2,
-    "number": 290,
-    "activationCost": {
-      "fn": "compileFrom",
-      "args": {
-        "materials": [
-          {
-            "family": "Bestia",
-            "count": 3
-          }
-        ]
-      }
-    },
-    "effectCodes": [
-      "TARASCA_DESTROY_WEAKER"
     ]
   },
   {

@@ -273,19 +273,7 @@ describe('Raiz Asfixiante', () => {
   });
 });
 
-describe('Engranaje maestro / Extensor de Vida / El poder de las plantas', () => {
-  it('Engranaje maestro special summons an "Engranaje" from the Mazo', async () => {
-    const state = await makeDuel();
-    toPhase(state, 'main1', 0);
-    const motor = await toDeckTop(state, 0, 'Motor de Engranaje');
-    const card = await toHand(state, 0, 'Engranaje maestro');
-    state.players[0].pixelcoins = 10;
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [motor] }).ok).toBe(true);
-    passAll(state);
-    answer(state, [motor]);
-    expect(monster(state, motor)).toBeDefined();
-  });
-
+describe('Extensor de Vida / El poder de las plantas', () => {
   it('Extensor de Vida: +30 VP; from the Cementerio, +30 more only while the rival has more VP', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);

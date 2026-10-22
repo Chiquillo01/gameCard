@@ -1,0 +1,55 @@
+{
+  "note": "Cartas retiradas de momento (no se cargan en la BD). Para recuperarlas, vuelve a meter la carta en cards_final.json y sus efectos en effects_final.json.",
+  "cards": [
+    {
+      "name": "Engranaje maestro",
+      "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260179/engranajeMaestroTCG.jpg",
+      "attribute": "none",
+      "type": "normal",
+      "description": "-",
+      "rarity": "epic",
+      "category": "support",
+      "subtype": "normal",
+      "expansion": "SBE",
+      "effect": "En activación:\n• Invoca especial un monstruo \"Engranaje\" desde tu Mazo.",
+      "invocationText": "Activación - 3 Píxel",
+      "state": 2,
+      "number": 272,
+      "activationCost": {
+        "fn": "payPixels",
+        "args": {
+          "amount": 3
+        }
+      },
+      "effectCodes": [
+        "ENGRANAJE_MAESTRO_SUMMON"
+      ]
+    }
+  ],
+  "effects": [
+    {
+      "oncePerTurn": false,
+      "conditions": [],
+      "_id": "ENGRANAJE_MAESTRO_SUMMON",
+      "type": "activated",
+      "trigger": {
+        "fn": "onActivation",
+        "args": {
+          "phase": "main",
+          "from": "hand"
+        }
+      },
+      "actions": [
+        {
+          "fn": "summonFromDeck",
+          "args": {
+            "filter": {
+              "nameContains": "Engranaje"
+            }
+          }
+        }
+      ],
+      "source": "authored"
+    }
+  ]
+}
