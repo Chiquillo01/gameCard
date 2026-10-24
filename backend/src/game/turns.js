@@ -14,6 +14,8 @@ function advancePhase(state) {
 
   const idx = PHASES.indexOf(state.phase);
   if (idx === PHASES.length - 1) {
+    // The Reinos' upkeep is the very last thing of the turn: each player answers, then it ends.
+    if (askTerritoryUpkeep(state)) return { ok: true, upkeep: true };
     endTurn(state);
     return { ok: true, newTurn: true };
   }
@@ -66,7 +68,6 @@ function runPhaseEntry(state) {
   if (state.phase === 'end') {
     fireTrigger(state, 'phase', { timing: 'endPhase' });
     returnExiled(state);
-    payTerritoryUpkeep(state);
     applyBurnDamage(state);
     // Book contradicts itself on the exact number and destination (7-to-exile vs 8-to-graveyard
     // in different sections) — using the more detailed rule: discard to MAX_HAND_SIZE, to the
@@ -117,19 +118,42 @@ function bringBack(state, due) {
 }
 
 // Rulebook: "Si existen dos Territorios en juego ambos jugadores tendrán que pagar 1 pixel al
-// final de cada turno para mantener activo su Territorio." — only kicks in once BOTH players
-// have one active; checked at the end of every turn (not just once per round). The book doesn't
-// say what happens if a player can't pay, so this just floors at 0 rather than destroying the
-// Territorio — the safer assumption until confirmed otherwise.
-function payTerritoryUpkeep(state) {
-  const bothHaveTerritory = state.players.every((p) => p.field.territory);
-  if (!bothHaveTerritory) return;
-  state.players.forEach((p) => {
-    const before = p.pixelcoins;
-    p.pixelcoins = Math.max(0, p.pixelcoins - 1);
-    if (p.pixelcoins !== before) log(state, `${p.userId} paga 1 píxel para mantener su Territorio.`);
-    else log(state, `${p.userId} no puede pagar el mantenimiento de su Territorio (0 píxeles).`);
+// final de cada turno para mantener activo su Territorio." It's the last window of the turn (no
+// Pila can be opened in it): each player — the turn player first — chooses to pay 1 píxel and keep
+// their Reino, or to send it to the Cementerio (the only option with no píxel left). The turn ends
+// once both have answered (effectEngine.resolveTriggerChoice → resolveTerritoryUpkeep).
+function askTerritoryUpkeep(state) {
+  if (state.upkeepTurn === state.turnNumber) return false;
+  if (!state.players.every((p) => p.field.territory)) return false;
+  state.upkeepTurn = state.turnNumber;
+  state.pendingTriggerChoices = state.pendingTriggerChoices || [];
+  [state.turnPlayer, opponentIndex(state.turnPlayer)].forEach((i) => {
+    const p = player(state, i);
+    const card = getCard(p.field.territory.cardId);
+    const options = [];
+    if (p.pixelcoins >= 1) options.push({ instanceId: 'upkeep:pay', name: `Mantener ${card.name} (pagar 1 Píxel)`, image: card.image });
+    options.push({ instanceId: 'upkeep:drop', name: `Enviar ${card.name} al Cementerio`, image: null });
+    state.pendingTriggerChoices.push({ kind: 'upkeep', controllerIndex: i, options, prompt: `Mantenimiento de los Reinos: ¿pagas 1 Píxel para mantener ${card.name}?` });
   });
+  log(state, 'Hay dos Reinos en juego: cada jugador decide si paga 1 píxel para mantener el suyo.');
+  return true;
+}
+
+// One player's answer; with nobody left to answer, the turn ends.
+function resolveTerritoryUpkeep(state, pending, pick) {
+  const p = player(state, pending.controllerIndex);
+  const territory = p.field.territory;
+  if (territory && pick === 'upkeep:pay' && p.pixelcoins >= 1) {
+    p.pixelcoins -= 1;
+    log(state, `${p.userId} paga 1 píxel para mantener ${getCard(territory.cardId).name}.`);
+  } else if (territory) {
+    moveToZone(state, territory.instanceId, 'graveyard');
+    log(state, `${p.userId} no mantiene ${getCard(territory.cardId).name}: va al Cementerio.`);
+    require('./effectEngine').announceSentToGraveyard(state, territory.instanceId, pending.controllerIndex, { from: 'field', reason: 'effect' });
+    // With one Reino gone there are no longer two in play: the other player pays nothing.
+    state.pendingTriggerChoices = (state.pendingTriggerChoices || []).filter((q) => q.kind !== 'upkeep');
+  }
+  if (!(state.pendingTriggerChoices || []).some((q) => q.kind === 'upkeep') && state.status === 'active') endTurn(state);
 }
 
 // Rulebook, Quemadura: at the end of every turn each player loses 5 VP per burning monster they control.
@@ -166,4 +190,4 @@ function endTurn(state) {
   runPhaseEntry(state);
 }
 
-module.exports = { advancePhase, endTurn, runPhaseEntry };
+module.exports = { advancePhase, endTurn, runPhaseEntry, resolveTerritoryUpkeep };

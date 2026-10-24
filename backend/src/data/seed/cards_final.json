@@ -785,15 +785,14 @@
     "rarity": "common",
     "category": "monster",
     "expansion": "CdG",
-    "effect": "Una vez por turno:\n• Cambia la posición de batalla a 1 monstruo de tu oponente.\nSi es usado como un material de un monstruo Compilación:\n• Aplica el efecto de QUEMADURA en 1 monstruo oponente.",
-    "atk": 2,
-    "def": 3,
+    "effect": "Una vez por turno:\n• Cambia la posición de batalla a 1 monstruo de tu oponente.",
+    "atk": 3,
+    "def": 2,
     "level": 2,
     "state": 4,
     "number": 33,
     "effectCodes": [
-      "GOBLIN_ARDIENTE_SWITCH",
-      "GOBLIN_ARDIENTE_MATERIAL_BURN"
+      "GOBLIN_ARDIENTE_SWITCH"
     ]
   },
   {
@@ -1444,14 +1443,14 @@
     "category": "support",
     "subtype": "equipment",
     "expansion": "CdG",
-    "effect": "El monstruo equipado con esta carta gana +1 Atk por cada monstruo que haya en el Campo.",
-    "invocationText": "Activación - 1 Píxel",
+    "effect": "El monstruo equipado con esta carta gana +1 Atk por cada monstruo de tu oponente.",
+    "invocationText": "Activación - 2 Píxel",
     "state": 3,
     "number": 59,
     "activationCost": {
       "fn": "payPixels",
       "args": {
-        "amount": 1
+        "amount": 2
       }
     },
     "effectCodes": [
@@ -3340,14 +3339,15 @@
     "category": "monster",
     "expansion": "IdL",
     "effect": "Una vez por turno:\n• Recupera VP iguales al Atk de un monstruo de Hada en tu Cementerio.",
-    "invocationText": "Si controaslas 1 \"Sátiro\" se puede invocar especial.",
+    "invocationText": "Si controlas 1 \"Sátiro\" se puede invocar especial.",
     "atk": 3,
     "def": 1,
     "level": 3,
     "state": 4,
     "number": 173,
     "effectCodes": [
-      "SATIRO_VENGADOR_VP"
+      "SATIRO_VENGADOR_VP",
+      "SATIRO_VENGADOR_SPECIAL_SUMMON"
     ]
   },
   {
@@ -3532,7 +3532,7 @@
     "rarity": "epic",
     "category": "monster",
     "expansion": "IdL",
-    "effect": "Una vez por turno, selecciona un monstruo en el Campo:\n• Convierte al objetivo en un Hada.\nSi es usado como material para una Compilación Hada:\n• Roba 1 carta.",
+    "effect": "Una vez por turno, selecciona un monstruo en el Campo:\n• Convierte al objetivo en Celestial.\nSi es usado como material para una Compilación Hada:\n• Roba 1 carta.",
     "invocationText": "Si controlas 1 Hada se puede invocar especial.",
     "atk": 5,
     "def": 3,
@@ -5220,14 +5220,19 @@
     "rarity": "rare",
     "category": "monster",
     "expansion": "PAO",
-    "effect": "Cada vez que esta carta batalla con un monstruo con más Atk que ella: \n• Crea un token de Cabeza de Hidra (Bestia / Reptil / Nivel 2 / ATK 0 / DEF 0 )\nEsta carta puede realizar ataques extra hasta la cantidad de tokens en el Campo.\nNo recibes daño de batallas que involucren a esta carta.",
+    "effect": "Cada vez que esta carta batalla con un monstruo con más Atk que ella: \n• Crea un token de Cabeza de Hidra (Bestia / Reptil / Nivel 2 / Atk 0 / Vida 0)\nEsta carta puede realizar ataques extra hasta la cantidad de tokens en el Campo.\nNo recibes daño de batallas que involucren a esta carta.",
     "invocationText": "Si tienes 5 monstruos Agua en Campo o Cementerio se puede invocar especial.",
     "atk": 0,
     "def": 0,
     "level": 6,
     "state": 3,
     "number": 251,
-    "effectCodes": []
+    "effectCodes": [
+      "HIDRA_HEAD_TOKEN",
+      "HIDRA_EXTRA_ATTACKS",
+      "HIDRA_NO_BATTLE_DAMAGE",
+      "HIDRA_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Pecera de Cristal",
@@ -5549,7 +5554,7 @@
     "rarity": "epic",
     "category": "fusion",
     "expansion": "SBE",
-    "effect": "Una vez por turno: \n• Destruye los monstruos con menos Atk que este monstruo y esta carta gana 2 de Atk permanentemente por cada monstruo destruido por este efecto.",
+    "effect": "Una vez por turno: \n• Destruye los monstruos con menos Atk que este monstruo y esta carta gana 2 de Atk por cada monstruo destruido por este efecto.",
     "invocationText": "Compilación - 3 Bestia",
     "atk": 7,
     "def": 7,
@@ -5991,8 +5996,8 @@
     "category": "monster",
     "expansion": "SBE",
     "effect": "Al final del turno:\n• Aplica -2 de Vida a todos los monstruos en el Campo.\nSi al aplicar este efecto el monstruo queda en 0 o un valor negativo es destruido.",
-    "atk": 3,
-    "def": 2,
+    "atk": 5,
+    "def": 3,
     "level": 3,
     "state": 3,
     "number": 289,

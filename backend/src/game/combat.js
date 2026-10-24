@@ -209,6 +209,9 @@ function damageStep(state, link) {
   let damageToDefenderSide = 0;
   let damageToAttackerSide = 0;
   const loseVp = (pl, amount, involved) => {
+    // Hidra: "no recibes daño de batallas que involucren a esta carta".
+    if (attacker.noBattleDamage && pl === attackerPl) return 0;
+    if (defender.noBattleDamage && pl === oppPl) return 0;
     const lost = amount * burnMultiplier(involved);
     pl.vp = Math.max(0, pl.vp - lost);
     return lost;

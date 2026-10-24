@@ -1,7 +1,7 @@
 const { randomUUID } = require('crypto');
 const { Deck } = require('../data/Schema/deck');
 const { User } = require('../data/Schema/user');
-const { createMatch, applyAction, viewFor, coinTossFirstPlayer, runBotTurn, matchStore } = require('../game');
+const { createMatch, applyAction, viewFor, coinTossFirstPlayer, botStep, matchStore } = require('../game');
 const { isDeckPlayable } = require('../game/deckRules');
 const { getIo } = require('../socket/socketServer');
 
@@ -40,17 +40,43 @@ function broadcastState(matchId) {
   });
 }
 
-function maybeRunBot(state) {
-  if (!state.vsBot || state.status !== 'active') return;
+// Whether the bot has something to do: it's genuinely its turn, or the human just activated
+// something and opened a Pila the bot has to respond to (or pass), or a pick of its own is waiting.
+function botIndexToAct(state) {
+  if (!state.vsBot || state.status !== 'active') return -1;
   const botIndex = state.players.findIndex((p) => p.userId === 'BOT');
-  if (botIndex === -1) return;
-  // Either it's genuinely the bot's turn, or the human just activated something during their own
-  // turn and opened a Pila the bot now has to respond to (or pass), or a trigger on the bot's own
-  // card needs a pick — any of which the bot must resolve before anything else can continue.
-  const botHasChainPriority = state.chain.length > 0 && state.priorityPlayer === botIndex;
-  const botHasPendingChoice = state.pendingTriggerChoices && state.pendingTriggerChoices[0] && state.pendingTriggerChoices[0].controllerIndex === botIndex;
-  if (state.turnPlayer !== botIndex && !botHasChainPriority && !botHasPendingChoice) return;
-  runBotTurn(state, botIndex);
+  if (botIndex === -1) return -1;
+  const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
+  if (pending) return pending.controllerIndex === botIndex ? botIndex : -1;
+  if (state.chain.length) return state.priorityPlayer === botIndex ? botIndex : -1;
+  return state.turnPlayer === botIndex ? botIndex : -1;
+}
+
+// The bot plays one move at a time, each broadcast to the player, with a pause in between so its
+// turn can be followed (a longer one after a real move than after just changing phase).
+const BOT_ACTION_MS = 1100;
+const BOT_PHASE_MS = 450;
+const botTimers = new Set();
+function maybeRunBot(state, delay = BOT_ACTION_MS) {
+  if (botIndexToAct(state) === -1 || botTimers.has(state.id)) return;
+  botTimers.add(state.id);
+  const timer = setTimeout(() => {
+    botTimers.delete(state.id);
+    const live = matchStore.get(state.id) || state;
+    const botIndex = botIndexToAct(live);
+    if (botIndex === -1) return;
+    let did = null;
+    try {
+      did = botStep(live, botIndex);
+    } catch (e) {
+      console.error('Bot step failed:', e);
+    }
+    matchStore.save(live);
+    broadcastState(live.id);
+    if (did) maybeRunBot(live, did === 'phase' ? BOT_PHASE_MS : BOT_ACTION_MS);
+  }, delay);
+  // A pending bot move never keeps the process alive on its own (tests, shutdown).
+  if (timer.unref) timer.unref();
 }
 
 const startPve = async (req, res) => {

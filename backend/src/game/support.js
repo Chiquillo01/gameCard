@@ -112,7 +112,15 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   const costTaken = [...costPicks(ctx, cost, targets), ...runningEffects.flatMap((effect) => costPicks({ ...ctx, effect }, effect.cost, targets))];
   const effectTargets = targets.filter((t) => t !== equipTarget);
   const effectChoice = runningEffects.map((effect) => pendingEffectChoice({ ...ctx, effect }, effect, effectTargets, costTaken)).find(Boolean);
-  if (effectChoice) return { ok: false, reason: 'choose-target', ...effectChoice };
+  if (effectChoice) {
+    // Nothing is asked about an activation that couldn't be paid anyway (tried out, then undone).
+    const probe = snapshot(state);
+    const affordable = (!cost || !cost.fn || payCost({ ...ctx, paidCards: [] }, cost, targets))
+      && runningEffects.every((effect) => !effect.cost || payCost({ ...ctx, effect, paidCards: [] }, effect.cost, targets));
+    restore(state, probe);
+    if (!affordable) return { ok: false, reason: 'cannot-pay-cost' };
+    return { ok: false, reason: 'choose-target', ...effectChoice };
+  }
 
   const snap = snapshot(state);
   const fail = (reason) => {

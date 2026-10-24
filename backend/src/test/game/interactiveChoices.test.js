@@ -172,13 +172,16 @@ describe('Search effects offer real choices instead of grabbing whichever card i
     expect(state.players[0].pixelcoins).toBe(6 - cost);
   });
 
-  it('does not ask when there is only one legal match', async () => {
+  it('asks even when there is only one legal match: the player always makes the pick', async () => {
     const { state, inHand } = await makeMatch(['Enjambre de Avispas', 'Kraken'], ['Kraken']);
     const only = (await Card.findOne({ name: 'Avispa gigante' }).lean())._id;
     state.players[0].deck.push(`0:${only}:w0`);
     toMain1(state);
     state.players[0].pixelcoins = 6;
-    const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Enjambre de Avispas') });
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Enjambre de Avispas') });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(ask.options).toHaveLength(1);
+    const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Enjambre de Avispas'), targets: [ask.options[0].instanceId] });
     expect(res.ok).toBe(true);
     passChain(state);
     expect(state.players[0].hand.some((id) => id.startsWith('0:' + only))).toBe(true);

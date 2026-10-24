@@ -6,7 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
-const { passChain } = require('./chainHelpers');
+const { passChain, actPicking } = require('./chainHelpers');
 const { STARTING_PIXELS } = require('../../game/constants');
 
 beforeAll(async () => {
@@ -114,9 +114,34 @@ describe('Territorio upkeep', () => {
     const pB = state.players[1].pixelcoins;
 
     advanceUntil(state, 2, 'end'); // both now have a Territorio active going into this end phase
-
+    // The last window of the turn: each player (the turn player first) keeps theirs or lets it go.
+    expect(applyAction(state, 1, { type: 'ADVANCE_PHASE' }).ok).toBe(true);
+    expect(state.pendingTriggerChoices.map((p) => [p.kind, p.controllerIndex])).toEqual([['upkeep', 1], ['upkeep', 0]]);
+    expect(applyAction(state, 0, { type: 'PASS_CHAIN' }).ok).toBe(false);
+    expect(applyAction(state, 1, { type: 'RESOLVE_TRIGGER_CHOICE', targets: ['upkeep:pay'] }).ok).toBe(true);
+    expect(state.turnNumber).toBe(2); // the other player still has to answer
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: ['upkeep:pay'] }).ok).toBe(true);
     expect(state.players[0].pixelcoins).toBe(pA - 1);
     expect(state.players[1].pixelcoins).toBe(pB - 1);
+    expect(state.turnNumber).toBe(3);
+  });
+
+  it('a player who does not keep their Territorio sends it to the Cementerio, and then the other pays nothing', async () => {
+    const state = await makeMatchWithHands(['Arboleda'], ['Oceano', 'Templo del Dragón'], { amountB: 4 });
+    const oceano = await Card.findOne({ name: 'Oceano' }).lean();
+    const instanceIdA = state.players[0].hand.find((id) => id.startsWith('0:'));
+    const instanceIdB = state.players[1].hand.find((id) => id.split(':')[1] === oceano._id.toString());
+    applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: instanceIdA });
+    advanceUntil(state, 2, 'main1');
+    applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: instanceIdB });
+    const pA = state.players[0].pixelcoins;
+    advanceUntil(state, 2, 'end');
+    applyAction(state, 1, { type: 'ADVANCE_PHASE' });
+    expect(applyAction(state, 1, { type: 'RESOLVE_TRIGGER_CHOICE', targets: ['upkeep:drop'] }).ok).toBe(true);
+    expect(state.players[1].field.territory).toBeNull();
+    expect(state.players[1].graveyard).toContain(instanceIdB);
+    expect(state.players[0].pixelcoins).toBe(pA);
+    expect(state.turnNumber).toBe(3);
   });
 
   it('replaces an existing Territorio (sends the old one to the graveyard) instead of blocking activation', async () => {
@@ -167,7 +192,7 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
 
     // Playing a Normal Apoyo places it on the Campo and opens the response window; once both
     // sides pass, its primary effect resolves and it lands in the graveyard.
-    const activate = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId });
+    const activate = actPicking(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId });
     expect(activate.ok).toBe(true);
     passChain(state);
     expect(state.players[0].graveyard).toContain(instanceId);
@@ -183,7 +208,7 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: instanceId })).toMatchObject({ ok: false, reason: 'no-legal-target' });
     state.players[0].graveyard.push(...wasps);
     const pixels = state.players[0].pixelcoins;
-    const fromGrave = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: instanceId });
+    const fromGrave = actPicking(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: instanceId });
     expect(fromGrave.ok).toBe(true);
     passChain(state);
     // It exiles itself, shuffles the 2 Avispas back into the Mazo and generates 1 pixel.
@@ -199,7 +224,7 @@ describe('Apoyo Normal — segundo efecto desde el cementerio', () => {
     const instanceId = state.players[0].hand.find((id) => id.split(':')[1] === card._id.toString());
     await avispaOnDeckTop(state);
 
-    const activate = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId });
+    const activate = actPicking(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId });
     expect(activate.ok).toBe(true);
     passChain(state);
 

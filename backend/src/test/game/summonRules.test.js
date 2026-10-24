@@ -6,7 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
-const { passChain, placePending } = require('./chainHelpers');
+const { passChain, placePending, actPicking, resolveAll } = require('./chainHelpers');
 const { getCard } = require('../../game/cardIndex');
 const { placeMonster } = require('../../game/zones');
 const { STARTING_VP } = require('../../game/constants');
@@ -47,7 +47,8 @@ async function makeMatch(names) {
 }
 
 function toMain1(state) {
-  while (state.phase !== 'main1') applyAction(state, state.turnPlayer, { type: 'ADVANCE_PHASE' });
+  let guard = 0;
+  while (state.phase !== 'main1' && guard++ < 30) applyAction(state, state.turnPlayer, { type: 'ADVANCE_PHASE' });
 }
 
 describe('Normal Summon and the invocation method', () => {
@@ -244,7 +245,13 @@ describe('Phase-timed effects', () => {
     placeMonster(state, inHand('Bálor'), 0, { position: 'attack' });
     const kraken = state.players[1].hand[0];
     placeMonster(state, kraken, 1, { position: 'attack' });
-    while (state.turnNumber === 1 && state.phase !== 'end') applyAction(state, 0, { type: 'ADVANCE_PHASE' });
+    let guard = 0;
+    while (state.turnNumber === 1 && state.phase !== 'end' && guard++ < 30) {
+      const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
+      // Its standby effect asks which rival monster gets it (the player always picks).
+      if (pending) applyAction(state, pending.controllerIndex, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [kraken] });
+      else applyAction(state, 0, { type: 'ADVANCE_PHASE' });
+    }
     expect(hasStatus(state, kraken, 'Quemadura')).toBe(true);
   });
 
@@ -263,7 +270,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     placeMonster(state, mine, 0, { position: 'attack' });
     const theirs = state.players[1].hand[0];
     placeMonster(state, theirs, 1, { position: 'attack' });
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') }).ok).toBe(true);
+    expect(actPicking(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') }).ok).toBe(true);
     passChain(state);
     expect(onField(state, 0, mine)).toBeUndefined();
     expect(onField(state, 1, theirs)).toBeUndefined();
@@ -289,6 +296,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     });
     const { registry } = require('../../game/effects/actions');
     registry.destroy({ state, controllerIndex: 1, sourceInstanceId: 'x', effect: {} }, { side: 'opponent', zone: 'monster', count: 1 }, []);
+    resolveAll(state);
     expect(state.players[0].graveyard).toContain(ginete);
     expect(state.players[0].hand.filter((id) => /Bebe/.test(getCard(id.split(':')[1]).name)).length).toBe(2);
   });

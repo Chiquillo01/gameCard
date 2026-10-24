@@ -40,6 +40,7 @@ function matchesFilter(monsterEntry, filter = {}) {
   const card = {
     ...base,
     breed: monsterEntry.breedOverride || base.breed,
+    family: monsterEntry.familyOverride || base.family,
     name: (monsterEntry.nameOverride && monsterEntry.nameOverride.name) || base.name,
     level: monsterEntry.nameOverride && monsterEntry.nameOverride.level != null ? monsterEntry.nameOverride.level : base.level,
   };

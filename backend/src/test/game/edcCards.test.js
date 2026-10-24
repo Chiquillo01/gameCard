@@ -6,7 +6,7 @@ const { placeSupport } = require('../../game/zones');
 const { hasStatus } = require('../../game/statuses');
 const { sendToGraveyard } = require('../../game/effects/fieldActions');
 const { seedCatalog, makeDuel, instance, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
-const { placePending } = require('./chainHelpers');
+const { placePending, actPicking } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -122,7 +122,7 @@ describe('Cáliz de Sangre', () => {
     const vampiro = await toDeckTop(state, 0, 'Vampiro');
     const caliz = await toHand(state, 0, 'Cáliz de Sangre');
     state.players[0].vp = 60;
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: caliz }).ok).toBe(true);
+    expect(actPicking(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: caliz }).ok).toBe(true);
     passAll(state);
     resolveChoices(state, (p) => (p.options.find((o) => o.instanceId === vampiro) || {}).instanceId);
     expect(state.players[0].hand).toContain(vampiro);
@@ -170,7 +170,7 @@ describe('Venganza de los Héroes', () => {
     const caballo = await toHand(state, 1, 'Caballo de Paja');
     state.players[1].pixelcoins = 5;
     expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: caballo }).ok).toBe(true);
-    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'VENGANZA_HEROES_COMPILE', sourceInstanceId: venganza }).ok).toBe(true);
+    expect(actPicking(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'VENGANZA_HEROES_COMPILE', sourceInstanceId: venganza }).ok).toBe(true);
     passAll(state);
     resolveChoices(state);
     expect(monster(state, berserker)).toBeDefined();
@@ -204,7 +204,7 @@ describe('Noche Eterna', () => {
     state.players[0].banished.push(vampiro);
     const hand = state.players[0].hand.length;
     const use = () => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'NOCHE_ETERNA_RECYCLE', sourceInstanceId: noche });
-    expect(use().ok).toBe(true);
+    expect(actPicking(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'NOCHE_ETERNA_RECYCLE', sourceInstanceId: noche }).ok).toBe(true);
     passAll(state);
     expect(state.players[0].banished).not.toContain(vampiro);
     expect(state.players[0].hand.length).toBe(hand + 1);

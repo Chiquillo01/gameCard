@@ -260,6 +260,16 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   // "Si un/os monstruo Hada que controles dejan el Campo": only the effect's controller's ones.
   if (eventName === 'monstersLeftField' && args.ownOnly && !(eventArgs.left || []).some((l) => l.ownerIndex === m.controllerIndex && (!args.filter || matchesCardFilter(getCard(l.cardId), args.filter)))) return false;
   if (eventName === 'involvedInBattle') {
+    // Hidra: "cada vez que esta carta batalla con un monstruo con más Atk que ella".
+    if (args.selfInvolved || args.againstStronger) {
+      const ids = [eventArgs.attackerInstanceId, eventArgs.defenderInstanceId];
+      if (!ids.includes(m.instanceId)) return false;
+      if (args.againstStronger) {
+        const self = getFieldMonster(state, m.instanceId);
+        const other = getFieldMonster(state, ids.find((id) => id !== m.instanceId));
+        if (!self || !other || getEffectiveStats(other).atk <= getEffectiveStats(self).atk) return false;
+      }
+    }
     if (args.equippedDefends && eventArgs.defenderInstanceId !== m.equippedTo) return false;
     const involved = [eventArgs.attackerInstanceId, eventArgs.defenderInstanceId].filter((id) => id && !(args.excludeSelf && id === m.instanceId));
     if (!involved.some((id) => { const e = getFieldMonster(state, id); return e && matchesFilter(e, args.filter || {}); })) return false;
@@ -428,6 +438,17 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     return { ok: true };
   }
 
+  // The Reinos' upkeep at the very end of the turn (turns.askTerritoryUpkeep).
+  if (pending.kind === 'upkeep') {
+    const pick = picks.find((t) => pending.options.some((o) => o.instanceId === t));
+    if (!pick) return chooseTarget({ options: pending.options, prompt: pending.prompt });
+    state.pendingTriggerChoices.shift();
+    require('./turns').resolveTerritoryUpkeep(state, pending, pick);
+    recomputeContinuous(state);
+    checkWin(state);
+    return { ok: true };
+  }
+
   // Attack or defense for a monster just special summoned (placement.askPosition).
   if (pending.kind === 'position') {
     const pick = picks.find((t) => t === 'position:attack' || t === 'position:defense');
@@ -555,6 +576,7 @@ function recomputeContinuous(state) {
       m.forcedAttack = false;
       m.statOverride = null;
       m.cannotAttack = false;
+      m.noBattleDamage = false;
     });
     [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => { s.negatedByContinuous = false; });
   });

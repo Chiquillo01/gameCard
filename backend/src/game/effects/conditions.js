@@ -91,6 +91,13 @@ function controlsCard(ctx, args) {
   return players.some((pl) => [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name));
 }
 
+// "Si tienes N monstruos X en Campo o Cementerio" (Hidra): the player's own cards in those zones.
+function countInZones(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const ids = (args.zones || ['field', 'graveyard']).flatMap((z) => (z === 'field' ? pl.field.monsters.filter((m) => m && !m.isToken && !m.faceDown).map((m) => m.instanceId) : pl[z] || []));
+  return ids.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {})).length >= (args.min || 1);
+}
+
 // Extensor de Vida: "si tu oponente tiene más VP que tú".
 function opponentHasMoreVP(ctx) {
   return player(ctx.state, opponentIndex(ctx.controllerIndex)).vp > player(ctx.state, ctx.controllerIndex).vp;
@@ -267,6 +274,7 @@ function onFieldSinceLastTurn(ctx) {
 }
 
 const registry = {
+  countInZones,
   opponentHasMoreVP,
   ownTurn,
   inOwnPhase,

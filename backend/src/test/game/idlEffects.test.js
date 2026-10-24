@@ -18,15 +18,17 @@ afterAll(async () => {
 const answer = (state, picks = []) => {
   let guard = 0;
   let sent = [];
+  let asked = null;
   while (guard++ < 15) {
     const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
     if (!pending) return;
     if (pending.kind === 'slot') { applyAction(state, pending.controllerIndex, { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] }); sent = []; continue; }
     const p = pending.controllerIndex;
-    const view = viewFor(state, p).pendingTriggerChoice;
+    const view = asked || viewFor(state, p).pendingTriggerChoice;
     const next = picks.find((id) => view.options.some((o) => o.instanceId === id) && !sent.includes(id)) || view.options[0].instanceId;
     sent = [...sent, next];
     const res = applyAction(state, p, { type: 'RESOLVE_TRIGGER_CHOICE', targets: sent });
+    asked = res.reason === 'choose-target' ? res : null;
     if (res.reason !== 'choose-target') { sent = []; passAll(state); }
   }
 };

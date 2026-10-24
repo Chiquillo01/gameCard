@@ -6,7 +6,7 @@ const { recomputeContinuous, getEffectiveStats } = require('../../game/effectEng
 const { placeMonster, placeSupport } = require('../../game/zones');
 const { isNegated } = require('../../game/negation');
 const { seedCatalog, makeDuel, instance, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
-const { placePending } = require('./chainHelpers');
+const { placePending, actPicking } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -97,7 +97,7 @@ describe('Des - Compilación', () => {
     toPhase(state, 'main1', 0);
     const card = await toHand(state, 0, 'Des - Compilación');
     state.players[0].pixelcoins = 5;
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card }).ok).toBe(true);
+    expect(actPicking(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card }).ok).toBe(true);
     passAll(state);
     placePending(state);
     expect(monster(state, berserker)).toBeUndefined();

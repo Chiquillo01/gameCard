@@ -5,7 +5,7 @@ const { getEffectiveStats, recomputeContinuous, fireTrigger } = require('../../g
 const { placeSupport, placeMonster } = require('../../game/zones');
 const { sendToGraveyard } = require('../../game/effects/fieldActions');
 const { seedCatalog, makeDuel, instance, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
-const { placePending } = require('./chainHelpers');
+const { placePending, actPicking } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -20,15 +20,17 @@ afterAll(async () => {
 const answer = (state, picks = []) => {
   let guard = 0;
   let sent = [];
+  let asked = null;
   while (guard++ < 20) {
     const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
     if (!pending) return;
     if (pending.kind === 'slot') { applyAction(state, pending.controllerIndex, { type: 'RESOLVE_TRIGGER_CHOICE', slot: pending.slots[0] }); sent = []; continue; }
     const p = pending.controllerIndex;
-    const view = viewFor(state, p).pendingTriggerChoice;
+    const view = asked || viewFor(state, p).pendingTriggerChoice;
     const next = picks.find((id) => view.options.some((o) => o.instanceId === id) && !sent.includes(id)) || view.options[0].instanceId;
     sent = [...sent, next];
     const res = applyAction(state, p, { type: 'RESOLVE_TRIGGER_CHOICE', targets: sent });
+    asked = res.reason === 'choose-target' ? res : null;
     if (res.reason !== 'choose-target') { sent = []; passAll(state); }
   }
 };
@@ -106,7 +108,7 @@ describe('El Bosque Oscuro', () => {
     const bosque = await toHand(state, 0, 'El Bosque Oscuro');
     const filler = await toHand(state, 0, 'Slime');
     state.players[0].pixelcoins = 10;
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: bosque }).ok).toBe(true);
+    expect(actPicking(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: bosque }).ok).toBe(true);
     passAll(state);
     // The search (only the Cuélebre fits), then which card to discard.
     answer(state, [filler]);
@@ -165,7 +167,7 @@ describe('Cuélebre / Nuberu / Xana / Atalaya / Busgosu', () => {
     toPhase(state, 'main1', 0);
     const busgosu = await onField(state, 0, 'Busgosu del Bosque Oscuro');
     const pantano = await toDeckTop(state, 0, 'Pantano del Bosque Oscuro');
-    expect(effect(state, 0, 'BUSGOSU_BO_SEARCH', busgosu).ok).toBe(true);
+    expect(effect(state, 0, 'BUSGOSU_BO_SEARCH', busgosu, [pantano]).ok).toBe(true);
     passAll(state);
     answer(state, [pantano]);
     expect(state.players[0].hand).toContain(pantano);
@@ -180,7 +182,7 @@ describe('Cuélebre / Nuberu / Xana / Atalaya / Busgosu', () => {
     const buho = await instance(0, 'Búho del bosque oscuro');
     state.players[0].extra.push(buho);
     const m = await toHand(state, 0, 'Cuélebre del Bosque Oscuro');
-    expect(effect(state, 0, 'ATALAYA_BO_QUICK_COMPILE', atalaya).ok).toBe(true);
+    expect(effect(state, 0, 'ATALAYA_BO_QUICK_COMPILE', atalaya, [buho]).ok).toBe(true);
     passAll(state);
     answer(state);
     expect(monster(state, buho)).toBeDefined();
@@ -230,7 +232,7 @@ describe('Pantano / Pétalos de Rosa / Raíz Centenaria', () => {
     const xana = await instance(0, 'Xana del Bosque Oscuro');
     state.players[0].banished.push(xana);
     const hand = state.players[0].hand.length;
-    expect(effect(state, 0, 'PANTANO_BO_RECYCLE', pantano).ok).toBe(true);
+    expect(effect(state, 0, 'PANTANO_BO_RECYCLE', pantano, [xana]).ok).toBe(true);
     passAll(state);
     expect(state.players[0].banished).not.toContain(xana);
     expect(state.players[0].hand.length).toBe(hand + 1);
@@ -308,12 +310,16 @@ describe('Otyugh / Tarasca', () => {
   it('Otyugh: at the end of the turn every monster loses 2 Vida for good; one left at 0 is destroyed', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
-    const otyugh = await onField(state, 0, 'Otyugh'); // Vida 2
+    const otyugh = await onField(state, 0, 'Otyugh'); // Vida 3
     const ent = await onField(state, 1, 'Ent'); // Vida 5
     fireTrigger(state, 'phase', { timing: 'endPhase' });
     recomputeContinuous(state);
     expect(def(state, ent)).toBe(3);
-    expect(monster(state, otyugh)).toBeUndefined();
+    expect(def(state, otyugh)).toBe(1);
+    fireTrigger(state, 'phase', { timing: 'endPhase' });
+    recomputeContinuous(state);
+    expect(def(state, ent)).toBe(1);
+    expect(monster(state, otyugh)).toBeUndefined(); // 1 - 2: at 0, destroyed
   });
 
   it('Tarasca destroys every monster with less Atk and gains 2 Atk per one, for good', async () => {

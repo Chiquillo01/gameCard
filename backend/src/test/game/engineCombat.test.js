@@ -7,7 +7,7 @@ const { placeSupport } = require('../../game/zones');
 const { checkWin } = require('../../game/outcome');
 const { seedCatalog, makeDuel, toHand, toDeckTop, onField, toPhase, passAll, monster, instance } = require('./engineHelpers');
 const { STARTING_VP } = require('../../game/constants');
-const { placePending } = require('./chainHelpers');
+const { placePending, resolveAll } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -76,7 +76,7 @@ describe('Battle events', () => {
     toPhase(state, 'battle', 0);
     const second = await toDeckTop(state, 0, 'Matón'); // after the turn's draws
     attack(state, 0, maton, slime);
-    placePending(state);
+    resolveAll(state);
     expect(monster(state, slime)).toBeUndefined();
     expect(monster(state, second)).toBeDefined();
   });
@@ -88,7 +88,7 @@ describe('Battle events', () => {
     toPhase(state, 'battle', 0);
     const next = await toDeckTop(state, 1, 'Gárgola');
     attack(state, 0, orco, gargola);
-    placePending(state);
+    resolveAll(state);
     expect(state.players[1].graveyard).toContain(gargola);
     expect(monster(state, next)).toBeDefined();
   });

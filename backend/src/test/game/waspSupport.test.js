@@ -5,7 +5,7 @@ const { recomputeContinuous } = require('../../game/effectEngine');
 const { placeSupport } = require('../../game/zones');
 const { getCard } = require('../../game/cardIndex');
 const { seedCatalog, makeDuel, instance, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster, idOf } = require('./engineHelpers');
-const { placePending } = require('./chainHelpers');
+const { placePending, resolveAll } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -46,7 +46,7 @@ describe('Avispa Reina', () => {
     const nido = await toGraveyard(state, 0, 'Nido de Avispas');
     const victim = await onField(state, 1, 'Orco Guerrero');
 
-    expect(act(state, 0, 'AVISPA_REINA_NIDO', reina).ok).toBe(true);
+    expect(act(state, 0, 'AVISPA_REINA_NIDO', reina, [nido]).ok).toBe(true);
     passAll(state);
     expect(state.players[0].hand).toContain(nido);
     expect(monster(state, reina).counters.Miel).toBe(5);
@@ -78,7 +78,7 @@ describe('Avispa Arquera', () => {
     const b = await onField(state, 0, 'Avispa Rosa');
     const fromDeck = await toDeckTop(state, 0, 'Avispa Mutante');
     expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: arquera, materials: [a, b], materialInstanceIds: [a, b] }).ok).toBe(true);
-    placePending(state);
+    resolveAll(state);
     expect(state.players[0].graveyard).toContain(fromDeck);
     const inGrave = state.players[0].graveyard.filter((id) => getCard(id.split(':')[1]).name.includes('Avispa')).length;
     expect(atkOf(state, 0, arquera)).toBe((await printedAtk('Avispa Arquera')) + inGrave);
@@ -101,7 +101,7 @@ describe('Avispa de Respaldo', () => {
 
     const arquera = await instance(0, 'Avispa Arquera');
     state.players[0].extra.push(arquera);
-    expect(act(state, 0, 'AVISPA_RESPALDO_COMPILE', respaldo).ok).toBe(true);
+    expect(act(state, 0, 'AVISPA_RESPALDO_COMPILE', respaldo, [arquera]).ok).toBe(true);
     passAll(state);
     placePending(state);
     const compiled = monster(state, arquera);

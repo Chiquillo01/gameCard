@@ -80,6 +80,12 @@ function weakenAllMonsters(ctx, args) {
   if (args.destroyAtZero && dead.length) require('./fieldActions').destroy(ctx, { target: 'selected' }, dead);
 }
 
+// Hidra: "no recibes daño de batallas que involucren a esta carta" (combat.js reads it).
+function noBattleDamage(ctx) {
+  const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
+  if (m) m.noBattleDamage = true;
+}
+
 // Raiz Asfixiante: "no puede declarar ataques" (the equipped monster, while it lasts).
 function preventAttacks(ctx, args, targets) {
   (targets || []).map((id) => getFieldMonster(ctx.state, id)).filter(Boolean).forEach((m) => { m.cannotAttack = true; });
@@ -515,9 +521,11 @@ function grantExtraAttack(ctx, args) {
   if (!m) return;
   const { hasStatus } = require('../statuses');
   const enemies = player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean);
+  // Hidra: "ataques extra hasta la cantidad de tokens en el Campo".
   const amount = args.perMaterial ? (m.materials || []).length
     : args.perEnemyWithStatus ? enemies.filter((e) => hasStatus(ctx.state, e.instanceId, args.perEnemyWithStatus)).length
-      : (args.amount || 1);
+      : args.perTokenOnField ? allFieldMonsters(ctx.state).filter((x) => x.isToken).length
+        : (args.amount || 1);
   if (!amount) return;
   if (isContinuous(ctx)) {
     m.extraAttacksContinuous = (m.extraAttacksContinuous || 0) + amount;
@@ -754,8 +762,9 @@ function changeBeed(ctx, args, targets) {
   list.forEach((id) => {
     const target = getFieldMonster(ctx.state, id);
     if (!target) return;
-    target.breedOverride = args.breed || args.family;
-    log(ctx.state, `${getCard(target.cardId).name} se convierte en ${target.breedOverride}.`);
+    if (args.family) target.familyOverride = args.family;
+    else target.breedOverride = args.breed;
+    log(ctx.state, `${getCard(target.cardId).name} se convierte en ${args.family || args.breed}.`);
   });
 }
 
@@ -980,6 +989,7 @@ const registry = {
   gainVPFromGraveyard,
   weakenAllMonsters,
   preventAttacks,
+  noBattleDamage,
 };
 
 const fieldActions = require('./fieldActions');

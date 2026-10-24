@@ -362,7 +362,9 @@ function pendingEffectChoice(ctx, effect, targets = [], exclude = []) {
         options: [...remaining.map((id) => describeCandidate(ctx.state, id)), { instanceId: `done:${index}`, name: picks.length ? 'Terminar' : 'No elegir ninguna', image: null }],
       };
     }
-    if (pool.length <= count || remaining.length === 0) continue; // nothing to choose between
+    // Rulebook: the player always makes the pick, even with a single candidate (only an empty pool
+    // has nothing to ask).
+    if (remaining.length === 0) continue;
     return {
       prompt: (step.args && step.args.prompt) || STEP_PROMPTS[step.fn] || 'Elige un objetivo',
       options: remaining.map((id) => describeCandidate(ctx.state, id)),

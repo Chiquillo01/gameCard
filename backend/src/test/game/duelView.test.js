@@ -80,7 +80,7 @@ describe('Duel view: why the duel ended', () => {
 });
 
 describe('Espíritu de batalla', () => {
-  it('gives +1 Atk per monster on the whole field', async () => {
+  it('gives +1 Atk per monster of the rival', async () => {
     const state = await makeDuel();
     const orco = await onField(state, 0, 'Orco Guerrero');
     await onField(state, 0, 'Slime');
@@ -90,8 +90,8 @@ describe('Espíritu de batalla', () => {
     espiritu.equippedTo = orco;
     recomputeContinuous(state);
     expect(fieldView(state, 0, orco)).toMatchObject({
-      atk: 3 + 4,
-      statMods: [{ source: 'Espíritu de batalla', atk: 4, def: 0, kind: 'continuous' }],
+      atk: 3 + 2,
+      statMods: [{ source: 'Espíritu de batalla', atk: 2, def: 0, kind: 'continuous' }],
     });
   });
 });

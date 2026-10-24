@@ -563,7 +563,7 @@
       {
         "fn": "changeBeed",
         "args": {
-          "breed": "Hada",
+          "family": "Celestial",
           "target": "selected"
         }
       }
@@ -1329,7 +1329,7 @@
         "fn": "modifyStatsPerMonsterOnField",
         "args": {
           "atk": 1,
-          "scope": "field"
+          "scope": "opponentField"
         }
       }
     ],
@@ -4199,9 +4199,8 @@
         "fn": "gainVP",
         "args": {
           "amount": 1,
-          "perCount": {
-            "breed": "Hada",
-            "scope": "self"
+          "perControlled": {
+            "breed": "Hada"
           }
         }
       }
@@ -7744,26 +7743,6 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
-    "source": "authored",
-    "_id": "GOBLIN_ARDIENTE_MATERIAL_BURN",
-    "type": "triggered",
-    "trigger": {
-      "fn": "usedAsCompileMaterial"
-    },
-    "actions": [
-      {
-        "fn": "applyStatus",
-        "args": {
-          "target": "enemyMonster",
-          "count": 1,
-          "status": "Quemadura"
-        }
-      }
-    ]
-  },
-  {
-    "oncePerTurn": false,
     "conditions": [
       {
         "fn": "faceUp"
@@ -9936,6 +9915,126 @@
         "args": {
           "atk": 2,
           "perDestroyed": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "HIDRA_HEAD_TOKEN",
+    "type": "triggered",
+    "trigger": {
+      "fn": "involvedInBattle",
+      "args": {
+        "againstStronger": true
+      }
+    },
+    "actions": [
+      {
+        "fn": "summonToken",
+        "args": {
+          "token": {
+            "name": "Cabeza de Hidra",
+            "family": "Bestia",
+            "breed": "Reptil",
+            "level": 2,
+            "atk": 0,
+            "def": 0
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "HIDRA_EXTRA_ATTACKS",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantExtraAttack",
+        "args": {
+          "perTokenOnField": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "HIDRA_NO_BATTLE_DAMAGE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "noBattleDamage"
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "countInZones",
+        "args": {
+          "filter": {
+            "attribute": "Agua",
+            "isMonster": true
+          },
+          "zones": [
+            "field",
+            "graveyard"
+          ],
+          "min": 5
+        }
+      }
+    ],
+    "_id": "HIDRA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Sátiro"
+          },
+          "count": 1
+        }
+      }
+    ],
+    "_id": "SATIRO_VENGADOR_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
         }
       }
     ],

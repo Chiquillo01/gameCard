@@ -12,7 +12,7 @@ const { canAffect } = require('../../game/targets');
 const effects = require('../../data/seed/effects_final.json');
 const { seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster, instance, idOf } = require('./engineHelpers');
 const { STARTING_VP } = require('../../game/constants');
-const { placePending } = require('./chainHelpers');
+const { placePending, resolveAll, actPicking } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -136,14 +136,14 @@ describe('Choices and picks', () => {
     expect(state.players[0].pixelcoins).toBe(12); // the other option didn't run
   });
 
-  it('Pegaso turns the monster the player picks into an Hada', async () => {
+  it('Pegaso turns the monster the player picks into a Celestial', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const pegaso = await onField(state, 0, 'Pegaso');
     const slime = await onField(state, 1, 'Slime');
     expect(activate(state, 0, 'PEGASO', pegaso, [slime]).ok).toBe(true);
     passAll(state);
-    expect(matchesFilter(monster(state, slime), { breed: 'Hada' })).toBe(true);
+    expect(matchesFilter(monster(state, slime), { family: 'Celestial' })).toBe(true);
     expect(activate(state, 0, 'PEGASO', pegaso, [slime])).toMatchObject({ ok: false, reason: 'once-per-turn' });
   });
 
@@ -283,7 +283,7 @@ describe('Actions and flags that used to do nothing', () => {
     const beta = await toDeckTop(state, 0, 'Licántropo Beta');
     applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // battle
     applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // end of the Battle Phase
-    placePending(state);
+    resolveAll(state);
     expect(monster(state, cazador)).toBeUndefined();
     expect(state.players[0].deck).toContain(cazador);
     expect(monster(state, beta)).toBeDefined();
@@ -730,7 +730,7 @@ describe('Doppelganger', () => {
     const view = viewFor(state, 0).players[0].field.monsters.find((m) => m && m.instanceId === doppel);
     expect(view.availableEffects).toContain('ENT_SEARCH_PLANTA');
     const espora = await toDeckTop(state, 0, 'Espora Venenosa');
-    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ENT_SEARCH_PLANTA', sourceInstanceId: doppel }).ok).toBe(true);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ENT_SEARCH_PLANTA', sourceInstanceId: doppel, targets: [espora] }).ok).toBe(true);
     passAll(state);
     placePending(state);
     expect(state.players[0].hand).toContain(espora);
@@ -750,7 +750,8 @@ describe('Vampiro: "destruye una carta cuyo Atk actual sea diferente a su Atk or
 
     const boosted = await onField(state, 1, 'Orco Guerrero');
     monster(state, boosted).baseAtk += 2; // its Atk is no longer the printed one
-    expect(act([]).ok).toBe(true); // the only legal one, picked without asking
+    expect(act([])).toMatchObject({ ok: false, reason: 'choose-target', options: [expect.objectContaining({ instanceId: boosted })] }); // the only legal one: still the player's pick
+    expect(act([boosted]).ok).toBe(true);
     passAll(state);
     expect(monster(state, boosted)).toBeUndefined();
     expect(monster(state, hidden)).toBeDefined();
@@ -818,7 +819,7 @@ describe('Guarida del Ser Oscuro', () => {
     const slime = await toDeckTop(state, 0, 'Íncubo'); // Pecador
     const cubo = await toDeckTop(state, 0, 'Rey Demonio'); // a Demonio of Fuego counts too
     expect(viewFor(state, 0).players[0].field.territory.availableEffects).toContain('OSC_DEMON_SEARCH');
-    expect(search().ok).toBe(true);
+    expect(actPicking(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'OSC_DEMON_SEARCH', sourceInstanceId: guarida }).ok).toBe(true);
     passAll(state);
     let guard = 0;
     while (viewFor(state, 0).pendingTriggerChoice && guard++ < 5) {
@@ -859,11 +860,11 @@ describe('Intercanvio del Pequeño', () => {
     const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card });
     expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige la carta que descartas' });
     expect(ask.options.map((o) => o.instanceId).sort()).toEqual([keep, pay].sort());
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [pay] }).ok).toBe(true);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [pay, esqueleto] }).ok).toBe(true);
     expect(state.players[0].graveyard).toContain(pay);
     expect(state.players[0].hand).toContain(keep);
     passAll(state);
-    placePending(state);
+    resolveAll(state);
     expect(monster(state, esqueleto)).toBeDefined();
   });
 });

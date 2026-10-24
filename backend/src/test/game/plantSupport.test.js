@@ -92,7 +92,7 @@ describe('Renovación de Vida', () => {
     const card = await toHand(state, 0, 'Renovación de Vida');
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card })).toMatchObject({ ok: false, reason: 'no-legal-target' });
     const ent = await toHand(state, 0, 'Ent');
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card }).ok).toBe(true);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [ent] }).ok).toBe(true);
     passAll(state);
     placePending(state);
     expect(monster(state, ent)).toBeDefined();
