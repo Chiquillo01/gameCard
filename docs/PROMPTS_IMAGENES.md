@@ -652,3 +652,13 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 ```text
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: an otyugh, a huge bloated aberration beast with a round, leathery, mottled grey-green body covered in warts and filth, standing on three short, thick elephant-like legs; a gaping mouth split across the whole front of its body, full of jagged yellow teeth and dripping slime; two long muscular tentacles ending in flat leaf-shaped pads covered in sharp spikes, lashing out; a third, thinner tentacle rising from its top with a cluster of three glowing yellow eyes. Setting: a dark, flooded dungeon sewer piled with rotting garbage, bones and broken barrels, green toxic mist rising from the murky water, flies buzzing, a faint torch glow from a distant tunnel.
 ```
+
+# Diseño del juego
+
+## Dorso de las cartas
+
+Se usa en las cartas boca abajo, en el Mazo y en la Mano del rival. Va en **vertical 5:7 (480x700)**, que es la proporción con la que se dibujan las cartas en el tablero, no el 423x308 de las ilustraciones.
+
+```text
+Detailed pixel art design of the BACK of a fantasy trading card, same style as the rest of the set: fine retro pixels, rich textures, warm dramatic lighting. Portrait 5:7 (480x700), the design fills the whole image edge to edge. No text, no letters, no numbers, no logo words. Perfectly symmetrical both vertically and horizontally, so it looks the same when the card is turned upside down. Design: a thick ornate border of polished gold filigree with small corner gems, framing a deep midnight-blue and dark purple leather background with a subtle diamond pattern; in the exact centre, a large glowing emblem: a faceted magical crystal shining with cyan light, surrounded by a circular golden ring engraved with arcane symbols, a crossed sword and wand behind it, and tiny pixel sparkles around it; thin golden lines radiate from the emblem towards the four corners. Elegant, mysterious, readable even when shown small.
+```
