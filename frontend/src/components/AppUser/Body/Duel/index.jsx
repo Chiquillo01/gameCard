@@ -10,7 +10,7 @@ import { fetchCards } from '../../../../lib/utils/apiCard';
 import CardFace from '../CreateNewDeck/CardModal/CardFace';
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import { isDeckPlayable } from '../../../../lib/utils/deckRules';
-import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
+import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, WindowBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
 import { ChoiceOptionList } from './ChoiceOptions';
 import CompileModal from './CompileModal';
 import { PIXELCOIN_ICON } from '../../../../lib/utils/storeConstants';
@@ -228,7 +228,7 @@ const DuelPage = () => {
     const isMyTurn = view.turnPlayer === view.you;
     const isMainPhase = view.phase === 'main1' || view.phase === 'main2';
     const chainOpen = !!view.chain;
-    const canRespondToChain = chainOpen && view.chain.priorityPlayer === view.you;
+    const canRespondToChain = (chainOpen && view.chain.priorityPlayer === view.you) || (!!view.window && view.window.priorityPlayer === view.you);
     // Rulebook, Velocidades: an Apoyo Veloz/Contraefecto (Speed 2/3) can be activated from hand in
     // any phase of its controller's own turn, not just Main Phase — and, like any Speed 2+ card,
     // as a response whenever it's this player's priority on an open Pila.
@@ -678,6 +678,7 @@ const DuelPage = () => {
       {/* On wide screens these two move into the column beside the board (sidePanel), leaving the
           height above the board to the board itself. */}
       {view.chain && <ChainBar className={styles.topOnly} chain={view.chain} you={you} names={names} onPass={() => act({ type: 'PASS_CHAIN' })} />}
+      {view.window && <WindowBar className={styles.topOnly} window={view.window} you={you} onPass={() => act({ type: 'PASS_CHAIN' })} />}
       <GuideBar className={styles.topOnly} guide={guide} forecast={forecast} />
 
       <div className={styles.board} ref={boardRef}>
@@ -733,6 +734,7 @@ const DuelPage = () => {
 
         <div className={styles.sidePanel}>
           {view.chain && <ChainBar className={styles.sideOnly} chain={view.chain} you={you} names={names} onPass={() => act({ type: 'PASS_CHAIN' })} />}
+          {view.window && <WindowBar className={styles.sideOnly} window={view.window} you={you} onPass={() => act({ type: 'PASS_CHAIN' })} />}
           <GuideBar className={styles.sideOnly} guide={guide} forecast={forecast} />
           <DetailsPanel hovered={hovered} isMyBattle={isMyBattle} />
           <LastBattlePanel battle={view.lastBattle} you={you} names={names} />

@@ -82,6 +82,10 @@ export function guideFor({ view, me, enemy, isMyTurn, attacker, canAttackDirectl
   const you = view.you;
   if (view.status !== 'active') return null;
   if (choicePending) return { tone: 'action', text: 'Tienes que elegir: responde a la ventana abierta para seguir.' };
+  if (view.window) {
+    if (view.window.priorityPlayer === you) return { tone: 'action', text: `${view.window.label}. Puedes responder con una carta de Velocidad 2 o más (Apoyo Veloz o un efecto rápido) o pulsar "Pasar".` };
+    return { tone: 'wait', text: 'Esperando a que el rival responda o pase…' };
+  }
   if (view.chain) {
     const top = view.chain.links[view.chain.links.length - 1];
     const topIsRival = top.controllerIndex !== you;
@@ -182,6 +186,28 @@ export function forecastBattle(attacker, defender, cardsById) {
   }
   if (burn(attacker) || burn(defender)) lines.push('🔥 Quemadura: el daño de ese monstruo cuenta doble.');
   return { lines };
+}
+
+// A response window: the rival (or you) just did something and the other player may answer it with
+// a fast effect, or pass.
+export function WindowBar({ window: w, you, onPass, className = '' }) {
+  const mine = w.priorityPlayer === you;
+  return (
+    <div className={`${styles.chainBar} ${className}`}>
+      <div className={styles.chainInfo}>
+        <span className={styles.chainTitle}>⏳ Ventana de respuesta</span>
+        <span>{w.label}.</span>
+      </div>
+      <div className={styles.chainActions}>
+        <span>{mine ? 'Puedes responder con un efecto rápido o pasar' : 'Esperando a que el rival responda o pase…'}</span>
+        {mine && (
+          <button className={styles.actionButton} onClick={onPass}>
+            Pasar
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function ChainBar({ chain, you, names, onPass, className = '' }) {

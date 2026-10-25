@@ -49,6 +49,7 @@ function botIndexToAct(state) {
   const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
   if (pending) return pending.controllerIndex === botIndex ? botIndex : -1;
   if (state.chain.length) return state.priorityPlayer === botIndex ? botIndex : -1;
+  if (state.window) return state.window.priorityPlayer === botIndex ? botIndex : -1;
   return state.turnPlayer === botIndex ? botIndex : -1;
 }
 

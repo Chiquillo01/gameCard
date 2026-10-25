@@ -118,7 +118,7 @@ describe('Bot against bot', () => {
     let stuck = 0;
     for (let i = 0; i < 400 && state.status === 'active' && state.turnNumber <= 20; i++) {
       const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
-      const who = pending ? pending.controllerIndex : state.chain.length ? state.priorityPlayer : state.turnPlayer;
+      const who = pending ? pending.controllerIndex : state.chain.length ? state.priorityPlayer : state.window ? state.window.priorityPlayer : state.turnPlayer;
       runBotTurn(state, who);
       stuck = state.turnNumber === lastTurn ? stuck + 1 : 0;
       lastTurn = state.turnNumber;

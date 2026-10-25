@@ -98,6 +98,11 @@ function settle(state) {
       if (!answerFirst(state, pending)) return;
       continue;
     }
+    if (!state.chain.length && state.window) {
+      const res = safeApply(state, state.window.priorityPlayer, { type: 'PASS_CHAIN' });
+      if (!res || !res.ok) return;
+      continue;
+    }
     if (state.chain.length) {
       const res = safeApply(state, state.priorityPlayer, { type: 'PASS_CHAIN' });
       if (!res || !res.ok) return;

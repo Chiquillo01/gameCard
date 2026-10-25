@@ -60,9 +60,11 @@ function botStep(state, botIndex) {
     return 'action';
   }
 
-  // Rulebook, "Apilar": while a Pila is open only the priority holder acts — respond or pass.
-  if (state.chain.length) {
-    if (state.priorityPlayer !== botIndex) return null;
+  // Rulebook, "Apilar": while a Pila (or a response window) is open only the priority holder acts —
+  // respond or pass.
+  if (state.chain.length || state.window) {
+    if (!state.chain.length && state.window.priorityPlayer !== botIndex) return null;
+    if (state.chain.length && state.priorityPlayer !== botIndex) return null;
     const choice = chooseAction(state, botIndex, banned);
     if (!(choice && act(choice))) applyAction(state, botIndex, { type: 'PASS_CHAIN' });
     return 'action';

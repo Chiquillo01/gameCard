@@ -102,9 +102,15 @@ function summonZonePool(ctx, zones, args) {
   if (args.levelOrLower) filter.maxLevel = args.levelOrLower;
   const exclude = args.exclude || (args.filter && args.filter.exclude);
   const excludedName = exclude === 'self' ? cardOf(ctx.sourceInstanceId).name : exclude;
-  return zones.flatMap((z) => pl[z] || []).filter((id) => {
+  // "Invoca un monstruo" brings out monsters, not Compilaciones — only a card that says so does
+  // (Ba-o: "invoca una Compilación de tu Cementerio").
+  const wantsCompile = /^(compilado|compilaci[oó]n|fusion)$/i.test(String((args.filter && args.filter.category) || ''));
+  // "De cualquier Cementerio" (Deva): the rival's too.
+  const rivalGY = args.scope === 'anyGY' && zones.includes('graveyard') ? player(ctx.state, opponentIndex(ctx.controllerIndex)).graveyard : [];
+  return [...zones.flatMap((z) => pl[z] || []), ...rivalGY].filter((id) => {
     const card = cardOf(id);
     if (!['monster', 'fusion'].includes(card.category)) return false;
+    if (card.category === 'fusion' && !wantsCompile) return false;
     if (excludedName && card.name === excludedName) return false;
     if (!require('./cardIndex').maySummon(card, ctx.sourceInstanceId)) return false;
     if (!require('./summon').summonRequirementsMet(ctx.state, ctx.controllerIndex, id, card)) return false;

@@ -90,11 +90,52 @@ function coinTossFirstPlayer(random = Math.random) {
 // until it clears.
 const CHAIN_RESPONSE_TYPES = ['ACTIVATE_SUPPORT', 'ACTIVATE_EFFECT', 'PASS_CHAIN'];
 
+// Rulebook: every action opens a window for the other player to answer it with a fast effect
+// (Speed 2 or more: an Apoyo Veloz from the hand or set, a quick effect) — or to pass. Activations
+// and attacks already open a Pila of their own; these are the rest.
+const WINDOW_ACTIONS = {
+  NORMAL_SUMMON: (a) => (a.faceDown ? 'coloca un monstruo boca abajo' : 'invoca un monstruo'),
+  SPECIAL_SUMMON: () => 'invoca un monstruo de forma especial',
+  COMPILE_SUMMON: () => 'compila un monstruo',
+  CHANGE_POSITION: () => 'cambia la posición de un monstruo',
+  DECOMPILE: () => 'descompila un monstruo',
+  ACTIVATE_SUPPORT: (a) => (a.setFaceDown ? 'coloca un Apoyo boca abajo' : null),
+  ADVANCE_PHASE: () => 'pasa de fase',
+};
+
+// Whether the player could answer anything right now: a fast effect they could use (set Veloz,
+// quick effect...) or an Apoyo Veloz in their hand. With nothing, the window passes on its own.
+function canRespondNow(state, idx) {
+  const pl = state.players[idx];
+  if (pl.hand.some((id) => { const c = getCard(id.split(':')[1]); return c.category === 'support' && c.subtype === 'instant'; })) return true;
+  const ids = [...pl.hand, ...pl.graveyard, ...pl.banished, ...pl.field.monsters.filter(Boolean).map((m) => m.instanceId), ...pl.field.support.filter(Boolean).map((s) => s.instanceId), ...(pl.field.territory ? [pl.field.territory.instanceId] : [])];
+  return ids.some((id) => !String(id).startsWith('token:') && computeAvailableEffects(state, idx, id, id.split(':')[1]).length > 0);
+}
+
+function openWindow(state, actorIndex, label) {
+  const idx = actorIndex === 0 ? 1 : 0;
+  state.windowDue = null;
+  if (state.status !== 'active' || state.chain.length) return;
+  if (!canRespondNow(state, idx)) return;
+  state.window = { priorityPlayer: idx, openedBy: actorIndex, label };
+  require('./zones').log(state, `${state.players[idx].userId} puede responder (${state.players[actorIndex].userId} ${label}).`);
+}
+
 function applyAction(state, playerIndex, action) {
   const res = dispatchAction(state, playerIndex, action);
   // A placement still waiting is asked with the zones that are free after this action (or done at
   // once if only one is left).
   if (res && res.ok) require('./placement').settlePlacements(state);
+  if (res && res.ok) {
+    // An activation answered the window: the Pila takes over from it.
+    if (state.chain.length) state.window = null;
+    // A phase change that ends the turn (or waits on the Reinos' upkeep) opens none.
+    const label = WINDOW_ACTIONS[action.type] && !res.newTurn && !res.upkeep && WINDOW_ACTIONS[action.type](action);
+    if (label && state.status === 'active') state.windowDue = { actorIndex: playerIndex, label };
+    // Opened once nothing else is waiting (a pick, a Pila).
+    const busy = (state.pendingTriggerChoices && state.pendingTriggerChoices.length) || state.chain.length;
+    if (state.windowDue && !busy && !state.window) openWindow(state, state.windowDue.actorIndex, state.windowDue.label);
+  }
   // A pick the player still has to make: each option says where that card is (choiceOptions.js).
   if (res && res.reason === 'choose-target') res.options = withLocations(state, res.options, playerIndex);
   return res;
@@ -113,6 +154,9 @@ function dispatchAction(state, playerIndex, action) {
   } else if (state.chain.length > 0) {
     if (!CHAIN_RESPONSE_TYPES.includes(action.type)) return { ok: false, reason: 'chain-open' };
     if (playerIndex !== state.priorityPlayer) return { ok: false, reason: 'not-your-priority' };
+  } else if (state.window) {
+    // A response window: only its player acts — answer with a fast effect, or pass.
+    if (playerIndex !== state.window.priorityPlayer || !CHAIN_RESPONSE_TYPES.includes(action.type)) return { ok: false, reason: 'window-open' };
   } else if (playerIndex !== state.turnPlayer && !['ACTIVATE_EFFECT'].includes(action.type)) {
     return { ok: false, reason: 'not-your-turn' };
   }
@@ -162,6 +206,11 @@ function dispatchAction(state, playerIndex, action) {
       return activateEffect(state, playerIndex, action.effectId, action.sourceInstanceId, action.targets || []);
 
     case 'PASS_CHAIN':
+      if (!state.chain.length && state.window) {
+        require('./zones').log(state, `${state.players[playerIndex].userId} no responde.`);
+        state.window = null;
+        return { ok: true };
+      }
       return passPriority(state, playerIndex);
 
     case 'RESOLVE_TRIGGER_CHOICE':
@@ -231,6 +280,8 @@ function viewFor(state, viewerIndex) {
     // Avispas...) or where to place a self-summon (Avispa Mutante, kind 'slot'). Null for the
     // other player, who has nothing to do about it.
     pendingTriggerChoice: describePendingTriggerChoice(state, viewerIndex),
+    // A response window: who may answer the last action (with a fast effect) or pass, and what it was.
+    window: state.window && !state.chain.length ? { priorityPlayer: state.window.priorityPlayer, label: readableLogLine(state, { message: `${state.players[state.window.openedBy].userId} ${state.window.label}` }, names).message } : null,
   };
 }
 
