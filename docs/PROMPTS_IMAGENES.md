@@ -645,6 +645,12 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: an ancient spellbook bound in deep blue leather with silver corners and a jagged lightning-bolt emblem on the cover, floating open in mid-air, its pages flipping wildly; a blinding bolt of white-blue lightning bursts out of the open pages and strikes a glowing magical artefact on a stone pedestal (an enchanted crystal shield wrapped in arcane chains), shattering it into shards and sparks; electric arcs crackle around the book. Setting: a tall, dim arcane library with towering bookshelves and floating candles, the flash of the lightning lighting up the scene in cold blue tones, loose pages swirling in the air.
 ```
 
+## Xorn (nuevo)
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a xorn, a squat elemental creature made of living rock, its wide barrel-shaped body of grey-brown stone streaked with veins of glittering ore; three thick stubby legs and three long clawed arms evenly spaced around its body; three large stony eyes set around the top of its head; a huge gaping mouth on the very top, lined with grinding crystal teeth, crunching a handful of glowing gems. It emerges halfway out of a solid cave wall as if the rock were water, chunks of stone and gemstones scattering around it. Setting: a deep underground mine tunnel lit by glowing crystals and an abandoned miner's lantern, minecart rails and scattered precious stones on the ground.
+```
+
 # Prompts para cartas que aún no están en la BD
 
 ## Otyugh
