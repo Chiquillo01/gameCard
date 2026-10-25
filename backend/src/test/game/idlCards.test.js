@@ -84,6 +84,23 @@ describe('Planetar', () => {
   });
 });
 
+describe('The view shows a Compilación\'s materials', () => {
+  it('to both players: each one\'s name and image', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const berserker = await instance(0, 'Héroe Berserker');
+    state.players[0].extra.push(berserker);
+    const mats = [await onField(state, 0, 'Héroe Silencioso'), await onField(state, 0, 'Héroe Montado')];
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: berserker, materialInstanceIds: mats }).ok).toBe(true);
+    placePending(state);
+    [0, 1].forEach((viewer) => {
+      const shown = viewFor(state, viewer).players[0].field.monsters.find((m) => m && m.instanceId === berserker);
+      expect(shown.materials.map((m) => m.name).sort()).toEqual(['Héroe Montado', 'Héroe Silencioso']);
+      expect(shown.materials.every((m) => m.image)).toBe(true);
+    });
+  });
+});
+
 describe('Des - Compilación', () => {
   it('decompiles the picked Compilación and negates the effects of the materials that come back', async () => {
     const state = await makeDuel();

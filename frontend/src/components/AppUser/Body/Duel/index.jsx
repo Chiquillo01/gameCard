@@ -16,7 +16,7 @@ import CompileModal from './CompileModal';
 import { PIXELCOIN_ICON } from '../../../../lib/utils/storeConstants';
 
 
-const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', extra: 'Mazo-C' };
+const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', materials: 'Materiales', extra: 'Mazo-C' };
 
 // "WASP_SWARM_GRAVE" -> "Wasp Swarm Grave" — the server only sends an effect id, no human label.
 const formatEffectId = (id) =>
@@ -626,9 +626,11 @@ const DuelPage = () => {
       )}
 
       {openPile && !(openPile.side === 'me' && openPile.zone === 'extra') && (
-        <PileModal
-          title={PILE_LABELS[openPile.zone]}
-          cards={openPile.side === 'me' ? me[openPile.zone] : enemy[openPile.zone]}
+        <PileViewer
+          pile={openPile.zone === 'extra' ? { ...openPile, zone: 'graveyard' } : openPile}
+          me={me}
+          enemy={enemy}
+          onChange={setOpenPile}
           onClose={() => setOpenPile(null)}
           renderCardExtra={(card) =>
             openPile.side === 'me' && openPile.zone === 'extra' ? (
@@ -704,7 +706,7 @@ const DuelPage = () => {
           selectedAttacker={selectedAttacker}
           fusion={fusion}
           onMonsterClick={(m) => onFieldMonsterClick(m, false)}
-          onOpenPile={(zone) => setOpenPile({ side: 'enemy', zone })}
+          onOpenPile={(zone, focus) => setOpenPile({ side: 'enemy', zone, focus })}
           renderEffectButtons={renderEffectButtons}
           onHover={setHovered}
           flashes={flashes}
@@ -723,7 +725,7 @@ const DuelPage = () => {
           onDecompile={(instanceId) => act({ type: 'DECOMPILE', instanceId })}
           onMonsterClick={(m) => onFieldMonsterClick(m, true)}
           onSupportClick={onFieldSupportClick}
-          onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
+          onOpenPile={(zone, focus) => setOpenPile({ side: 'me', zone, focus })}
           renderEffectButtons={renderEffectButtons}
           onHover={setHovered}
           slotPicker={boardSlotPicker}
@@ -847,7 +849,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
             <>
               {m.isToken ? <div className={styles.tokenFace}>{m.name}</div> : <img src={m.image} alt={m.name} title={m.name} />}
               <StatBar m={m} />
-              <SlotTags m={m} />
+              <SlotTags m={m} onMaterials={() => onOpenPile('materials', m.instanceId)} />
               {((m.statuses && m.statuses.length > 0) || m.negated) && (
                 <span className={styles.statusBadges}>
                   {m.negated && (
@@ -971,21 +973,37 @@ function VpBadge({ vp, max, flash, onDirectAttack }) {
 }
 
 // Small markers on a monster's top-left corner: equips, materials and counters on it.
-function SlotTags({ m }) {
+function SlotTags({ m, onMaterials }) {
   const tags = [];
   if (m.equips && m.equips.length) tags.push({ text: `✚${m.equips.length}`, title: `Equipos: ${m.equips.join(', ')}` });
-  if (m.materialCount) tags.push({ text: `◆${m.materialCount}`, title: `Compilado con ${m.materialCount} material(es)` });
+  // The materials mark opens them (Materiales tab of the pile viewer).
+  if (m.materialCount) tags.push({ text: `◆${m.materialCount}`, title: `Compilado con ${m.materialCount} material(es) — pulsa para verlos`, onClick: onMaterials });
   Object.entries(m.counters || {}).forEach(([k, v]) => {
     if (v > 0) tags.push({ text: `⚙${v}`, title: `${k === 'gear' ? 'Engranajes' : k}: ${v}` });
   });
   if (!tags.length) return null;
   return (
     <span className={styles.slotTags}>
-      {tags.map((t) => (
-        <span key={t.text} className={styles.slotTag} title={t.title}>
-          {t.text}
-        </span>
-      ))}
+      {tags.map((t) =>
+        t.onClick ? (
+          <button
+            key={t.text}
+            type='button'
+            className={`${styles.slotTag} ${styles.slotTagButton}`}
+            title={t.title}
+            onClick={(e) => {
+              e.stopPropagation();
+              t.onClick();
+            }}
+          >
+            {t.text}
+          </button>
+        ) : (
+          <span key={t.text} className={styles.slotTag} title={t.title}>
+            {t.text}
+          </span>
+        )
+      )}
     </span>
   );
 }
@@ -1049,6 +1067,74 @@ function PileSlot({ style, label, count, onClick }) {
       <div className={styles.faceDown} />
       <span className={styles.pileLabel}>{label}</span>
       <span className={styles.pileCount}>{count}</span>
+    </div>
+  );
+}
+
+// The public piles of both players in one window: Cementerio, Exilio and the materials under each
+// Compilación on the field, with a switch between your side and the rival's.
+function PileViewer({ pile, me, enemy, onChange, onClose, renderCardExtra }) {
+  const owner = pile.side === 'me' ? me : enemy;
+  const compiled = (owner.field.monsters || []).filter((m) => m && m.materials && m.materials.length);
+  const counts = {
+    graveyard: (owner.graveyard || []).length,
+    banished: (owner.banished || []).length,
+    materials: compiled.reduce((n, m) => n + m.materials.length, 0),
+  };
+  const tabs = ['graveyard', 'banished', 'materials'];
+  return (
+    <div className={styles.pileOverlay} onClick={onClose}>
+      <div className={styles.pileModal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.pileSides}>
+          {[['me', 'Tú'], ['enemy', 'Rival']].map(([side, label]) => (
+            <button key={side} className={`${styles.pileSide} ${pile.side === side ? styles.pileSideActive : ''}`} onClick={() => onChange({ ...pile, side })}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className={styles.pileTabs} role='tablist'>
+          {tabs.map((zone) => (
+            <button key={zone} role='tab' aria-selected={pile.zone === zone} className={`${styles.pileTab} ${pile.zone === zone ? styles.pileTabActive : ''}`} onClick={() => onChange({ ...pile, zone })}>
+              {PILE_LABELS[zone]} ({counts[zone]})
+            </button>
+          ))}
+        </div>
+        <div className={styles.pileModalList}>
+          {pile.zone === 'materials' ? (
+            compiled.length === 0 ? (
+              <p className={styles.pileEmpty}>No hay Compilaciones con materiales en el Campo.</p>
+            ) : (
+              compiled.map((m) => (
+                <div key={m.instanceId} className={`${styles.pileGroup} ${pile.focus === m.instanceId ? styles.pileGroupFocus : ''}`}>
+                  <h4 className={styles.pileGroupTitle}>◆ Bajo {m.name}</h4>
+                  <div className={styles.pileGroupCards}>
+                    {m.materials.map((card) => (
+                      <div key={card.instanceId} className={styles.pileModalCard}>
+                        {card.image && <img src={card.image} alt={card.name} />}
+                        <span className={styles.pileModalCardName}>{card.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )
+          ) : (
+            <>
+              {(owner[pile.zone] || []).length === 0 && <p className={styles.pileEmpty}>Vacío.</p>}
+              {(owner[pile.zone] || []).map((card) => (
+                <div key={card.instanceId} className={styles.pileModalCard}>
+                  {card.image && <img src={card.image} alt={card.name} />}
+                  <span className={styles.pileModalCardName}>{card.name}</span>
+                  {renderCardExtra && renderCardExtra(card)}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+        <button className={styles.surrenderButton} onClick={onClose}>
+          Cerrar
+        </button>
+      </div>
     </div>
   );
 }

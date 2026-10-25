@@ -202,13 +202,17 @@ const DeckPage = () => {
                       title={selecting ? (isSelected ? 'Quitar de la selección' : 'Seleccionar para eliminar') : `Editar ${deck.deckTitle}`}
                     >
                       {selecting && <span className={styles.checkbox}>{isSelected ? '✔' : ''}</span>}
+                      {/* At a glance: whether it's ready (the corner mark); the details show on hover. */}
+                      <span className={playable ? styles.readyMark : styles.notReadyMark} aria-hidden='true'>{playable ? '✔' : '!'}</span>
                       <img src={deck.image} alt='' className={styles.deckImage} />
                       <span className={styles.deckTitle}>{deck.deckTitle}</span>
-                      <span className={styles.deckCount}>
-                        {totalMain} cartas{totalFusion ? ` · ${totalFusion} de Compilación` : ''}
-                      </span>
-                      <span className={playable ? styles.statusOk : styles.statusWarn}>
-                        {playable ? 'Listo para jugar' : `Incompleto (${MIN_DECK_SIZE}-${MAX_DECK_SIZE})`}
+                      <span className={styles.deckInfo} role='tooltip'>
+                        <span className={styles.deckCount}>
+                          {totalMain} cartas{totalFusion ? ` · ${totalFusion} de Compilación` : ''}
+                        </span>
+                        <span className={playable ? styles.statusOk : styles.statusWarn}>
+                          {playable ? 'Listo para jugar' : `Incompleto (${MIN_DECK_SIZE}-${MAX_DECK_SIZE})`}
+                        </span>
                       </span>
                     </button>
                   </li>

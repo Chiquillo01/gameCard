@@ -1589,3 +1589,68 @@
   font-family: inherit;
   font-size: 0.875rem;
 }
+
+/* --- Pile viewer: Tú / Rival and the Cementerio / Exilio / Materiales tabs --- */
+
+.slotTagButton {
+  font-family: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.slotTagButton:hover {
+  border-color: #ffd76a;
+}
+
+.pileSides,
+.pileTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  justify-content: center;
+}
+
+.pileSide,
+.pileTab {
+  border: 3px solid #241305;
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.4);
+  background: #e8d3a0;
+  color: #4a2a10;
+  font-family: 'VT323', monospace;
+  font-size: 1.2rem;
+  padding: 0.2rem 0.75rem;
+  cursor: pointer;
+}
+
+.pileSideActive,
+.pileTabActive {
+  background: linear-gradient(180deg, #6b3d16 0%, #4a2a10 100%);
+  color: #ffd76a;
+}
+
+.pileGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.375rem;
+  border: 2px dashed transparent;
+}
+
+.pileGroupFocus {
+  border-color: #6b3d16;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.pileGroupTitle {
+  margin: 0;
+  font-family: 'VT323', monospace;
+  font-size: 1.25rem;
+  font-weight: normal;
+  color: #4a2a10;
+}
+
+.pileGroupCards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}

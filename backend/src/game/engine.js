@@ -377,7 +377,12 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
   // The owner knows which card their face-down monster is (for the hover preview); the rival doesn't.
   if (m.faceDown) return isViewerOwner ? { ...base, cardId: m.cardId, name: getCard(m.cardId).name, ...describeStats(state, m, getCard(m.cardId)), availableEffects: [] } : base;
   const card = getCard(m.cardId);
-  const described = { ...base, cardId: m.cardId, name: card.name, image: card.image, ...describeStats(state, m, card) };
+  // The materials under a face-up Compilación are face-up too: both players can look at them.
+  const materials = (m.materials || []).map((id) => {
+    const mat = getCard(id.split(':')[1]);
+    return { instanceId: id, cardId: mat._id.toString(), name: mat.name, image: mat.image, category: mat.category, effect: mat.effect, atk: mat.atk, def: mat.def, level: mat.level };
+  });
+  const described = { ...base, cardId: m.cardId, name: card.name, image: card.image, materials, ...describeStats(state, m, card) };
   if (!isViewerOwner) return described;
   return { ...described, ...effectsFor(state, ownerIndex, m.instanceId, m.cardId) };
 }

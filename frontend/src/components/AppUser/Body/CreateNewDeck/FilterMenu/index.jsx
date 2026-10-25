@@ -108,7 +108,7 @@ const FilterMenu = ({ filters, onFilterChange, onClearFilters, availableCategori
           ))}
         </select>
       </div>
-      <div className={styles.filterSection}>
+      <div className={`${styles.filterSection} ${styles.clearSection}`}>
         <button className={styles.clearButton} onClick={onClearFilters}>
           <FaTrashAlt className={styles.icon} /> Limpiar Filtros
         </button>
