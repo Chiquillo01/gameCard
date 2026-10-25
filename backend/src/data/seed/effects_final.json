@@ -10039,5 +10039,212 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "ANGUILA_BUFF_PER_PEZ",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "filter": {
+            "breed": "Pez"
+          },
+          "atk": 1,
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Pez",
+          "count": 1
+        }
+      }
+    ],
+    "_id": "ANGUILA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "KOI_MAGICO_PEZ_UNTARGETABLE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "makeUntargetable",
+        "args": {
+          "filter": {
+            "breed": "Pez"
+          },
+          "scope": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "KOI_MAGICO_HAND_SUMMON",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantHandSpecialSummon",
+        "args": {
+          "filter": {
+            "category": "monster",
+            "breed": "Pez"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "TIBURON_ONSUMMON_SEND",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "sendFromDeckToGY",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "family": "Marino"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "TIBURON_REVIVE_PEZ",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "filter": {
+            "breed": "Pez"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "MANTA_RAYA_ONSUMMON_DISCARD",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "discardRandomCard",
+        "args": {
+          "player": "opponent"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "countInZones",
+        "args": {
+          "filter": {
+            "attribute": "Agua",
+            "isMonster": true
+          },
+          "zones": [
+            "field",
+            "graveyard"
+          ],
+          "min": 5
+        }
+      }
+    ],
+    "_id": "MANTA_RAYA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "PECERA_CRISTAL_REVIVE",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "hand"
+      }
+    },
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "filter": {
+            "breed": "Pez"
+          },
+          "count": 2,
+          "upTo": true,
+          "copiesOfFirst": true,
+          "prompt": "Elige el Pez que invocas (y, si quieres, otra copia suya)"
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

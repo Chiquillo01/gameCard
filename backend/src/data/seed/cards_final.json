@@ -3194,28 +3194,6 @@
     "effectCodes": []
   },
   {
-    "name": "Gigante de Fuego",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173766/gigantefuegotcg.png",
-    "attribute": "Fuego",
-    "type": "Roca",
-    "breed": "Roca",
-    "family": "Elemental",
-    "description": "El Gigante de Fuego, un destructor imparable, se alza entre ríos de lava y explosiones volcánicas. Su piel de roca fundida, surcada por grietas que emanan llamas, refleja el furor de un volcán en erupción. Invoca torrentes de fuego desde sus manos, desatando una fuerza devastadora. Esta entidad colosal, vinculada al poder del fuego, es capaz de invocar olas de lava que arrasan todo a su paso y encender vastos territorios con solo un gesto. Es temido como un destructor de tierras, un avatar de la furia elemental del fuego.",
-    "rarity": "common",
-    "category": "monster",
-    "expansion": "PAO",
-    "effect": "Monstruo sin efecto.",
-    "invocationText": "Se puede invocar especial sacrificando un monstruo de Fuego en tu Campo.",
-    "atk": 11,
-    "def": 3,
-    "level": 6,
-    "state": 4,
-    "number": 167,
-    "effectCodes": [
-      "FIRE_GIANT_SPECIAL_SUMMON"
-    ]
-  },
-  {
     "name": "Olla de la Usura",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173845/ollausuratcg.png",
     "attribute": "none",
@@ -4739,7 +4717,10 @@
     "level": 3,
     "state": 4,
     "number": 231,
-    "effectCodes": []
+    "effectCodes": [
+      "ANGUILA_BUFF_PER_PEZ",
+      "ANGUILA_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Cangrejo Archipiélago",
@@ -4753,7 +4734,7 @@
     "category": "monster",
     "expansion": "PAO",
     "effect": "Los monstruos de Agua no pueden ser destruidos en batalla.",
-    "invocationText": "Si controlas 2 monstruos de Agua se puede invocar espacial.",
+    "invocationText": "Si controlas 2 monstruos de Agua se puede invocar especial.",
     "atk": 3,
     "def": 2,
     "level": 3,
@@ -4774,7 +4755,7 @@
     "category": "support",
     "subtype": "equipment",
     "expansion": "PAO",
-    "effect": "El monstruo equipado obtiene +2 Vida.\nSolo se puede ser equipada a un monstruo Agua.",
+    "effect": "El monstruo equipado obtiene +2 Vida.\nSolo puede ser equipada a un monstruo Agua.",
     "invocationText": "Activación - 1 Píxel",
     "state": 4,
     "number": 233,
@@ -4969,7 +4950,7 @@
     "rarity": "epic",
     "category": "monster",
     "expansion": "PAO",
-    "effect": "Cuando esta carta es enviada del Campo al Cementerio:\n• Invoca 2 Tokens de \"Tentáculo Musculoso\" (Marino/ Pez / Agua / Nivel 3 / ATK 0 / Vida 0).",
+    "effect": "Cuando esta carta es enviada del Campo al Cementerio:\n• Invoca 2 Tokens de \"Tentáculo Musculoso\" (Marino/ Pez / Agua / Nivel 3 / Atk 0 / Vida 0).",
     "invocationText": "Esta carta solo puede ser Invocada de forma especial al destruir un monstruo Agua en el Campo, puede invocarse desde la Mano o Cementerio.",
     "atk": 5,
     "def": 5,
@@ -5005,7 +4986,7 @@
   },
   {
     "name": "Koi Mágico",
-    "image": "/assets/CardImg/generated/koi-magico.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792950641/243.jpg",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -5014,13 +4995,16 @@
     "rarity": "epic",
     "category": "monster",
     "expansion": "PAO",
-    "effect": "Los Monsters Pez en el Campo no pueden ser seleccionados por efectos de cartas.\nMientras está carta esté boca arriba en el Campo los Monsters Pez en tu Mano se pueden Invocar Espacial.",
+    "effect": "Los monstruos Pez en el Campo no pueden ser seleccionados por efectos de cartas.\nMientras esta carta esté boca arriba en el Campo, los monstruos Pez en tu Mano se pueden invocar especial.",
     "atk": 2,
     "def": 4,
     "level": 3,
     "state": 2,
     "number": 243,
-    "effectCodes": []
+    "effectCodes": [
+      "KOI_MAGICO_PEZ_UNTARGETABLE",
+      "KOI_MAGICO_HAND_SUMMON"
+    ]
   },
   {
     "name": "Kraken",
@@ -5046,7 +5030,7 @@
   },
   {
     "name": "Tiburón de Grandes Fauces",
-    "image": "/assets/CardImg/generated/tiburon-de-grandes-fauces.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792950641/245.jpg",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -5055,17 +5039,20 @@
     "rarity": "epic",
     "category": "monster",
     "expansion": "PAO",
-    "effect": "Al ser invocado:\n• Envía al Cementerio un monstruo Marino de tu Mazo.\nUna vez por turno: \n• Invoca espacial un Pez de tu Cementerio.",
+    "effect": "Al ser invocado:\n• Envía al Cementerio un monstruo Marino de tu Mazo.\nUna vez por turno: \n• Invoca especial un Pez de tu Cementerio.",
     "atk": 5,
     "def": 3,
     "level": 6,
     "state": 2,
     "number": 245,
-    "effectCodes": []
+    "effectCodes": [
+      "TIBURON_ONSUMMON_SEND",
+      "TIBURON_REVIVE_PEZ"
+    ]
   },
   {
     "name": "Xorn",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173915/uxorntcg.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792950641/246.jpg",
     "attribute": "Tierra",
     "type": "Roca",
     "breed": "Roca",
@@ -5087,7 +5074,7 @@
         "materials": [
           {
             "breed": "Roca",
-            "count": 2
+            "count": 3
           }
         ]
       }
@@ -5170,7 +5157,7 @@
   },
   {
     "name": "Manta-Raya",
-    "image": "/assets/CardImg/generated/manta-raya.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792950641/249.jpg",
     "attribute": "Agua",
     "type": "Pez",
     "breed": "Pez",
@@ -5186,7 +5173,10 @@
     "level": 5,
     "state": 3,
     "number": 249,
-    "effectCodes": []
+    "effectCodes": [
+      "MANTA_RAYA_ONSUMMON_DISCARD",
+      "MANTA_RAYA_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Pez Leviatán",
@@ -5211,7 +5201,7 @@
   },
   {
     "name": "Hidra",
-    "image": "/assets/CardImg/generated/hidra.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792950641/251.jpg",
     "attribute": "Agua",
     "type": "Reptil",
     "breed": "Reptil",
@@ -5236,7 +5226,7 @@
   },
   {
     "name": "Pecera de Cristal",
-    "image": "/assets/CardImg/generated/pecera-de-cristal.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792950641/252.jpg",
     "attribute": "none",
     "type": "normal",
     "description": "-",
@@ -5244,7 +5234,7 @@
     "category": "support",
     "subtype": "normal",
     "expansion": "PAO",
-    "effect": "En activación, seleccionar un Pez en el Cementerio: \n• Invocalo de forma espacial, si tienes otra copia del monstruo tambien la puedes invocar especial.",
+    "effect": "En activación, selecciona un Pez en el Cementerio: \n• Invócalo de forma especial; si tienes otra copia de ese monstruo en el Cementerio, también la puedes invocar especial.",
     "invocationText": "Activación - 2 Píxel",
     "state": 3,
     "number": 252,
@@ -5254,7 +5244,31 @@
         "amount": 2
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "PECERA_CRISTAL_REVIVE"
+    ]
+  },
+  {
+    "name": "Gigante de Fuego",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173766/gigantefuegotcg.png",
+    "attribute": "Fuego",
+    "type": "Roca",
+    "breed": "Roca",
+    "family": "Elemental",
+    "description": "El Gigante de Fuego, un destructor imparable, se alza entre ríos de lava y explosiones volcánicas. Su piel de roca fundida, surcada por grietas que emanan llamas, refleja el furor de un volcán en erupción. Invoca torrentes de fuego desde sus manos, desatando una fuerza devastadora. Esta entidad colosal, vinculada al poder del fuego, es capaz de invocar olas de lava que arrasan todo a su paso y encender vastos territorios con solo un gesto. Es temido como un destructor de tierras, un avatar de la furia elemental del fuego.",
+    "rarity": "common",
+    "category": "monster",
+    "expansion": "PAO",
+    "effect": "Monstruo sin efecto.",
+    "invocationText": "Se puede invocar especial sacrificando un monstruo de Fuego en tu Campo.",
+    "atk": 11,
+    "def": 3,
+    "level": 6,
+    "state": 4,
+    "number": 253,
+    "effectCodes": [
+      "FIRE_GIANT_SPECIAL_SUMMON"
+    ]
   },
   {
     "name": "Arboleda",

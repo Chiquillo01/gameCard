@@ -62,7 +62,9 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
 
   // A rule with its own `trigger` (Avispa Mutante) fires automatically instead — see
   // fireHandTrigger below — not something the player invokes with this action.
-  const rule = (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && !e.trigger && (e.actions || []).some((a) => a.fn === 'specialSummon'));
+  // One another card grants (Koi Mágico: free, no conditions) wins over its own method.
+  const rule = grantedSummonRule(state, controllerIndex, instanceId, card)
+    || (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && !e.trigger && (e.actions || []).some((a) => a.fn === 'specialSummon'));
   if (!rule) return { ok: false, reason: 'no-special-summon-method' };
 
   // Most special summons are from hand; a few (Aboleth, Perro Esqueleto) name other zones via
@@ -357,4 +359,16 @@ function summonRequirementsMet(state, controllerIndex, instanceId, card) {
   return steps.every((a) => checkConditions({ state, controllerIndex, sourceInstanceId: instanceId }, (a.args && a.args.conditions) || []));
 }
 
-module.exports = { summonRequirementsMet, materialMatches, materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };
+// A special summon from the hand another face-up card of the player grants ("mientras esta carta
+// esté boca arriba, los monstruos Pez en tu Mano se pueden invocar especial": Koi Mágico) — as a
+// plain rule with no cost, or null.
+function grantedSummonRule(state, controllerIndex, instanceId, card) {
+  if (!player(state, controllerIndex).hand.includes(instanceId)) return null;
+  const { effectCodesOf } = require('./cardIndex');
+  const grants = player(state, controllerIndex).field.monsters
+    .filter((m) => m && !m.faceDown && !m.isToken && !require('./negation').isNegated(state, m))
+    .some((m) => effectCodesOf(m).map(getEffect).some((e) => e && (e.actions || []).some((a) => a.fn === 'grantHandSpecialSummon' && matchesCardFilter(card, (a.args && a.args.filter) || {}))));
+  return grants ? { _id: 'GRANTED_SPECIAL_SUMMON', type: 'summon_rule', oncePerTurn: false, conditions: [], actions: [{ fn: 'specialSummon', args: { card: 'self', zone: 'field' } }] } : null;
+}
+
+module.exports = { grantedSummonRule, summonRequirementsMet, materialMatches, materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };

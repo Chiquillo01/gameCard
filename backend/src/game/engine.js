@@ -332,7 +332,7 @@ function specialSummonRuleFor(card) {
 // Whether that rule's CONDITIONS are met right now (cost affordability isn't checked here — the
 // player finds out when they try, same as any other cost).
 function specialSummonAvailable(state, ownerIndex, instanceId, card) {
-  const rule = specialSummonRuleFor(card);
+  const rule = require('./summon').grantedSummonRule(state, ownerIndex, instanceId, card) || specialSummonRuleFor(card);
   if (!rule) return false;
   const ctx = { state, controllerIndex: ownerIndex, sourceInstanceId: instanceId, effect: rule };
   return checkConditions(ctx, rule.conditions);

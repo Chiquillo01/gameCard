@@ -150,9 +150,14 @@ function stepPool(ctx, step) {
       return summonZonePool(ctx, ['deck'], args);
     case 'summonFromHand':
       return summonZonePool(ctx, ['hand'], args);
-    case 'specialSummonFromGY':
+    case 'specialSummonFromGY': {
       // "Invoca especial esta carta del Cementerio" (Héroe Fénix): nothing to pick.
-      return args.player === 'opponent' || args.target === 'self' ? null : summonZonePool(ctx, ['graveyard'], args);
+      if (args.player === 'opponent' || args.target === 'self') return null;
+      const pool = summonZonePool(ctx, ['graveyard'], args);
+      if (!args.copiesOfFirst) return pool;
+      const first = (ctx.pickedSoFar || []).find((t) => pool.includes(t));
+      return first ? pool.filter((id) => id === first || cardOf(id).name === cardOf(first).name) : pool;
+    }
     case 'summonFromZones':
       return summonZonePool(ctx, args.zones || ['graveyard'], args);
     case 'summon':
@@ -276,6 +281,7 @@ function activeSteps(effect, targets) {
 // that belong to it and weren't taken by an earlier step (or by the cost — `exclude`).
 function assignPicks(ctx, effect, targets, exclude = []) {
   const taken = new Set(exclude);
+  ctx.pickedSoFar = targets || [];
   return activeSteps(effect, targets).map(({ step, index }) => {
     const pool = stepPool(ctx, step);
     if (!pool) return { step, index, pool: null, picks: null };

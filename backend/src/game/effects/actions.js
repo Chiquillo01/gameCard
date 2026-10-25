@@ -80,6 +80,14 @@ function weakenAllMonsters(ctx, args) {
   if (args.destroyAtZero && dead.length) require('./fieldActions').destroy(ctx, { target: 'selected' }, dead);
 }
 
+// Koi Mágico: the matching monsters (both sides with `scope: 'field'`) can't be picked by card
+// effects while it lasts (targets.canAffect reads the flag).
+function makeUntargetable(ctx, args) {
+  const pool = args.scope === 'field' ? allFieldMonsters(ctx.state) : allOwnedMonsters(ctx.state, ctx.controllerIndex);
+  pool.filter((m) => monsterMatches(m, args.filter || {})).forEach((m) => { m.untargetable = true; });
+}
+function grantHandSpecialSummon() {} // read by summon.grantedSummonRule
+
 // Hidra: "no recibes daño de batallas que involucren a esta carta" (combat.js reads it).
 function noBattleDamage(ctx) {
   const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
@@ -990,6 +998,8 @@ const registry = {
   weakenAllMonsters,
   preventAttacks,
   noBattleDamage,
+  makeUntargetable,
+  grantHandSpecialSummon,
 };
 
 const fieldActions = require('./fieldActions');
