@@ -8,7 +8,7 @@ const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { attackAndResolve } = require('./chainHelpers');
 const { runBotTurn } = require('../../game/botAI');
-const { STARTING_PIXELS, PIXEL_INCOME_PER_TURN } = require('../../game/constants');
+const { STARTING_PIXELS, PIXEL_INCOME_PER_TURN, PIXEL_CAP, STARTING_HAND_SIZE } = require('../../game/constants');
 
 beforeAll(async () => {
   await connectDB();
@@ -89,10 +89,10 @@ function advanceUntil(state, targetTurn, targetPhase) {
 }
 
 describe('Game engine', () => {
-  it('deals 6 cards to each player and starts turn 1 on the draw phase', async () => {
+  it('deals the starting hand (game rules) to each player and starts turn 1 on the draw phase', async () => {
     const state = await makeTestMatch();
-    expect(state.players[0].hand).toHaveLength(6);
-    expect(state.players[1].hand).toHaveLength(6);
+    expect(state.players[0].hand).toHaveLength(STARTING_HAND_SIZE);
+    expect(state.players[1].hand).toHaveLength(STARTING_HAND_SIZE);
     expect(state.turnPlayer).toBe(0);
     expect(state.phase).toBe('draw');
   });
@@ -104,11 +104,23 @@ describe('Game engine', () => {
     expect(state.players[0].pixelcoins).toBe(STARTING_PIXELS + PIXEL_INCOME_PER_TURN); // income on their second turn
   });
 
-  it('caps pixels at 12 — income never pushes a player past it', async () => {
+  it('caps pixels at PIXEL_CAP — income never pushes a player past it', async () => {
     const state = await makeTestMatch();
-    state.players[0].pixelcoins = 10;
-    advanceUntil(state, 3, 'draw'); // P0's second turn: 10 + the income would pass 12, must stop there
-    expect(state.players[0].pixelcoins).toBe(12);
+    state.players[0].pixelcoins = PIXEL_CAP - 1;
+    advanceUntil(state, 3, 'draw'); // P0's second turn: the income would pass the cap, must stop there
+    expect(state.players[0].pixelcoins).toBe(PIXEL_CAP);
+  });
+
+  it('no player draws on their own first turn; from their second turn on, they draw 1', async () => {
+    const state = await makeTestMatch();
+    const hand0 = state.players[0].hand.length;
+    const hand1 = state.players[1].hand.length;
+    advanceUntil(state, 2, 'main1'); // player 1's first turn
+    expect(state.players[1].hand).toHaveLength(hand1);
+    advanceUntil(state, 3, 'main1'); // player 0's second turn
+    expect(state.players[0].hand).toHaveLength(hand0 + 1);
+    advanceUntil(state, 4, 'main1'); // player 1's second turn
+    expect(state.players[1].hand).toHaveLength(hand1 + 1);
   });
 
   it('skips both Battle and Principal 2 on the very first turn of the match', async () => {
@@ -210,8 +222,8 @@ describe('Game engine', () => {
   it('produces a redacted view that hides the opponent hand contents', async () => {
     const state = await makeTestMatch();
     const view = viewFor(state, 0);
-    expect(view.players[0].hand).toHaveLength(6);
+    expect(view.players[0].hand).toHaveLength(STARTING_HAND_SIZE);
     expect(view.players[1].hand).toBeUndefined();
-    expect(view.players[1].handCount).toBe(6);
+    expect(view.players[1].handCount).toBe(STARTING_HAND_SIZE);
   });
 });

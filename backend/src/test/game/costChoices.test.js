@@ -105,15 +105,15 @@ describe('Cost payments ask the player instead of picking for them', () => {
     expect(state.players[0].hand).toContain(oscuro); // never picked, never touched
   });
 
-  it('Fire Giant: with 2 Fuego monsters on the field, asks which to sacrifice', async () => {
-    const { state, inHand } = await makeMatch(['Fire Giant', 'Kraken']);
+  it('Gigante de Fuego: with 2 Fuego monsters on the field, asks which to sacrifice', async () => {
+    const { state, inHand } = await makeMatch(['Gigante de Fuego', 'Kraken']);
     toMain1(state);
     const fireCards = await Card.find({ attribute: 'Fuego', category: 'monster' }).limit(2).lean();
     const fireA = `0:${fireCards[0]._id}:fa`;
     const fireB = `0:${fireCards[1]._id}:fb`;
     placeMonster(state, fireA, 0, { position: 'attack' });
     placeMonster(state, fireB, 0, { position: 'attack' });
-    const giant = inHand('Fire Giant');
+    const giant = inHand('Gigante de Fuego');
 
     const res = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: giant });
     expect(res).toMatchObject({ ok: false, reason: 'choose-target' });

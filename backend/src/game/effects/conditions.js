@@ -1,7 +1,7 @@
 const { getCard } = require('../cardIndex');
 const { player, opponentIndex, getFieldMonster, findInstanceLocation } = require('../zones');
 const { cardIdFromInstance } = require('../deckUtils');
-const { matchesFilter } = require('../filters');
+const { matchesFilter, matchesCardFilter } = require('../filters');
 
 function wasOnField(ctx) {
   return true; // by the time a "sent to graveyard" trigger fires we can no longer check the
@@ -74,7 +74,7 @@ function controlsMonster(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
   const filter = args.filter || { breed: args.breed, family: args.family, attribute: args.attribute, name: args.name };
   const count = args.count || 1;
-  return pl.field.monsters.filter((m) => m && !m.faceDown && matchesFilter(m, filter)).length >= count;
+  return pl.field.monsters.filter((m) => m && !m.faceDown && !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId) && matchesFilter(m, filter)).length >= count;
 }
 
 // "Si controlas [count] monstruo(s) [filter]" EXCLUDING the card whose own effect this is
@@ -85,15 +85,22 @@ function controlsAnotherOfFamily(ctx, args) {
   return pl.field.monsters.some((m) => m && m.instanceId !== ctx.sourceInstanceId && !m.faceDown && matchesFilter(m, filter));
 }
 
-// Aboleth's event-based summon window (see zones.js moveToZone) — open for the rest of the turn
-// a water monster was destroyed, on either side.
-function waterMonsterDestroyedThisTurn(ctx) {
-  return !!ctx.state.specialSummonWindows && ctx.state.specialSummonWindows.waterMonsterDestroyed === ctx.state.turnNumber;
+// `side: 'any'`: on either side ("si \"Hada del Bosque Oscuro\" está en el Campo").
+function controlsCard(ctx, args) {
+  const players = args.side === 'any' ? ctx.state.players : [player(ctx.state, ctx.controllerIndex)];
+  return players.some((pl) => [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name));
 }
 
-function controlsCard(ctx, args) {
+// "Si tienes N monstruos X en Campo o Cementerio" (Hidra): the player's own cards in those zones.
+function countInZones(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
-  return [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name);
+  const ids = (args.zones || ['field', 'graveyard']).flatMap((z) => (z === 'field' ? pl.field.monsters.filter((m) => m && !m.isToken && !m.faceDown).map((m) => m.instanceId) : pl[z] || []));
+  return ids.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {})).length >= (args.min || 1);
+}
+
+// Extensor de Vida: "si tu oponente tiene más VP que tú".
+function opponentHasMoreVP(ctx) {
+  return player(ctx.state, opponentIndex(ctx.controllerIndex)).vp > player(ctx.state, ctx.controllerIndex).vp;
 }
 
 // What an effect "includes", in the words Kraken/Rakshasa use ("si se activa un efecto que incluya
@@ -123,10 +130,17 @@ function actionTags(step) {
     case 'specialSummonFromGY':
       tags.push('specialSummonFromGraveyard');
       break;
+    case 'summonFromHand':
+      tags.push('summonFromHand');
+      break;
+    case 'compileFromExtra':
+      tags.push('summonFromExtra');
+      break;
     case 'summon':
     case 'summonFromZones':
       if (!zones.length || has('graveyard')) tags.push('specialSummonFromGraveyard');
       if (has('deck')) tags.push('summonFromDeck');
+      if (has('hand')) tags.push('summonFromHand');
       break;
     case 'millDeck':
     case 'sendFromDeckToGY':
@@ -205,6 +219,31 @@ function hasCounter(ctx, args) {
   return !!entry && ((entry.counters || {})[args.counter] || 0) >= (args.min || 1);
 }
 
+// "Controlando a X en Campo o Cementerio" (Vampiro, Vampiresa: "Murciélago"): one of the player's
+// own cards named X face-up on their field, or in their Cementerio (args.zones picks which).
+function hasCardIn(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const zones = args.zones || ['field', 'graveyard'];
+  const named = (cardId) => matchesCardFilter(getCard(cardId), { name: args.name });
+  if (zones.includes('field') && [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && named(e.cardId))) return true;
+  return ['graveyard', 'banished', 'hand'].some((z) => zones.includes(z) && pl[z].some((id) => named(cardIdFromInstance(id))));
+}
+
+// "Si no controlas monstruos" (Avispa de Batalla).
+function controlsNoMonsters(ctx) {
+  return player(ctx.state, ctx.controllerIndex).field.monsters.every((m) => !m);
+}
+
+// "Si tienes N cartas en tu Cementerio" (Doppelganger: 8). `monsters`/`filter` count only those cards,
+// and `player: 'both'` asks it of both players (Deva: "los dos jugadores tienen como mínimo 3
+// monstruos en Cementerio").
+function graveyardCount(ctx, args) {
+  const who = args.player === 'both' ? [0, 1] : [args.player === 'opponent' ? opponentIndex(ctx.controllerIndex) : ctx.controllerIndex];
+  return who.every((i) => player(ctx.state, i).graveyard
+    .map((id) => getCard(cardIdFromInstance(id)))
+    .filter((card) => (!args.monsters || ['monster', 'fusion'].includes(card.category)) && (!args.filter || matchesCardFilter(card, args.filter))).length >= (args.min || 1));
+}
+
 // "Excepto el turno que fue enviada al Cementerio".
 function notSameTurnSentToGraveyard(ctx) {
   return ((ctx.state.graveyardTurn || {})[ctx.sourceInstanceId]) !== ctx.state.turnNumber;
@@ -218,7 +257,28 @@ function isEquippedToRace(ctx, args) {
   return !args.breed || matchesFilter(target, { breed: args.breed });
 }
 
+// "En tu siguiente Fase de Espera": it's the controller's own turn, and the card has been on the
+// field since before this turn (Safira's "en la siguiente fase de espera tributa esta carta").
+function ownTurn(ctx) {
+  return ctx.state.turnPlayer === ctx.controllerIndex;
+}
+
+// "En la fase de batalla" (Basilisco): during that phase of its controller's turn.
+function inOwnPhase(ctx, args) {
+  return ctx.state.turnPlayer === ctx.controllerIndex && ctx.state.phase === args.phase;
+}
+
+function onFieldSinceLastTurn(ctx) {
+  const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
+  return !!m && m.summonedTurn < ctx.state.turnNumber;
+}
+
 const registry = {
+  countInZones,
+  opponentHasMoreVP,
+  ownTurn,
+  inOwnPhase,
+  onFieldSinceLastTurn,
   wasOnField,
   faceUp,
   opponentHasMorePixels,
@@ -230,7 +290,6 @@ const registry = {
   controlsCard,
   controlsMonster,
   controlsAnotherOfFamily,
-  waterMonsterDestroyedThisTurn,
   effectIncludes,
   canActivateOnOpponentTurn,
   opponentControlsMonster,
@@ -240,6 +299,9 @@ const registry = {
   onceDuelLimit,
   hasCounter,
   notSameTurnSentToGraveyard,
+  graveyardCount,
+  controlsNoMonsters,
+  hasCardIn,
   isEquippedToRace,
 };
 

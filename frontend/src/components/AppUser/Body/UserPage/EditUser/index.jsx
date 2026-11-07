@@ -2,7 +2,7 @@ import styles from './editUser.module.css';
 import { useState } from 'react';
 import { useUser } from '../../../../../context/userContext';
 import { updateUser } from '../../../../../lib/utils/apiUser';
-import { toast, ToastContainer } from 'react-toastify';
+import { toast } from 'react-toastify';
 import EditButton from '../../Generic/EditButton';
 
 const EditUser = ({ user, handleUpdate }) => {

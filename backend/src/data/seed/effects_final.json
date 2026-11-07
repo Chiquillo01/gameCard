@@ -175,9 +175,11 @@
     "conditions": [],
     "actions": [
       {
-        "fn": "burnOpponent",
+        "fn": "applyStatus",
         "args": {
-          "amount": 3
+          "target": "enemyMonster",
+          "count": 1,
+          "status": "Quemadura"
         }
       }
     ],
@@ -282,8 +284,14 @@
   },
   {
     "_id": "ABOLETH_DEATH_TOKENS",
-    "type": "trigger",
+    "type": "triggered",
     "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field"
+      }
+    },
     "conditions": [
       {
         "fn": "wasOnField",
@@ -300,10 +308,11 @@
           "token": {
             "name": "Tentáculo Musculoso",
             "attribute": "Agua",
+            "family": "Marino",
+            "breed": "Pez",
             "level": 3,
             "atk": 0,
-            "def": 0,
-            "breed": "Pez"
+            "def": 0
           }
         }
       }
@@ -376,12 +385,36 @@
         "fn": "destroyAndCopyEffect",
         "args": {
           "source": "self",
-          "target": "any",
+          "target": "selected",
+          "zone": "monster",
           "count": 1
         }
       }
     ],
     "source": "Efecto(monster)"
+  },
+  {
+    "_id": "DOPPEL_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "graveyardCount",
+        "args": {
+          "min": 8
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
   },
   {
     "_id": "KRAKEN_NEGATE",
@@ -476,48 +509,15 @@
     "source": "Efecto(monster)"
   },
   {
-    "_id": "BALOR_INFLICT_BURN",
-    "type": "ignition",
-    "oncePerTurn": true,
-    "conditions": [
-      {
-        "fn": "limitPerTurn",
-        "args": {
-          "name": "Bálor",
-          "max": 1
-        }
-      }
-    ],
-    "actions": [
-      {
-        "fn": "applyStatus",
-        "args": {
-          "target": "enemyMonster",
-          "count": 1,
-          "status": "Quemadura"
-        }
-      }
-    ],
-    "source": "Efecto(monster)"
-  },
-  {
     "_id": "BALOR_EXTRA_ATTACK",
     "type": "ignition",
     "oncePerTurn": true,
-    "conditions": [
-      {
-        "fn": "limitPerTurn",
-        "args": {
-          "name": "Bálor",
-          "max": 1
-        }
-      }
-    ],
+    "conditions": [],
     "actions": [
       {
         "fn": "grantExtraAttack",
         "args": {
-          "amount": 1
+          "perEnemyWithStatus": "Quemadura"
         }
       }
     ],
@@ -563,7 +563,7 @@
       {
         "fn": "changeBeed",
         "args": {
-          "breed": "Hada",
+          "family": "Celestial",
           "target": "selected"
         }
       }
@@ -604,7 +604,11 @@
         }
       },
       {
-        "fn": "waterMonsterDestroyedThisTurn"
+        "fn": "controlsMonster",
+        "args": {
+          "attribute": "Agua",
+          "count": 1
+        }
       }
     ],
     "actions": [
@@ -616,7 +620,13 @@
         }
       }
     ],
-    "source": "Efecto(monster_summon)"
+    "source": "Efecto(monster_summon)",
+    "cost": {
+      "fn": "destroyOwnMonster",
+      "args": {
+        "attribute": "Agua"
+      }
+    }
   },
   {
     "_id": "WASP_SWARM_GRAVE",
@@ -636,6 +646,26 @@
         "fn": "banishSelf",
         "args": {
           "from": "graveyard"
+        }
+      },
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "count": 2,
+          "filter": {
+            "nameContains": "Avispa",
+            "category": "monster"
+          },
+          "required": true,
+          "prompt": "Elige los 2 monstruos \"Avispa\" de tu Cementerio que barajas en el Mazo"
+        }
+      },
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1,
+          "conditionalOn": "previousActionSucceeded"
         }
       }
     ],
@@ -682,6 +712,9 @@
     "conditions": [
       {
         "fn": "opponentHasMorePixels"
+      },
+      {
+        "fn": "notSameTurnSentToGraveyard"
       }
     ],
     "requiresTarget": false,
@@ -695,7 +728,7 @@
       {
         "fn": "generatePixels",
         "args": {
-          "amount": 2
+          "amount": 3
         }
       }
     ],
@@ -815,35 +848,6 @@
     "source": "EfectoBD(activated)"
   },
   {
-    "_id": "ANILLO_BODA_CEMENTERIO",
-    "type": "activated",
-    "oncePerTurn": false,
-    "trigger": {
-      "fn": "onGraveyard"
-    },
-    "conditions": [],
-    "requiresTarget": false,
-    "actions": [
-      {
-        "fn": "mirrorEvent",
-        "args": {
-          "event": "draw",
-          "actor": "receiver",
-          "receiver": "self"
-        }
-      },
-      {
-        "fn": "mirrorEvent",
-        "args": {
-          "event": "gainVP",
-          "actor": "receiver",
-          "receiver": "self"
-        }
-      }
-    ],
-    "source": "EfectoBD(activated)"
-  },
-  {
     "_id": "ANILLO_BODA_TURNO",
     "type": "activated",
     "oncePerTurn": false,
@@ -906,7 +910,8 @@
       {
         "fn": "destroy",
         "args": {
-          "target": "selected"
+          "target": "selected",
+          "zone": "monster"
         }
       }
     ],
@@ -924,10 +929,17 @@
     "requiresTarget": false,
     "actions": [
       {
-        "fn": "exileTarget"
+        "fn": "exileTarget",
+        "args": {
+          "target": "enemyMonster",
+          "duration": "endOfTurn"
+        }
       },
       {
-        "fn": "gainVP"
+        "fn": "gainVP",
+        "args": {
+          "amountFrom": "previousTargetsAtk"
+        }
       }
     ],
     "source": "EfectoBD(activated)"
@@ -968,9 +980,6 @@
     "actions": [
       {
         "fn": "negateAttack"
-      },
-      {
-        "fn": "endBattlePhase"
       }
     ],
     "source": "EfectoBD(activated)"
@@ -993,7 +1002,8 @@
         "fn": "changePosition",
         "args": {
           "sendCard": false,
-          "position": "defenseDown"
+          "position": "defenseDown",
+          "target": "selected"
         }
       }
     ],
@@ -1060,8 +1070,15 @@
         "fn": "searchDeck",
         "args": {
           "count": 2,
-          "attribute": "Oscuridad",
-          "breed": "Demonio"
+          "filter": {
+            "category": "monster",
+            "breedIn": [
+              "Demonio",
+              "Inmortal",
+              "Pecador",
+              "Cambiaformas"
+            ]
+          }
         }
       },
       {
@@ -1376,7 +1393,7 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "def": 3
+            "def": 2
           }
         }
       }
@@ -1399,7 +1416,7 @@
         "fn": "grantBuff",
         "args": {
           "buff": {
-            "atk": 3
+            "atk": 2
           }
         }
       }
@@ -1448,12 +1465,16 @@
         "fn": "grantBuff",
         "args": {
           "filter": {
-            "attribute": "Oscuridad",
-            "breed": "Demonio"
+            "breedIn": [
+              "Demonio",
+              "Inmortal",
+              "Pecador",
+              "Cambiaformas"
+            ]
           },
           "buff": {
-            "atk": 5,
-            "def": 5
+            "atk": 4,
+            "def": 4
           },
           "scope": "field"
         }
@@ -1645,14 +1666,9 @@
     "conditions": [],
     "actions": [
       {
-        "fn": "negateActivationOfEffects",
+        "fn": "disableEffects",
         "args": {
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -1858,7 +1874,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "beforeDamageCalculation"
+      "fn": "beforeDamageCalculation",
+      "args": {
+        "requiresDefender": true
+      }
     },
     "conditions": [],
     "actions": [
@@ -1893,12 +1912,10 @@
       {
         "fn": "grantBuff",
         "args": {
-          "target": "selected",
+          "target": "previous",
           "buff": {
             "atk": -2
-          },
-          "duration": "whileStatus",
-          "status": "Veneno"
+          }
         }
       },
       {
@@ -1957,7 +1974,7 @@
   {
     "_id": "HEROE_MARFIL_SEND_HERO",
     "type": "triggered",
-    "oncePerTurn": true,
+    "oncePerTurn": false,
     "trigger": {
       "fn": "onSummon"
     },
@@ -1966,8 +1983,11 @@
       {
         "fn": "sendFromDeckToGY",
         "args": {
-          "breed": "Héroe",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "breed": "Héroe"
+          }
         }
       }
     ]
@@ -1981,11 +2001,12 @@
       {
         "fn": "addCardToHandFromDeck",
         "args": {
+          "count": 1,
           "filter": {
-            "subtype": "Contraataque",
+            "category": "support",
+            "subtype": "Contraefecto",
             "textIncludes": "Héroe"
-          },
-          "count": 1
+          }
         }
       }
     ]
@@ -2003,7 +2024,7 @@
         "fn": "summonFromZones",
         "args": {
           "filter": {
-            "breed": "Trasgo"
+            "family": "Grokkar"
           },
           "zones": [
             "graveyard",
@@ -2475,11 +2496,8 @@
       {
         "fn": "specialSummonFromGY",
         "args": {
-          "player": "self",
-          "filter": {
-            "name": "Héroe Fénix"
-          },
-          "scope": "ownGY"
+          "target": "self",
+          "ifPreviousSucceeded": true
         }
       }
     ]
@@ -2609,7 +2627,7 @@
       {
         "fn": "burnOpponent",
         "args": {
-          "amount": 10
+          "amount": 6
         }
       }
     ]
@@ -2621,14 +2639,7 @@
     "trigger": {
       "fn": "onActivation"
     },
-    "conditions": [
-      {
-        "fn": "noCardsControlled",
-        "args": {
-          "scope": "monsters"
-        }
-      }
-    ],
+    "conditions": [],
     "requiresTarget": false,
     "actions": [
       {
@@ -2976,7 +2987,7 @@
       {
         "fn": "applyStatus",
         "args": {
-          "target": "selected",
+          "target": "enemyMonster",
           "status": "Congelado"
         }
       }
@@ -3114,30 +3125,34 @@
       "fn": "onSummon"
     },
     "conditions": [],
-    "requiresTarget": false,
     "actions": [
       {
         "fn": "opponentChoosesEffect",
         "args": {
           "options": [
             {
-              "fn": "sacrificeMonsters",
+              "fn": "sacrifice",
               "args": {
-                "count": 1,
-                "player": "self"
+                "count": 1
               }
             },
             {
-              "fn": "banishFromGraveyard",
+              "fn": "exileFromGraveyard",
               "args": {
-                "count": 3,
-                "player": "self"
+                "count": 1
+              }
+            },
+            {
+              "fn": "discard",
+              "args": {
+                "count": 1
               }
             }
           ]
         }
       }
-    ]
+    ],
+    "source": "authored"
   },
   {
     "_id": "LICANTROPO_GEVAUDAN_ONSUMMON_SEARCH",
@@ -3395,7 +3410,7 @@
   },
   {
     "_id": "HEROE_ESPERANZA_BATTLE_DESTROY",
-    "type": "trigger",
+    "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
       "fn": "involvedInBattle",
@@ -3414,6 +3429,13 @@
         "args": {
           "target": "selected",
           "zone": "field"
+        }
+      },
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1,
+          "ifPreviousSucceeded": true
         }
       }
     ]
@@ -3444,22 +3466,6 @@
       }
     ],
     "choice": true
-  },
-  {
-    "_id": "ORCO_GIGANTE_EXILE",
-    "type": "quick",
-    "oncePerTurn": true,
-    "conditions": [],
-    "requiresTarget": true,
-    "actions": [
-      {
-        "fn": "exileTarget",
-        "args": {
-          "target": "selected",
-          "duration": "endOfTurn"
-        }
-      }
-    ]
   },
   {
     "_id": "ARPIA_DORADA_ALL_BUFF",
@@ -3623,7 +3629,7 @@
           "heads": {
             "fn": "gainVP",
             "args": {
-              "amount": 3
+              "amount": 5
             }
           },
           "tails": {
@@ -3710,7 +3716,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "onSummon"
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
     },
     "conditions": [],
     "requiresTarget": true,
@@ -3725,7 +3734,8 @@
           }
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "_id": "INFERNO_DRAGON_ALT_SUMMON",
@@ -3766,7 +3776,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "onSummon"
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
     },
     "conditions": [],
     "requiresTarget": false,
@@ -3782,7 +3795,8 @@
           ]
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "_id": "ROCO_DRAGON_ALT_SUMMON",
@@ -4112,7 +4126,11 @@
     "_id": "SUCUBO_COLUMN_DEBUFF",
     "type": "continuous",
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
     "requiresTarget": false,
     "actions": [
       {
@@ -4141,22 +4159,25 @@
   },
   {
     "_id": "BASILISCO_BATTLE_DEBUFF",
-    "type": "trigger",
+    "type": "continuous",
     "oncePerTurn": false,
-    "trigger": {
-      "fn": "phase",
-      "args": {
-        "timing": "battlePhase"
+    "conditions": [
+      {
+        "fn": "faceUp"
+      },
+      {
+        "fn": "inOwnPhase",
+        "args": {
+          "phase": "battle"
+        }
       }
-    },
-    "conditions": [],
+    ],
     "requiresTarget": false,
     "actions": [
       {
         "fn": "buffPerCount",
         "args": {
           "atk": -1,
-          "def": -1,
           "scope": "opponentField"
         }
       }
@@ -4173,9 +4194,8 @@
         "fn": "gainVP",
         "args": {
           "amount": 1,
-          "perCount": {
-            "breed": "Hada",
-            "scope": "self"
+          "perControlled": {
+            "breed": "Hada"
           }
         }
       }
@@ -4379,13 +4399,15 @@
     },
     "conditions": [],
     "requiresTarget": true,
-    "targetSelector": "fieldLicantropo",
     "actions": [
       {
         "fn": "returnCardToHand",
         "args": {
           "target": "selected",
-          "zone": "field"
+          "zone": "monster",
+          "filter": {
+            "nameContains": "Licántropo"
+          }
         }
       },
       {
@@ -4550,7 +4572,8 @@
             "family": "Inframundo"
           },
           "scope": "field",
-          "atk": 0
+          "atk": 0,
+          "def": 0
         }
       }
     ]
@@ -4676,20 +4699,27 @@
       }
     },
     "conditions": [],
-    "requiresTarget": false,
+    "requiresTarget": true,
     "actions": [
       {
         "fn": "destroy",
         "args": {
+          "target": "Monstruo",
+          "side": "self",
+          "required": true,
+          "prompt": "Elige el monstruo de tu Campo que se destruye"
+        }
+      },
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "Monstruo",
           "side": "opponent",
-          "zone": "monster",
-          "count": 1
+          "required": true,
+          "prompt": "Elige el monstruo del oponente que se destruye"
         }
       }
-    ],
-    "cost": {
-      "fn": "destroyOwnMonster"
-    }
+    ]
   },
   {
     "_id": "OLLA_USURA_DRAW",
@@ -4783,6 +4813,7 @@
         "fn": "addCardToHandFromGraveyard",
         "args": {
           "filter": {
+            "category": "monster",
             "breed": "Himenóptero",
             "levelOrLower": 3
           },
@@ -4830,7 +4861,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "onSummon"
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
     },
     "conditions": [],
     "actions": [
@@ -4841,7 +4875,8 @@
           "count": 1
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "_id": "SKY_DRAGON_VIENTO_ALT_SUMMON",
@@ -4934,18 +4969,17 @@
         "fn": "destroy",
         "args": {
           "target": "support",
-          "zone": "field",
-          "amount": {
-            "perControlledBreed": "Héroe"
-          },
-          "exclude": "self"
+          "prompt": "Elige la carta de Apoyo que se destruye"
         }
       },
       {
         "fn": "addCardToHandFromDeck",
         "args": {
-          "breed": "Héroe",
-          "count": 1
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "nameContains": "Héroe"
+          }
         }
       }
     ],
@@ -5101,7 +5135,8 @@
           "count": 1,
           "buff": {
             "atk": -3
-          }
+          },
+          "duration": "endOfTurn"
         }
       }
     ]
@@ -5388,8 +5423,9 @@
       {
         "fn": "destroyAndGainVP",
         "args": {
-          "target": "fieldCard",
-          "vpEqualToAtk": true
+          "target": "selected",
+          "vpEqualToAtk": true,
+          "recover": true
         }
       }
     ]
@@ -5515,7 +5551,9 @@
         "fn": "returnFromGraveyardToDeck",
         "args": {
           "count": 2,
-          "shuffled": true
+          "shuffled": true,
+          "required": true,
+          "prompt": "Elige los 2 monstruos de tu Cementerio que barajas en el Mazo"
         }
       },
       {
@@ -5551,7 +5589,7 @@
         "fn": "destroy",
         "args": {
           "target": "selected",
-          "zone": "field"
+          "zone": "monster"
         }
       }
     ]
@@ -5716,7 +5754,10 @@
     "type": "triggered",
     "oncePerTurn": false,
     "trigger": {
-      "fn": "onSummon"
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
     },
     "conditions": [],
     "requiresTarget": true,
@@ -5731,7 +5772,8 @@
           }
         }
       }
-    ]
+    ],
+    "optional": true
   },
   {
     "oncePerTurn": false,
@@ -5771,7 +5813,10 @@
     "_id": "PRIMER_GINETE_GY_RECOVER",
     "type": "triggered",
     "trigger": {
-      "fn": "sentToGraveyard"
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field"
+      }
     },
     "actions": [
       {
@@ -5808,7 +5853,8 @@
             "breed": "Dragón"
           },
           "atk": 1,
-          "scope": "field"
+          "scope": "field",
+          "applyTo": "field"
         }
       }
     ]
@@ -6095,7 +6141,17 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "canBeSummonedFrom",
+        "args": {
+          "zones": [
+            "hand",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6118,7 +6174,17 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "canBeSummonedFrom",
+        "args": {
+          "zones": [
+            "hand",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6141,7 +6207,17 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "canBeSummonedFrom",
+        "args": {
+          "zones": [
+            "hand",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6164,7 +6240,17 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "canBeSummonedFrom",
+        "args": {
+          "zones": [
+            "hand",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6482,7 +6568,18 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "hasCardIn",
+        "args": {
+          "name": "Murciélago",
+          "zones": [
+            "field",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6550,7 +6647,18 @@
   },
   {
     "oncePerTurn": false,
-    "conditions": [],
+    "conditions": [
+      {
+        "fn": "hasCardIn",
+        "args": {
+          "name": "Murciélago",
+          "zones": [
+            "field",
+            "graveyard"
+          ]
+        }
+      }
+    ],
     "actions": [
       {
         "fn": "specialSummon",
@@ -6610,5 +6718,3532 @@
         }
       }
     ]
+  },
+  {
+    "_id": "AVISPA_REINA_BUFF",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "buff": {
+            "atk": 4
+          },
+          "scope": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_REINA_MIEL",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "effectActivated",
+      "args": {
+        "filter": {
+          "nameContains": "Avispa"
+        },
+        "excludeSelf": true
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCounter",
+        "args": {
+          "counter": "Miel",
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_REINA_NIDO",
+    "type": "quick",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Avispa Reina",
+          "max": 1
+        }
+      }
+    ],
+    "cost": {
+      "fn": "spendCounter",
+      "args": {
+        "counter": "Miel",
+        "amount": 2
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "filter": {
+            "name": "Nido de Avispas"
+          },
+          "scope": [
+            "deck",
+            "graveyard"
+          ],
+          "count": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_REINA_EXILE",
+    "type": "quick",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Avispa Reina",
+          "max": 1
+        }
+      }
+    ],
+    "cost": {
+      "fn": "spendCounter",
+      "args": {
+        "counter": "Miel",
+        "amount": 4
+      }
+    },
+    "actions": [
+      {
+        "fn": "exileTarget",
+        "args": {
+          "target": "enemyMonster",
+          "duration": "endOfNextTurn"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_REINA_DESTROY",
+    "type": "quick",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "Avispa Reina",
+          "max": 1
+        }
+      }
+    ],
+    "cost": {
+      "fn": "spendCounter",
+      "args": {
+        "counter": "Miel",
+        "amount": 6
+      }
+    },
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "side": "opponent"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_ARQUERA_BUFF",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "atk": 1,
+          "def": 1,
+          "scope": "ownGraveyard",
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_ARQUERA_ONSUMMON",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "sendFromDeckToGY",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "count": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_RESPALDO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "count": 2
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_RESPALDO_COMPILE",
+    "type": "quick",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "compileFromExtra",
+        "args": {
+          "filter": {
+            "category": "fusion",
+            "breed": "Himenóptero"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_RESPALDO_MATERIAL_BUFF",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "usedAsMaterial",
+      "args": {
+        "family": "Insecto"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "target": "compiled",
+          "buff": {
+            "atk": 1,
+            "def": 1
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_BATALLA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsNoMonsters"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "AVISPA_BATALLA_ZERO_ATK",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Avispa"
+          },
+          "count": 1,
+          "excludeSelf": true
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "setAtk",
+        "args": {
+          "target": "enemyMonster",
+          "value": 0,
+          "duration": "endOfTurn"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CLIONNE_PLANT_PROTECTION",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "protectFromEffectDestruction",
+        "args": {
+          "filter": {
+            "family": "Planta"
+          },
+          "excludeSelf": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PODER_PLANTAS_STRONGEST_ONLY",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "attacksOnlyOnStrongest",
+        "args": {
+          "stat": "def"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "RENOVACION_VIDA_SUMMON",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "summonFromHand",
+        "args": {
+          "filter": {
+            "family": "Planta",
+            "category": "monster"
+          },
+          "ignoreCost": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "GROOK_PLANT_GROW",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "target": "selected",
+          "side": "self",
+          "zone": "monster",
+          "filter": {
+            "family": "Planta"
+          },
+          "excludeSelf": false,
+          "buff": {
+            "def": 1
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "DEVA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "graveyardCount",
+        "args": {
+          "player": "both",
+          "min": 3,
+          "monsters": true
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ARANA_FASE_PHASES_OUT",
+    "type": "trigger",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "exileTarget",
+        "args": {
+          "target": "self",
+          "duration": "untilOwnerStandby"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ARANA_FASE_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "family": "Insecto"
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CAMINO_REINA_SAFIRA_DRAW_PIXEL",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "allySummoned",
+      "args": {
+        "filter": {
+          "nameContains": "Safira",
+          "category": "monster"
+        }
+      }
+    },
+    "conditions": [],
+    "requiresTarget": false,
+    "actions": [
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1
+        }
+      },
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "ownTurn"
+      },
+      {
+        "fn": "onFieldSinceLastTurn"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_BEBE_EVOLVE",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "standbyPhase"
+      }
+    },
+    "cost": {
+      "fn": "tributeSelf"
+    },
+    "actions": [
+      {
+        "fn": "summonFromZones",
+        "args": {
+          "filter": {
+            "name": "Safira, la Joven Heredera"
+          },
+          "zones": [
+            "deck",
+            "hand"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "ownTurn"
+      },
+      {
+        "fn": "onFieldSinceLastTurn"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_JOVEN_EVOLVE",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "standbyPhase"
+      }
+    },
+    "cost": {
+      "fn": "tributeSelf"
+    },
+    "actions": [
+      {
+        "fn": "summonFromZones",
+        "args": {
+          "filter": {
+            "name": "Safira, la Dragóna Real"
+          },
+          "zones": [
+            "deck",
+            "graveyard",
+            "hand"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "ownTurn"
+      },
+      {
+        "fn": "onFieldSinceLastTurn"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_REAL_EVOLVE",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "standbyPhase"
+      }
+    },
+    "cost": {
+      "fn": "tributeSelf"
+    },
+    "actions": [
+      {
+        "fn": "summonFromZones",
+        "args": {
+          "filter": {
+            "name": "Safira, la Reina Dragón"
+          },
+          "zones": [
+            "deck",
+            "graveyard",
+            "hand"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_UNTARGETABLE_BY_MONSTERS",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "untargetableBy",
+        "args": {
+          "by": "monster",
+          "unless": {
+            "breed": "Dragón"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "SAFIRA_JOVEN_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
+    },
+    "actions": [
+      {
+        "fn": "setFaceDownDefense",
+        "args": {
+          "target": "selected",
+          "side": "opponent"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "SAFIRA_REAL_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
+    },
+    "actions": [
+      {
+        "fn": "setFaceDownDefense",
+        "args": {
+          "target": "selected",
+          "side": "opponent",
+          "lockPosition": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "SAFIRA_REINA_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "special"
+      }
+    },
+    "actions": [
+      {
+        "fn": "setFaceDownDefense",
+        "args": {
+          "target": "allEnemyMonsters",
+          "lockPosition": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_REINA_UNTARGETABLE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "untargetableBy",
+        "args": {
+          "by": "any",
+          "unless": {
+            "breed": "Dragón"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "SAFIRA_REINA_DRAGON_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "breed": "Dragón"
+          },
+          "buff": {
+            "atk": 2,
+            "def": 2
+          },
+          "scope": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "DRACO_IS_DRAGON",
+    "type": "rule",
+    "actions": [
+      {
+        "fn": "gainBreed",
+        "args": {
+          "breed": "Dragón"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "DRACO_DRAGON_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "filter": {
+            "breed": "Dragón"
+          },
+          "atk": 2,
+          "scope": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GRIFO_SUMMON_BEAST",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "normal"
+      }
+    },
+    "actions": [
+      {
+        "fn": "summonFromHand",
+        "args": {
+          "filter": {
+            "family": "Bestia",
+            "category": "monster"
+          }
+        }
+      },
+      {
+        "fn": "gainStatsOfSummoned"
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "HIPOGRIFO_SUMMON_BEAST",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon",
+      "args": {
+        "kind": "normal"
+      }
+    },
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "player": "self",
+          "filter": {
+            "family": "Bestia",
+            "category": "monster"
+          }
+        }
+      },
+      {
+        "fn": "gainStatsOfSummoned"
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "MANTICORA_DOUBLES_BEAST_GAINS",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "doublePositiveMods",
+        "args": {
+          "filter": {
+            "family": "Bestia"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      },
+      {
+        "fn": "controlsAnotherOfFamily",
+        "args": {
+          "family": "Bestia"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "MANTICORA_PROTECTED",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
+        }
+      },
+      {
+        "fn": "protectFromEffectDestruction",
+        "args": {
+          "target": "self"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "VIAJE_UNION_DRAW_ON_SEARCH",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "actions": [
+      {
+        "fn": "afterOpponentSearch"
+      }
+    ]
+  },
+  {
+    "_id": "ANILLO_BODA_CEMENTERIO",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "graveyard"
+      }
+    },
+    "conditions": [],
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "mirrorEvent",
+        "args": {
+          "event": "destroyedByOpponent"
+        }
+      },
+      {
+        "fn": "mirrorEvent",
+        "args": {
+          "event": "banishedByOpponent"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SAFIRA_ONLY_BY_SAFIRA",
+    "type": "rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "onlySummonedBy",
+        "args": {
+          "filter": {
+            "nameContains": "Safira"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "GROVER_GUARDIAN_WALL",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
+        }
+      },
+      {
+        "fn": "grantAbility",
+        "args": {
+          "target": "self",
+          "ability": "attackInDefense"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GOBLIN_ARDIENTE_SWITCH",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "changePosition",
+        "args": {
+          "target": "selected",
+          "side": "opponent",
+          "zone": "monster",
+          "position": "toggle"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "GOBLIN_GUARDIAN_BATTLE_IMMUNE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "ORCO_TRAICIONERO_SACRIFICED",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "reason": "cost",
+        "bySource": {
+          "nameContains": "Orco"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "scope": "field",
+          "filter": {
+            "excludeFamily": "Grokkar"
+          },
+          "buff": {
+            "atk": -1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Orco"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_TRAICIONERO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "ORCOS_BATALLON_SACRIFICED",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "reason": "cost",
+        "bySource": {
+          "nameContains": "Orco"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "scope": "field",
+          "filter": {
+            "family": "Grokkar"
+          },
+          "buff": {
+            "atk": 1
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Orco"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCOS_BATALLON_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_SOLITARIO_NEGATE_SUPPORT",
+    "type": "quick",
+    "trigger": {
+      "fn": "card_effect_activated",
+      "args": {
+        "phase": "all",
+        "source": "any",
+        "cardType": "support"
+      }
+    },
+    "cost": {
+      "fn": "discart",
+      "args": {
+        "count": 1
+      }
+    },
+    "requiresTarget": true,
+    "targetSelector": "triggeredEffect",
+    "actions": [
+      {
+        "fn": "negateAndSendToGraveyard",
+        "args": {
+          "sendCard": true
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_SEARCH_CATEDRAL",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Catedral de los Goblins"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_QUICK_COMPILE",
+    "type": "quick",
+    "actions": [
+      {
+        "fn": "compileFromExtra",
+        "args": {
+          "filter": {
+            "recipeIncludes": "Grover, el Goblin"
+          },
+          "zones": [
+            "field",
+            "hand"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "CIUDADELA_SUMMON_GROKKAR",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "actions": [
+      {
+        "fn": "summonFromDeck",
+        "args": {
+          "filter": {
+            "family": "Grokkar",
+            "category": "monster"
+          },
+          "destination": "field",
+          "sendCard": false
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "CIUDADELA_ORCOS_PIERCE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantAbility",
+        "args": {
+          "filter": {
+            "nameContains": "Orco"
+          },
+          "ability": "piercing"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "EN_BUSCA_GOBLIN_SEARCH",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Goblin",
+            "excludeName": "En busca del Goblin"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Grover, el Goblin"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "EN_BUSCA_GOBLIN_GY_RETURN",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "count": 3,
+          "filter": {
+            "breedIn": [
+              "Orco",
+              "Goblin"
+            ],
+            "category": "monster"
+          },
+          "required": true,
+          "prompt": "Elige los 3 Orcos y/o Goblins del Cementerio que devuelves al Mazo"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "CATEDRAL_DESTROY_ON_COMPILE",
+    "type": "triggered",
+    "trigger": {
+      "fn": "allySummoned",
+      "args": {
+        "filter": {
+          "category": "Compilado"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "zone": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Grover, el Goblin"
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "CATEDRAL_BACK_FROM_GY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromGraveyard",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Catedral de los Goblins"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "CATEDRAL_GROVER_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "scope": "field",
+          "filter": {
+            "textIncludes": "Grover, el Goblin"
+          },
+          "buff": {
+            "atk": 2,
+            "def": 2
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "ORCO_JEFE_SUMMON_GROKKAR",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "summonFromDeck",
+        "args": {
+          "filter": {
+            "family": "Grokkar",
+            "category": "monster"
+          },
+          "destination": "field",
+          "sendCard": false,
+          "position": "attack"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "ownTurn"
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_JEFE_END_PHASE_RECOVER",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromGraveyard",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Orco",
+            "category": "monster"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_JEFE_ORCOS_BATTLE_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "nameContains": "Orco"
+          },
+          "buff": {
+            "atk": 3
+          },
+          "phase": "battle"
+        }
+      },
+      {
+        "fn": "untargetableBy",
+        "args": {
+          "by": "any",
+          "filter": {
+            "nameContains": "Orco"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Orco"
+          },
+          "count": 4
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_JEFE_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "source": "authored",
+    "_id": "ORCO_CONJURADOR_FIELD",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "side": "opponent"
+        }
+      },
+      {
+        "fn": "forceAttackPosition",
+        "args": {
+          "filter": {
+            "excludeBreed": "Orco"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_ARDIENTE_ONSUMMON_BURN",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "count": 1,
+          "status": "Quemadura"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_ARDIENTE_LEAVES_BURN",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field"
+      }
+    },
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "count": 1,
+          "status": "Quemadura"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GROVER_ARDIENTE_END_BURN",
+    "type": "trigger",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "count": 1,
+          "status": "Quemadura"
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "source": "authored",
+    "_id": "GOBLIN_SOLITARIO_SUMMON",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "summonFromHand",
+        "args": {
+          "filter": {
+            "breed": "Goblin",
+            "category": "monster"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "effectIncludes",
+        "args": {
+          "effects": [
+            "summonFromDeck",
+            "specialSummonFromGraveyard",
+            "summonFromHand",
+            "summonFromExtra"
+          ]
+        }
+      },
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "breed": "Goblin",
+            "category": "Compilado"
+          }
+        }
+      }
+    ],
+    "source": "authored",
+    "_id": "DUENDE_ELEGIDO_COUNTER",
+    "type": "activated",
+    "trigger": {
+      "fn": "card_effect_activated",
+      "args": {
+        "phase": "all",
+        "source": "opponent"
+      }
+    },
+    "requiresTarget": true,
+    "targetSelector": "triggeredEffect",
+    "actions": [
+      {
+        "fn": "negateDestroyAndBan"
+      }
+    ]
+  },
+  {
+    "_id": "BEHOLDER_NEEDS_DEMON",
+    "type": "rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "summonRequires",
+        "args": {
+          "conditions": [
+            {
+              "fn": "controlsMonster",
+              "args": {
+                "breed": "Demonio"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HERIDA_SANGRANTE_DESTROY",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "destroyAndGainVP",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "prompt": "Elige el monstruo que se destruye",
+          "recover": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CABALLO_PAJA_GIFT",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "summonToken",
+        "args": {
+          "side": "opponent",
+          "token": {
+            "name": "Caballo de Paja",
+            "breed": "Planta",
+            "attribute": "Tierra",
+            "level": 2,
+            "atk": 0,
+            "def": 0
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CALIZ_SANGRE_SEARCH",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "breed": "Inmortal"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CALIZ_SANGRE_GY_VP",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "conditions": [
+      {
+        "fn": "notSameTurnSentToGraveyard"
+      }
+    ],
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "gainVP",
+        "args": {
+          "amount": 5,
+          "perControlled": {
+            "breed": "Inmortal"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HEROE_FRIO_POLAR_ONSUMMON_FREEZE",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "status": "Congelado",
+          "prompt": "Elige el monstruo que queda Congelado"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HEROE_FRIO_POLAR_LEAVES_FREEZE",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "status": "Congelado",
+          "prompt": "Elige el monstruo que queda Congelado"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "VENGANZA_HEROES_COMPILE",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "card_effect_activated",
+      "args": {
+        "phase": "all",
+        "source": "opponent"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "compileFromExtra",
+        "args": {
+          "filter": {
+            "breed": "Héroe"
+          },
+          "zones": [
+            "hand",
+            "field",
+            "graveyard",
+            "banished"
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "NOCHE_ETERNA_RECYCLE",
+    "type": "activated",
+    "oncePerTurn": true,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": [
+            "graveyard",
+            "banished"
+          ],
+          "count": 1,
+          "filter": {
+            "breed": "Inmortal"
+          },
+          "required": true,
+          "prompt": "Elige la carta Inmortal que barajas en el Mazo"
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "conditionalOn": "previousActionSucceeded"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "NOCHE_ETERNA_VP",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onMonsterDestroyed",
+      "args": {
+        "anyOf": [
+          {
+            "reason": "battle"
+          },
+          {
+            "reason": "effect",
+            "bySource": {
+              "breed": "Inmortal"
+            }
+          }
+        ]
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "gainVP",
+        "args": {
+          "amountFrom": "eventAtk",
+          "recover": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "DES_COMPILACION_DECOMPILE",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "decompileMonster",
+        "args": {
+          "negateMaterials": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PLANETAR_ONSUMMON_CHOICE",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "optional": true,
+    "choice": true,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "filter": {
+            "breed": "Hada"
+          },
+          "sacrificeSelf": true
+        }
+      },
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "breed": "Hada"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PLANETAR_MATERIAL_DRAW",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "usedAsCompileMaterial",
+      "args": {
+        "breed": "Hada"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "RECIPIENTE_ENGANOSO_MILL",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "flipped"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "millDeck",
+        "args": {
+          "target": "opponent",
+          "amount": 2
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CONTENEDOR_SOSPECHOSO_BOUNCE",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "flipped"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "bounceToHand",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "prompt": "Elige el monstruo que vuelve a la Mano"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "EL_VACIO_EXILE_ALL",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "exileTarget",
+        "args": {
+          "target": "allMonsters"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SOMBRA_DESTROY_ALL_TOKENS",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "allMonsters",
+          "side": "any",
+          "replaceWithToken": {
+            "name": "Ficha Sombra",
+            "family": "Inframundo",
+            "breed": "Cambiaformas",
+            "attribute": "Oscuridad",
+            "level": 2,
+            "atk": 1,
+            "def": 1
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CAN_INFIERNO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {}
+    },
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CAN_INFIERNO_CHOICE",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "choice": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "damageOpponent",
+        "args": {
+          "amount": 5
+        }
+      },
+      {
+        "fn": "generatePixelsPerCreature",
+        "args": {
+          "amount": 1,
+          "status": "Quemadura",
+          "scope": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SATIRO_VENGADOR_VP",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "gainVPFromGraveyard",
+        "args": {
+          "filter": {
+            "category": "monster",
+            "breed": "Hada"
+          },
+          "recover": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "VIRTUD_DEBIL_EQUIP",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileEquipped",
+      "args": {
+        "maxAtk": 0
+      }
+    },
+    "conditions": [],
+    "actions": [],
+    "source": "authored"
+  },
+  {
+    "_id": "VIRTUD_DEBIL_ATTACKED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "involvedInBattle",
+      "args": {
+        "equippedDefends": true
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "target": "equipped",
+          "amountFrom": "attackerAtk",
+          "duration": "endOfTurn"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HOGUERA_SEARCH",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "attributeIn": [
+              "Fuego",
+              "Lava"
+            ]
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "HOGUERA_GY_RECYCLE",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "conditions": [],
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "count": 2,
+          "filter": {
+            "category": "monster",
+            "attributeIn": [
+              "Fuego",
+              "Lava"
+            ]
+          },
+          "required": true,
+          "prompt": "Elige los 2 monstruos de Fuego y/o Lava que barajas en el Mazo"
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "conditionalOn": "previousActionSucceeded"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ORCO_GIGANTE_GROWS_PER_ORCO_SACRIFICED",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "scope": "sacrificedThisTurn",
+          "filter": {
+            "nameContains": "Orco"
+          },
+          "atk": 2,
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ORCO_MAGO_BATTLE_SHIELD",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "side": "opponent"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ORCO_MAGO_RANDOM_STATUS",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "enemyMonster",
+          "status": "random",
+          "prompt": "Elige el monstruo del oponente"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "BUHO_BO_GY_RETURN",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "count": 3,
+          "upTo": true,
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "prompt": "Elige los monstruos \"Bosque Oscuro\" que devuelves al Mazo"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "CUELEBRE_BO_GY_SUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard"
+    },
+    "actions": [
+      {
+        "fn": "summonFromHand",
+        "args": {
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "ignoreCost": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro"
+        }
+      }
+    ],
+    "_id": "CUELEBRE_BO_DRAW",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "drawCards",
+        "args": {
+          "player": "self",
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "NUBERU_BO_GY_SUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "sentToGraveyard"
+    },
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "exclude": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro"
+        }
+      }
+    ],
+    "_id": "NUBERU_BO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "PANTANO_BO_RECYCLE",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": [
+            "graveyard",
+            "banished"
+          ],
+          "count": 1,
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "required": true,
+          "prompt": "Elige el monstruo \"Bosque Oscuro\" que barajas en el Mazo"
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "conditionalOn": "previousActionSucceeded"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "PETALOS_ROSA_COUNT",
+    "type": "triggered",
+    "trigger": {
+      "fn": "opponentSummoned"
+    },
+    "actions": [
+      {
+        "fn": "addCounter",
+        "args": {
+          "counter": "petal",
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "PETALOS_ROSA_EQUIP",
+    "type": "continuous",
+    "trigger": {
+      "fn": "whileEquipped",
+      "args": {}
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "buff": {
+            "atk": 1
+          },
+          "perCounter": "petal"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "RAIZ_CENTENARIA_COUNT",
+    "type": "triggered",
+    "trigger": {
+      "fn": "opponentSummoned"
+    },
+    "actions": [
+      {
+        "fn": "addCounter",
+        "args": {
+          "counter": "root",
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "RAIZ_CENTENARIA_EQUIP",
+    "type": "continuous",
+    "trigger": {
+      "fn": "whileEquipped",
+      "args": {}
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "buff": {
+            "def": 1
+          },
+          "perCounter": "root"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "ATALAYA_BO_SEARCH",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro"
+        }
+      }
+    ],
+    "_id": "ATALAYA_BO_QUICK_COMPILE",
+    "type": "quick",
+    "actions": [
+      {
+        "fn": "compileFromExtra",
+        "args": {
+          "filter": {
+            "nameContains": "Bosque Oscuro"
+          },
+          "zones": [
+            "field",
+            "hand"
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "BUSGOSU_BO_SEARCH",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "support",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro"
+        }
+      }
+    ],
+    "_id": "BUSGOSU_BO_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "GUARDIAN_BO_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "sendFromDeckToGY",
+        "args": {
+          "zones": [
+            "deck",
+            "extra"
+          ],
+          "count": 2,
+          "upTo": true,
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          },
+          "prompt": "Elige los monstruos \"Bosque Oscuro\" que envías al Cementerio"
+        }
+      },
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1,
+          "perMovedCard": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "GUARDIAN_BO_DESTROY",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "side": "self",
+          "zone": "field",
+          "prompt": "Elige la carta de tu Campo que se destruye"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "EXTENSOR_VIDA_GAIN",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "actions": [
+      {
+        "fn": "gainVP",
+        "args": {
+          "amount": 30
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "opponentHasMoreVP"
+      }
+    ],
+    "_id": "EXTENSOR_VIDA_GY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "gainVP",
+        "args": {
+          "amount": 30
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "RAIZ_ASFIXIANTE_LOCK",
+    "type": "continuous",
+    "trigger": {
+      "fn": "whileEquipped",
+      "args": {
+        "side": "any"
+      }
+    },
+    "actions": [
+      {
+        "fn": "preventAttacks"
+      },
+      {
+        "fn": "negateActivationOfEffects",
+        "args": {
+          "target": "equipped"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "EL_BOSQUE_OSCURO_ON_PLAY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onPlay"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "scope": [
+            "deck",
+            "graveyard"
+          ],
+          "filter": {
+            "category": "monster",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      },
+      {
+        "fn": "discart",
+        "args": {
+          "count": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro"
+        }
+      }
+    ],
+    "_id": "EL_BOSQUE_OSCURO_DESTROY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "zone": "field",
+          "prompt": "Elige la carta que se destruye"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro"
+        }
+      }
+    ],
+    "_id": "EL_BOSQUE_OSCURO_END_PIXEL",
+    "type": "triggered",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "actions": [
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "EL_BOSQUE_OSCURO_BUFF",
+    "type": "continuous",
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "nameContains": "Bosque Oscuro"
+          },
+          "buff": {
+            "atk": 2,
+            "def": 2
+          },
+          "scope": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "HADA_BO_BUFF",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantBuff",
+        "args": {
+          "filter": {
+            "nameContains": "Bosque Oscuro"
+          },
+          "buff": {
+            "atk": 2
+          },
+          "scope": "field",
+          "excludeSelf": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "HADA_BO_FAIRY_LEAVES",
+    "type": "triggered",
+    "trigger": {
+      "fn": "monstersLeftField",
+      "args": {
+        "filter": {
+          "breed": "Hada"
+        },
+        "ownOnly": true
+      }
+    },
+    "actions": [
+      {
+        "fn": "fairyLeaveBonus",
+        "args": {
+          "draw": 1,
+          "pixels": 2,
+          "limitPerTurn": 2
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "HADA_BO_FAIRY_SEARCHED",
+    "type": "triggered",
+    "trigger": {
+      "fn": "addedFromDeckToHand",
+      "args": {
+        "filter": {
+          "category": "monster",
+          "breed": "Hada"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "destroyAndGainVP",
+        "args": {
+          "target": "selected",
+          "zone": "monster",
+          "prompt": "Elige el monstruo que se destruye"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "PODER_PLANTAS_PIXELS",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "all",
+        "from": "hand"
+      }
+    },
+    "cost": {
+      "fn": "sacrificeFiltered",
+      "args": {
+        "family": "Planta"
+      }
+    },
+    "actions": [
+      {
+        "fn": "generatePixels",
+        "args": {
+          "amount": 1,
+          "perCostLevel": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "SABIO_BO_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "SABIO_BO_GY",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "XANA_BO_ONSUMMON",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "sendFromDeckToGY",
+        "args": {
+          "count": 1,
+          "filter": {
+            "isMonster": true,
+            "nameContains": "Bosque Oscuro"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "controlsCard",
+        "args": {
+          "name": "Hada del Bosque Oscuro"
+        }
+      }
+    ],
+    "_id": "XANA_BO_QUICK_FLIP",
+    "type": "quick",
+    "actions": [
+      {
+        "fn": "setFaceDownDefense",
+        "args": {
+          "target": "selected",
+          "filter": {
+            "faceUp": true
+          },
+          "prompt": "Elige el monstruo que pasa a defensa boca abajo"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "OTYUGH_END_WEAKEN",
+    "type": "triggered",
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "actions": [
+      {
+        "fn": "weakenAllMonsters",
+        "args": {
+          "amount": 2,
+          "destroyAtZero": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "TARASCA_DESTROY_WEAKER",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "allMonsters",
+          "side": "any",
+          "lessAtkThanSelf": true
+        }
+      },
+      {
+        "fn": "growSelf",
+        "args": {
+          "atk": 2,
+          "perDestroyed": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "HIDRA_HEAD_TOKEN",
+    "type": "triggered",
+    "trigger": {
+      "fn": "involvedInBattle",
+      "args": {
+        "againstStronger": true
+      }
+    },
+    "actions": [
+      {
+        "fn": "summonToken",
+        "args": {
+          "token": {
+            "name": "Cabeza de Hidra",
+            "family": "Bestia",
+            "breed": "Reptil",
+            "level": 2,
+            "atk": 0,
+            "def": 0
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "HIDRA_EXTRA_ATTACKS",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantExtraAttack",
+        "args": {
+          "perTokenOnField": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "HIDRA_NO_BATTLE_DAMAGE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "noBattleDamage"
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "countInZones",
+        "args": {
+          "filter": {
+            "attribute": "Agua",
+            "isMonster": true
+          },
+          "zones": [
+            "field",
+            "graveyard"
+          ],
+          "min": 5
+        }
+      }
+    ],
+    "_id": "HIDRA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Sátiro"
+          },
+          "count": 1
+        }
+      }
+    ],
+    "_id": "SATIRO_VENGADOR_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "ANGUILA_BUFF_PER_PEZ",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "filter": {
+            "breed": "Pez"
+          },
+          "atk": 1,
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "breed": "Pez",
+          "count": 1
+        }
+      }
+    ],
+    "_id": "ANGUILA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "KOI_MAGICO_PEZ_UNTARGETABLE",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "makeUntargetable",
+        "args": {
+          "filter": {
+            "breed": "Pez"
+          },
+          "scope": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "_id": "KOI_MAGICO_HAND_SUMMON",
+    "type": "continuous",
+    "actions": [
+      {
+        "fn": "grantHandSpecialSummon",
+        "args": {
+          "filter": {
+            "category": "monster",
+            "breed": "Pez"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "TIBURON_ONSUMMON_SEND",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "sendFromDeckToGY",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "family": "Marino"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": true,
+    "conditions": [],
+    "_id": "TIBURON_REVIVE_PEZ",
+    "type": "ignition",
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "filter": {
+            "breed": "Pez"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "MANTA_RAYA_ONSUMMON_DISCARD",
+    "type": "triggered",
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "actions": [
+      {
+        "fn": "discardRandomCard",
+        "args": {
+          "player": "opponent"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "countInZones",
+        "args": {
+          "filter": {
+            "attribute": "Agua",
+            "isMonster": true
+          },
+          "zones": [
+            "field",
+            "graveyard"
+          ],
+          "min": 5
+        }
+      }
+    ],
+    "_id": "MANTA_RAYA_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "oncePerTurn": false,
+    "conditions": [],
+    "_id": "PECERA_CRISTAL_REVIVE",
+    "type": "activated",
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "hand"
+      }
+    },
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "filter": {
+            "breed": "Pez"
+          },
+          "count": 2,
+          "upTo": true,
+          "copiesOfFirst": true,
+          "prompt": "Elige el Pez que invocas (y, si quieres, otra copia suya)"
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

@@ -10,8 +10,9 @@ const { getCard, getEffect, effectCodesOf } = require('../../game/cardIndex');
 const { registry } = require('../../game/effects/actions');
 const { canAffect } = require('../../game/targets');
 const effects = require('../../data/seed/effects_final.json');
-const { seedCatalog, makeDuel, toHand, toDeckTop, onField, toPhase, passAll, monster, instance, idOf } = require('./engineHelpers');
+const { seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster, instance, idOf } = require('./engineHelpers');
 const { STARTING_VP } = require('../../game/constants');
+const { placePending, resolveAll, actPicking } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -120,26 +121,29 @@ describe('Choices and picks', () => {
     const dracula = await onField(state, 0, 'Drácula, El primer Inmortal');
     const slime = await onField(state, 1, 'Slime');
     const valkiria = await onField(state, 1, 'Valkiria');
+    const trampa = placeSupport(state, await instance(1, 'Trampa de Madera'), 1, { faceDown: true }).instanceId; // "una carta": supports too
     const choose = activate(state, 0, 'DRACULA_CHOICE', dracula);
     expect(choose).toMatchObject({ reason: 'choose-target', prompt: 'Elige qué efecto aplicar' });
     expect(choose.options.map((o) => o.instanceId)).toEqual(['choice:0', 'choice:1']);
     const pick = activate(state, 0, 'DRACULA_CHOICE', dracula, ['choice:1']);
-    expect(pick.options.map((o) => o.instanceId).sort()).toEqual([slime, valkiria].sort());
+    expect(pick.options.map((o) => o.instanceId).sort()).toEqual([slime, valkiria, trampa].sort());
+    const valkiriaAtk = monster(state, valkiria).baseAtk;
+    const vpCost = getEffect('DRACULA_CHOICE').cost.args.amount;
     expect(activate(state, 0, 'DRACULA_CHOICE', dracula, ['choice:1', valkiria]).ok).toBe(true);
     passAll(state);
     expect(monster(state, valkiria)).toBeUndefined();
-    expect(state.players[0].vp).toBe(STARTING_VP - 10 + 11); // paid 10 VP, recovered Valkiria's 11 Atk
+    expect(state.players[0].vp).toBe(STARTING_VP - vpCost + valkiriaAtk); // paid the VP, recovered Valkiria's Atk
     expect(state.players[0].pixelcoins).toBe(12); // the other option didn't run
   });
 
-  it('Pegaso turns the monster the player picks into an Hada', async () => {
+  it('Pegaso turns the monster the player picks into a Celestial', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const pegaso = await onField(state, 0, 'Pegaso');
     const slime = await onField(state, 1, 'Slime');
     expect(activate(state, 0, 'PEGASO', pegaso, [slime]).ok).toBe(true);
     passAll(state);
-    expect(matchesFilter(monster(state, slime), { breed: 'Hada' })).toBe(true);
+    expect(matchesFilter(monster(state, slime), { family: 'Celestial' })).toBe(true);
     expect(activate(state, 0, 'PEGASO', pegaso, [slime])).toMatchObject({ ok: false, reason: 'once-per-turn' });
   });
 
@@ -162,7 +166,7 @@ describe('Choices and picks', () => {
     toPhase(state, 'main1', 0);
     const incubo = await onField(state, 0, 'Íncubo', { slot: 2 });
     const across = await onField(state, 1, 'Valkiria', { slot: 2 });
-    const aside = await onField(state, 1, 'Slime', { slot: 4 });
+    const aside = await onField(state, 1, 'Slime', { slot: 0 }); // faces zone 4 (the rival's side is turned 180°)
     recomputeContinuous(state);
     expect(monster(state, across).tempBuff).toEqual({ atk: -2, def: -2 });
     expect(monster(state, aside).tempBuff).toEqual({ atk: 0, def: 0 });
@@ -178,10 +182,11 @@ describe('Choices and picks', () => {
   it('Carnívora Come Hombres equips the picked attack-position monster and gets +1 Atk; it goes to its owner\'s Cementerio later', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
-    const carnivora = await onField(state, 0, 'Carnivora Come Hombres');
+    const carnivora = await onField(state, 0, 'Carnívora Come Hombres');
     const slime = await onField(state, 1, 'Slime');
     expect(activate(state, 0, 'CARNIVORA_STEAL_EQUIP', carnivora, [slime]).ok).toBe(true);
     passAll(state);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: 0 }).ok).toBe(true); // which support zone
     expect(monster(state, slime)).toBeUndefined();
     expect(state.players[0].field.support.find((s) => s && s.instanceId === slime)).toMatchObject({ equippedTo: carnivora });
     expect(monster(state, carnivora).tempBuff.atk).toBe(1);
@@ -218,13 +223,14 @@ describe('Actions and flags that used to do nothing', () => {
     monster(state, berserker).materials = [await instance(0, 'Héroe Silencioso'), await instance(0, 'Héroe Corrupto')];
     const valkiria = await onField(state, 1, 'Valkiria');
     recomputeContinuous(state);
-    expect(monster(state, valkiria).tempBuff.atk).toBe(-(2 + 3));
+    const printedAtk = async (name) => getCard(await idOf(name)).atk;
+    expect(monster(state, valkiria).tempBuff.atk).toBe(-((await printedAtk('Héroe Silencioso')) + (await printedAtk('Héroe Corrupto'))));
   });
 
   it('Gigante Elemental is immune to effects of monsters sharing an attribute with its materials', async () => {
     const state = await makeDuel();
     const gigante = await onField(state, 1, 'Gigante Elemental');
-    monster(state, gigante).materials = [await instance(1, 'Fire Giant')];
+    monster(state, gigante).materials = [await instance(1, 'Gigante de Fuego')];
     recomputeContinuous(state);
     const fireSource = await onField(state, 0, 'Bálor'); // Fuego
     const darkSource = await onField(state, 0, 'Cubo Gelatinoso'); // Oscuridad
@@ -259,7 +265,7 @@ describe('Actions and flags that used to do nothing', () => {
   it('Moneda de la Fortuna runs the step the coin picks', async () => {
     const state = await makeDuel();
     registry.coinFlip({ state, controllerIndex: 0 }, getEffect('MONEDA_FORTUNA_COINFLIP').actions[0].args);
-    expect(state.players[0].vp).toBe(state.lastCoinFlip ? STARTING_VP + 3 : STARTING_VP - 3);
+    expect(state.players[0].vp).toBe(state.lastCoinFlip ? STARTING_VP + 5 : STARTING_VP - 3); // heads +5, tails -3
   });
 
   it('Licántropo Cazador summoned by a Licano\'s effect: Atk 10 until the end of the next turn, and back to the Mazo at the end of the Battle Phase, bringing out another Licano', async () => {
@@ -271,11 +277,13 @@ describe('Actions and flags that used to do nothing', () => {
     const cazador = await toDeckTop(state, 0, 'Licántropo Cazador');
     const { summonByEffect } = require('../../game/effects/fieldActions');
     summonByEffect({ state, controllerIndex: 0, sourceInstanceId: alfa }, cazador);
+    placePending(state);
     recomputeContinuous(state);
     expect(monster(state, cazador).tempBuff.atk + monster(state, cazador).baseAtk).toBe(10);
     const beta = await toDeckTop(state, 0, 'Licántropo Beta');
     applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // battle
     applyAction(state, 0, { type: 'ADVANCE_PHASE' }); // end of the Battle Phase
+    resolveAll(state);
     expect(monster(state, cazador)).toBeUndefined();
     expect(state.players[0].deck).toContain(cazador);
     expect(monster(state, beta)).toBeDefined();
@@ -329,16 +337,6 @@ describe('Optional effects ("Puedes...")', () => {
     expect(state.players[0].hand.length).toBe(hand);
   });
 
-  it('Bálor: "puedes activar uno de estos efectos" — one of the two per turn, not both', async () => {
-    const state = await makeDuel();
-    const balor = await onField(state, 0, 'Bálor');
-    await onField(state, 1, 'Slime');
-    toPhase(state, 'main1', 0);
-    expect(activate(state, 0, 'BALOR_EXTRA_ATTACK', balor).ok).toBe(true);
-    passAll(state);
-    expect(activate(state, 0, 'BALOR_INFLICT_BURN', balor)).toMatchObject({ ok: false, reason: 'conditions-not-met' });
-  });
-
   it('Damarco no longer has the "destroy 2 cards" effect its text never had', async () => {
     expect(getCard(await idOf('Damarco, licántropo luchador')).effectCodes).toEqual(['DAMARCO_EXTRA_ATTACKS']);
   });
@@ -351,8 +349,741 @@ describe('Keywords and "monstruo sin efecto"', () => {
 
   it('a monster whose only effects describe how it is summoned counts as "sin efecto"', async () => {
     expect(matchesCardFilter(getCard(await idOf('Valkiria')), { effectless: true })).toBe(true);
-    expect(matchesCardFilter(getCard(await idOf('Fire Giant')), { effectless: true })).toBe(true);
+    expect(matchesCardFilter(getCard(await idOf('Gigante de Fuego')), { effectless: true })).toBe(true);
     expect(matchesCardFilter(getCard(await idOf('Doppelganger')), { effectless: true })).toBe(false);
     expect(matchesCardFilter(getCard(await idOf('Doppelganger')), { effectless: false })).toBe(true);
+  });
+});
+
+describe('Espora Venenosa', () => {
+  it('turned face-up: one pick poisons that monster, which also loses 2 Atk, and the rival takes 2', async () => {
+    const state = await makeDuel();
+    const espora = await onField(state, 0, 'Espora Venenosa', { position: 'defense', faceDown: true });
+    const orco = await onField(state, 1, 'Orco Guerrero');
+    await onField(state, 1, 'Orco Gladiador');
+    monster(state, espora).summonedTurn = 0; // set on an earlier turn
+    toPhase(state, 'main1', 0);
+
+    expect(applyAction(state, 0, { type: 'CHANGE_POSITION', instanceId: espora, position: 'attack' })).toMatchObject({ ok: true, flipped: true });
+    expect(viewFor(state, 0).pendingTriggerChoice).toMatchObject({ kind: 'effect' });
+    // A single pick: the Atk loss goes to the monster just poisoned, nothing more is asked.
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [orco] }).ok).toBe(true);
+    expect(viewFor(state, 0).pendingTriggerChoice).toBeNull();
+
+    const poisoned = viewFor(state, 0).players[1].field.monsters.find((m) => m && m.instanceId === orco);
+    expect(poisoned).toMatchObject({ statuses: ['Veneno'], atk: 1, printedAtk: 3 });
+    expect(state.players[1].vp).toBe(STARTING_VP - 2);
+    expect(state.log.some((l) => l.message === 'Orco Guerrero queda en estado Veneno (por Espora Venenosa).')).toBe(true);
+
+    // The card doesn't say "hasta el final del turno": the Atk loss stays after the status ends.
+    toPhase(state, 'main1', 1);
+    const later = viewFor(state, 0).players[1].field.monsters.find((m) => m && m.instanceId === orco);
+    expect(later.statuses || []).not.toContain('Veneno');
+    expect(later).toMatchObject({ atk: 1, printedAtk: 3 });
+    expect(later.statMods).toEqual(expect.arrayContaining([expect.objectContaining({ atk: -2 })]));
+  });
+});
+
+describe('Orco Gigante', () => {
+  it('gains +2 Atk for each "Orco" sacrificed this turn; a destroyed one or a non-Orco does not count, and it resets next turn', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const gigante = await onField(state, 0, 'Orco Gigante');
+    const base = monster(state, gigante).baseAtk;
+    const atk = () => { recomputeContinuous(state); const m = monster(state, gigante); return m.baseAtk + m.tempBuff.atk; };
+    const sacrifice = async (name) => {
+      const gladiador = await onField(state, 0, 'Orco Gladiador');
+      const fodder = await onField(state, 0, name);
+      expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ORCO_GLADIADOR_EXTRA_ATTACK', sourceInstanceId: gladiador, targets: [fodder] }).ok).toBe(true);
+      passAll(state);
+    };
+    await sacrifice('Orco Guerrero');
+    expect(atk()).toBe(base + 2);
+    await sacrifice('Slime');
+    expect(atk()).toBe(base + 2);
+    const card = await toHand(state, 0, 'Relámpago');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [await onField(state, 1, 'Orco Guerrero')] }).ok).toBe(true);
+    passAll(state);
+    expect(atk()).toBe(base + 2);
+    toPhase(state, 'main1', 1);
+    expect(atk()).toBe(base);
+  });
+});
+
+describe('Cards that pick their target', () => {
+  it('Hechizo de volteo: the picked face-up monster goes to defense face-down', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const orco = await onField(state, 1, 'Orco Guerrero');
+    await onField(state, 1, 'Orco Gladiador');
+    const hechizo = await toHand(state, 0, 'Hechizo de volteo');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: hechizo });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige el monstruo que pasa a defensa boca abajo' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: hechizo, targets: [orco] }).ok).toBe(true);
+    passAll(state);
+    expect(monster(state, orco)).toMatchObject({ position: 'defense', faceDown: true });
+  });
+
+  it('Capitán Bandido: takes control of the monster the player picks, not the strongest', async () => {
+    const state = await makeDuel();
+    const capitan = await onField(state, 0, 'Capitán Bandido');
+    const weak = await onField(state, 1, 'Slime');
+    await onField(state, 1, 'Orco Gladiador');
+    toPhase(state, 'main1', 0);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: capitan, targets: [weak] }).ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    expect(state.players[0].field.monsters.some((m) => m && m.instanceId === weak)).toBe(true);
+  });
+
+  it('Gato del Destino: shuffles the Licántropos picked from the Cementerio, not itself', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const lics = await Promise.all(['Licántropo Beta', 'Licántropo Cazador', 'Licántropo de Hielo', 'Licántropo Gigante'].map((n) => toGraveyard(state, 0, n)));
+    const gato = await toHand(state, 0, 'Gato del Destino');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: gato })).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: gato, targets: lics.slice(0, 3) }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].deck).toEqual(expect.arrayContaining(lics.slice(0, 3)));
+    expect(state.players[0].graveyard).toEqual(expect.arrayContaining([lics[3], gato]));
+  });
+
+  it('Sacrificio memorable: one monster picked on each side, both destroyed; needs one on each', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const sacrificio = await toHand(state, 0, 'Sacrificio memorable');
+    const mine = await onField(state, 0, 'Orco Guerrero');
+    const keep = await onField(state, 0, 'Slime');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sacrificio })).toMatchObject({ ok: false, reason: 'no-legal-target' });
+
+    const theirs = await onField(state, 1, 'Orco Gladiador');
+    const spared = await onField(state, 1, 'Cactus Violento');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sacrificio });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige el monstruo de tu Campo que se destruye' });
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([mine, keep].sort());
+    const next = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sacrificio, targets: [mine] });
+    expect(next).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige el monstruo del oponente que se destruye' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sacrificio, targets: [mine, theirs] }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].graveyard).toContain(mine);
+    expect(state.players[1].graveyard).toContain(theirs);
+    expect(monster(state, keep)).toBeDefined();
+    expect(monster(state, spared)).toBeDefined();
+  });
+});
+
+describe('Equipping a monster as an Equipo', () => {
+  it('the player picks which support zone it goes to', async () => {
+    const state = await makeDuel();
+    const carnivora = await onField(state, 0, 'Carnívora Come Hombres');
+    const victim = await onField(state, 1, 'Orco Guerrero');
+    toPhase(state, 'main1', 0);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CARNIVORA_STEAL_EQUIP', sourceInstanceId: carnivora, targets: [victim] }).ok).toBe(true);
+    passAll(state);
+    // Four free support zones: it waits for the pick, the monster still where it was.
+    expect(viewFor(state, 0).pendingTriggerChoice).toMatchObject({ kind: 'slot', zone: 'support', slots: [0, 1, 2, 3] });
+    expect(monster(state, victim)).toBeTruthy();
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', slot: 2 }).ok).toBe(true);
+    expect(state.players[0].field.support[2]).toMatchObject({ instanceId: victim, equippedTo: carnivora, isMonsterEquip: true });
+    expect(monster(state, victim)).toBeFalsy();
+  });
+});
+
+describe('An Apoyo in hand', () => {
+  it('is only played with ACTIVATE_SUPPORT: its "en activación" effect is not a free button (Olla de la Usura)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const olla = await toHand(state, 0, 'Olla de la Usura');
+    expect(viewFor(state, 0).players[0].hand.find((c) => c.instanceId === olla).availableEffects).toEqual([]);
+    const handBefore = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'OLLA_USURA_DRAW', sourceInstanceId: olla })).toMatchObject({ ok: false, reason: 'play-support-instead' });
+    expect(state.players[0].hand).toHaveLength(handBefore);
+  });
+});
+
+describe('Options to pick from say where each card is', () => {
+  it("whose, which zone and position, Atk/Vida — and a rival's face-down card stays hidden", async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const mine = await onField(state, 0, 'Slime', { position: 'defense' });
+    const theirs = await onField(state, 1, 'Orco Gladiador');
+    const hidden = await onField(state, 1, 'Orco Guerrero', { position: 'defense', faceDown: true });
+    const trap = await instance(1, 'Trampa de Madera');
+    placeSupport(state, trap, 1, { faceDown: true });
+    const relampago = await toHand(state, 0, 'Relámpago');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: relampago });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    // "Destruye un monstruo": the rival's face-down Apoyo isn't one of the options.
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([mine, theirs, hidden].sort());
+    const byId = Object.fromEntries(ask.options.map((o) => [o.instanceId, o]));
+    expect(byId[mine]).toMatchObject({ name: 'Slime', where: { owner: 'self', zone: 'monster', slot: 0, position: 'defense', faceDown: false } });
+    expect(byId[theirs]).toMatchObject({ name: 'Orco Gladiador', where: { owner: 'rival', zone: 'monster', slot: 0, position: 'attack', atk: 3 } });
+    expect(byId[hidden]).toEqual({ instanceId: hidden, name: 'Monstruo boca abajo', image: null, where: { owner: 'rival', zone: 'monster', slot: 1, position: 'defense', faceDown: true } });
+  });
+});
+
+describe('Mazo-C: what each Compilación needs', () => {
+  it('lists the recipe, what the player has for it, and a suggestion once it can be compiled', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const gigante = await instance(0, 'Orco Gigante');
+    state.players[0].extra.push(gigante);
+    const orco1 = await onField(state, 0, 'Orco Guerrero');
+    await toHand(state, 0, 'Orco Gladiador'); // in hand: the recipe only takes them from the field
+
+    const pending = viewFor(state, 0).players[0].extra.find((c) => c.instanceId === gigante).compile;
+    expect(pending).toMatchObject({ ready: false, blockedBy: 'Te faltan materiales.', suggested: [] });
+    expect(pending.requirements).toEqual([expect.objectContaining({ label: '2 × monstruo Orco', zones: ['Campo'], count: 2, have: 1 })]);
+    expect(pending.requirements[0].candidates).toEqual([expect.objectContaining({ instanceId: orco1, name: 'Orco Guerrero', zoneLabel: 'Campo', slot: 0 })]);
+
+    const orco2 = await onField(state, 0, 'Orco Gladiador');
+    const ready = viewFor(state, 0).players[0].extra.find((c) => c.instanceId === gigante).compile;
+    expect(ready).toMatchObject({ ready: true, blockedBy: null });
+    expect(ready.suggested.sort()).toEqual([orco1, orco2].sort());
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: gigante, materialInstanceIds: ready.suggested }).ok).toBe(true);
+  });
+
+  it('Pez Dorado ("2 monstruos Agua") and Amooth ("3 monstruos Marinos") take any of them', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const dorado = await instance(0, 'Pez Dorado de la Suerte');
+    const amooth = await instance(0, 'Protector del Mar, Amooth');
+    state.players[0].extra.push(dorado, amooth);
+    await onField(state, 0, 'HipoCampo');
+    await onField(state, 0, 'Cangrejo Archipiélago');
+    const info = (id) => viewFor(state, 0).players[0].extra.find((c) => c.instanceId === id).compile;
+    expect(info(dorado)).toMatchObject({ ready: true });
+    expect(info(amooth)).toMatchObject({ ready: false, requirements: [expect.objectContaining({ have: 2, count: 3 })] });
+    await onField(state, 0, 'Pez Leviatán');
+    expect(info(amooth)).toMatchObject({ ready: true });
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: dorado, materialInstanceIds: info(dorado).suggested }).ok).toBe(true);
+  });
+
+  it('Gigante Elemental: 5 monsters with "Gigante" in the name, from the field or the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const elemental = await instance(0, 'Gigante Elemental');
+    state.players[0].extra.push(elemental);
+    await onField(state, 0, 'Gigante de Fuego');
+    await onField(state, 0, 'Gigante del Trueno');
+    await toGraveyard(state, 0, 'Gigante de Rocas');
+    await toGraveyard(state, 0, 'Gigante de las Nubes');
+    const info = () => viewFor(state, 0).players[0].extra.find((c) => c.instanceId === elemental).compile;
+    expect(info()).toMatchObject({ ready: false, requirements: [expect.objectContaining({ have: 4, count: 5 })] });
+    await toGraveyard(state, 0, 'Gigante de Hielo');
+    expect(info()).toMatchObject({ ready: true });
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: elemental, materialInstanceIds: info().suggested }).ok).toBe(true);
+  });
+
+  it('Catapulta compiles from 2 Balista tokens, which then stop existing', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const catapulta = await instance(0, 'Catapulta');
+    state.players[0].extra.push(catapulta);
+    const def = { name: 'Balista', attribute: 'Tierra', breed: 'Metal', level: 2, atk: 2, def: 2 };
+    const tokens = [0, 1].map((slot) => {
+      const id = `token:Balista:test${slot}`;
+      state.players[0].field.monsters[slot] = { instanceId: id, cardId: null, isToken: true, tokenDef: def, position: 'attack', faceDown: false, baseAtk: 2, baseDef: 2, summonedTurn: 0, equips: [], counters: {} };
+      return id;
+    });
+    const info = viewFor(state, 0).players[0].extra.find((c) => c.instanceId === catapulta).compile;
+    expect(info).toMatchObject({ ready: true });
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: catapulta, materialInstanceIds: info.suggested }).ok).toBe(true);
+    expect(monster(state, catapulta)).toMatchObject({ materials: [] });
+    tokens.forEach((id) => expect(monster(state, id)).toBeUndefined());
+  });
+});
+
+describe('Aboleth: "cuando es enviada del Campo al Cementerio" summons 2 Tentáculo Musculoso', () => {
+  const tentacles = (state, p) => state.players[p].field.monsters.filter((m) => m && m.isToken && m.tokenDef.name === 'Tentáculo Musculoso');
+
+  it('when destroyed by an effect (Relámpago)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const aboleth = await onField(state, 1, 'Aboleth');
+    const relampago = await toHand(state, 0, 'Relámpago');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: relampago, targets: [aboleth] }).ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    expect(state.players[1].graveyard).toContain(aboleth);
+    expect(tentacles(state, 1)).toHaveLength(2);
+  });
+
+  it('when destroyed in battle', async () => {
+    const state = await makeDuel();
+    const gigante = await onField(state, 0, 'Gigante de Fuego');
+    const aboleth = await onField(state, 1, 'Aboleth');
+    toPhase(state, 'battle', 0);
+    expect(applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: gigante, targetInstanceId: aboleth }).ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    expect(state.players[1].graveyard).toContain(aboleth);
+    expect(tentacles(state, 1)).toHaveLength(2);
+  });
+
+  it('its own Tentáculos (Agua) can be destroyed to bring Aboleth back; a token just disappears', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const aboleth = await onField(state, 0, 'Aboleth');
+    const relampago = await toHand(state, 0, 'Relámpago');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: relampago, targets: [aboleth] }).ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    const [tentacle] = tentacles(state, 0);
+    expect(viewFor(state, 0).players[0].graveyard.find((g) => g.instanceId === aboleth).specialSummonAvailable).toBe(true);
+    const ask = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth, targets: [tentacle.instanceId] }).ok).toBe(true);
+    expect(monster(state, aboleth)).toBeDefined();
+    expect(tentacles(state, 0)).toHaveLength(1);
+    expect(state.players[0].graveyard.some((id) => id.startsWith('token:'))).toBe(false);
+  });
+
+  it('when destroyed to pay a cost (another Aboleth coming out)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const first = await onField(state, 0, 'Aboleth');
+    const second = await toHand(state, 0, 'Aboleth');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: second, targets: [first] }).ok).toBe(true);
+    placePending(state);
+    expect(state.players[0].graveyard).toContain(first);
+    expect(monster(state, second)).toBeDefined();
+    expect(tentacles(state, 0)).toHaveLength(2);
+  });
+});
+
+describe('A one-shot Apoyo waiting on the Pila', () => {
+  it('Tifón Místico: its "en activación" effect cannot be used again while it waits to resolve', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const oceano = await instance(1, 'Oceano');
+    placeSupport(state, await instance(1, 'Trampa de Madera'), 1, { faceDown: true });
+    state.players[1].field.territory = { instanceId: oceano, cardId: oceano.split(':')[1], faceDown: false, counters: {} };
+    const cometa = await toHand(state, 0, 'Tifón Místico');
+    const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: cometa, targets: [oceano] });
+    expect(res.ok).toBe(true);
+    // While it's on the Pila (face-up in a support zone) it offers no effect of its own…
+    const onField = viewFor(state, 0).players[0].field.support.find((s) => s && s.instanceId === cometa);
+    expect(onField.availableEffects).toEqual([]);
+    // …and activating it again is refused.
+    applyAction(state, 1, { type: 'PASS_CHAIN' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DESTRUIR_APOYO', sourceInstanceId: cometa })).toMatchObject({ ok: false });
+    passAll(state);
+    expect(state.log.filter((l) => / es destruida\./.test(l.message))).toHaveLength(1);
+  });
+});
+
+describe('Refuerzos from the Cementerio', () => {
+  it('needs 2 monsters there, lets the player pick which 2, then draws 1', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const refuerzos = await toGraveyard(state, 0, 'Refuerzos');
+    state.graveyardTurn = { [refuerzos]: 0 }; // sent on an earlier turn
+    const one = await toGraveyard(state, 0, 'Slime');
+    const act = (targets) => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos, targets });
+    expect(act([])).toMatchObject({ ok: false, reason: 'no-legal-target' });
+
+    const two = await toGraveyard(state, 0, 'Orco Guerrero');
+    const three = await toGraveyard(state, 0, 'Orco Gladiador');
+    const ask = act([]);
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige los 2 monstruos de tu Cementerio que barajas en el Mazo' });
+    expect(act([one])).toMatchObject({ ok: false, reason: 'choose-target' });
+    const hand = state.players[0].hand.length;
+    expect(act([one, three]).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].graveyard).toContain(two);
+    expect(state.players[0].graveyard).not.toContain(one);
+    expect(state.players[0].graveyard).not.toContain(three);
+    expect(state.players[0].banished).toContain(refuerzos);
+    expect(state.players[0].hand).toHaveLength(hand + 1);
+  });
+});
+
+describe('Doppelganger', () => {
+  it('comes out only with 8 cards in the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const doppel = await toHand(state, 0, 'Doppelganger');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: doppel, position: 'attack' })).toMatchObject({ ok: false });
+    for (let i = 0; i < 7; i++) await toGraveyard(state, 0, 'Slime');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: doppel })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
+    await toGraveyard(state, 0, 'Slime');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: doppel }).ok).toBe(true);
+    expect(monster(state, doppel)).toBeDefined();
+  });
+
+  it('destroys a monster (never an Apoyo) and takes its effect', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const doppel = await onField(state, 0, 'Doppelganger');
+    const ent = await onField(state, 1, 'Ent');
+    await onField(state, 1, 'Slime');
+    const trap = await instance(1, 'Trampa de Madera');
+    placeSupport(state, trap, 1, { faceDown: true });
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DOPPEL_COPY_EFFECT', sourceInstanceId: doppel });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(ask.options.map((o) => o.instanceId)).not.toContain(trap);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DOPPEL_COPY_EFFECT', sourceInstanceId: doppel, targets: [ent] }).ok).toBe(true);
+    passAll(state);
+    expect(monster(state, ent)).toBeUndefined();
+    // Ent's "añade un monstruo Planta del Mazo" is now Doppelganger's own.
+    const view = viewFor(state, 0).players[0].field.monsters.find((m) => m && m.instanceId === doppel);
+    expect(view.availableEffects).toContain('ENT_SEARCH_PLANTA');
+    const espora = await toDeckTop(state, 0, 'Espora Venenosa');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'ENT_SEARCH_PLANTA', sourceInstanceId: doppel, targets: [espora] }).ok).toBe(true);
+    passAll(state);
+    placePending(state);
+    expect(state.players[0].hand).toContain(espora);
+  });
+});
+
+describe('Vampiro: "destruye una carta cuyo Atk actual sea diferente a su Atk original"', () => {
+  it('only a face-up monster whose Atk really changed; never a face-down one', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const vampiro = await onField(state, 0, 'Vampiro');
+    const hidden = await onField(state, 1, 'Orco Gladiador', { position: 'defense', faceDown: true });
+    const plain = await onField(state, 1, 'Slime');
+    const act = (targets) => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'VAMPIRO_DESTROY_MODIFIED_ATK', sourceInstanceId: vampiro, targets });
+    expect(act([])).toMatchObject({ ok: false, reason: 'no-legal-target' });
+    expect(act([hidden])).toMatchObject({ ok: false });
+
+    const boosted = await onField(state, 1, 'Orco Guerrero');
+    monster(state, boosted).baseAtk += 2; // its Atk is no longer the printed one
+    expect(act([])).toMatchObject({ ok: false, reason: 'choose-target', options: [expect.objectContaining({ instanceId: boosted })] }); // the only legal one: still the player's pick
+    expect(act([boosted]).ok).toBe(true);
+    passAll(state);
+    expect(monster(state, boosted)).toBeUndefined();
+    expect(monster(state, hidden)).toBeDefined();
+    expect(monster(state, plain)).toBeDefined();
+  });
+});
+
+describe('Murciélago, Vampiro and Vampiresa: special summon only', () => {
+  it('Murciélago pays 2 VP; it has no Normal Summon', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const bat = await toHand(state, 0, 'Murciélago');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: bat, position: 'attack' })).toMatchObject({ ok: false });
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: bat }).ok).toBe(true);
+    expect(state.players[0].vp).toBe(STARTING_VP - 2);
+  });
+
+  it('Vampiro (5 VP) and Vampiresa (4 VP) need a Murciélago in the Campo or the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const vampiro = await toHand(state, 0, 'Vampiro');
+    const vampiresa = await toHand(state, 0, 'Vampiresa');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: vampiro, position: 'attack' })).toMatchObject({ ok: false });
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiro })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
+
+    await toGraveyard(state, 0, 'Murciélago');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiro }).ok).toBe(true);
+    placePending(state);
+    expect(state.players[0].vp).toBe(STARTING_VP - 5);
+
+    state.players[0].graveyard = [];
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiresa })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
+    await onField(state, 0, 'Murciélago');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: vampiresa }).ok).toBe(true);
+    expect(state.players[0].vp).toBe(STARTING_VP - 9);
+  });
+});
+
+describe('Vampiresa', () => {
+  it('-3 Atk to the rival monster the player picks, only until the end of the turn', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const vampiresa = await onField(state, 0, 'Vampiresa');
+    const orco = await onField(state, 1, 'Orco Guerrero');
+    await onField(state, 1, 'Slime');
+    expect(activate(state, 0, 'VAMPIRESA_CHOICE', vampiresa, ['choice:1', orco]).ok).toBe(true);
+    passAll(state);
+    expect(viewFor(state, 0).players[1].field.monsters.find((m) => m && m.instanceId === orco).atk).toBe(0); // 3 - 3
+    toPhase(state, 'main1', 1);
+    expect(viewFor(state, 0).players[1].field.monsters.find((m) => m && m.instanceId === orco).atk).toBe(3);
+  });
+});
+
+describe('Guarida del Ser Oscuro', () => {
+  it('can be played with nothing to search; its "una vez por turno" search is used from the field', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const guarida = await toHand(state, 0, 'Guarida del Ser Oscuro');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: guarida }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].field.territory).toMatchObject({ instanceId: guarida });
+    const search = () => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'OSC_DEMON_SEARCH', sourceInstanceId: guarida });
+    expect(search()).toMatchObject({ ok: false, reason: 'no-legal-target' }); // no Demonio/Inmortal/Pecador in the Mazo
+
+    const slime = await toDeckTop(state, 0, 'Íncubo'); // Pecador
+    const cubo = await toDeckTop(state, 0, 'Rey Demonio'); // a Demonio of Fuego counts too
+    expect(viewFor(state, 0).players[0].field.territory.availableEffects).toContain('OSC_DEMON_SEARCH');
+    expect(actPicking(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'OSC_DEMON_SEARCH', sourceInstanceId: guarida }).ok).toBe(true);
+    passAll(state);
+    let guard = 0;
+    while (viewFor(state, 0).pendingTriggerChoice && guard++ < 5) {
+      const pending = viewFor(state, 0).pendingTriggerChoice;
+      applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [pending.options[pending.options.length - 1].instanceId] });
+    }
+    expect([slime, cubo].filter((id) => state.players[0].hand.includes(id) || state.players[0].graveyard.includes(id))).toHaveLength(2);
+    expect(search()).toMatchObject({ ok: false, reason: 'once-per-turn' });
+  });
+});
+
+describe('Guarida del Ser Oscuro on the field', () => {
+  it('+4 Atk/Vida to every Demonio, Inmortal, Pecador and Cambiaformas monster on the field', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const guarida = await toHand(state, 0, 'Guarida del Ser Oscuro');
+    const vampiro = await onField(state, 0, 'Vampiro'); // Inmortal
+    const kraken = await onField(state, 0, 'Kraken'); // Monstruo Marino: not one of them
+    const incubo = await onField(state, 1, 'Íncubo'); // Pecador, on the rival's side
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: guarida }).ok).toBe(true);
+    passAll(state);
+    expect(monster(state, vampiro).tempBuff).toEqual({ atk: 4, def: 4 });
+    expect(monster(state, incubo).tempBuff).toEqual({ atk: 4, def: 4 });
+    expect(monster(state, kraken).tempBuff).toEqual({ atk: 0, def: 0 });
+  });
+});
+
+describe('Intercanvio del Pequeño', () => {
+  it('costs a card from hand the player picks; then summons a Nivel 1 monster from the Mazo', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const card = await toHand(state, 0, 'Intercanvio del Pequeño');
+    const esqueleto = await toDeckTop(state, 0, 'Esqueleto'); // Nivel 1
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card })).toMatchObject({ ok: false, reason: 'cannot-pay-cost' });
+
+    const keep = await toHand(state, 0, 'Orco Guerrero');
+    const pay = await toHand(state, 0, 'Slime');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige la carta que descartas' });
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([keep, pay].sort());
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [pay, esqueleto] }).ok).toBe(true);
+    expect(state.players[0].graveyard).toContain(pay);
+    expect(state.players[0].hand).toContain(keep);
+    passAll(state);
+    resolveAll(state);
+    expect(monster(state, esqueleto)).toBeDefined();
+  });
+});
+
+describe('Loto de Obsidiana', () => {
+  it('costs a card from hand; 3 pixels; from the Cementerio, 3 more but not the turn it got there', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    state.players[0].pixelcoins = 0;
+    const loto = await toHand(state, 0, 'Loto de Obsidiana');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: loto })).toMatchObject({ ok: false, reason: 'cannot-pay-cost' });
+    const pay = await toHand(state, 0, 'Slime');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: loto }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].graveyard).toEqual(expect.arrayContaining([pay, loto]));
+    expect(state.players[0].pixelcoins).toBe(3);
+
+    state.players[1].pixelcoins = 10; // the rival has more pixels
+    const fromGrave = () => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'OBSIDIAN_GRAVE_PIXEL', sourceInstanceId: loto });
+    expect(fromGrave()).toMatchObject({ ok: false, reason: 'conditions-not-met' }); // sent there this turn
+    state.graveyardTurn[loto] = state.turnNumber - 1;
+    expect(fromGrave().ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].banished).toContain(loto);
+    expect(state.players[0].pixelcoins).toBe(6);
+  });
+});
+
+describe('Searches by kind of Apoyo and by what the text mentions', () => {
+  it('a subtype/textIncludes filter only offers matching cards, not the whole Mazo', async () => {
+    const { matchesCardFilter: m } = require('../../game/filters');
+    const card = async (n) => getCard(await idOf(n));
+    expect(m(await card('Trampa de Madera'), { subtype: 'Contraataque' })).toBe((await card('Trampa de Madera')).subtype === 'counter');
+    expect(m(await card('Llamada al Héroe'), { subtype: 'Normal', textIncludes: 'Héroe' })).toBe(true);
+    expect(m(await card('Llamada al Héroe'), { subtype: 'Contraataque' })).toBe(false);
+    expect(m(await card('Relámpago'), { textIncludes: 'Héroe' })).toBe(false);
+  });
+});
+
+describe('"Cuando es enviada al Cementerio" from anywhere, and where it came from', () => {
+  it('Héroe Montado sent from the Mazo by Héroe de Marfil adds a Héroe Apoyo to the hand', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const llamada = await toDeckTop(state, 0, 'Llamada al Héroe');
+    const montado = await toDeckTop(state, 0, 'Héroe Montado');
+    const marfil = await toHand(state, 0, 'Héroe de Marfil');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: marfil, position: 'attack' }).ok).toBe(true);
+    let guard = 0;
+    while (viewFor(state, 0).pendingTriggerChoice && guard++ < 5) {
+      const pending = viewFor(state, 0).pendingTriggerChoice;
+      const pick = pending.options.find((o) => o.instanceId === montado || o.instanceId === llamada) || pending.options[0];
+      applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [pick.instanceId] });
+    }
+    expect(state.players[0].graveyard).toContain(montado);
+    expect(state.players[0].hand).toContain(llamada);
+  });
+
+  it('Aboleth discarded from the hand does not summon its tokens ("del Campo al Cementerio")', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const aboleth = await toHand(state, 0, 'Aboleth');
+    await toHand(state, 0, 'Slime'); // two cards: the player picks which one
+    const { requestDiscard } = require('../../game/effects/actions');
+    requestDiscard(state, 0, 1, 'Descarta');
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [aboleth] }).ok).toBe(true);
+    expect(state.players[0].graveyard).toContain(aboleth);
+    expect(state.players[0].field.monsters.filter(Boolean)).toHaveLength(0);
+    expect(viewFor(state, 0).pendingTriggerChoice).toBeNull();
+  });
+});
+
+describe('Héroe de Escarcha as a material', () => {
+  it('freezes a monster of the rival, never one of the player', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const escarcha = await onField(state, 0, 'Héroe de Escarcha');
+    const mine = await onField(state, 0, 'Slime');
+    const theirs = await onField(state, 1, 'Orco Guerrero');
+    await onField(state, 1, 'Orco Gladiador');
+    const { fireMaterialTriggers } = require('../../game/effectEngine');
+    fireMaterialTriggers(state, 0, [escarcha], `0:${await idOf('Héroe Berserker')}:x`);
+    const pending = viewFor(state, 0).pendingTriggerChoice;
+    expect(pending.options.map((o) => o.instanceId)).not.toContain(mine);
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [theirs] }).ok).toBe(true);
+    expect(state.statuses[theirs].map((s) => s.type)).toContain('Congelado');
+    expect(state.statuses[mine]).toBeUndefined();
+  });
+});
+
+describe('Ciempiés Eterno', () => {
+  it('is compiled from "Ciempiés Gigante" + 1 Insecto', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const eterno = await instance(0, 'Ciempiés Eterno');
+    state.players[0].extra.push(eterno);
+    const a = await onField(state, 0, 'Avispa gigante');
+    await onField(state, 0, 'Avispa Rosa');
+    const info = () => viewFor(state, 0).players[0].extra.find((c) => c.instanceId === eterno).compile;
+    expect(info()).toMatchObject({ ready: false }); // two Insectos, but no Ciempiés Gigante
+    const gigante = await onField(state, 0, 'Ciempiés Gigante');
+    expect(info()).toMatchObject({ ready: true });
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: eterno, materialInstanceIds: [gigante, a] }).ok).toBe(true);
+  });
+});
+
+describe('Enjambre de Avispas from the Cementerio', () => {
+  it('with 3 Avispas there, the player picks which 2 go back', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const enjambre = await toGraveyard(state, 0, 'Enjambre de Avispas');
+    const wasps = [await toGraveyard(state, 0, 'Avispa gigante'), await toGraveyard(state, 0, 'Avispa Rosa'), await toGraveyard(state, 0, 'Avispa Mutante')];
+    expect(viewFor(state, 0).players[0].graveyard.find((c) => c.instanceId === enjambre).availableEffects).toContain('WASP_SWARM_GRAVE');
+    const act = (targets) => applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'WASP_SWARM_GRAVE', sourceInstanceId: enjambre, targets });
+    expect(act([])).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige los 2 monstruos "Avispa" de tu Cementerio que barajas en el Mazo' });
+    expect(act([wasps[0], wasps[2]]).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].graveyard).toContain(wasps[1]);
+    expect(state.players[0].deck).toEqual(expect.arrayContaining([wasps[0], wasps[2]]));
+  });
+});
+
+describe('A Compilación never goes to the hand', () => {
+  it('Avispa Rosa only offers Himenóptero monsters of level 3 or less from the Cementerio, never a Compilación', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const rosa = await onField(state, 0, 'Avispa Rosa');
+    await toGraveyard(state, 0, 'Avispa Reina');
+    await toGraveyard(state, 0, 'Avispa Arquera');
+    const small = await toGraveyard(state, 0, 'Avispa gigante');
+    const small2 = await toGraveyard(state, 0, 'Avispa de Batalla');
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'AVISPA_ROSA_ADD_HAND', sourceInstanceId: rosa });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([small, small2].sort());
+  });
+
+  it('a compiled monster sent back to the hand goes to its Mazo-C instead', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const arquera = await onField(state, 0, 'Avispa Arquera');
+    moveToZone(state, arquera, 'hand');
+    expect(state.players[0].hand).not.toContain(arquera);
+    expect(state.players[0].extra).toContain(arquera);
+  });
+});
+
+describe('Deva', () => {
+  it('can only be special summoned when both players have at least 3 monsters in the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const deva = await toHand(state, 0, 'Deva');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: deva })).toMatchObject({ ok: false, reason: 'special-summon-only' });
+    for (const name of ['Slime', 'Slime', 'Slime']) await toGraveyard(state, 0, name);
+    await toGraveyard(state, 1, 'Slime');
+    await toGraveyard(state, 1, 'Relámpago'); // not a monster
+    await toGraveyard(state, 1, 'Slime');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: deva }).ok).toBe(false);
+    await toGraveyard(state, 1, 'Kraken');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: deva }).ok).toBe(true);
+  });
+});
+
+describe('Oscuro / Inferno: "destruye una carta boca abajo / boca arriba"', () => {
+  it('only offers face-down cards to Oscuro and face-up cards to Inferno, monsters and supports alike', async () => {
+    const { selectRows } = require('../../game/targets');
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const oscuro = await onField(state, 0, 'Oscuro, el Dragón de Oscuridad');
+    const downMonster = await onField(state, 1, 'Slime', { position: 'defense', faceDown: true });
+    const upMonster = await onField(state, 1, 'Kraken');
+    const downSupport = placeSupport(state, await instance(1, 'Trampa de Madera'), 1, { faceDown: true }).instanceId;
+    const upSupport = placeSupport(state, await instance(1, 'Arboleda'), 1, { faceDown: false }).instanceId;
+    const offered = (effectId) => {
+      const effect = getEffect(effectId);
+      return selectRows({ state, controllerIndex: 0, sourceInstanceId: oscuro, effect }, effect.actions[0].args).map((r) => r.entry.instanceId).sort();
+    };
+    expect(offered('OSCURO_DRAGON_DESTROY_FACEDOWN')).toEqual([downMonster, downSupport].sort());
+    expect(offered('INFERNO_DRAGON_DESTROY_ON_SUMMON')).toEqual([upMonster, upSupport].sort());
+  });
+});
+
+describe('Araña de Fase', () => {
+  it('leaves at the end of every turn and comes back in its owner\'s next Fase de Espera', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const arana = await onField(state, 0, 'Araña de Fase');
+    toPhase(state, 'end', 0);
+    passAll(state);
+    expect(state.players[0].banished).toContain(arana);
+    toPhase(state, 'main1', 1); // the rival's turn: still away
+    expect(monster(state, arana)).toBeUndefined();
+    toPhase(state, 'main1', 0); // its owner's Fase de Espera brings it back
+    expect(monster(state, arana)).toBeDefined();
+    expect(state.players[0].banished).not.toContain(arana);
+  });
+
+  it('can be special summoned only while its owner controls an Insecto', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const arana = await toHand(state, 0, 'Araña de Fase');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: arana }).ok).toBe(false);
+    await onField(state, 0, 'Avispa gigante');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: arana }).ok).toBe(true);
+  });
+});
+
+describe('Camino de la Reina', () => {
+  it('each "Safira" its controller summons draws 1 card and generates 1 pixel; other monsters do not', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    placeSupport(state, await instance(0, 'Camino de la Reina'), 0, { faceDown: false });
+    state.players[0].pixelcoins = 3;
+    const safira = await toHand(state, 0, 'Safira, Bebé Dragón');
+    const hand = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: safira }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].hand).toHaveLength(hand - 1 + 1); // Safira left the hand, one card drawn
+    expect(state.players[0].pixelcoins).toBe(4);
+
+    await onField(state, 1, 'Slime'); // a rival's monster: nothing
+    expect(state.players[0].pixelcoins).toBe(4);
   });
 });

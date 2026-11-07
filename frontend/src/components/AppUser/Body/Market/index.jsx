@@ -4,6 +4,7 @@ import styles from './market.module.css';
 import CardFace from '../CreateNewDeck/CardModal/CardFace';
 import { useUser } from '../../../../context/userContext';
 import { successToast, errorToast } from '../../../../lib/toastify/toast';
+import { PIXELCOIN_ICON } from '../../../../lib/utils/storeConstants';
 import {
   getMarketSummary,
   getCardListings,
@@ -15,7 +16,6 @@ import {
   marketError,
 } from '../../../../lib/utils/apiMarket';
 
-const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
 
 const TABS = [
   { id: 'buy', label: 'Comprar' },

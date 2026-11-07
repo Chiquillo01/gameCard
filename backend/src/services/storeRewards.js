@@ -43,7 +43,7 @@ async function drawChest(productDoc, random = Math.random) {
   const product = productDoc.toObject ? productDoc.toObject() : productDoc;
   const size = dropTableSize(product.dropTable);
   if (!size) return null;
-  const cards = await Card.find({ expansion: product.expansion }).lean();
+  const cards = await Card.find({ expansion: product.expansion, obtainable: { $ne: false } }).lean();
   const byRarity = new Map();
   cards.forEach((card) => {
     if (!byRarity.has(card.rarity)) byRarity.set(card.rarity, []);

@@ -28,7 +28,7 @@ const SUPPORT_SUBTYPES = {
   equipment: 'Equipo',
   field: 'Territorio',
   instant: 'Apoyo Veloz',
-  counter: 'Contraataque',
+  counter: 'Contraefecto',
 };
 
 const COUNTER_LABELS = { gear: 'Engranaje' };
@@ -82,6 +82,10 @@ export function guideFor({ view, me, enemy, isMyTurn, attacker, canAttackDirectl
   const you = view.you;
   if (view.status !== 'active') return null;
   if (choicePending) return { tone: 'action', text: 'Tienes que elegir: responde a la ventana abierta para seguir.' };
+  if (view.window) {
+    if (view.window.priorityPlayer === you) return { tone: 'action', text: `${view.window.label}. Puedes responder con una carta de Velocidad 2 o más (Apoyo Veloz o un efecto rápido) o pulsar "Pasar".` };
+    return { tone: 'wait', text: 'Esperando a que el rival responda o pase…' };
+  }
   if (view.chain) {
     const top = view.chain.links[view.chain.links.length - 1];
     const topIsRival = top.controllerIndex !== you;
@@ -89,7 +93,7 @@ export function guideFor({ view, me, enemy, isMyTurn, attacker, canAttackDirectl
       const what = top.kind === 'attack' ? `${topIsRival ? 'El rival declara' : 'Declaras'} "${top.cardName}"` : `${topIsRival ? 'El rival activa' : 'Activas'} ${top.cardName}`;
       return {
         tone: 'action',
-        text: `${what}. Puedes responder con una carta de Velocidad ${Math.max(2, top.speed)} o más (Apoyo Veloz, Contraataque o un efecto rápido) o pulsar "Pasar" para que se resuelva.`,
+        text: `${what}. Puedes responder con una carta de Velocidad ${Math.max(2, top.speed)} o más (Apoyo Veloz, Contraefecto o un efecto rápido) o pulsar "Pasar" para que se resuelva.`,
       };
     }
     return { tone: 'wait', text: 'Esperando a que el rival responda o pase…' };
@@ -157,7 +161,7 @@ export function forecastBattle(attacker, defender, cardsById) {
   const hit = (amount, m) => (burn(m) ? amount * 2 : amount);
   const lines = [];
   if (defender.faceDown || defender.def == null) {
-    lines.push(`${attacker.name} (Atk ${a}) contra un monstruo boca abajo: se revelará y su Vida decidirá el resultado.`);
+    lines.push(`${attacker.name} (Atk ${a}) contra un monstruo boca abajo: pasará a boca arriba, su efecto al ponerse boca arriba (si tiene) se aplicará antes del daño y su Vida decidirá el resultado.`);
     return { lines };
   }
   const water = (m) => cardsById[m.cardId]?.attribute === 'Agua';
@@ -182,6 +186,28 @@ export function forecastBattle(attacker, defender, cardsById) {
   }
   if (burn(attacker) || burn(defender)) lines.push('🔥 Quemadura: el daño de ese monstruo cuenta doble.');
   return { lines };
+}
+
+// A response window: the rival (or you) just did something and the other player may answer it with
+// a fast effect, or pass.
+export function WindowBar({ window: w, you, onPass, className = '' }) {
+  const mine = w.priorityPlayer === you;
+  return (
+    <div className={`${styles.chainBar} ${className}`}>
+      <div className={styles.chainInfo}>
+        <span className={styles.chainTitle}>⏳ Ventana de respuesta</span>
+        <span>{w.label}.</span>
+      </div>
+      <div className={styles.chainActions}>
+        <span>{mine ? 'Puedes responder con un efecto rápido o pasar' : 'Esperando a que el rival responda o pase…'}</span>
+        {mine && (
+          <button className={styles.actionButton} onClick={onPass}>
+            Pasar
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function ChainBar({ chain, you, names, onPass, className = '' }) {
@@ -286,7 +312,7 @@ export function DetailsPanel({ hovered, isMyBattle }) {
         <span className={styles.panelTitle}>
           Monstruo boca abajo <span className={styles.detailsOwner}>{owner}</span>
         </span>
-        <p className={styles.detailsLine}>En Defensa. Si lo atacas se revela y su Vida decide el combate.</p>
+        <p className={styles.detailsLine}>En Defensa. Si lo atacas pasa a boca arriba: primero se aplica su efecto al ponerse boca arriba (si tiene) y luego su Vida decide el combate.</p>
       </div>
     );
   }

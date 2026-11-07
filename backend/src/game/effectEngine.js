@@ -22,6 +22,19 @@ function makeCtx(state, controllerIndex, effect, sourceInstanceId) {
 // sitting in that zone right now — this is the shared convention effect authoring used for
 // that (`from` on the trigger's args, or the shorthand "onGraveyard"). Kraken/Rakshasa ("descarta
 // esta carta") are used from the hand the same way.
+// A one-shot Apoyo's (Normal / Veloz / Contraataque) own "En activación" effect — what
+// ACTIVATE_SUPPORT / turning it face-up runs, never a separate ACTIVATE_EFFECT. Continuos and
+// Territorios keep theirs: "una vez por turno" abilities used from the field (Forja, Guarida del
+// Oscuro). Graveyard/exile effects of a card are separate, and allowed.
+const ONE_SHOT_SUPPORTS = ['normal', 'instant', 'counter'];
+function isOwnActivation(card, effect) {
+  if (card && card.category === 'support' && effect && effect.trigger && effect.trigger.fn === 'onPlay') return true;
+  if (!card || card.category !== 'support' || !ONE_SHOT_SUPPORTS.includes(card.subtype)) return false;
+  if (!effect || !effect.trigger || effect.trigger.fn !== 'onActivation') return false;
+  const from = effect.trigger.args && effect.trigger.args.from;
+  return from !== 'graveyard' && from !== 'banished';
+}
+
 function requiredZoneFor(effect) {
   if (!effect.trigger) return null;
   const from = effect.trigger.args && effect.trigger.args.from;
@@ -77,15 +90,28 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
   if (hasStatus(state, sourceInstanceId, FREEZE)) return { ok: false, reason: 'frozen' };
   // Only an effect this card actually has (its own, or one it copied) — never an arbitrary id.
   if (!effectIdsAt(state, sourceInstanceId).includes(effectId)) return { ok: false, reason: 'unknown-effect' };
+  // An Apoyo in hand is played with ACTIVATE_SUPPORT, which pays its activation cost and takes it
+  // out of the hand — its "en activación" effect is not a separate effect to use on its own.
+  if (loc.zone === 'hand' && getCard(cardIdFromInstance(sourceInstanceId)).category === 'support') return { ok: false, reason: 'play-support-instead' };
 
   // A Veloz/Contraataque set face-down is activated by turning it over, paying its activation cost
   // and going to the Cementerio afterwards — exactly like activating it from the hand.
   const entry = fieldEntryAt(state, loc);
   if (entry && loc.zone === 'field:support' && entry.faceDown) {
+    // Turning it over runs its "en activación" effects: an effect for another zone (Anillo de Boda's
+    // "exilia esta carta en el Cementerio") can't be used from here.
+    if (!require('./support').onPlayEffects(getCard(cardIdFromInstance(sourceInstanceId))).some((e) => e._id === effectId)) {
+      const zone = requiredZoneFor(effect);
+      return { ok: false, reason: zone && zone !== 'field' ? `not-in-${zone === 'banished' ? 'exile' : zone}` : 'face-down' };
+    }
     return require('./support').activateSetSupport(state, controllerIndex, sourceInstanceId, { targets });
   }
   if (entry && entry.faceDown) return { ok: false, reason: 'face-down' };
+  if (entry && loc.zone === 'field:monster' && isNegated(state, entry)) return { ok: false, reason: 'negated' };
   if (entry && entry.isMonsterEquip) return { ok: false, reason: 'unknown-effect' };
+  // Its "en activación" effect already went on the Pila with the card itself: a face-up Apoyo on
+  // the field (Tifón Místico waiting to resolve, a Continuo) can't run it again for free.
+  if (isOwnActivation(getCard(cardIdFromInstance(sourceInstanceId)), effect)) return { ok: false, reason: 'already-activated' };
 
   // Effects that don't say which zone they need (most monster ignition/quick abilities) default to
   // "must be face-up on the field" — the ordinary case for that kind of ability.
@@ -146,9 +172,17 @@ function resolveActions(ctx, effect, targets = []) {
   const exclude = ctx.costPaid || [];
   const assigned = assignPicks(ctx, effect, list, exclude);
   const byIndex = new Map(assigned.map((a) => [a.index, a]));
+  // What the last step that picked something acted on — for a step whose data says
+  // `target: 'previous'` ("el monstruo envenenado por este efecto pierde -2 Atk").
+  let previousTargets = [];
   activeSteps(effect, list).forEach(({ step, index }) => {
     const a = byIndex.get(index);
     let stepTargets;
+    if (step.args && step.args.target === 'previous') {
+      if (!previousTargets.length) return;
+      runAction(ctx, step, previousTargets);
+      return;
+    }
     if (a && a.pool) {
       // Pools are re-read right before each step runs: an earlier step may have moved cards.
       const { stepPool, stepCount } = require('./targets');
@@ -161,6 +195,7 @@ function resolveActions(ctx, effect, targets = []) {
         if (step.fn === 'destroy' || step.fn === 'destroyUpToHeroCount') ctx.destroyedCount = 0;
         return;
       }
+      previousTargets = stepTargets;
     } else {
       stepTargets = list.filter((t) => !exclude.includes(t) && !isToken(t));
     }
@@ -186,25 +221,96 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   if (eventName === 'allySummoned' && eventArgs.cardId && !matchesCardFilter(getCard(eventArgs.cardId), args.filter || {})) return false;
   // "Cuando es invocado por el efecto de un Licano".
   const bySource = eventArgs.bySourceCardId ? getCard(eventArgs.bySourceCardId) : null;
+  // "En invocación normal" / "En invocación especial".
+  if (eventName === 'onSummon' && args.kind && args.kind !== (eventArgs.kind || 'special')) return false;
   if (eventName === 'onSummon' && args.by === 'effect') {
     if (!eventArgs.byEffect) return false;
     if (args.filter && !(bySource && matchesCardFilter(bySource, args.filter))) return false;
   }
   if ((eventName === 'summonedByEffect' || eventName === 'summonedByCardEffect') && args.breed && !(bySource && matchesCardFilter(bySource, { breed: args.breed }))) return false;
+  // "Cuando es enviada DEL CAMPO al Cementerio" (Aboleth) / "...por batalla" (Duende Reptante).
+  if (eventName === 'sentToGraveyard') {
+    if (args.from && eventArgs.from && args.from !== eventArgs.from) return false;
+    if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
+    // "Si es sacrificado para activar el efecto de un monstruo \"Orco\"".
+    if (args.bySource && !(eventArgs.bySourceCardId && matchesCardFilter(getCard(eventArgs.bySourceCardId), args.bySource))) return false;
+  }
+  if (eventName === 'effectActivated') {
+    if (args.excludeSelf && eventArgs.instanceId === m.instanceId) return false;
+    if (args.filter && !(eventCard && matchesCardFilter(eventCard, args.filter))) return false;
+  }
   if (eventName === 'onMonsterDestroyed') {
     if (args.target === 'self' && m.instanceId !== eventArgs.instanceId) return false;
-    if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
+    // `reason` / `bySource` (the card that destroyed it), or any of the `anyOf` alternatives
+    // (Noche Eterna: "destruido en batalla o por efecto de una carta Inmortal").
+    const fits = (alt) => (!alt.reason || [].concat(alt.reason).includes(eventArgs.reason))
+      && (!alt.bySource || (eventArgs.bySourceCardId && matchesCardFilter(getCard(eventArgs.bySourceCardId), alt.bySource)));
+    if (!fits(args)) return false;
+    if (args.anyOf && !args.anyOf.some(fits)) return false;
   }
+  // "Antes de la fase de daño: sube a la Mano esta carta y al defensor" (Serpiente de Muelle): with
+  // no defender (a direct attack) there's nothing to do.
+  if (eventName === 'beforeDamageCalculation' && args.requiresDefender && !eventArgs.defenderInstanceId) return false;
   if (eventName === 'direct_damage_dealt') {
     if (eventArgs.controllerIndex !== m.controllerIndex) return false;
     if (args.source === 'self' && m.instanceId !== eventArgs.instanceId) return false;
     if (args.filter && !(eventCard && matchesCardFilter(eventCard, args.filter))) return false;
   }
+  // "Si un/os monstruo Hada dejan el Campo" / "si se añade un monstruo Hada del Deck a la Mano".
+  if ((eventName === 'monstersLeftField' || eventName === 'addedFromDeckToHand') && args.filter && !(eventArgs.cardIds || []).some((id) => matchesCardFilter(getCard(id), args.filter))) return false;
+  // "Si un/os monstruo Hada que controles dejan el Campo": only the effect's controller's ones.
+  if (eventName === 'monstersLeftField' && args.ownOnly && !(eventArgs.left || []).some((l) => l.ownerIndex === m.controllerIndex && (!args.filter || matchesCardFilter(getCard(l.cardId), args.filter)))) return false;
   if (eventName === 'involvedInBattle') {
+    // Hidra: "cada vez que esta carta batalla con un monstruo con más Atk que ella".
+    if (args.selfInvolved || args.againstStronger) {
+      const ids = [eventArgs.attackerInstanceId, eventArgs.defenderInstanceId];
+      if (!ids.includes(m.instanceId)) return false;
+      if (args.againstStronger) {
+        const self = getFieldMonster(state, m.instanceId);
+        const other = getFieldMonster(state, ids.find((id) => id !== m.instanceId));
+        if (!self || !other || getEffectiveStats(other).atk <= getEffectiveStats(self).atk) return false;
+      }
+    }
+    if (args.equippedDefends && eventArgs.defenderInstanceId !== m.equippedTo) return false;
     const involved = [eventArgs.attackerInstanceId, eventArgs.defenderInstanceId].filter((id) => id && !(args.excludeSelf && id === m.instanceId));
     if (!involved.some((id) => { const e = getFieldMonster(state, id); return e && matchesFilter(e, args.filter || {}); })) return false;
   }
   return true;
+}
+
+// A card's effect was activated (an Apoyo played, an effect used, a triggered effect run): "cada vez
+// que se active el efecto de un Avispa" (Avispa Reina). An effect that only reacts to this event
+// doesn't count as an activation itself — two of them would set each other off forever.
+function announceEffectActivated(state, instanceId, controllerIndex, effects = []) {
+  if (!instanceId || String(instanceId).startsWith('token:')) return;
+  if (effects.length && effects.every((e) => e && e.trigger && e.trigger.fn === 'effectActivated')) return;
+  fireTrigger(state, 'effectActivated', { instanceId, cardId: cardIdFromInstance(instanceId), controllerIndex });
+}
+
+// A card just reached its owner's Cementerio: its "cuando es enviada al Cementerio" effects get to
+// fire. `from`: 'field' | 'hand' | 'deck'; `reason`: 'battle' | 'effect' | 'cost' | 'discard' | 'mill'.
+function announceSentToGraveyard(state, instanceId, ownerIndex, { from, reason } = {}) {
+  if (!instanceId || String(instanceId).startsWith('token:')) return;
+  fireTrigger(state, 'sentToGraveyard', { instanceId, cardId: cardIdFromInstance(instanceId), ownerIndex, from, reason });
+}
+
+// Anillo de Boda: when a player who has its Cementerio effect this turn loses a monster to the rival
+// (destroyed or exiled), that rival has to destroy/exile one of their own, picked by themselves.
+function answerLoss(state, event, ownerIndex, byPlayer) {
+  if (byPlayer === undefined || byPlayer === null || byPlayer === ownerIndex) return;
+  const active = (state.mirrors || []).some((m) => m.event === event && m.ownerIndex === ownerIndex && m.expiresTurn === state.turnNumber);
+  if (!active) return;
+  const own = player(state, byPlayer).field.monsters.filter((m) => m && !m.isToken);
+  if (!own.length) return;
+  const { describeCandidate } = require('./targets');
+  state.pendingTriggerChoices = state.pendingTriggerChoices || [];
+  state.pendingTriggerChoices.push({
+    kind: 'ownMonster',
+    action: event === 'banishedByOpponent' ? 'banish' : 'destroy',
+    controllerIndex: byPlayer,
+    options: own.map((m) => describeCandidate(state, m.instanceId)),
+    prompt: event === 'banishedByOpponent' ? 'Anillo de Boda: elige un monstruo tuyo para exiliarlo' : 'Anillo de Boda: elige un monstruo tuyo para destruirlo',
+  });
 }
 
 // Fires every triggered/trigger effect on the board that matches, in field order (turn player's
@@ -212,6 +318,13 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
 // card an event is about when it has just left the field ("cuando es enviada al Cementerio",
 // "si es destruida"). A negated card's triggers don't fire.
 function fireTrigger(state, eventName, eventArgs = {}) {
+  // Every monster destroyed this turn (in battle, by an effect or as a cost), for "por cada X
+  // destruido este turno" (Orco Gigante). Tokens aren't cards and don't count.
+  if (eventName === 'onMonsterDestroyed' && eventArgs.cardId) {
+    if (!state.destroyedThisTurn || state.destroyedThisTurn.turn !== state.turnNumber) state.destroyedThisTurn = { turn: state.turnNumber, cardIds: [] };
+    state.destroyedThisTurn.cardIds.push(eventArgs.cardId);
+    answerLoss(state, 'destroyedByOpponent', eventArgs.ownerIndex, eventArgs.byPlayer);
+  }
   const order = [state.turnPlayer, state.turnPlayer === 0 ? 1 : 0];
   order.forEach((controllerIndex) => {
     const pl = player(state, controllerIndex);
@@ -223,6 +336,9 @@ function fireTrigger(state, eventName, eventArgs = {}) {
       if (m.faceDown || m.isToken || isNegated(state, m) || hasStatus(state, m.instanceId, FREEZE)) return;
       if (SELF_EVENTS.includes(eventName) && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
       if (eventName === 'allySummoned' && (eventArgs.faceDown || eventArgs.controllerIndex !== controllerIndex || m.instanceId === eventArgs.instanceId)) return;
+      if (eventName === 'opponentSummoned' && eventArgs.controllerIndex === controllerIndex) return;
+      // Hada del Bosque Oscuro: "si se añade un monstruo Hada del Deck a la Mano" (its controller's).
+      if (eventName === 'addedFromDeckToHand' && eventArgs.controllerIndex !== controllerIndex) return;
       const card = getCard(m.cardId);
       const codes = m.offField ? (card.effectCodes || []) : effectCodesOf(m);
       codes.forEach((effectId) => {
@@ -269,8 +385,9 @@ function runTriggered(state, ctx, effect, card, targets) {
     log(state, `No se puede pagar el coste de ${card.name}.`);
     return false;
   }
+  log(state, `Se activa el efecto de ${card.name}.`);
+  announceEffectActivated(state, ctx.sourceInstanceId, ctx.controllerIndex, [effect]);
   resolveActions({ ...ctx, costPaid: ctx.paidCards || [] }, effect, targets.filter((t) => !costTaken.includes(t)));
-  log(state, `Efecto disparado: ${effect._id} (${card.name}).`);
   return true;
 }
 
@@ -286,12 +403,91 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
   const picks = [...new Set((targets || []).filter((t) => t != null))];
 
   if (pending.kind === 'slot') {
-    if (!pending.slots.includes(slot)) return { ok: false, reason: 'no-field-space' };
+    // A card's placement is checked against the zones free NOW — the board may have changed since
+    // the choice was asked (another card landed while it waited).
+    const legal = require('./placement').isPlacement(pending) ? require('./placement').freeMonsterSlots(state, pending.controllerIndex, pending.freeing || []) : pending.slots;
+    if (!legal.includes(slot)) return { ok: false, reason: 'no-field-space' };
     state.pendingTriggerChoices.shift();
     if (pending.purpose === 'relocate') require('./effects/actions').relocateSelfFromChoice(state, pending, slot);
+    else if (pending.purpose === 'equip') require('./effects/extraActions').equipFromChoice(state, pending, slot);
+    else if (require('./placement').isPlacement(pending)) require('./placement').finishPlacement(state, pending, slot);
     else require('./summon').finishHandTrigger(state, pending.controllerIndex, pending.sourceInstanceId, getEffect(pending.effectId), slot);
     recomputeContinuous(state);
     checkWin(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
+
+  if (pending.kind === 'ownMonster') {
+    const chosen = picks.find((id) => pending.options.some((o) => o.instanceId === id) && player(state, controllerIndex).field.monsters.some((m) => m && m.instanceId === id));
+    if (!chosen) {
+      // The monsters offered may have left meanwhile: with none left there is nothing to do.
+      const still = pending.options.filter((o) => player(state, controllerIndex).field.monsters.some((m) => m && m.instanceId === o.instanceId));
+      if (still.length) return { ok: false, reason: 'choose-target', options: still, prompt: pending.prompt };
+      state.pendingTriggerChoices.shift();
+      return { ok: true };
+    }
+    state.pendingTriggerChoices.shift();
+    const ctx = makeCtx(state, controllerIndex, null, null);
+    if (pending.action === 'banish') require('./effects/actions').registry.exileTarget(ctx, {}, [chosen]);
+    else require('./effects/fieldActions').destroy(ctx, { target: 'selected' }, [chosen]);
+    recomputeContinuous(state);
+    checkWin(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
+
+  // The Reinos' upkeep at the very end of the turn (turns.askTerritoryUpkeep).
+  if (pending.kind === 'upkeep') {
+    const pick = picks.find((t) => pending.options.some((o) => o.instanceId === t));
+    if (!pick) return chooseTarget({ options: pending.options, prompt: pending.prompt });
+    state.pendingTriggerChoices.shift();
+    require('./turns').resolveTerritoryUpkeep(state, pending, pick);
+    recomputeContinuous(state);
+    checkWin(state);
+    return { ok: true };
+  }
+
+  // Attack or defense for a monster just special summoned (placement.askPosition).
+  if (pending.kind === 'position') {
+    const pick = picks.find((t) => t === 'position:attack' || t === 'position:defense');
+    if (!pick) return chooseTarget({ options: pending.options, prompt: pending.prompt });
+    state.pendingTriggerChoices.shift();
+    require('./placement').setChosenPosition(state, pending, pick);
+    recomputeContinuous(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
+
+  // Beholder: the rival picks which penalty, then (kind 'ownPick') which of their cards.
+  if (pending.kind === 'penalty') {
+    const index = picks.map((t) => (typeof t === 'string' && t.startsWith('choice:') ? Number(t.split(':')[1]) : NaN)).find((i) => pending.penalties[i]);
+    if (index === undefined) return chooseTarget({ options: pending.options, prompt: pending.prompt });
+    state.pendingTriggerChoices.shift();
+    require('./effects/actions').applyPenalty(state, controllerIndex, pending.penalties[index]);
+    recomputeContinuous(state);
+    checkWin(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
+
+  if (pending.kind === 'ownPick') {
+    const { PENALTY_POOLS, payPenalty } = require('./effects/actions');
+    const pool = PENALTY_POOLS[pending.action](player(state, controllerIndex));
+    const still = pending.options.filter((o) => pool.includes(o.instanceId));
+    const chosen = picks.filter((id) => still.some((o) => o.instanceId === id));
+    const need = Math.min(pending.count, still.length);
+    if (chosen.length < need) return chooseTarget({ options: still.filter((o) => !chosen.includes(o.instanceId)), prompt: pending.prompt });
+    state.pendingTriggerChoices.shift();
+    payPenalty(state, controllerIndex, pending.action, chosen.slice(0, need));
+    recomputeContinuous(state);
+    checkWin(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
     return { ok: true };
   }
 
@@ -303,7 +499,10 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
     state.pendingTriggerChoices.shift();
     chosen.slice(0, need).forEach((id) => require('./zones').moveToZone(state, id, 'graveyard'));
     log(state, `${pl.userId} descarta ${need} carta(s).`);
+    chosen.slice(0, need).forEach((id) => announceSentToGraveyard(state, id, controllerIndex, { from: 'hand', reason: 'discard' }));
     recomputeContinuous(state);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
     return { ok: true };
   }
 
@@ -318,6 +517,9 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
   runTriggered(state, ctx, effect, card, picks);
   recomputeContinuous(state);
   checkWin(state);
+  // A battle a flip effect's pick had paused goes on to its damage step.
+  require('./placement').settlePlacements(state);
+  require('./combat').resumeBattle(state);
   return { ok: true };
 }
 
@@ -331,16 +533,35 @@ function describeHand(state, playerIndex, exclude = []) {
 // Continuous effects aren't stored as applied deltas — every mutation we recompute them fresh
 // from current field state, which avoids "forgot to remove the buff" bugs entirely. That includes
 // every flag a continuous effect can set, reset here first.
+// Monsters that left the field since the last check (zones.moveToZone queues them), announced
+// together — "si un/os monstruo Hada dejan el Campo" fires once for a batch.
+function flushLeftField(state) {
+  let guard = 0;
+  while (state.leftField && state.leftField.length && !state.flushingLeftField && guard++ < 5) {
+    const left = state.leftField;
+    state.leftField = [];
+    state.flushingLeftField = true;
+    try {
+      fireTrigger(state, 'monstersLeftField', { cardIds: left.map((l) => l.cardId), left });
+    } finally {
+      state.flushingLeftField = false;
+    }
+  }
+}
+
 function recomputeContinuous(state) {
+  flushLeftField(state);
   releaseCorrosion(state);
   state.players.forEach((pl) => {
     pl.cantLose = false;
+    pl.attacksOnlyOnStrongest = false;
     pl.cantWin = false;
     pl.activationTax = 0;
     pl.field.monsters.filter(Boolean).forEach((m) => {
       resetTempMods(m);
       addTempMod(m, poisonDebuff(state, m.instanceId), 'Veneno', 'status');
       m.cannotBeDestroyedByBattle = false;
+      m.cannotBeDestroyedByEffects = false;
       m.immuneToOpponentEffects = false;
       m.negatedByContinuous = false;
       m.canAttackDirectly = false;
@@ -349,16 +570,32 @@ function recomputeContinuous(state) {
       m.gainsAllTypes = false;
       m.equipLimit = 0;
       m.immuneAttributes = null;
+      m.untargetableBy = null;
+      m.doublesPositiveMods = false;
+      m.effectsLost = false;
+      m.continuousAbilities = [];
+      m.forcedAttack = false;
+      m.statOverride = null;
+      m.cannotAttack = false;
+      m.noBattleDamage = false;
     });
     [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => { s.negatedByContinuous = false; });
   });
   applyTimedBuffs(state);
-  state.players.forEach((pl, controllerIndex) => {
+  // Two passes: first the effects that take others' effects away (Fuegos Fatuos, Seraphine, Sello
+  // Temporal...), then the rest — skipping every card that has lost its effects, so a negated
+  // Dríada stops buffing itself. Espectro only stops activations: it doesn't count here.
+  const NEGATING = ['disableEffects', 'negateEffect', 'negateEffects'];
+  const negates = (effect) => (effect.actions || []).some((a) => NEGATING.includes(a.fn));
+  const lostEffects = (entry) => entry.effectsLost || (state.negations || []).some((n) => n.targetInstanceId === entry.instanceId && (n.expiresTurn === null || n.expiresTurn >= state.turnNumber));
+  [true, false].forEach((negatingPass) => state.players.forEach((pl, controllerIndex) => {
     [...pl.field.monsters, ...pl.field.support, pl.field.territory].filter(Boolean).forEach((entry) => {
       if (entry.faceDown || entry.isToken || entry.isMonsterEquip || hasStatus(state, entry.instanceId, FREEZE)) return;
+      if (lostEffects(entry)) return;
       effectCodesOf(entry).forEach((effectId) => {
         const effect = getEffect(effectId);
         if (!effect || effect.type !== 'continuous') return;
+        if (negates(effect) !== negatingPass) return;
         // An Equipo card's effect only runs for the monster it's equipped to; with none (or that
         // monster gone) it does nothing until the field-leave cleanup sends the card to the graveyard.
         const isEquip = effect.trigger && effect.trigger.fn === 'whileEquipped';
@@ -368,12 +605,27 @@ function recomputeContinuous(state) {
         resolveActions(ctx, effect, isEquip ? [entry.equippedTo] : []);
       });
     });
-  });
+  }));
+  // "Duplica los cambios positivos" (Mantícora): every gain the monster carries counts twice.
+  state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => {
+    if (!m.doublesPositiveMods) return;
+    const gains = [...(m.statMods || []), ...(m.permanentMods || [])];
+    const sum = (k) => gains.reduce((s, mod) => s + Math.max(0, mod[k] || 0), 0);
+    addTempMod(m, { atk: sum('atk'), def: sum('def') }, 'Mantícora (doble)');
+  }));
   // "El Atk de esta carta se convierte en X hasta el final del turno" wins over every other change.
   state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => {
     if (!m.atkOverride) return;
     m.tempBuff.atk = m.atkOverride.value - m.baseAtk;
     m.statMods.push({ source: m.atkOverride.source || 'Efecto', atk: 0, def: 0, kind: 'set', value: m.atkOverride.value });
+  }));
+  // "Pasan a tener 0 de Atk y Vida" (Solar): set by a continuous effect, after everything else.
+  state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => {
+    const o = m.statOverride;
+    if (!o) return;
+    if (o.atk != null) m.tempBuff.atk = o.atk - m.baseAtk;
+    if (o.def != null) m.tempBuff.def = o.def - m.baseDef;
+    m.statMods.push({ source: o.source || 'Efecto', atk: 0, def: 0, kind: 'set', value: o.atk ?? o.def });
   }));
   const { canStillAttack } = require('./combat');
   state.players.forEach((pl) => pl.field.monsters.filter(Boolean).forEach((m) => { m.hasAttacked = !canStillAttack(state, m); }));
@@ -454,4 +706,4 @@ function getEffectiveStats(monsterEntry) {
   };
 }
 
-module.exports = { activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };
+module.exports = { answerLoss, announceEffectActivated, announceSentToGraveyard, isOwnActivation, activateEffect, resolveActions, fireTrigger, resolveTriggerChoice, expireTimedBuffs, fireMaterialTriggers, recomputeContinuous, getEffectiveStats, requiredZoneFor, locationIsInZone, violatesUnique, runTriggered, describeHand, effectIdsAt, fieldEntryAt };

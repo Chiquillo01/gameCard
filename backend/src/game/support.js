@@ -112,7 +112,15 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   const costTaken = [...costPicks(ctx, cost, targets), ...runningEffects.flatMap((effect) => costPicks({ ...ctx, effect }, effect.cost, targets))];
   const effectTargets = targets.filter((t) => t !== equipTarget);
   const effectChoice = runningEffects.map((effect) => pendingEffectChoice({ ...ctx, effect }, effect, effectTargets, costTaken)).find(Boolean);
-  if (effectChoice) return { ok: false, reason: 'choose-target', ...effectChoice };
+  if (effectChoice) {
+    // Nothing is asked about an activation that couldn't be paid anyway (tried out, then undone).
+    const probe = snapshot(state);
+    const affordable = (!cost || !cost.fn || payCost({ ...ctx, paidCards: [] }, cost, targets))
+      && runningEffects.every((effect) => !effect.cost || payCost({ ...ctx, effect, paidCards: [] }, effect.cost, targets));
+    restore(state, probe);
+    if (!affordable) return { ok: false, reason: 'cannot-pay-cost' };
+    return { ok: false, reason: 'choose-target', ...effectChoice };
+  }
 
   const snap = snapshot(state);
   const fail = (reason) => {
@@ -121,7 +129,16 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   };
   if (cost && cost.fn && !payCost(ctx, cost, targets)) return fail('cannot-pay-cost');
   // Some cards add a cost inside their effect ("destruye un monstruo en tu Campo:").
-  if (!runningEffects.every((effect) => !effect.cost || payCost({ ...ctx, effect }, effect.cost, targets))) return fail('cannot-pay-cost');
+  const paidByEffects = [];
+  const paysAll = runningEffects.every((effect) => {
+    if (!effect.cost) return true;
+    const effectCtx = { ...ctx, effect, paidCards: [] };
+    if (!payCost(effectCtx, effect.cost, targets)) return false;
+    paidByEffects.push(...effectCtx.paidCards);
+    return true;
+  });
+  if (!paysAll) return fail('cannot-pay-cost');
+  ctx.paidCards = [...(ctx.paidCards || []), ...paidByEffects];
 
   // Rulebook: activating ANY Apoyo card places it on the Campo right away — that's the cost of
   // activating it, not the effect — Normal/Veloz/Contraataque included, which is what actually
@@ -162,11 +179,14 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
 function legalEquipTargets(state, controllerIndex, card) {
   const equipEffect = (card.effectCodes || []).map(getEffect).find((e) => e && e.trigger && e.trigger.fn === 'whileEquipped');
   const restriction = (equipEffect && equipEffect.trigger.args) || {};
-  const side = restriction.side === 'opponent' ? opponentIndex(controllerIndex) : controllerIndex;
+  const sides = restriction.side === 'any' ? [controllerIndex, opponentIndex(controllerIndex)] : [restriction.side === 'opponent' ? opponentIndex(controllerIndex) : controllerIndex];
   const filter = { breed: restriction.breed, family: restriction.family, attribute: restriction.attribute };
   const hasFilter = Object.values(filter).some(Boolean);
   const { canAffect } = require('./targets');
-  return player(state, side).field.monsters.filter((m) => m && !m.faceDown && (!hasFilter || matchesFilter(m, filter)) && canAffect({ state, controllerIndex, sourceInstanceId: null }, m));
+  const { getEffectiveStats } = require('./effectEngine');
+  return sides.flatMap((side) => player(state, side).field.monsters).filter((m) => m && !m.faceDown && (!hasFilter || matchesFilter(m, filter))
+    && (restriction.maxAtk == null || getEffectiveStats(m).atk <= restriction.maxAtk)
+    && canAffect({ state, controllerIndex, sourceInstanceId: null }, m));
 }
 
 function describeFieldTarget(m) {
@@ -182,11 +202,17 @@ function describeFieldTarget(m) {
 // A "triggered" one (Nido de Avispas) waits for its event and a "continuous" one is recomputed.
 const ON_PLAY_EFFECT_TYPES = ['activated', 'quick', 'ignition'];
 
+// A Continuo's or Territorio's "una vez por turno" ability (Guarida del Oscuro's search, Forja's
+// Balista) is used from the field with its own button — playing the card doesn't run it, and an
+// ability with nothing to do right now doesn't stop the card from being played.
+const ONE_SHOT_SUPPORTS = ['normal', 'instant', 'counter'];
+
 function onPlayEffects(card) {
   return (card.effectCodes || [])
     .map((effectId) => getEffect(effectId))
     .filter((effect) => effect && ON_PLAY_EFFECT_TYPES.includes(effect.type))
-    .filter((effect) => !['graveyard', 'banished', 'field'].includes(requiredZoneFor(effect)));
+    .filter((effect) => !['graveyard', 'banished', 'field'].includes(requiredZoneFor(effect)))
+    .filter((effect) => ONE_SHOT_SUPPORTS.includes(card.subtype) || !(effect.trigger && effect.trigger.fn === 'onActivation'));
 }
 
 module.exports = { activateSupport, activateSetSupport, onPlayEffects };

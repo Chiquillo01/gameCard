@@ -71,15 +71,46 @@ function equipTo(ctx, holderId, targets) {
     }
     const row = fieldRowOf(ctx.state, id);
     if (!row || row.kind !== 'monster' || row.entry.isToken || id === holderId) return;
-    const slot = findEmptySlot(pl.field.support, corrodedSlots(pl, 'support'));
-    if (slot === -1) {
+    const blocked = corrodedSlots(pl, 'support');
+    const free = pl.field.support.map((s, i) => (s === null && !blocked.includes(i) ? i : -1)).filter((i) => i >= 0);
+    if (!free.length) {
       log(ctx.state, 'No hay espacio en la zona de Apoyo para equiparlo.');
       return;
     }
-    removeFromZone(ctx.state, id, findInstanceLocation(ctx.state, id));
-    pl.field.support[slot] = { instanceId: id, cardId: cardIdFromInstance(id), faceDown: false, equippedTo: holderId, isMonsterEquip: true };
-    log(ctx.state, `${getCard(cardIdFromInstance(id)).name} queda equipado a ${getCard(holder.cardId).name}.`);
+    if (free.length === 1) {
+      equipIntoSlot(ctx.state, ctx.controllerIndex, id, holderId, free[0]);
+      return;
+    }
+    // Rulebook: the player picks where a card lands — the monster stays where it is until they do
+    // (effectEngine.resolveTriggerChoice → equipFromChoice).
+    ctx.state.pendingTriggerChoices = ctx.state.pendingTriggerChoices || [];
+    ctx.state.pendingTriggerChoices.push({
+      kind: 'slot',
+      purpose: 'equip',
+      zone: 'support',
+      controllerIndex: ctx.controllerIndex,
+      sourceInstanceId: id,
+      holderId,
+      slots: free,
+      prompt: `Elige en qué zona de Apoyo colocas ${getCard(cardIdFromInstance(id)).name}`,
+    });
   });
+}
+
+// Puts monster `id` in `slot` of the controller's support zone as an Equipo of `holderId`.
+function equipIntoSlot(state, controllerIndex, id, holderId, slot) {
+  const pl = player(state, controllerIndex);
+  const holder = getFieldMonster(state, holderId);
+  const loc = findInstanceLocation(state, id);
+  if (!holder || !loc || loc.zone !== 'field:monster' || pl.field.support[slot] !== null) return false;
+  removeFromZone(state, id, loc);
+  pl.field.support[slot] = { instanceId: id, cardId: cardIdFromInstance(id), faceDown: false, equippedTo: holderId, isMonsterEquip: true };
+  log(state, `${getCard(cardIdFromInstance(id)).name} queda equipado a ${getCard(holder.cardId).name}.`);
+  return true;
+}
+
+function equipFromChoice(state, pending, slot) {
+  return equipIntoSlot(state, pending.controllerIndex, pending.sourceInstanceId, pending.holderId, slot);
 }
 
 function equipMonster(ctx, args, targets) {
@@ -221,6 +252,83 @@ function imposeActivationCost(ctx, args) {
 // Static rules read straight from the card data elsewhere (cardIndex.extraAttributesOf,
 // summon.allowsSameTurnDecompile): nothing to do when "run".
 function gainAttribute() {}
+function gainBreed() {}
+function onlySummonedBy() {}
+function summonRequires() {}
+
+// Safira: "no puede ser seleccionada por efectos de monstruos, excepto Dragón" (by: 'monster') or
+// "por efectos de cartas, excepto Monstruos Dragón" (by: 'any'). targets.selectRows reads the flag.
+function untargetableBy(ctx, args) {
+  const rule = { by: args.by || 'any', unless: args.unless || null };
+  // With a filter it covers the controller's matching monsters (Orco Jefe: "los Orco que controles").
+  if (args.filter) {
+    const { matchesFilter } = require('../filters');
+    player(ctx.state, ctx.controllerIndex).field.monsters.filter((m) => m && matchesFilter(m, args.filter)).forEach((m) => { m.untargetableBy = rule; });
+    return;
+  }
+  const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
+  if (m) m.untargetableBy = rule;
+}
+
+// "Todos los monstruos que no sean Orco en el Campo cambian a Posición de Ataque".
+function forceAttackPosition(ctx, args) {
+  const { matchesFilter } = require('../filters');
+  ctx.state.players.flatMap((p) => p.field.monsters).filter((m) => m && !m.faceDown && matchesFilter(m, args.filter || {})).forEach((m) => {
+    m.position = 'attack';
+    m.forcedAttack = true;
+  });
+}
+
+// El Duende Elegido: "niega ese efecto, destruye la carta y, durante el resto del turno, no se pueden
+// activar efectos con el mismo nombre que la carta negada".
+function negateDestroyAndBan(ctx) {
+  const actions = lazy();
+  const negated = actions.registry.negateActivation(ctx);
+  if (!negated) return;
+  const name = getCard(cardIdFromInstance(negated.sourceInstanceId)).name;
+  const { moveToZone } = require('../zones');
+  moveToZone(ctx.state, negated.sourceInstanceId, 'graveyard');
+  ctx.state.bannedNames = (ctx.state.bannedNames || []).filter((b) => b.turn === ctx.state.turnNumber);
+  ctx.state.bannedNames.push({ name, turn: ctx.state.turnNumber });
+  log(ctx.state, `Durante el resto del turno no se pueden activar efectos de "${name}".`);
+}
+
+// "Duplica los cambios positivos de los monstruos Bestia en tu Campo" (Mantícora): marks them;
+// recomputeContinuous doubles their gains once every other change is in.
+function doublePositiveMods(ctx, args) {
+  const { matchesFilter } = require('../filters');
+  player(ctx.state, ctx.controllerIndex).field.monsters
+    .filter((m) => m && matchesFilter(m, args.filter || {}))
+    .forEach((m) => { m.doublesPositiveMods = true; });
+}
+
+// "Pon al monstruo en defensa boca abajo (y este no puede cambiar su posición de batalla)" — the
+// picked monsters, or all of the rival's with `target: 'allEnemyMonsters'` (Safira, la Reina Dragón).
+function setFaceDownDefense(ctx, args, targets) {
+  const { canAffect } = require('../targets');
+  const list = args.target === 'allEnemyMonsters'
+    ? player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean)
+    : (targets || []).map((id) => getFieldMonster(ctx.state, id)).filter(Boolean);
+  list.filter((m) => canAffect(ctx, m)).forEach((m) => {
+    m.position = 'defense';
+    m.faceDown = true;
+    if (args.lockPosition) m.positionLocked = true;
+  });
+  if (list.length) log(ctx.state, `${list.length === 1 ? 'Un monstruo pasa' : `${list.length} monstruos pasan`} a defensa boca abajo${args.lockPosition ? ' y no pueden cambiar su posición' : ''}.`);
+}
+
+// "Si lo haces, esta carta gana su Atk y Vida" (Grifo, Hipogrifo): the printed stats of what the
+// previous step summoned, for good.
+function gainStatsOfSummoned(ctx) {
+  const { addPermanentMod } = require('../statMods');
+  const self = getFieldMonster(ctx.state, ctx.sourceInstanceId);
+  if (!self) return;
+  (ctx.lastSummoned || []).forEach((id) => {
+    const card = getCard(cardIdFromInstance(id));
+    addPermanentMod(self, { atk: card.atk || 0, def: card.def || 0 }, card.name);
+    log(ctx.state, `${getCard(self.cardId).name} gana el Atk y la Vida de ${card.name}.`);
+  });
+}
 function allowDecompileSameTurn() {}
 
 // Drácula: "Destruye una carta en el Campo y recupera VP igual a su Atk".
@@ -230,7 +338,7 @@ function destroyAndGainVP(ctx, args, targets) {
   const m = getFieldMonster(ctx.state, id);
   const atk = m ? Math.max(0, m.baseAtk + ((m.tempBuff || {}).atk || 0)) : 0;
   require('./fieldActions').destroy(ctx, { target: 'selected' }, [id]);
-  if (ctx.destroyedCount && atk) lazy().registry.gainVP(ctx, { amount: atk });
+  if (ctx.destroyedCount && atk) lazy().registry.gainVP(ctx, { amount: atk, recover: !!args.recover });
 }
 
 // Paseo Temporal: "Añade otro turno después de este pero no puedes atacar este turno".
@@ -247,10 +355,53 @@ function disableAttacks(ctx, args) {
   ctx.state.attackBans[who] = ctx.state.turnNumber;
 }
 
+// "Compila un monstruo [filter] desde tu Mazo-C" (Avispa de Respaldo): the Compilaciones in the
+// player's Mazo-C that match and could be compiled right now.
+function compilableFromExtra(ctx, args) {
+  const { matchesCardFilter } = require('../filters');
+  const { compileInfo } = require('../compileInfo');
+  const pl = player(ctx.state, ctx.controllerIndex);
+  return pl.extra.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {}) && compileInfo(ctx.state, ctx.controllerIndex, id, { defaultZones: args.zones }).ready);
+}
+
+// Compiles the picked one (the only one, if there's no choice) with the materials it suggests —
+// the cheapest that meet its recipe — and lets the player pick its zone.
+function compileFromExtra(ctx, args, targets) {
+  const candidates = compilableFromExtra(ctx, args);
+  const chosen = (targets || []).find((id) => candidates.includes(id)) || (candidates.length === 1 ? candidates[0] : null);
+  if (!chosen) {
+    log(ctx.state, 'No hay ninguna Compilación que se pueda compilar.');
+    return;
+  }
+  const { compileInfo } = require('../compileInfo');
+  const materials = compileInfo(ctx.state, ctx.controllerIndex, chosen, { defaultZones: args.zones }).suggested;
+  const freeing = materials.filter((id) => player(ctx.state, ctx.controllerIndex).field.monsters.some((m) => m && m.instanceId === id));
+  require('../placement').requestPlacement(ctx.state, {
+    purpose: 'effectCompile',
+    controllerIndex: ctx.controllerIndex,
+    instanceId: chosen,
+    sourceInstanceId: chosen,
+    materials,
+    freeing,
+    defaultZones: args.zones,
+    prompt: `Elige dónde compilas ${getCard(cardIdFromInstance(chosen)).name}`,
+  });
+}
+
 module.exports = {
+  compileFromExtra,
   target,
   fairyLeaveBonus,
   afterOpponentSearch,
+  gainBreed,
+  onlySummonedBy,
+  summonRequires,
+  untargetableBy,
+  forceAttackPosition,
+  negateDestroyAndBan,
+  doublePositiveMods,
+  setFaceDownDefense,
+  gainStatsOfSummoned,
   copyNameAndLevel,
   equipMonster,
   equipMonsterToSelf,
@@ -276,3 +427,8 @@ module.exports = {
   addExtraTurn,
   disableAttacks,
 };
+
+// Not a card action (every enumerable export here is registered as one): resolveTriggerChoice
+// calls it once the player has picked the support zone for a monster being equipped.
+Object.defineProperty(module.exports, 'equipFromChoice', { value: equipFromChoice, enumerable: false });
+Object.defineProperty(module.exports, 'compilableFromExtra', { value: compilableFromExtra, enumerable: false });

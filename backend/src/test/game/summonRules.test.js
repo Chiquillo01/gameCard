@@ -6,7 +6,7 @@ const { User } = require('../../data/Schema/user');
 const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
-const { passChain } = require('./chainHelpers');
+const { passChain, placePending, actPicking, resolveAll } = require('./chainHelpers');
 const { getCard } = require('../../game/cardIndex');
 const { placeMonster } = require('../../game/zones');
 const { STARTING_VP } = require('../../game/constants');
@@ -47,7 +47,8 @@ async function makeMatch(names) {
 }
 
 function toMain1(state) {
-  while (state.phase !== 'main1') applyAction(state, state.turnPlayer, { type: 'ADVANCE_PHASE' });
+  let guard = 0;
+  while (state.phase !== 'main1' && guard++ < 30) applyAction(state, state.turnPlayer, { type: 'ADVANCE_PHASE' });
 }
 
 describe('Normal Summon and the invocation method', () => {
@@ -169,7 +170,7 @@ describe('Nido de Avispas (first "Avispa" summoned while it is on the field)', (
     // -1 summoned, +1 searched: one of the two Avispas left the deck.
     expect(state.players[0].hand.length).toBe(handBefore);
     expect(state.players[0].deck.length).toBe(1);
-    const nidoFires = () => state.log.filter((l) => l.message.includes('NIDO_AVISPAS_FIRST_SUMMON')).length;
+    const nidoFires = () => state.log.filter((l) => l.message === 'Se activa el efecto de Nido de Avispas.').length;
     expect(nidoFires()).toBe(1);
 
     // A second Avispa summoned later does not fire the Nido again. Whichever wasp is still in the
@@ -200,10 +201,10 @@ describe('Effect values follow the card text', () => {
   const monsterOf = (state, playerIndex, instanceId) => state.players[playerIndex].field.monsters.find((m) => m && m.instanceId === instanceId);
 
   it('Arboleda gives every Planta on the field (both sides) +1 Atk/Vida and nothing else', async () => {
-    const { state, inHand } = await makeMatch(['Arboleda', 'Carnivora Come Hombres', 'Slime', 'Kraken']);
+    const { state, inHand } = await makeMatch(['Arboleda', 'Carnívora Come Hombres', 'Slime', 'Kraken']);
     toMain1(state);
     state.players[0].pixelcoins = 6;
-    const planta = inHand('Carnivora Come Hombres');
+    const planta = inHand('Carnívora Come Hombres');
     const slime = inHand('Slime');
     applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: planta, position: 'attack' });
     state.players[0].normalSummonUsed = false;
@@ -227,6 +228,7 @@ describe('Effect values follow the card text', () => {
     placeMonster(state, mutante, 0, { position: 'attack' });
     state.players[0].hand = state.players[0].hand.filter((id) => id !== gigante && id !== mutante);
     expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: fusion, materialInstanceIds: [gigante, mutante] }).ok).toBe(true);
+    placePending(state);
     expect(state.players[0].pixelcoins).toBe(1);
     expect(monsterOf(state, 0, fusion).tempBuff.atk).toBe(0);
 
@@ -236,12 +238,21 @@ describe('Effect values follow the card text', () => {
 });
 
 describe('Phase-timed effects', () => {
-  it('Bálor hits the rival for 3 only in the standby phase, once per turn', async () => {
-    const { state, inHand } = await makeMatch(['Bálor', 'Kraken']);
+  it('Bálor puts QUEMADURA on a rival monster in the standby phase', async () => {
+    const { state, inHand } = await makeMatch(['Bálor', 'Kraken'], ['Kraken']);
     const { placeMonster } = require('../../game/zones');
+    const { hasStatus } = require('../../game/statuses');
     placeMonster(state, inHand('Bálor'), 0, { position: 'attack' });
-    while (state.turnNumber === 1 && state.phase !== 'end') applyAction(state, 0, { type: 'ADVANCE_PHASE' });
-    expect(state.players[1].vp).toBe(STARTING_VP - 3);
+    const kraken = state.players[1].hand[0];
+    placeMonster(state, kraken, 1, { position: 'attack' });
+    let guard = 0;
+    while (state.turnNumber === 1 && state.phase !== 'end' && guard++ < 30) {
+      const pending = state.pendingTriggerChoices && state.pendingTriggerChoices[0];
+      // Its standby effect asks which rival monster gets it (the player always picks).
+      if (pending) applyAction(state, pending.controllerIndex, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [kraken] });
+      else applyAction(state, 0, { type: 'ADVANCE_PHASE' });
+    }
+    expect(hasStatus(state, kraken, 'Quemadura')).toBe(true);
   });
 
 });
@@ -252,14 +263,14 @@ describe('Effects rewritten to match the new descriptions', () => {
   const idOf = (state, p, name) => [...state.players[p].hand, ...state.players[p].deck].find((id) => getCard(id.split(':')[1]).name === name);
 
   it('Sacrificio memorable destroys one of your monsters as the cost and one of the rival\'s', async () => {
-    const { state, inHand } = await makeMatch(['Sacrificio memorable', 'Slime', 'Kraken'], ['Esqueleto', 'Slime', 'Carnivora Come Hombres', 'Kraken', 'Arboleda', 'Nido de Avispas']);
+    const { state, inHand } = await makeMatch(['Sacrificio memorable', 'Slime', 'Kraken'], ['Esqueleto', 'Slime', 'Carnívora Come Hombres', 'Kraken', 'Arboleda', 'Nido de Avispas']);
     toMain1(state);
     state.players[0].pixelcoins = 6;
     const mine = inHand('Slime');
     placeMonster(state, mine, 0, { position: 'attack' });
     const theirs = state.players[1].hand[0];
     placeMonster(state, theirs, 1, { position: 'attack' });
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') }).ok).toBe(true);
+    expect(actPicking(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') }).ok).toBe(true);
     passChain(state);
     expect(onField(state, 0, mine)).toBeUndefined();
     expect(onField(state, 1, theirs)).toBeUndefined();
@@ -270,7 +281,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     const { state, inHand } = await makeMatch(['Sacrificio memorable', 'Kraken']);
     toMain1(state);
     state.players[0].pixelcoins = 6;
-    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') })).toMatchObject({ ok: false, reason: 'cannot-pay-cost' });
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Sacrificio memorable') })).toMatchObject({ ok: false, reason: 'no-legal-target' });
   });
 
   it('El Primer Ginete brings back 2 Dragones when it is destroyed', async () => {
@@ -285,6 +296,7 @@ describe('Effects rewritten to match the new descriptions', () => {
     });
     const { registry } = require('../../game/effects/actions');
     registry.destroy({ state, controllerIndex: 1, sourceInstanceId: 'x', effect: {} }, { side: 'opponent', zone: 'monster', count: 1 }, []);
+    resolveAll(state);
     expect(state.players[0].graveyard).toContain(ginete);
     expect(state.players[0].hand.filter((id) => /Bebe/.test(getCard(id.split(':')[1]).name)).length).toBe(2);
   });
@@ -316,8 +328,9 @@ describe('Effects rewritten to match the new descriptions', () => {
     const [a, b] = state.players[1].hand;
     placeMonster(state, a, 1, { position: 'attack' });
     placeMonster(state, b, 1, { position: 'attack' });
-    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: cap }).ok).toBe(true);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CAPITAN_BANDIDO_STEAL', sourceInstanceId: cap, targets: [a] }).ok).toBe(true);
     passChain(state);
+    placePending(state);
     expect(state.players[1].field.monsters.some(Boolean)).toBe(false);
     const stolen = [a, b].map((id) => onField(state, 0, id)).find(Boolean);
     expect(stolen.breedOverride).toBe('Ladrón');

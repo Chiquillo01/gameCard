@@ -203,6 +203,21 @@ describe('Store Controller TEST', () => {
         expect({ name: p.name, total }).toEqual({ name: p.name, total: p.reward.cards });
       });
     });
+
+    it('every structure deck in the store data adds up to its card count, with real cards within the copy limits', () => {
+      const products = require('../../data/seed/store_products_final.json');
+      const cards = require('../../data/seed/cards_final.json');
+      const { maxCopiesByRarity } = require('../../data/seed/game_rules_final.json');
+      products.filter((p) => p.category === 'structure').forEach((p) => {
+        const total = p.structureCards.reduce((s, c) => s + c.amount, 0);
+        expect({ name: p.name, total }).toEqual({ name: p.name, total: p.reward.cards });
+        p.structureCards.forEach(({ name, amount }) => {
+          const card = cards.find((c) => c.name === name);
+          expect({ name, found: !!card, obtainable: card && card.obtainable !== false }).toEqual({ name, found: true, obtainable: true });
+          expect(amount).toBeLessThanOrEqual(maxCopiesByRarity[card.rarity]);
+        });
+      });
+    });
   });
 
   describe('POST /store/products/:productId/buy-chest with `quantity` (bulk purchase)', () => {
@@ -404,6 +419,26 @@ describe('Store Controller TEST', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.newBalance).toEqual({ pixelcoins: before.pixelcoins - 100, pixelgems: before.pixelgems + 10 });
+    });
+
+    it('a pixelcoin pack, paid with pixelgems, credits pixelcoins', async () => {
+      const pack = await new StoreProduct({
+        name: 'Coins for gems',
+        description: 'Pixelcoins bought with pixelgems',
+        price: { pixelgems: 1 },
+        reward: { pixelcoins: 100 },
+        imageUrl: 'coins.png',
+        category: 'pixelcoins',
+      }).save();
+      const before = await balanceOf(userToken);
+
+      const response = await fakeRequest
+        .post(`/store/products/${pack._id}/buy-currency`)
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ paymentMethod: 'pixelgems', quantity: 2 });
+
+      expect(response.status).toBe(200);
+      expect(response.body.newBalance).toEqual({ pixelcoins: before.pixelcoins + 200, pixelgems: before.pixelgems - 2 });
     });
 
     it('refuses an in-game-priced pack the user cannot afford', async () => {

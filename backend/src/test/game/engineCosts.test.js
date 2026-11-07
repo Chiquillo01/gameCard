@@ -6,6 +6,7 @@ const { applyAction, viewFor } = require('../../game/engine');
 const { payCost } = require('../../game/effects/costs');
 const { checkConditions } = require('../../game/effects/conditions');
 const { seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
+const { placePending, actPicking, resolveAll } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -47,10 +48,11 @@ describe('Costs the data uses', () => {
     expect(ask.options.map((o) => o.instanceId).sort()).toEqual([fire, wind].sort());
     expect(state.players[0].hand).toContain(bebe); // nothing paid while asking
 
-    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DRAGON_TIERRA_BEBE_SUMMON', sourceInstanceId: bebe, targets: [wind] }).ok).toBe(true);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DRAGON_TIERRA_BEBE_SUMMON', sourceInstanceId: bebe, targets: [wind, roco] }).ok).toBe(true);
     expect(state.players[0].graveyard).toEqual(expect.arrayContaining([bebe, wind]));
     expect(state.players[0].hand).toContain(fire);
     passAll(state);
+    placePending(state);
     expect(monster(state, roco)).toBeDefined();
   });
 
@@ -84,15 +86,16 @@ describe('Costs the data uses', () => {
     await toGraveyard(state, 0, 'Slime');
     await toGraveyard(state, 0, 'Valkiria');
     // Played and resolved: it reaches the Cementerio this turn.
-    applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: refuerzos });
+    actPicking(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: refuerzos });
     passAll(state);
+    resolveAll(state);
     expect(state.players[0].graveyard).toContain(refuerzos);
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos })).toMatchObject({ ok: false, reason: 'conditions-not-met' });
 
     toPhase(state, 'main1', 1);
     toPhase(state, 'main1', 0);
     const hand = state.players[0].hand.length;
-    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos }).ok).toBe(true);
+    expect(actPicking(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos }).ok).toBe(true);
     expect(state.players[0].banished).toContain(refuerzos);
     passAll(state);
     expect(state.players[0].hand.length).toBe(hand + 1);
@@ -107,7 +110,7 @@ describe('Costs the data uses', () => {
     state.turnNumber = 3; // it reached the Cementerio on an earlier turn
     toPhase(state, 'main1', 0);
     const ask = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos });
-    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige los monstruos que vuelven al Mazo' });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige los 2 monstruos de tu Cementerio que barajas en el Mazo' });
     expect(ask.options.map((o) => o.instanceId).sort()).toEqual([slime, valkiria, avispa].sort());
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'REFUERZOS_GY_SHUFFLE_DRAW', sourceInstanceId: refuerzos, targets: [slime, avispa] }).ok).toBe(true);
     passAll(state);
@@ -134,6 +137,7 @@ describe('Costs the data uses', () => {
     toPhase(state, 'main1', 0);
     const perro = await toGraveyard(state, 0, 'Perro Esqueleto');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: perro }).ok).toBe(true);
+    placePending(state);
     const { moveToZone } = require('../../game/zones');
     moveToZone(state, perro, 'graveyard');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: perro })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });

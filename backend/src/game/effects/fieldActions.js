@@ -32,8 +32,9 @@ function rowMatches(row, args) {
   const { entry } = row;
   if ((args.faceUp || (args.filter && args.filter.faceUp)) && entry.faceDown) return false;
   if ((args.faceDown || (args.filter && args.filter.faceDown)) && !entry.faceDown) return false;
+  if (args.filter && args.filter.atkDiffersFromOriginal && !(row.kind === 'monster' && matchesFilter(entry, { atkDiffersFromOriginal: true }))) return false;
   if (args.filter && Object.values(args.filter).some((v) => v !== undefined && v !== null && v !== '' && v !== true && v !== false)) {
-    if (entry.isToken) return false;
+    if (entry.isToken && row.kind !== 'monster') return false;
     if (row.kind === 'monster' ? !matchesFilter(entry, args.filter) : !matchesCardFilter(getCard(entry.cardId), args.filter)) return false;
   }
   if (args.maxDef != null && row.kind === 'monster' && (entry.baseDef + ((entry.tempBuff || {}).def || 0)) > args.maxDef) return false;
@@ -55,6 +56,9 @@ function sendToGraveyard(ctx, row) {
   const { entry, ownerIndex } = row;
   const card = entry.isToken ? null : getCard(entry.cardId);
   const wasMonster = row.kind !== 'support' && !!player(ctx.state, ownerIndex).field.monsters.includes(entry);
+  // Its Atk as it left, and the card whose effect destroyed it (Noche Eterna).
+  const atk = wasMonster && !entry.isToken ? require('../effectEngine').getEffectiveStats(entry).atk : 0;
+  const bySourceCardId = ctx.sourceInstanceId && !String(ctx.sourceInstanceId).startsWith('token:') ? cardIdFromInstance(ctx.sourceInstanceId) : null;
   if (entry.isToken) {
     const pl = player(ctx.state, ownerIndex);
     const i = pl.field.monsters.indexOf(entry);
@@ -65,8 +69,8 @@ function sendToGraveyard(ctx, row) {
   log(ctx.state, `${card ? card.name : 'Una ficha'} es destruida.`);
   if (!entry.isToken) {
     const { fireTrigger } = require('../effectEngine');
-    fireTrigger(ctx.state, 'sentToGraveyard', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex });
-    if (wasMonster) fireTrigger(ctx.state, 'onMonsterDestroyed', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, reason: 'effect' });
+    fireTrigger(ctx.state, 'sentToGraveyard', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, from: 'field', reason: 'effect' });
+    if (wasMonster) fireTrigger(ctx.state, 'onMonsterDestroyed', { instanceId: entry.instanceId, cardId: entry.cardId, ownerIndex, reason: 'effect', byPlayer: ctx.controllerIndex, atk, bySourceCardId });
   }
 }
 
@@ -89,8 +93,15 @@ function destroy(ctx, args, targets) {
     const wantSelf = args.excludeSelf !== false && !all;
     const filter = wantsSupport && args.filter ? { ...args.filter, category: undefined } : args.filter;
     rows = fieldEntries(ctx, side, zone).filter((r) => rowMatches(r, { ...args, filter }) && !(wantSelf && r.entry.instanceId === ctx.sourceInstanceId));
+    if (args.lessAtkThanSelf) {
+      const self = player(ctx.state, ctx.controllerIndex).field.monsters.find((m) => m && m.instanceId === ctx.sourceInstanceId);
+      const { getEffectiveStats } = require('../effectEngine');
+      const mine = self ? getEffectiveStats(self).atk : 0;
+      rows = rows.filter((r) => r.kind === 'monster' && r.entry.instanceId !== ctx.sourceInstanceId && getEffectiveStats(r.entry).atk < mine);
+    }
     // With nothing chosen and no side given, go for the rival's cards first.
-    if (side === 'any' && rows.some((r) => r.ownerIndex !== ctx.controllerIndex)) rows = rows.filter((r) => r.ownerIndex !== ctx.controllerIndex);
+    // ("Todos los monstruos" means both sides.)
+    if (!all && side === 'any' && rows.some((r) => r.ownerIndex !== ctx.controllerIndex)) rows = rows.filter((r) => r.ownerIndex !== ctx.controllerIndex);
     rows = pickRows(rows, { pick: own ? 'weakest' : 'strongest', ...args, count: all ? 999 : args.count });
   }
   rows.forEach((row) => {
@@ -98,8 +109,19 @@ function destroy(ctx, args, targets) {
       log(ctx.state, 'Un monstruo protegido ignora el efecto.');
       return;
     }
+    if (row.entry.cannotBeDestroyedByEffects) {
+      log(ctx.state, `${row.entry.isToken ? row.entry.tokenDef.name : getCard(row.entry.cardId).name} no puede ser destruido por efectos de cartas.`);
+      return;
+    }
+    const slot = row.kind === 'monster' ? player(ctx.state, row.ownerIndex).field.monsters.indexOf(row.entry) : -1;
     sendToGraveyard(ctx, row);
     ctx.destroyedCount += 1;
+    // Sombra: "invoca una Ficha Sombra por cada monstruo destruido, en la zona donde fue destruido".
+    if (args.replaceWithToken && slot !== -1 && player(ctx.state, row.ownerIndex).field.monsters[slot] === null) {
+      player(ctx.state, row.ownerIndex).field.monsters[slot] = require('../placement').tokenEntry(ctx.state, args.replaceWithToken);
+      log(ctx.state, `Aparece una ficha ${args.replaceWithToken.name} en su lugar.`);
+      require('../placement').askPosition(ctx.state, row.ownerIndex, player(ctx.state, row.ownerIndex).field.monsters[slot].instanceId);
+    }
   });
 }
 
@@ -109,7 +131,10 @@ function growSelf(ctx, args) {
   if (args.ifPreviousSucceeded && !(ctx.destroyedCount > 0)) return;
   const entry = player(ctx.state, ctx.controllerIndex).field.monsters.find((m) => m && m.instanceId === ctx.sourceInstanceId);
   if (!entry) return;
-  const delta = { atk: args.atk || 0, def: args.def || 0 };
+  // "Gana N por cada monstruo destruido por este efecto" (Tarasca).
+  const times = args.perDestroyed ? ctx.destroyedCount || 0 : 1;
+  if (!times) return;
+  const delta = { atk: (args.atk || 0) * times, def: (args.def || 0) * times };
   addPermanentMod(entry, delta, ctxSource(ctx));
   logStatChange(ctx, entry.instanceId, delta);
 }
@@ -119,26 +144,26 @@ function growSelf(ctx, args) {
 function takeControl(ctx, args, targets) {
   const oppIdx = opponentIndex(ctx.controllerIndex);
   const opp = player(ctx.state, oppIdx);
-  const me = player(ctx.state, ctx.controllerIndex);
-  const candidates = opp.field.monsters.filter(Boolean).filter((m) => !m.faceDown || true);
+  const candidates = opp.field.monsters.filter(Boolean);
   const chosen = (targets && targets.length && candidates.find((m) => targets.includes(m.instanceId)))
     || pickRows(candidates.map((entry) => ({ entry })), { pick: 'strongest', count: 1 }).map((r) => r.entry)[0];
   if (!chosen) return;
-  const slot = findEmptySlot(me.field.monsters, corrodedSlots(me, 'monsters'));
-  if (slot === -1) {
+  const { requestPlacement, freeMonsterSlots } = require('../placement');
+  if (!freeMonsterSlots(ctx.state, ctx.controllerIndex).length) {
     log(ctx.state, 'No hay espacio para tomar el control del monstruo.');
     return;
   }
-  // Through removeFromZone, not a bare null assignment, so this also releases any Equipo cards
-  // that were on the stolen monster (per the rulebook, they don't follow it to the new controller).
-  removeFromZone(ctx.state, chosen.instanceId, { zone: 'field:monster', ownerIndex: oppIdx, slot: opp.field.monsters.indexOf(chosen) });
-  chosen.attackLockTurn = ctx.state.turnNumber;
-  if (args.changeBreed) chosen.breedOverride = args.changeBreed;
-  me.field.monsters[slot] = chosen;
-  log(ctx.state, `${me.userId} toma el control de ${getCard(chosen.cardId).name}.`);
-  if (args.destroyOthers) {
-    opp.field.monsters.filter(Boolean).forEach((m) => sendToGraveyard(ctx, { entry: m, ownerIndex: oppIdx }));
-  }
+  // The player picks the zone it goes to (placement.js moves it, turns it into a Ladrón and
+  // destroys the rest of that side once it's there).
+  requestPlacement(ctx.state, {
+    purpose: 'takeControl',
+    controllerIndex: ctx.controllerIndex,
+    instanceId: chosen.instanceId,
+    sourceInstanceId: chosen.instanceId,
+    changeBreed: args.changeBreed || null,
+    destroyOthers: !!args.destroyOthers,
+    prompt: `Elige dónde colocas ${getCard(chosen.cardId).name}`,
+  });
 }
 
 // --- Search actions: "añade a tu Mano X del Mazo/Cementerio/Exilio" --------------------------
@@ -147,7 +172,7 @@ function takeControl(ctx, args, targets) {
 
 // Normalizes the handful of search-action shapes the effect data uses into one { filter, zones, count }.
 function normalizeSearchArgs(fn, args = {}) {
-  if (fn === 'searchDeck') return { filter: { attribute: args.attribute, breed: args.breed, family: args.family }, zones: ['deck'], count: args.count || 1 };
+  if (fn === 'searchDeck') return { filter: args.filter || { attribute: args.attribute, breed: args.breed, family: args.family }, zones: ['deck'], count: args.count || 1 };
   if (fn === 'searchFromDeck') return { filter: args, zones: ['deck'], count: 1 };
   if (fn === 'addCardToHandFromGraveyard') return { filter: args.filter || args, zones: ['graveyard'], count: args.count || 1 };
   if (fn === 'recoverCardsToHand') {
@@ -173,11 +198,13 @@ function searchCandidates(state, controllerIndex, fn, args) {
   }
   // Refuerzos: "un monstruo que comparta atributo con un monstruo que tengas en Campo".
   const fieldAttributes = filter.matchAttributeWithFieldMonster
-    ? pl.field.monsters.filter((m) => m && !m.isToken && !m.faceDown).map((m) => getCard(m.cardId).attribute)
+    ? pl.field.monsters.filter((m) => m && !m.faceDown).map((m) => (m.isToken ? m.tokenDef.attribute : getCard(m.cardId).attribute))
     : null;
   const ids = [];
   zones.forEach((zone) => pl[zone].forEach((id) => {
     const card = getCard(cardIdFromInstance(id));
+    // A Compilación never goes to the hand (it lives in the Mazo-C), so a search can't offer one.
+    if (card.category === 'fusion') return;
     if (!matchesCardFilter(card, filter) || taken.includes(card.attribute)) return;
     if (fieldAttributes && !(['monster', 'fusion'].includes(card.category) && fieldAttributes.includes(card.attribute))) return;
     ids.push(id);
@@ -193,12 +220,14 @@ function runSearch(ctx, fn, args, targets) {
   const candidates = searchCandidates(ctx.state, ctx.controllerIndex, fn, args);
   const picked = (targets && targets.length ? targets.filter((id) => candidates.includes(id)) : candidates).slice(0, count);
   const moved = [];
+  const movedFrom = {};
   picked.forEach((id) => {
     const zone = zones.find((z) => pl[z].includes(id));
     if (!zone || !matchesCardFilter(getCard(cardIdFromInstance(id)), filter)) return;
     pl[zone] = pl[zone].filter((x) => x !== id);
     pl.hand.push(id);
     moved.push(id);
+    movedFrom[id] = zone;
   });
   log(ctx.state, `${pl.userId} añade ${moved.length} carta(s) a la mano.`);
   // Rulebook, Avispa Mutante: "Si es añadida a tu Mano desde el Mazo o Cementerio, invocarlo
@@ -207,6 +236,8 @@ function runSearch(ctx, fn, args, targets) {
   moved.forEach((id) => fireHandTrigger(ctx.state, 'addedToHand', id, ctx.controllerIndex));
   // Viaje de Unión: "si tu oponente añade cartas de su Mazo a su Mano, roba".
   if (moved.length && zones.includes('deck')) require('../draw').runMirrors(ctx.state, 'search', ctx.controllerIndex, moved.length);
+  const fromDeck = moved.filter((id) => movedFrom[id] === 'deck');
+  if (fromDeck.length) require('../effectEngine').fireTrigger(ctx.state, 'addedFromDeckToHand', { controllerIndex: ctx.controllerIndex, cardIds: fromDeck.map(cardIdFromInstance) });
 }
 
 const addCardToHandFromDeck = (ctx, args, targets) => runSearch(ctx, 'addCardToHandFromDeck', args, targets);
@@ -221,16 +252,34 @@ const SEARCH_FNS = ['addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck',
 // Every one of these brings out exactly the cards the player picked (targets.js pools them), then
 // announces the summon like any other — so its "en invocación" effects fire — and marks it as a
 // summon *by an effect*, which "cuando es invocado por el efecto de un Licano" cards react to.
-function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx.controllerIndex } = {}) {
-  if (!placeMonster(ctx.state, instanceId, ownerIndex, { position })) {
+function summonByEffect(ctx, instanceId, { position = 'attack', positionFixed = false, ownerIndex = ctx.controllerIndex } = {}) {
+  const { requestPlacement, freeMonsterSlots } = require('../placement');
+  const card = getCard(cardIdFromInstance(instanceId));
+  if (!require('../summon').summonRequirementsMet(ctx.state, ownerIndex, instanceId, card)) {
+    log(ctx.state, `No se cumple lo que ${card.name} necesita para ser invocada.`);
+    return false;
+  }
+  if (!require('../cardIndex').maySummon(card, ctx.sourceInstanceId)) {
+    log(ctx.state, `${getCard(cardIdFromInstance(instanceId)).name} no puede ser invocada por este efecto.`);
+    return false;
+  }
+  if (!freeMonsterSlots(ctx.state, ownerIndex).length) {
     log(ctx.state, 'No hay espacio en el Campo para invocar.');
     return false;
   }
-  const card = getCard(cardIdFromInstance(instanceId));
-  log(ctx.state, `${player(ctx.state, ownerIndex).userId} invoca a ${card.name} por un efecto.`);
-  const { announceSummon } = require('../summon');
+  // The player picks the zone (placement.js places it and announces the summon, so its "en
+  // invocación" effects and "cuando es invocado por un efecto" reactions still fire).
   const by = ctx.sourceInstanceId && !String(ctx.sourceInstanceId).startsWith('token:') ? ctx.sourceInstanceId : null;
-  announceSummon(ctx.state, ownerIndex, instanceId, card, false, { byEffect: true, bySourceInstanceId: by, bySourceCardId: by ? cardIdFromInstance(by) : null });
+  requestPlacement(ctx.state, {
+    purpose: 'effectSummon',
+    controllerIndex: ownerIndex,
+    instanceId,
+    sourceInstanceId: instanceId,
+    position,
+    positionFixed,
+    bySourceInstanceId: by,
+    prompt: `Elige dónde invocas ${getCard(cardIdFromInstance(instanceId)).name}`,
+  });
   return true;
 }
 
@@ -238,14 +287,29 @@ function summonByEffect(ctx, instanceId, { position = 'attack', ownerIndex = ctx
 // summonFromDeck / specialSummonFromDeck / summonFromHand / specialSummonFromGY / summonFromZones /
 // summon. `targets` are the picks resolveActions handed this step (already inside its pool).
 function summonPicked(ctx, args, targets) {
-  (targets || []).forEach((id) => summonByEffect(ctx, id, { position: args.position || 'attack' }));
+  // "Sacrifica esta carta para invocar un X" (Planetar): it goes to the Cementerio first, freeing its
+  // zone (only when there's a card to bring out).
+  if (args.sacrificeSelf && (targets || []).length) {
+    const self = player(ctx.state, ctx.controllerIndex).field.monsters.find((m) => m && m.instanceId === ctx.sourceInstanceId);
+    if (!self) return;
+    moveToZone(ctx.state, self.instanceId, 'graveyard');
+    require('../zones').markSacrificed(ctx.state, self.cardId);
+    log(ctx.state, `${getCard(self.cardId).name} es sacrificada.`);
+    require('../effectEngine').announceSentToGraveyard(ctx.state, self.instanceId, ctx.controllerIndex, { from: 'field', reason: 'cost' });
+  }
+  // "Invoca especial esta carta del Cementerio" (Héroe Fénix).
+  const picks = args.target === 'self' ? [ctx.sourceInstanceId].filter((id) => player(ctx.state, ctx.controllerIndex).graveyard.includes(id)) : targets || [];
+  // "En posición de Defensa/Ataque" when the card says so; otherwise the player picks.
+  ctx.lastSummoned = picks.filter((id) => summonByEffect(ctx, id, { position: args.position || 'attack', positionFixed: !!args.position }));
 }
 
 // "Envía al Cementerio un [filter] de tu Mazo" (Héroe de Marfil) — the one the player picks.
 function sendFromDeckToGY(ctx, args, targets) {
   (targets || []).forEach((id) => {
+    const from = player(ctx.state, ctx.controllerIndex).extra.includes(id) ? 'extra' : 'deck';
     moveToZone(ctx.state, id, 'graveyard');
-    log(ctx.state, `${getCard(cardIdFromInstance(id)).name} es enviada del Mazo al Cementerio.`);
+    log(ctx.state, `${getCard(cardIdFromInstance(id)).name} es enviada del ${from === 'extra' ? 'Mazo-C' : 'Mazo'} al Cementerio.`);
+    require('../effectEngine').announceSentToGraveyard(ctx.state, id, ctx.controllerIndex, { from, reason: 'effect' });
   });
   ctx.movedCards = [...(ctx.movedCards || []), ...(targets || [])];
 }
@@ -253,9 +317,49 @@ function sendFromDeckToGY(ctx, args, targets) {
 // "No puede ser destruido en batalla": flags are recomputed every board change (see
 // effectEngine.recomputeContinuous), so they vanish with the effect.
 function preventBattleDestruction(ctx, args) {
-  const mine = player(ctx.state, ctx.controllerIndex).field.monsters.filter(Boolean);
+  const side = args.side === 'opponent' ? (ctx.controllerIndex === 0 ? 1 : 0) : ctx.controllerIndex;
+  const mine = player(ctx.state, side).field.monsters.filter(Boolean);
   const targets = args.target === 'self' ? mine.filter((m) => m.instanceId === ctx.sourceInstanceId) : mine.filter((m) => !args.attribute || matchesFilter(m, { attribute: args.attribute }));
   targets.forEach((m) => { m.cannotBeDestroyedByBattle = true; });
+}
+
+// "Otros monstruos [filter] en tu Campo no pueden ser destruidos por efectos de cartas" (Clionne).
+function protectFromEffectDestruction(ctx, args) {
+  player(ctx.state, args.side === 'opponent' ? (ctx.controllerIndex === 0 ? 1 : 0) : ctx.controllerIndex).field.monsters
+    .filter((m) => m && (args.target === 'self' ? m.instanceId === ctx.sourceInstanceId : !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId) && matchesFilter(m, args.filter || {})))
+    .forEach((m) => { m.cannotBeDestroyedByEffects = true; });
+}
+
+// "Tu oponente solo puede elegir para ataques al monstruo con más Vida que controles" (Poder de las
+// Plantas): combat.attackBlockReason reads the flag, which holds the stat compared ('atk'/'def').
+function attacksOnlyOnStrongest(ctx, args = {}) {
+  player(ctx.state, ctx.controllerIndex).attacksOnlyOnStrongest = args.stat || 'atk';
+}
+
+// "Excava N cartas de la parte superior de tu Mazo: si encuentras un [filter], añádelo a tu Mano"
+// (Grook). The excavated cards are shown in the log; the others stay where they were.
+function excavateCandidates(state, controllerIndex, args) {
+  const top = player(state, controllerIndex).deck.slice(0, args.cards || 3);
+  return top.filter((id) => getCard(cardIdFromInstance(id)).category !== 'fusion' && matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {}));
+}
+
+function excavate(ctx, args, targets) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const top = pl.deck.slice(0, args.cards || 3);
+  if (!top.length) return;
+  log(ctx.state, `${pl.userId} excava ${top.map((id) => getCard(cardIdFromInstance(id)).name).join(', ')}.`);
+  const found = excavateCandidates(ctx.state, ctx.controllerIndex, args);
+  const chosen = (targets || []).filter((id) => found.includes(id)).slice(0, args.count || 1);
+  const picked = chosen.length ? chosen : found.slice(0, args.count || 1);
+  if (!picked.length) {
+    log(ctx.state, 'No encuentra ninguna carta que añadir a la Mano.');
+    return;
+  }
+  picked.forEach((id) => {
+    pl.deck = pl.deck.filter((x) => x !== id);
+    pl.hand.push(id);
+    log(ctx.state, `${pl.userId} añade ${getCard(cardIdFromInstance(id)).name} a la mano.`);
+  });
 }
 
 function protectFromOpponentEffects(ctx) {
@@ -283,6 +387,9 @@ module.exports = {
   searchFromDeck,
   addCardToHandFromGraveyard,
   preventBattleDestruction,
+  protectFromEffectDestruction,
+  attacksOnlyOnStrongest,
+  excavate,
   cannotBeDestroyedOrExiled: protectFromOpponentEffects,
   cannotBeDestroyedByOpponentEffects: protectFromOpponentEffects,
   grantTimedBuff,
@@ -300,3 +407,4 @@ module.exports = {
   normalizeSearchArgs,
   SEARCH_FNS,
 };
+Object.defineProperty(module.exports, 'excavateCandidates', { value: excavateCandidates, enumerable: false });

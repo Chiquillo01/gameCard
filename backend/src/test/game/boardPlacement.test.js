@@ -62,7 +62,7 @@ describe('Board placement is the player\'s own choice', () => {
   });
 
   it('refuses a monster slot that is already occupied', async () => {
-    const { state, inHand } = await makeMatch(['Slime', 'Fire Giant', 'Kraken']);
+    const { state, inHand } = await makeMatch(['Slime', 'Gigante de Fuego', 'Kraken']);
     toMain1(state);
     placeMonster(state, `0:${(await Card.findOne({ name: 'Kraken' }).lean())._id}:blocker`, 0, { position: 'attack', slot: 2 });
     const slime = inHand('Slime');

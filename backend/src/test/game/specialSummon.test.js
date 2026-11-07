@@ -10,7 +10,7 @@ const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction, viewFor } = require('../../game/engine');
 const { placeMonster, moveToZone } = require('../../game/zones');
-const { passChain } = require('./chainHelpers');
+const { passChain, placePending } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -65,6 +65,7 @@ describe('SPECIAL_SUMMON', () => {
 
     const res = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: avispa });
     expect(res.ok).toBe(true);
+    placePending(state);
     expect(monsterOf(state, 0, avispa)).toBeDefined();
     expect(state.players[0].graveyard).toContain(insect);
     expect(state.players[0].hand).toContain(other);
@@ -94,21 +95,23 @@ describe('SPECIAL_SUMMON', () => {
     expect(monsterOf(state, 0, pegaso)).toBeDefined();
   });
 
-  it('Vampiro: pays 5 VP instead of a card cost', async () => {
+  it('Vampiro: pays 5 VP instead of a card cost (with a Murciélago in the Cementerio)', async () => {
     const { state, inHand } = await makeMatch(['Vampiro', 'Kraken']);
+    const bat = await Card.findOne({ name: 'Murciélago' }).lean();
+    state.players[0].graveyard.push(`0:${bat._id}:bat`);
     toMain1(state);
     const before = state.players[0].vp;
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: inHand('Vampiro') })).toMatchObject({ ok: true });
     expect(state.players[0].vp).toBe(before - 5);
   });
 
-  it('Fire Giant: sacrifices a Fuego monster', async () => {
-    const { state, inHand } = await makeMatch(['Fire Giant', 'Slime', 'Kraken']);
+  it('Gigante de Fuego: sacrifices a Fuego monster', async () => {
+    const { state, inHand } = await makeMatch(['Gigante de Fuego', 'Slime', 'Kraken']);
     toMain1(state);
     const fireCard = await Card.findOne({ attribute: 'Fuego', category: 'monster' }).lean();
     const fireMon = `0:${fireCard._id}:f`;
     placeMonster(state, fireMon, 0, { position: 'attack' });
-    const giant = inHand('Fire Giant');
+    const giant = inHand('Gigante de Fuego');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: giant })).toMatchObject({ ok: true });
     expect(monsterOf(state, 0, fireMon)).toBeUndefined();
     expect(state.players[0].graveyard).toContain(fireMon);
@@ -145,27 +148,39 @@ describe('SPECIAL_SUMMON', () => {
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: inHand('Lich') })).toMatchObject({ ok: false, reason: 'cannot-pay-special-summon-cost' });
   });
 
-  it('Aboleth: only special-summonable the turn a water monster was destroyed, from hand or Cementerio', async () => {
+  it('Aboleth: the player picks a monstruo Agua of their own to destroy, from hand or Cementerio', async () => {
     const { state, inHand } = await makeMatch(['Aboleth', 'Kraken']);
     const hipocampo = await Card.findOne({ name: 'HipoCampo' }).lean();
+    const slime = await Card.findOne({ name: 'Slime' }).lean();
     const water1 = `0:${hipocampo._id}:w1`;
     const water2 = `0:${hipocampo._id}:w2`;
-    placeMonster(state, water1, 0, { position: 'attack' });
-    placeMonster(state, water2, 0, { position: 'attack' });
+    const dry = `0:${slime._id}:s1`;
     toMain1(state);
 
     const aboleth = inHand('Aboleth');
-    // No water monster destroyed yet this turn: the window is closed.
+    // No monstruo Agua to destroy: not available.
+    placeMonster(state, dry, 0, { position: 'attack' });
+    expect(viewFor(state, 0).players[0].hand.find((h) => h.instanceId === aboleth).specialSummonAvailable).toBe(false);
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
 
-    moveToZone(state, water1, 'graveyard');
-    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth })).toMatchObject({ ok: true });
+    placeMonster(state, water1, 0, { position: 'attack' });
+    placeMonster(state, water2, 0, { position: 'attack' });
+    expect(viewFor(state, 0).players[0].hand.find((h) => h.instanceId === aboleth).specialSummonAvailable).toBe(true);
+    // Two candidates: the player is asked which one, and only monstruos Agua are offered.
+    const ask = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(ask.options.map((o) => o.instanceId).sort()).toEqual([water1, water2].sort());
+
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth, targets: [water2] })).toMatchObject({ ok: true });
+    placePending(state);
+    expect(state.players[0].graveyard).toContain(water2);
+    expect(monsterOf(state, 0, water1)).toBeDefined();
     expect(monsterOf(state, 0, aboleth)).toBeDefined();
 
-    // Send Aboleth itself to the graveyard and special-summon it from there in the same window.
+    // From the Cementerio too, paying with the other one.
     moveToZone(state, aboleth, 'graveyard');
-    moveToZone(state, water2, 'graveyard');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: aboleth })).toMatchObject({ ok: true });
+    expect(state.players[0].graveyard).toContain(water1);
     expect(monsterOf(state, 0, aboleth)).toBeDefined();
   });
 
@@ -217,7 +232,8 @@ describe('SPECIAL_SUMMON', () => {
     state.players[0].hand.push(mutanteId);
     const { fireHandTrigger } = require('../../game/summon');
     fireHandTrigger(state, 'addedToHand', mutanteId, 0);
-    expect(state.pendingTriggerChoices || []).toHaveLength(0);
+    // No zone to ask about — only the position it lands in.
+    expect((state.pendingTriggerChoices || []).map((p) => p.kind)).toEqual(['position']);
     expect(state.players[0].field.monsters[2]).toMatchObject({ instanceId: mutanteId });
   });
 

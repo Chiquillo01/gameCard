@@ -61,6 +61,22 @@
   color: #a33a2e;
 }
 
+.limitWarning {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: #f8edd3;
+  border: 2px solid #a33a2e;
+  color: #a33a2e;
+  font-family: 'Metamorphous', sans-serif;
+  font-size: 0.9rem;
+}
+
+.limitWarning ul {
+  margin: 0.25rem 0 0;
+  padding-left: 1.25rem;
+}
+
 .saveDeckButton {
   position: fixed;
   bottom: 10px;
@@ -138,6 +154,19 @@
 }
 
 @media (max-width: 768px) {
+  .createNewDeck {
+    /* Room for the "Volver a los mazos" button pinned at the top-left and for the save button
+       fixed at the bottom, so neither covers the title or the last cards. */
+    padding-top: 3.25rem;
+    padding-bottom: 5rem;
+  }
+
+  .statusRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
   .deckContent {
     flex-direction: column;
     height: auto;
@@ -147,6 +176,18 @@
   .cardsSelectedWrapper {
     flex: none;
     width: 100%;
+    max-width: none;
+    box-sizing: border-box;
+  }
+
+  /* Stacked, the panels no longer get their height from the row: give each its own, or the
+     deck's card boxes (sized as shares of it) shrink to nothing. */
+  .cardsSelectedWrapper {
+    height: 60vh;
+  }
+
+  .cardsCollectedWrapper {
+    height: 70vh;
   }
 
   .saveDeckButton {
@@ -158,7 +199,8 @@
 
 @media (max-width: 480px) {
   .createNewDeck {
-    padding: 0.5rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
   }
 
   .deckContent {

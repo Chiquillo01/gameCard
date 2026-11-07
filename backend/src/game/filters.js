@@ -1,4 +1,4 @@
-const { getCard, isEffectless, extraAttributesOf } = require('./cardIndex');
+const { getCard, isEffectless, extraAttributesOf, extraBreedsOf } = require('./cardIndex');
 
 // Card text has drifted slightly across data-entry passes (accents dropped/added, e.g. "Marino"
 // vs "Maríno"), while meaning the same thing. Effect/fusion filters compare accent-insensitively
@@ -9,13 +9,29 @@ const sameText = (a, b) => normalize(a) === normalize(b);
 // A Compilación (fusion) card counts as a monster on the field/in the deck for anything that
 // says `category: "Compilado"` — the Spanish label authored in the effect data — even though
 // the schema's own `category` value for it is "fusion".
-const CATEGORY_LABEL_TO_SCHEMA = { compilado: 'fusion', monstruo: 'monster', soporte: 'support', token: 'token' };
+const SUBTYPE_LABELS = { normal: 'normal', veloz: 'instant', contraataque: 'counter', contraefecto: 'counter', continuo: 'continuous', equipo: 'equipment', territorio: 'field', reino: 'field' };
+const CATEGORY_LABEL_TO_SCHEMA = { compilado: 'fusion', monstruo: 'monster', soporte: 'support', apoyo: 'support', token: 'token' };
 const categoryMatches = (cardCategory, wanted) => normalize(cardCategory) === (CATEGORY_LABEL_TO_SCHEMA[normalize(wanted)] || normalize(wanted));
 
 // Shared "does this monster on field match this filter" used by continuous buffs, search
 // effects, targeting, etc. All keys are optional and AND together.
 function matchesFilter(monsterEntry, filter = {}) {
-  if (!monsterEntry || monsterEntry.isToken) return false;
+  if (!monsterEntry) return false;
+  // "Que su Atk actual sea diferente a su Atk original" (Vampiro): read off the field, and only for
+  // a face-up monster — a face-down one shows no Atk at all.
+  if (filter.atkDiffersFromOriginal) {
+    if (monsterEntry.faceDown) return false;
+    const printed = monsterEntry.isToken ? monsterEntry.tokenDef.atk || 0 : getCard(monsterEntry.cardId).atk || 0;
+    const current = Math.max(0, (monsterEntry.baseAtk || 0) + ((monsterEntry.tempBuff || {}).atk || 0));
+    if (current === printed) return false;
+    const { atkDiffersFromOriginal, ...rest } = filter;
+    return matchesFilter(monsterEntry, rest);
+  }
+  // A token is a monster too: it matches by its own definition (Tentáculo Musculoso: Agua / Pez).
+  if (monsterEntry.isToken) {
+    if (filter.position && monsterEntry.position !== filter.position) return false;
+    return matchesCardFilter({ ...monsterEntry.tokenDef, category: 'monster' }, filter);
+  }
   const base = getCard(monsterEntry.cardId);
   // What the card counts as right now on the field: a monster turned into another breed (Pegaso,
   // Capitán Bandido) matches as that breed; one that took another card's name and level
@@ -24,6 +40,7 @@ function matchesFilter(monsterEntry, filter = {}) {
   const card = {
     ...base,
     breed: monsterEntry.breedOverride || base.breed,
+    family: monsterEntry.familyOverride || base.family,
     name: (monsterEntry.nameOverride && monsterEntry.nameOverride.name) || base.name,
     level: monsterEntry.nameOverride && monsterEntry.nameOverride.level != null ? monsterEntry.nameOverride.level : base.level,
   };
@@ -47,19 +64,38 @@ function attributeMatches(cardAttribute, wantedSpanish) {
 // validate fusion/Compilación material requirements against a candidate card.
 function matchesCardFilter(card, filter = {}) {
   if (!card) return false;
+  // A card off the field (or an Apoyo) has no current Atk to compare.
+  if (filter.atkDiffersFromOriginal) return false;
   if (filter.name && !sameText(card.name, filter.name)) return false;
   // `nameIncludes` is the older spelling of `nameContains` some effect data still uses.
   const contains = filter.nameContains || filter.nameIncludes;
   if (contains && !normalize(card.name).includes(normalize(contains))) return false;
   if (filter.excludeName && sameText(card.name, filter.excludeName)) return false;
-  if (filter.breed && !sameText(card.breed, filter.breed)) return false;
-  if (filter.breedIn && !filter.breedIn.some((b) => sameText(card.breed, b))) return false;
+  const breeds = [card.breed, ...extraBreedsOf(card)];
+  if (filter.breed && !breeds.some((b) => sameText(b, filter.breed))) return false;
+  if (filter.breedIn && !filter.breedIn.some((b) => breeds.some((own) => sameText(own, b)))) return false;
   if (filter.family && !sameText(card.family, filter.family)) return false;
+  // "Que no sea Orco / Grokkar / un \"Orco\"" (the Conjuradores, Orco Traicionero).
+  if (filter.excludeBreed && breeds.some((b) => sameText(b, filter.excludeBreed))) return false;
+  if (filter.excludeFamily && sameText(card.family, filter.excludeFamily)) return false;
+  if (filter.excludeNameContains && normalize(card.name).includes(normalize(filter.excludeNameContains))) return false;
+  // "Que mencione a X como uno de sus materiales" (Grover, el Goblin): a name in its recipe.
+  if (filter.recipeIncludes && !((card.activationCost && card.activationCost.args && card.activationCost.args.materials) || []).some((m) => m.name && sameText(m.name, filter.recipeIncludes))) return false;
   if (filter.category && !categoryMatches(card.category, filter.category)) return false;
+  // "Monstruos \"Bosque Oscuro\"": monsters and Compilaciones alike.
+  if (filter.isMonster && !['monster', 'fusion', 'token'].includes(card.category)) return false;
   if (filter.attribute && ![card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, filter.attribute))) return false;
+  // "Un monstruo de Fuego o Lava" (Hoguera).
+  if (filter.attributeIn && !filter.attributeIn.some((w) => [card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, w)))) return false;
   if (filter.level != null && card.level !== filter.level) return false;
   if (filter.minLevel != null && (card.level || 0) < filter.minLevel) return false;
+  // An Apoyo's kind, by its Spanish name or the stored one ("Contraataque" = counter).
+  if (filter.subtype && ![].concat(filter.subtype).some((s) => normalize(card.subtype) === (SUBTYPE_LABELS[normalize(s)] || normalize(s)))) return false;
+  // "Que menciona X en su texto": its name, its effect or its invocation text (a recipe counts).
+  if (filter.textIncludes && !normalize(`${card.name} ${card.effect || ''} ${card.invocationText || ''}`).includes(normalize(filter.textIncludes))) return false;
   if (filter.maxLevel != null && (card.level || 0) > filter.maxLevel) return false;
+  // "De nivel N o menor" as the effect data also spells it.
+  if (filter.levelOrLower != null && (card.level || 0) > filter.levelOrLower) return false;
   // "Monstruo sin efecto" (true) or a monster that has one (false).
   if (filter.effectless != null && isEffectless(card) !== !!filter.effectless) return false;
   return true;

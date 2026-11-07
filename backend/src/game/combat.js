@@ -1,3 +1,4 @@
+const { attributeMatches } = require('./filters');
 const { getCard, getEffect } = require('./cardIndex');
 const { player, opponentIndex, moveToZone, log, getFieldMonster } = require('./zones');
 const { hasStatus, FREEZE, BURN } = require('./statuses');
@@ -6,10 +7,12 @@ const { getEffectiveStats, fireTrigger, recomputeContinuous } = require('./effec
 const { checkWin } = require('./outcome');
 
 function isWater(entry) {
-  return !entry.isToken && !entry.faceDown && getCard(entry.cardId).attribute === 'Agua';
+  if (entry.faceDown) return false;
+  const attribute = entry.isToken ? entry.tokenDef.attribute : getCard(entry.cardId).attribute;
+  return attributeMatches(attribute, require('./rules').rules().freezeBreakerAttribute);
 }
 
-const hasAbility = (m, name) => (m.abilities || []).some((a) => a.name === name);
+const hasAbility = (m, name) => (m.abilities || []).some((a) => a.name === name) || (m.continuousAbilities || []).includes(name);
 
 // How many attacks a monster gets this turn: 1, plus a turn's extra (Bálor, Orco Gladiador) and a
 // standing one (Héroe del Caos "puede pegar dos veces", Damarco one per material).
@@ -35,6 +38,7 @@ function attackBlockReason(state, controllerIndex, attacker, targetInstanceId) {
   if (state.turnPlayer !== controllerIndex) return 'not-your-turn';
   // Paseo Temporal: "no puedes atacar este turno".
   if (state.attackBans && state.attackBans[controllerIndex] === state.turnNumber) return 'attacks-disabled';
+  if (attacker.cannotAttack) return 'cannot-attack';
   if (!canStillAttack(state, attacker)) return 'already-attacked';
   // Relicario de Engranaje: "pueden atacar este turno en Posición de Defensa boca arriba".
   const canAttackFromDefense = attacker.position === 'defense' && !attacker.faceDown && hasAbility(attacker, 'attackInDefense');
@@ -50,6 +54,16 @@ function attackBlockReason(state, controllerIndex, attacker, targetInstanceId) {
     const defender = oppPl.field.monsters.find((m) => m && m.instanceId === targetInstanceId);
     if (!defender) return 'defender-not-found';
     if (defender.untargetable) return 'cannot-be-targeted';
+  }
+  // Poder de las Plantas: only the defender's monster with the highest stat it names can be chosen.
+  if (oppPl.attacksOnlyOnStrongest) {
+    const stat = oppPl.attacksOnlyOnStrongest === true ? 'atk' : oppPl.attacksOnlyOnStrongest;
+    const monsters = oppPl.field.monsters.filter((m) => m && !m.untargetable);
+    if (monsters.length) {
+      const top = Math.max(...monsters.map((m) => getEffectiveStats(m)[stat]));
+      const defender = targetInstanceId && monsters.find((m) => m.instanceId === targetInstanceId);
+      if (!defender || getEffectiveStats(defender)[stat] !== top) return 'must-attack-strongest';
+    }
   }
   return null;
 }
@@ -86,11 +100,12 @@ function performBattle(state, link) {
     return;
   }
   const attackerName = monsterName(attacker);
+  if (attackStopped(state, attacker)) return;
 
   if (!link.targetInstanceId) {
     // "Antes de la fase de daño" (Serpiente de Muelle) for a direct attack too.
     fireTrigger(state, 'beforeDamageCalculation', { instanceId: attacker.instanceId, attackerInstanceId: attacker.instanceId, defenderInstanceId: null });
-    if (!getFieldMonster(state, attacker.instanceId)) return;
+    if (!getFieldMonster(state, attacker.instanceId) || attackStopped(state, attacker)) return;
     const atk = getEffectiveStats(attacker).atk;
     const before = oppPl.vp;
     oppPl.vp = Math.max(0, oppPl.vp - atk);
@@ -117,11 +132,55 @@ function performBattle(state, link) {
     return;
   }
   defender = getFieldMonster(state, defender.instanceId);
+  if (attackStopped(state, attacker)) return;
 
-  // Rulebook: a face-down defender is turned face-up during the damage step so its Vida can be
-  // read; its Rotación effects trigger after damage, if it's still on the field.
-  const wasFaceDown = defender.faceDown;
-  if (wasFaceDown) defender.faceDown = false;
+  // Rulebook, Rotación: a face-down defender is turned face-up so its Vida can be read, and its
+  // "al ser girada" effects resolve right then, before the damage is calculated. What they do
+  // stays even if the monster is destroyed in this same battle (Espora Venenosa's poison).
+  if (defender.faceDown) {
+    defender.faceDown = false;
+    link.revealed = true;
+    log(state, `${monsterName(defender)} estaba boca abajo: se gira para el combate.`);
+    fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
+    recomputeContinuous(state);
+    // An effect waiting on a pick ("selecciona un monstruo en el Campo") holds the battle until
+    // it's answered; resolveTriggerChoice then carries on with resumeBattle.
+    if (state.pendingTriggerChoices && state.pendingTriggerChoices.length) {
+      state.pausedBattle = link;
+      log(state, 'El combate espera a que se resuelva ese efecto.');
+      return;
+    }
+  }
+  return damageStep(state, link);
+}
+
+// Only a face-up monster in attack position attacks: one turned to defense / face-down while the
+// attack waited (Hechizo de volteo in response) stops there, and no battle happens.
+function attackStopped(state, attacker) {
+  if (!attacker.faceDown && attacker.position === 'attack') return false;
+  log(state, `${attacker.faceDown ? 'El monstruo atacante' : monsterName(attacker)} ya no está en posición de ataque: el ataque se detiene.`);
+  recomputeContinuous(state);
+  return true;
+}
+
+// The damage step of a battle between two monsters (after any face-down defender was turned over
+// and its effects resolved).
+function damageStep(state, link) {
+  const controllerIndex = link.controllerIndex;
+  const attackerPl = player(state, controllerIndex);
+  const oppIdx = opponentIndex(controllerIndex);
+  const oppPl = player(state, oppIdx);
+  const attacker = getFieldMonster(state, link.attackerInstanceId);
+  const defender = getFieldMonster(state, link.targetInstanceId);
+  if (!attacker || !defender || !attackerPl.field.monsters.includes(attacker) || !oppPl.field.monsters.includes(defender)) {
+    log(state, 'Uno de los monstruos dejó el Campo antes del daño: no hay batalla.');
+    recomputeContinuous(state);
+    checkWin(state);
+    return;
+  }
+  if (attackStopped(state, attacker)) return;
+  const attackerName = monsterName(attacker);
+  const wasFaceDown = !!link.revealed;
   const attackerStats = getEffectiveStats(attacker);
   const defenderStats = getEffectiveStats(defender);
   const defenderName = monsterName(defender);
@@ -129,7 +188,7 @@ function performBattle(state, link) {
   const defenderValue = inAttack ? defenderStats.atk : defenderStats.def;
   startBattleRecord(state, controllerIndex, { name: attackerName, atk: attackerStats.atk }, { name: defenderName, position: defender.position, stat: inAttack ? 'atk' : 'def', value: defenderValue, wasFaceDown });
   battleStep(state, `${attackerPl.userId} ataca con ${attackerName} (Atk ${attackerStats.atk}) a ${defenderName} (${inAttack ? `en Ataque, Atk ${defenderValue}` : `en Defensa, Vida ${defenderValue}`}).`);
-  if (wasFaceDown) battleStep(state, `${defenderName} estaba boca abajo: se revela.`);
+  if (wasFaceDown && state.lastBattle) state.lastBattle.steps.push(`${defenderName} estaba boca abajo: se giró para el combate.`);
 
   // Rulebook, Congelado: a frozen monster fighting a water monster (either way round) is destroyed
   // before the damage step, so no damage is dealt.
@@ -140,7 +199,6 @@ function performBattle(state, link) {
     if (attackerFrozen && isWater(defender)) destroyInBattle(state, controllerIndex, attacker, defender);
     else destroyInBattle(state, oppIdx, defender, attacker);
     battleStep(state, `${frozenName} está Congelado y lucha contra un monstruo de Agua: es destruido sin daño.`);
-    if (wasFaceDown && getFieldMonster(state, defender.instanceId)) fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
     recomputeContinuous(state);
     checkWin(state);
     return;
@@ -151,6 +209,9 @@ function performBattle(state, link) {
   let damageToDefenderSide = 0;
   let damageToAttackerSide = 0;
   const loseVp = (pl, amount, involved) => {
+    // Hidra: "no recibes daño de batallas que involucren a esta carta".
+    if (attacker.noBattleDamage && pl === attackerPl) return 0;
+    if (defender.noBattleDamage && pl === oppPl) return 0;
     const lost = amount * burnMultiplier(involved);
     pl.vp = Math.max(0, pl.vp - lost);
     return lost;
@@ -169,8 +230,10 @@ function performBattle(state, link) {
     // Defending in defense position (rulebook): ATK > Vida destroys the defender with no VP loss;
     // ATK = Vida destroys nothing; ATK < Vida leaves both alive and the attacker's owner loses
     // the difference (Vida - ATK) in VP.
-    if (attackerStats.atk > defenderStats.def) destroyedDefender = true;
-    else if (attackerStats.atk < defenderStats.def) {
+    if (attackerStats.atk > defenderStats.def) {
+      destroyedDefender = true;
+      if (hasAbility(attacker, 'piercing')) damageToDefenderSide = loseVp(oppPl, attackerStats.atk - defenderStats.def, defender);
+    } else if (attackerStats.atk < defenderStats.def) {
       damageToAttackerSide = loseVp(attackerPl, defenderStats.def - attackerStats.atk, attacker);
     }
   }
@@ -197,7 +260,6 @@ function performBattle(state, link) {
   if (!damageToDefenderSide && !damageToAttackerSide) battleStep(state, 'Nadie pierde VP.');
   if (destroyedDefender) destroyInBattle(state, oppIdx, defender, attacker);
   if (destroyedAttacker) destroyInBattle(state, controllerIndex, attacker, defender);
-  if (wasFaceDown && !destroyedDefender && getFieldMonster(state, defender.instanceId)) fireTrigger(state, 'flipped', { instanceId: defender.instanceId, attackerInstanceId: attacker.instanceId });
 
   // "Si inflige daño de batalla" (Acechador Invisible) / "si esta carta hace daño a tu oponente"
   // (Esqueleto de relámpago): whichever monster's side made the other player lose VP.
@@ -208,6 +270,15 @@ function performBattle(state, link) {
   recomputeContinuous(state);
   checkWin(state);
   return { destroyedAttacker, destroyedDefender };
+}
+
+// Carries on a battle a flip effect's pick had paused, once nothing is left to answer.
+function resumeBattle(state) {
+  if (!state.pausedBattle || (state.pendingTriggerChoices && state.pendingTriggerChoices.length)) return;
+  const link = state.pausedBattle;
+  delete state.pausedBattle;
+  if (state.status !== 'active') return;
+  damageStep(state, link);
 }
 
 function monsterName(m) {
@@ -245,9 +316,11 @@ function destroyInBattle(state, ownerIndex, victim, destroyer) {
   if (victim.isToken) {
     pl.field.monsters[idx] = null;
   } else {
+    const atk = getEffectiveStats(victim).atk;
     // moveToZone also releases the materials under a compiled monster and ends its burning.
     moveToZone(state, victim.instanceId, 'graveyard');
-    const event = { instanceId: victim.instanceId, cardId: cardIdFromInstance(victim.instanceId), ownerIndex: require('./zones').ownerOfInstance(victim.instanceId) ?? ownerIndex, reason: 'battle' };
+    const bySourceCardId = destroyer && !destroyer.isToken ? destroyer.cardId : null;
+    const event = { instanceId: victim.instanceId, cardId: cardIdFromInstance(victim.instanceId), ownerIndex: require('./zones').ownerOfInstance(victim.instanceId) ?? ownerIndex, reason: 'battle', from: 'field', byPlayer: ownerIndex === 0 ? 1 : 0, atk, bySourceCardId };
     fireTrigger(state, 'sentToGraveyard', event);
     fireTrigger(state, 'onMonsterDestroyed', event);
   }
@@ -256,4 +329,4 @@ function destroyInBattle(state, ownerIndex, victim, destroyer) {
   }
 }
 
-module.exports = { declareAttack, attackBlockReason, performBattle, canStillAttack, allowedAttacks };
+module.exports = { declareAttack, attackBlockReason, performBattle, resumeBattle, canStillAttack, allowedAttacks };

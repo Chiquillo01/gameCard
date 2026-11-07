@@ -6,12 +6,15 @@ const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport, activateSetSupport } = require('./support');
 const { declareAttack, attackBlockReason, allowedAttacks } = require('./combat');
 const { changePosition } = require('./position');
-const { activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand, getEffectiveStats } = require('./effectEngine');
+const { isOwnActivation, activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand, getEffectiveStats } = require('./effectEngine');
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
 const { checkConditions } = require('./effects/conditions');
+const { isNegated } = require('./negation');
 const { getCard, getEffect, loadCardIndex } = require('./cardIndex');
-const { STARTING_VP } = require('./constants');
+const { rules } = require('./rules');
 const { describeEffect } = require('./effectLabels');
+const { withLocations } = require('./choiceOptions');
+const { compileInfo } = require('./compileInfo');
 const { player, opponentIndex, findInstanceLocation } = require('./zones');
 
 // Player-initiated effect types (as opposed to 'triggered'/'trigger', which fire automatically,
@@ -27,16 +30,26 @@ function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
   const loc = findInstanceLocation(state, instanceId);
   if (!loc || loc.ownerIndex !== ownerIndex) return [];
   if (hasStatus(state, instanceId, FREEZE)) return [];
+  if (loc.zone === 'hand' && card.category === 'support') return []; // played with ACTIVATE_SUPPORT
   const entry = fieldEntryAt(state, loc);
   if (entry && entry.isMonsterEquip) return [];
   // A face-down Normal/Continuo/Equipo support is activated by turning it over (ACTIVATE_SET_SUPPORT),
   // which pays its cost; only Veloz/Contraataque cards act through their own effects while set.
   if (loc.zone === 'field:support' && entry && entry.faceDown && card.subtype !== 'instant' && card.subtype !== 'counter') return [];
   if (loc.zone === 'field:monster' && entry && entry.faceDown) return [];
+  // Negated (Espectro, Sello Temporal...): no effect of it can be activated.
+  if (loc.zone === 'field:monster' && entry && isNegated(state, entry)) return [];
   const setFast = loc.zone === 'field:support' && entry && entry.faceDown;
+  // Set face-down, only what turning it over runs (its "en activación" effects) — never an effect
+  // meant for the Cementerio/Exilio (Anillo de Boda's second one).
+  const onPlay = setFast ? require('./support').onPlayEffects(card).map((e) => e._id) : null;
   return effectIdsAt(state, instanceId).filter((effectId) => {
     const effect = getEffect(effectId);
     if (!effect || !PLAYER_ACTIVATABLE_TYPES.includes(effect.type)) return false;
+    if (setFast && !onPlay.includes(effectId)) return false;
+    // A face-up Apoyo's "en activación" effect went on the Pila with the card (a set Veloz still
+    // offers it: that's how it's turned face-up).
+    if (!setFast && isOwnActivation(card, effect)) return false;
     // Effects that don't say which zone they need (most monster ignition/quick abilities)
     // default to "must be face-up on the field" — the ordinary case for that kind of ability.
     const requiredZone = requiredZoneFor(effect) || 'field';
@@ -79,7 +92,58 @@ function coinTossFirstPlayer(random = Math.random) {
 // until it clears.
 const CHAIN_RESPONSE_TYPES = ['ACTIVATE_SUPPORT', 'ACTIVATE_EFFECT', 'PASS_CHAIN'];
 
+// Rulebook: every action opens a window for the other player to answer it with a fast effect
+// (Speed 2 or more: an Apoyo Veloz from the hand or set, a quick effect) — or to pass. Activations
+// and attacks already open a Pila of their own; these are the rest.
+const WINDOW_ACTIONS = {
+  NORMAL_SUMMON: (a) => (a.faceDown ? 'coloca un monstruo boca abajo' : 'invoca un monstruo'),
+  SPECIAL_SUMMON: () => 'invoca un monstruo de forma especial',
+  COMPILE_SUMMON: () => 'compila un monstruo',
+  CHANGE_POSITION: () => 'cambia la posición de un monstruo',
+  DECOMPILE: () => 'descompila un monstruo',
+  ACTIVATE_SUPPORT: (a) => (a.setFaceDown ? 'coloca un Apoyo boca abajo' : null),
+  ADVANCE_PHASE: () => 'pasa de fase',
+};
+
+// Whether the player could answer anything right now: a fast effect they could use (set Veloz,
+// quick effect...) or an Apoyo Veloz in their hand. With nothing, the window passes on its own.
+function canRespondNow(state, idx) {
+  const pl = state.players[idx];
+  if (pl.hand.some((id) => { const c = getCard(id.split(':')[1]); return c.category === 'support' && c.subtype === 'instant'; })) return true;
+  const ids = [...pl.hand, ...pl.graveyard, ...pl.banished, ...pl.field.monsters.filter(Boolean).map((m) => m.instanceId), ...pl.field.support.filter(Boolean).map((s) => s.instanceId), ...(pl.field.territory ? [pl.field.territory.instanceId] : [])];
+  return ids.some((id) => !String(id).startsWith('token:') && computeAvailableEffects(state, idx, id, id.split(':')[1]).length > 0);
+}
+
+function openWindow(state, actorIndex, label) {
+  const idx = actorIndex === 0 ? 1 : 0;
+  state.windowDue = null;
+  if (state.status !== 'active' || state.chain.length) return;
+  if (!canRespondNow(state, idx)) return;
+  state.window = { priorityPlayer: idx, openedBy: actorIndex, label };
+  require('./zones').log(state, `${state.players[idx].userId} puede responder (${state.players[actorIndex].userId} ${label}).`);
+}
+
 function applyAction(state, playerIndex, action) {
+  const res = dispatchAction(state, playerIndex, action);
+  // A placement still waiting is asked with the zones that are free after this action (or done at
+  // once if only one is left).
+  if (res && res.ok) require('./placement').settlePlacements(state);
+  if (res && res.ok) {
+    // An activation answered the window: the Pila takes over from it.
+    if (state.chain.length) state.window = null;
+    // A phase change that ends the turn (or waits on the Reinos' upkeep) opens none.
+    const label = WINDOW_ACTIONS[action.type] && !res.newTurn && !res.upkeep && WINDOW_ACTIONS[action.type](action);
+    if (label && state.status === 'active') state.windowDue = { actorIndex: playerIndex, label };
+    // Opened once nothing else is waiting (a pick, a Pila).
+    const busy = (state.pendingTriggerChoices && state.pendingTriggerChoices.length) || state.chain.length;
+    if (state.windowDue && !busy && !state.window) openWindow(state, state.windowDue.actorIndex, state.windowDue.label);
+  }
+  // A pick the player still has to make: each option says where that card is (choiceOptions.js).
+  if (res && res.reason === 'choose-target') res.options = withLocations(state, res.options, playerIndex);
+  return res;
+}
+
+function dispatchAction(state, playerIndex, action) {
   if (state.status !== 'active') return { ok: false, reason: 'match-finished' };
 
   if (action.type === 'SURRENDER') {
@@ -92,8 +156,16 @@ function applyAction(state, playerIndex, action) {
   } else if (state.chain.length > 0) {
     if (!CHAIN_RESPONSE_TYPES.includes(action.type)) return { ok: false, reason: 'chain-open' };
     if (playerIndex !== state.priorityPlayer) return { ok: false, reason: 'not-your-priority' };
+  } else if (state.window) {
+    // A response window: only its player acts — answer with a fast effect, or pass.
+    if (playerIndex !== state.window.priorityPlayer || !CHAIN_RESPONSE_TYPES.includes(action.type)) return { ok: false, reason: 'window-open' };
   } else if (playerIndex !== state.turnPlayer && !['ACTIVATE_EFFECT'].includes(action.type)) {
     return { ok: false, reason: 'not-your-turn' };
+  }
+
+  const activating = (action.type === 'ACTIVATE_SUPPORT' && !action.setFaceDown) || action.type === 'ACTIVATE_SET_SUPPORT' ? action.instanceId : action.type === 'ACTIVATE_EFFECT' ? action.sourceInstanceId : null;
+  if (activating && !String(activating).startsWith('token:') && (state.bannedNames || []).some((b) => b.turn === state.turnNumber && b.name === getCard(activating.split(':')[1]).name)) {
+    return { ok: false, reason: 'name-banned' };
   }
 
   switch (action.type) {
@@ -136,6 +208,11 @@ function applyAction(state, playerIndex, action) {
       return activateEffect(state, playerIndex, action.effectId, action.sourceInstanceId, action.targets || []);
 
     case 'PASS_CHAIN':
+      if (!state.chain.length && state.window) {
+        require('./zones').log(state, `${state.players[playerIndex].userId} no responde.`);
+        state.window = null;
+        return { ok: true };
+      }
       return passPriority(state, playerIndex);
 
     case 'RESOLVE_TRIGGER_CHOICE':
@@ -185,7 +262,7 @@ function viewFor(state, viewerIndex) {
     turnPlayer: state.turnPlayer,
     phase: state.phase,
     winnerIndex: state.winnerIndex,
-    startingVp: STARTING_VP, // what the VP bars are measured against
+    startingVp: rules().startingVp, // what the VP bars are measured against
     // Why the duel ended ("se queda sin VP", "se rinde"...), once it has.
     endReason: state.endReason ? readableLogLine(state, { message: state.endReason }, names).message : null,
     you: viewerIndex,
@@ -205,6 +282,8 @@ function viewFor(state, viewerIndex) {
     // Avispas...) or where to place a self-summon (Avispa Mutante, kind 'slot'). Null for the
     // other player, who has nothing to do about it.
     pendingTriggerChoice: describePendingTriggerChoice(state, viewerIndex),
+    // A response window: who may answer the last action (with a fast effect) or pass, and what it was.
+    window: state.window && !state.chain.length ? { priorityPlayer: state.window.priorityPlayer, label: readableLogLine(state, { message: `${state.players[state.window.openedBy].userId} ${state.window.label}` }, names).message } : null,
   };
 }
 
@@ -240,9 +319,9 @@ function describePendingTriggerChoice(state, viewerIndex) {
     };
   }
   if (pending.kind === 'discard') {
-    return { kind: 'discard', count: pending.count, options: describeHand(state, viewerIndex), prompt: pending.prompt };
+    return { kind: 'discard', count: pending.count, options: withLocations(state, describeHand(state, viewerIndex), viewerIndex), prompt: pending.prompt };
   }
-  return { kind: 'effect', options: pending.options, prompt: pending.prompt };
+  return { kind: 'effect', options: withLocations(state, pending.options, viewerIndex), prompt: pending.prompt };
 }
 
 // The card's own summon_rule effect (its "método de invocación especial"), if it has one the
@@ -255,7 +334,7 @@ function specialSummonRuleFor(card) {
 // Whether that rule's CONDITIONS are met right now (cost affordability isn't checked here — the
 // player finds out when they try, same as any other cost).
 function specialSummonAvailable(state, ownerIndex, instanceId, card) {
-  const rule = specialSummonRuleFor(card);
+  const rule = require('./summon').grantedSummonRule(state, ownerIndex, instanceId, card) || specialSummonRuleFor(card);
   if (!rule) return false;
   const ctx = { state, controllerIndex: ownerIndex, sourceInstanceId: instanceId, effect: rule };
   return checkConditions(ctx, rule.conditions);
@@ -271,6 +350,11 @@ function describeInstance(state, instanceId, ownerIndex, isViewerOwner) {
     base.specialSummonAvailable = isViewerOwner && specialSummonAvailable(state, ownerIndex, instanceId, card);
   }
   if (!isViewerOwner) return base;
+  // A Compilación in the Mazo-C (or hand): its recipe and what the player has for it.
+  if (card.category === 'fusion') {
+    const loc = findInstanceLocation(state, instanceId);
+    if (loc && (loc.zone === 'extra' || loc.zone === 'hand')) base.compile = compileInfo(state, ownerIndex, instanceId);
+  }
   return { ...base, ...effectsFor(state, ownerIndex, instanceId, cardId) };
 }
 
@@ -282,6 +366,7 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
     hasAttacked: m.hasAttacked,
     counters: m.counters,
     statuses: statusesOf(state, m.instanceId),
+    negated: !m.faceDown && (isNegated(state, m) || !!m.effectsLost),
     materialCount: (m.materials || []).length,
     // Only a compiled monster from an earlier turn can be decompiled from the UI (Pez dorado's
     // same-turn exception is left to the server to accept or reject).
@@ -294,7 +379,12 @@ function describeFieldMonster(state, m, ownerIndex, isViewerOwner) {
   // The owner knows which card their face-down monster is (for the hover preview); the rival doesn't.
   if (m.faceDown) return isViewerOwner ? { ...base, cardId: m.cardId, name: getCard(m.cardId).name, ...describeStats(state, m, getCard(m.cardId)), availableEffects: [] } : base;
   const card = getCard(m.cardId);
-  const described = { ...base, cardId: m.cardId, name: card.name, image: card.image, ...describeStats(state, m, card) };
+  // The materials under a face-up Compilación are face-up too: both players can look at them.
+  const materials = (m.materials || []).map((id) => {
+    const mat = getCard(id.split(':')[1]);
+    return { instanceId: id, cardId: mat._id.toString(), name: mat.name, image: mat.image, category: mat.category, effect: mat.effect, atk: mat.atk, def: mat.def, level: mat.level };
+  });
+  const described = { ...base, cardId: m.cardId, name: card.name, image: card.image, materials, ...describeStats(state, m, card) };
   if (!isViewerOwner) return described;
   return { ...described, ...effectsFor(state, ownerIndex, m.instanceId, m.cardId) };
 }
@@ -332,4 +422,4 @@ function describeFieldSupport(state, s, ownerIndex, isViewerOwner) {
   return { ...described, ...effectsFor(state, ownerIndex, s.instanceId, s.cardId) };
 }
 
-module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer };
+module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer, computeAvailableEffects, specialSummonAvailable };

@@ -80,7 +80,7 @@ describe('Duel view: why the duel ended', () => {
 });
 
 describe('Espíritu de batalla', () => {
-  it('gives +1 Atk per monster the rival controls, not per monster on the whole field', async () => {
+  it('gives +1 Atk per monster of the rival', async () => {
     const state = await makeDuel();
     const orco = await onField(state, 0, 'Orco Guerrero');
     await onField(state, 0, 'Slime');

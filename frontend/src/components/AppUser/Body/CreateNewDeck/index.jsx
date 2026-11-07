@@ -1,6 +1,6 @@
 import styles from './createnewdeck.module.css';
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DeckTitle from './DeckTitle';
@@ -10,10 +10,9 @@ import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import CardsCollectedDisplay from './CardsCollectedDisplay';
 import CardsSelectedDisplay from './CardsSelectedDisplay';
 import TokenSelector from './TokenSelector';
-import { MIN_DECK_SIZE, MAX_DECK_SIZE, MAX_FUSION_CARDS } from '../../../../lib/utils/deckRules';
+import { useGameRules, maxCopiesOf } from '../../../../lib/utils/gameRules';
 
 const TOAST_OPTIONS = {
-  position: 'top-right',
   autoClose: 3000,
   hideProgressBar: false,
   closeOnClick: true,
@@ -26,7 +25,13 @@ const TOAST_OPTIONS = {
 const showToast = (type, message) => toast[type](message, TOAST_OPTIONS);
 
 const CreateNewDeck = () => {
+  // Deck sizes and copy limits, as the server's rules say.
+  const gameRules = useGameRules();
+  const { minDeckSize: MIN_DECK_SIZE, maxDeckSize: MAX_DECK_SIZE, maxFusionCards: MAX_FUSION_CARDS } = gameRules;
   const { deckId } = useParams();
+  const navigate = useNavigate();
+  // True while a save is on its way: a second click can't send another one (and create a copy).
+  const [saving, setSaving] = useState(false);
   const [deckTitle, setDeckTitle] = useState('');
   const [selectedCards, setSelectedCards] = useState([]);
   const [selectedFusionCards, setSelectedFusionCards] = useState([]);
@@ -40,6 +45,18 @@ const CreateNewDeck = () => {
   const ownedTokens = userCards.filter((c) => c.category === 'token');
   const totalMainCards = selectedCards.reduce((sum, c) => sum + c.amount, 0);
   const totalFusionCards = selectedFusionCards.reduce((sum, c) => sum + c.amount, 0);
+
+  // Cards the deck holds more of than it may: over the card's own limit (`state`, its banlist
+  // value — it can change after a deck was built), or over the copies the player owns. The server
+  // refuses to save such a deck, so it's flagged here with what to remove.
+  const overLimit = [...selectedCards, ...selectedFusionCards]
+    .map((c) => {
+      const owned = userCards.length ? userCards.find((u) => u.id === c.id)?.amount ?? 0 : Infinity;
+      const limit = maxCopiesOf(c, gameRules);
+      const max = Math.min(limit, owned);
+      return c.amount > max ? { name: c.name, amount: c.amount, max, byOwned: owned < limit } : null;
+    })
+    .filter(Boolean);
 
   useEffect(() => {
     const getUserCards = async () => {
@@ -86,7 +103,7 @@ const CreateNewDeck = () => {
     // The real per-card ceiling is the card's own banlist value (`state`), not a flat number —
     // it defaults by rarity (Legendaria 1 / Épica 2 / Rara 3 / Común 4) but can be overridden
     // per card, and the backend rejects anything above it.
-    const maxCopies = card.state ?? 3;
+    const maxCopies = maxCopiesOf(card, gameRules);
     const maxTotal = isFusionCard ? MAX_FUSION_CARDS : MAX_DECK_SIZE;
     const totalInArray = selectedArray.reduce((sum, c) => sum + c.amount, 0);
     const totalLabel = isFusionCard
@@ -160,11 +177,18 @@ const CreateNewDeck = () => {
       return;
     }
 
+    if (saving) return;
+    setSaving(true);
     try {
       const savedDeck = deckId ? await updateDeck(deckId, formattedDeck) : await createDeck(formattedDeck);
       showToast('success', `Mazo "${savedDeck.deckTitle}" ${deckId ? 'actualizado' : 'guardado'} con éxito.`);
+      // A new deck now has its own page: saving again from here updates it instead of creating
+      // another copy (which is how duplicate decks appeared).
+      if (!deckId && savedDeck?._id) navigate(`/deck/${savedDeck._id}`, { replace: true });
     } catch (error) {
-      showToast('error', 'Error al guardar el mazo. Inténtalo de nuevo.');
+      showToast('error', error.message || 'Error al guardar el mazo. Inténtalo de nuevo.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -184,6 +208,19 @@ const CreateNewDeck = () => {
             </div>
             <TokenSelector availableTokens={ownedTokens} selectedTokens={selectedTokens} onToggleToken={handleToggleToken} />
           </div>
+          {overLimit.length > 0 && (
+            <div className={styles.limitWarning} role='alert'>
+              <strong>No se puede guardar hasta quitar estas copias:</strong>
+              <ul>
+                {overLimit.map((c) => (
+                  <li key={c.name}>
+                    {c.name}: tienes {c.amount} en el mazo y el máximo es {c.max}
+                    {c.byOwned ? ' (las que tienes en tu colección)' : ''} — quita {c.amount - c.max}.
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className={styles.deckContent}>
             <div className={styles.cardsSelectedWrapper}>
               <CardsSelectedDisplay
@@ -202,10 +239,11 @@ const CreateNewDeck = () => {
               hard ceilings (max deck size, max fusion cards) block saving outright. */}
           <button
             className={styles.saveDeckButton}
-            disabled={deckTitle.trim() === '' || totalMainCards > MAX_DECK_SIZE || totalFusionCards > MAX_FUSION_CARDS}
+            disabled={saving || overLimit.length > 0 || deckTitle.trim() === '' || totalMainCards > MAX_DECK_SIZE || totalFusionCards > MAX_FUSION_CARDS}
+            title={overLimit.length > 0 ? 'Quita las copias que sobran (ver el aviso de arriba)' : undefined}
             onClick={handleSaveDeck}
           >
-            {deckId ? 'Actualizar Mazo' : 'Guardar Mazo'}
+            {saving ? 'Guardando...' : deckId ? 'Actualizar Mazo' : 'Guardar Mazo'}
           </button>
         </>
       )}

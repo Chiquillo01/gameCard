@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { FaFilter, FaSortAmountDown } from 'react-icons/fa';
 import SearchBar from '../SearchBar';
 import FilterMenu from '../FilterMenu';
 import CardItem from '../CardItem';
+import { getProducts } from '../../../../../lib/utils/apiStore';
 import styles from './cardscollecteddisplay.module.css';
 
 const RARITY_RANK = { common: 0, rare: 1, epic: 2, legendary: 3 };
@@ -20,7 +21,17 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
     attribute: '',
     family: '',
     rarity: '',
+    expansion: '',
   });
+  // An edition's name is the name of its product in the store (its chest or structure deck);
+  // the card itself only carries the code ("AdB").
+  const [expansionNames, setExpansionNames] = useState({});
+  useEffect(() => {
+    getProducts().then((products) => {
+      if (!products) return;
+      setExpansionNames(Object.fromEntries(products.filter((p) => p.expansion).map((p) => [p.expansion, p.name])));
+    });
+  }, []);
 
   const [sortOption, setSortOption] = useState('');
 
@@ -50,6 +61,7 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
       attribute: '',
       family: '',
       rarity: '',
+      expansion: '',
     });
   };
 
@@ -75,6 +87,9 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
   const availableTypes = [...new Set(cards.map((c) => c.type))].filter(Boolean).sort();
   const availableAttributes = [...new Set(cards.map((c) => c.attribute))].filter((a) => a && a !== 'none').sort();
   const availableFamilies = [...new Set(cards.map((c) => c.family))].filter(Boolean).sort();
+  const availableExpansions = [...new Set(cards.map((c) => c.expansion))].filter(Boolean)
+    .map((code) => ({ code, name: expansionNames[code] || code }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const filteredCards = cards
     .filter((card) => {
@@ -84,7 +99,8 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
         (!filters.type || filters.type === card.type) &&
         (!filters.attribute || filters.attribute === card.attribute) &&
         (!filters.family || filters.family === card.family) &&
-        (!filters.rarity || filters.rarity === card.rarity)
+        (!filters.rarity || filters.rarity === card.rarity) &&
+        (!filters.expansion || filters.expansion === card.expansion)
       );
     })
     .sort((a, b) => {
@@ -121,6 +137,7 @@ const CardsCollectedDisplay = ({ cards, addCard, onAddCard }) => {
                 availableTypes={availableTypes}
                 availableAttributes={availableAttributes}
                 availableFamilies={availableFamilies}
+                availableExpansions={availableExpansions}
               />
             </div>
           )}

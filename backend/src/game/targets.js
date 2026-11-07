@@ -48,6 +48,17 @@ function protectedFromRemoval(ctx, row) {
   return !!row.entry.immuneToOpponentEffects && row.ownerIndex !== ctx.controllerIndex;
 }
 
+// Safira's "no puede ser seleccionada por efectos de monstruos (o de cartas), excepto Dragón".
+function untargetableFor(ctx, entry) {
+  const rule = entry.untargetableBy;
+  if (!rule || !ctx.sourceInstanceId || String(ctx.sourceInstanceId).startsWith('token:')) return false;
+  if (entry.instanceId === ctx.sourceInstanceId) return false;
+  const source = getCard(cardIdFromInstance(ctx.sourceInstanceId));
+  const fromMonster = ['monster', 'fusion'].includes(source.category);
+  if (rule.by === 'monster' && !fromMonster) return false;
+  return !(rule.unless && fromMonster && matchesCardFilter(source, rule.unless));
+}
+
 // Where a "selected" step looks for its card: the side and zone its args (or the effect's own
 // targetSelector) name, defaulting to any card on the field.
 function selectRows(ctx, args) {
@@ -62,12 +73,20 @@ function selectRows(ctx, args) {
   if (args.target === 'Compilado') rows = rows.filter((r) => (r.entry.materials || []).length > 0);
   if (args.target === 'fieldMonsterInAttackPosition') rows = rows.filter((r) => r.entry.position === 'attack' && !r.entry.faceDown);
   if (args.excludeSelf !== false) rows = rows.filter((r) => r.entry.instanceId !== ctx.sourceInstanceId);
+  rows = rows.filter((r) => !untargetableFor(ctx, r.entry));
   const filter = args.filter ? { ...args.filter, category: undefined } : null;
-  if (filter && Object.values(filter).some((v) => v !== undefined && v !== null && v !== '')) {
-    rows = rows.filter((r) => !r.entry.isToken && (r.kind === 'monster' ? matchesFilter(r.entry, filter) : matchesCardFilter(getCard(r.entry.cardId), filter)));
-  }
-  if (effect.targetSelector === 'fieldLicantropo' && args.target === 'selected') {
-    rows = rows.filter((r) => !r.entry.isToken && r.kind === 'monster' && matchesFilter(r.entry, { nameContains: 'Licántropo' }));
+  const hasFilter = filter && Object.values(filter).some((v) => v !== undefined && v !== null && v !== '');
+  // A rival's face-down card shows nothing: a pick that depends on what it is (a breed, an
+  // attribute, its Atk...) can't choose it. Whether it's face-down/face-up or its position is
+  // plain to see (Oscuro: "destruye una carta boca abajo").
+  const VISIBLE_KEYS = ['faceDown', 'faceUp', 'position'];
+  const asksWhatItIs = hasFilter && Object.entries(filter).some(([k, v]) => !VISIBLE_KEYS.includes(k) && v !== undefined && v !== null && v !== '');
+  if (asksWhatItIs) rows = rows.filter((r) => !(r.entry.faceDown && r.ownerIndex !== ctx.controllerIndex));
+  // "Boca abajo" / "boca arriba" is the card's state on the field, not something its data says.
+  if (filter && filter.faceDown) rows = rows.filter((r) => r.entry.faceDown);
+  if (filter && filter.faceUp) rows = rows.filter((r) => !r.entry.faceDown);
+  if (hasFilter) {
+    rows = rows.filter((r) => (r.kind === 'monster' ? matchesFilter(r.entry, filter) : !r.entry.isToken && matchesCardFilter(getCard(r.entry.cardId), filter)));
   }
   return rows;
 }
@@ -83,10 +102,18 @@ function summonZonePool(ctx, zones, args) {
   if (args.levelOrLower) filter.maxLevel = args.levelOrLower;
   const exclude = args.exclude || (args.filter && args.filter.exclude);
   const excludedName = exclude === 'self' ? cardOf(ctx.sourceInstanceId).name : exclude;
-  return zones.flatMap((z) => pl[z] || []).filter((id) => {
+  // "Invoca un monstruo" brings out monsters, not Compilaciones — only a card that says so does
+  // (Ba-o: "invoca una Compilación de tu Cementerio").
+  const wantsCompile = /^(compilado|compilaci[oó]n|fusion)$/i.test(String((args.filter && args.filter.category) || ''));
+  // "De cualquier Cementerio" (Deva): the rival's too.
+  const rivalGY = args.scope === 'anyGY' && zones.includes('graveyard') ? player(ctx.state, opponentIndex(ctx.controllerIndex)).graveyard : [];
+  return [...zones.flatMap((z) => pl[z] || []), ...rivalGY].filter((id) => {
     const card = cardOf(id);
     if (!['monster', 'fusion'].includes(card.category)) return false;
+    if (card.category === 'fusion' && !wantsCompile) return false;
     if (excludedName && card.name === excludedName) return false;
+    if (!require('./cardIndex').maySummon(card, ctx.sourceInstanceId)) return false;
+    if (!require('./summon').summonRequirementsMet(ctx.state, ctx.controllerIndex, id, card)) return false;
     return matchesCardFilter(card, filter);
   });
 }
@@ -94,22 +121,43 @@ function summonZonePool(ctx, zones, args) {
 // The pool of one action step, or null when that step doesn't involve a choice.
 function stepPool(ctx, step) {
   const args = step.args || {};
+  // Acts on what the step before it picked (effectEngine.resolveActions): nothing to ask for.
+  if (args.target === 'previous') return null;
   const { searchCandidates, SEARCH_FNS } = require('./effects/fieldActions');
   if (SEARCH_FNS.includes(step.fn)) return searchCandidates(ctx.state, ctx.controllerIndex, step.fn, args, ctx);
   switch (step.fn) {
+    // Hechizo de volteo: "selecciona un monstruo en el Campo: pásalo a defensa boca abajo".
+    case 'changePosition':
+      return isSelect(args) ? ids(faceUpMonsters(selectRows(ctx, args))) : null;
+    // Capitán Bandido: "selecciona un monstruo en el Campo de tu oponente: toma el control".
+    case 'takeControl':
+      return ids(selectRows(ctx, { ...args, side: 'opponent', zone: 'monster', target: 'selected' }));
+    // Gato del Destino: "selecciona 3 Licántropo del Cementerio: barájalos al Mazo".
+    case 'returnToDeck': {
+      const zones = [].concat(args.from || []);
+      if (!zones.length || !zones.every((z) => z === 'graveyard' || z === 'banished')) return null;
+      const pl = player(ctx.state, ctx.controllerIndex);
+      return zones.flatMap((z) => pl[z]).filter((id) => id !== ctx.sourceInstanceId && matchesCardFilter(cardOf(id), args.filter || {}));
+    }
     case 'returnFromGraveyardToDeck':
       return require('./effects/actions').graveyardMonstersToReturn(ctx.state, ctx.controllerIndex, ctx.sourceInstanceId);
     case 'sendFromDeckToGY': {
       const pl = player(ctx.state, ctx.controllerIndex);
-      return pl.deck.filter((id) => matchesCardFilter(cardOf(id), args.filter || { breed: args.breed, family: args.family }));
+      return (args.zones || ['deck']).flatMap((z) => pl[z] || []).filter((id) => matchesCardFilter(cardOf(id), args.filter || { breed: args.breed, family: args.family }));
     }
     case 'summonFromDeck':
     case 'specialSummonFromDeck':
       return summonZonePool(ctx, ['deck'], args);
     case 'summonFromHand':
       return summonZonePool(ctx, ['hand'], args);
-    case 'specialSummonFromGY':
-      return args.player === 'opponent' ? null : summonZonePool(ctx, ['graveyard'], args);
+    case 'specialSummonFromGY': {
+      // "Invoca especial esta carta del Cementerio" (Héroe Fénix): nothing to pick.
+      if (args.player === 'opponent' || args.target === 'self') return null;
+      const pool = summonZonePool(ctx, ['graveyard'], args);
+      if (!args.copiesOfFirst) return pool;
+      const first = (ctx.pickedSoFar || []).find((t) => pool.includes(t));
+      return first ? pool.filter((id) => id === first || cardOf(id).name === cardOf(first).name) : pool;
+    }
     case 'summonFromZones':
       return summonZonePool(ctx, args.zones || ['graveyard'], args);
     case 'summon':
@@ -119,10 +167,24 @@ function stepPool(ctx, step) {
     case 'destroyCards':
       return isSelect(args) ? ids(selectRows(ctx, args).filter((r) => !protectedFromRemoval(ctx, r))) : null;
     case 'exileTarget':
-      return args.target === 'self' ? null : ids(selectRows(ctx, { ...args, target: args.target || 'selected' }).filter((r) => !protectedFromRemoval(ctx, r)));
+      return args.target === 'self' || args.target === 'allMonsters' ? null : ids(selectRows(ctx, { ...args, target: args.target || 'selected' }).filter((r) => !protectedFromRemoval(ctx, r)));
+    case 'excavate': {
+      // Nothing found is a fine result (it was a dig), so an empty dig is no pick, not "no target".
+      const found = require('./effects/fieldActions').excavateCandidates(ctx.state, ctx.controllerIndex, args);
+      return found.length ? found : null;
+    }
+    // Sátiro Vengador: "un monstruo de Hada en tu Cementerio".
+    case 'gainVPFromGraveyard':
+      return player(ctx.state, ctx.controllerIndex).graveyard.filter((id) => matchesCardFilter(cardOf(id), args.filter || {}));
+    // Des - Compilación: "selecciona una Compilación en el Campo".
+    case 'decompileMonster':
+      return ids(selectRows(ctx, { ...args, target: 'Compilado' }).filter((r) => !r.entry.faceDown));
+    case 'compileFromExtra':
+      return require('./effects/extraActions').compilableFromExtra(ctx, args);
     case 'applyStatus':
     case 'grantBuff':
     case 'damageMonster':
+    case 'setAtk':
       return isSelect(args) ? ids(faceUpMonsters(selectRows(ctx, args))) : null;
     case 'returnCardToHand':
     case 'bounceToHand':
@@ -144,6 +206,8 @@ function stepPool(ctx, step) {
       const side = args.filter && args.filter.controller === 'opponent' ? 'opponent' : 'any';
       return ids(selectRows(ctx, { ...args, side, target: 'fieldMonsterInAttackPosition', filter: undefined }).filter((r) => !r.entry.isToken));
     }
+    case 'setFaceDownDefense':
+      return isSelect(args) ? ids(selectRows(ctx, { ...args, zone: 'monster' })) : null;
     case 'destroyAndCopyEffect':
     case 'destroyAndGainVP':
       return ids(selectRows(ctx, { ...args, target: 'selected' }).filter((r) => !protectedFromRemoval(ctx, r)));
@@ -157,7 +221,7 @@ function stepPool(ctx, step) {
 // Distinct names among the Héroe monsters on the whole field (Héroe de la Esperanza).
 function heroCount(ctx, countBy = {}) {
   const heroes = fieldRows(ctx.state, 'any', ctx.controllerIndex)
-    .filter((r) => r.kind === 'monster' && !r.entry.isToken && !r.entry.faceDown && matchesFilter(r.entry, { breed: countBy.breed || 'Héroe' }))
+    .filter((r) => r.kind === 'monster' && !r.entry.isToken && !r.entry.faceDown && matchesFilter(r.entry, countBy.filter || { breed: countBy.breed }))
     .map((r) => getCard(r.entry.cardId).name);
   return countBy.uniqueNames === false ? heroes.length : new Set(heroes).size;
 }
@@ -217,6 +281,7 @@ function activeSteps(effect, targets) {
 // that belong to it and weren't taken by an earlier step (or by the cost — `exclude`).
 function assignPicks(ctx, effect, targets, exclude = []) {
   const taken = new Set(exclude);
+  ctx.pickedSoFar = targets || [];
   return activeSteps(effect, targets).map(({ step, index }) => {
     const pool = stepPool(ctx, step);
     if (!pool) return { step, index, pool: null, picks: null };
@@ -243,7 +308,13 @@ const STEP_PROMPTS = {
   destroyTarget: 'Elige la carta que se destruye',
   destroyCards: 'Elige la carta que se destruye',
   destroyAndCopyEffect: 'Elige la carta que se destruye',
+  compileFromExtra: 'Elige la Compilación que compilas',
+  decompileMonster: 'Elige la Compilación que se descompila',
+  gainVPFromGraveyard: 'Elige el monstruo de tu Cementerio',
+  excavate: 'Elige la carta excavada que añades a tu Mano',
+  setAtk: 'Elige el monstruo cuyo Atk cambia',
   destroyAndGainVP: 'Elige la carta que se destruye',
+  setFaceDownDefense: 'Elige el monstruo que pasa a defensa boca abajo',
   destroyUpToHeroCount: 'Elige las cartas que se destruyen',
   exileTarget: 'Elige la carta que se exilia',
   negateEffect: 'Elige la carta cuyos efectos se niegan',
@@ -257,6 +328,9 @@ const STEP_PROMPTS = {
   equipMonsterToSelf: 'Elige el monstruo que se equipa',
   returnCardToHand: 'Elige la carta que vuelve a la mano',
   returnFromGraveyardToDeck: 'Elige los monstruos que vuelven al Mazo',
+  returnToDeck: 'Elige las cartas que vuelven al Mazo',
+  changePosition: 'Elige el monstruo que pasa a defensa boca abajo',
+  takeControl: 'Elige el monstruo del que tomas el control',
   bounceToHand: 'Elige la carta que vuelve a la mano',
   addCounter: 'Elige la carta que recibe los contadores',
   corrodeZone: 'Elige la zona que se corroe',
@@ -296,13 +370,15 @@ function pendingEffectChoice(ctx, effect, targets = [], exclude = []) {
       // "Hasta N": always the player's call — one pick at a time, until they say that's all.
       if (done || remaining.length === 0) continue;
       return {
-        prompt: `${STEP_PROMPTS[step.fn] || 'Elige un objetivo'} (hasta ${count}; llevas ${picks.length})`,
+        prompt: `${(step.args && step.args.prompt) || STEP_PROMPTS[step.fn] || 'Elige un objetivo'} (hasta ${count}; llevas ${picks.length})`,
         options: [...remaining.map((id) => describeCandidate(ctx.state, id)), { instanceId: `done:${index}`, name: picks.length ? 'Terminar' : 'No elegir ninguna', image: null }],
       };
     }
-    if (pool.length <= count || remaining.length === 0) continue; // nothing to choose between
+    // Rulebook: the player always makes the pick, even with a single candidate (only an empty pool
+    // has nothing to ask).
+    if (remaining.length === 0) continue;
     return {
-      prompt: STEP_PROMPTS[step.fn] || 'Elige un objetivo',
+      prompt: (step.args && step.args.prompt) || STEP_PROMPTS[step.fn] || 'Elige un objetivo',
       options: remaining.map((id) => describeCandidate(ctx.state, id)),
     };
   }
@@ -317,9 +393,12 @@ function pendingEffectChoice(ctx, effect, targets = [], exclude = []) {
 function hasNoLegalTarget(ctx, effect) {
   const steps = assignPicks(ctx, effect, [], []);
   const empty = ({ pool, upTo }) => pool && pool.length === 0 && !upTo;
+  // `required` on a step: the card can't be activated without enough for it (Sacrificio memorable
+  // needs a monster on each side; Refuerzos, 2 monsters in the Cementerio to shuffle back).
+  if (steps.some((s) => s.pool && s.step.args && s.step.args.required && s.pool.length < (s.count || 1))) return true;
   if (steps.some((s) => empty(s) && TARGET_REQUIRED.has(s.step.fn))) return true;
   return steps.length > 0 && steps[0].index === 0 && empty(steps[0]);
 }
 const TARGET_REQUIRED = new Set(['negateEffect', 'negateEffects', 'target', 'changeBeed', 'equipMonster', 'equipMonsterToSelf', 'destroyAndCopyEffect', 'destroyAndGainVP']);
 
-module.exports = { stepPool, stepCount, assignPicks, activeSteps, chosenIndex, pendingEffectChoice, pendingOptionalChoice, declined, isToken, isUpTo, hasNoLegalTarget, canAffect, selectRows, fieldRows, describeCandidate, getEffect };
+module.exports = { choiceLabels, stepPool, stepCount, assignPicks, activeSteps, chosenIndex, pendingEffectChoice, pendingOptionalChoice, declined, isToken, isUpTo, hasNoLegalTarget, canAffect, selectRows, fieldRows, describeCandidate, getEffect };

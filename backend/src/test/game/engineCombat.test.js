@@ -7,6 +7,7 @@ const { placeSupport } = require('../../game/zones');
 const { checkWin } = require('../../game/outcome');
 const { seedCatalog, makeDuel, toHand, toDeckTop, onField, toPhase, passAll, monster, instance } = require('./engineHelpers');
 const { STARTING_VP } = require('../../game/constants');
+const { placePending, resolveAll } = require('./chainHelpers');
 
 beforeAll(async () => {
   await connectDB();
@@ -26,7 +27,7 @@ const attack = (state, p, attacker, target = null) => {
 };
 
 describe('Responding to an attack', () => {
-  it('Trampa de Madera negates a direct attack and ends the Battle Phase', async () => {
+  it('Trampa de Madera negates a direct attack; the Battle Phase goes on', async () => {
     const state = await makeDuel();
     const attacker = await onField(state, 0, 'Orco Gladiador');
     const trampa = await toHand(state, 1, 'Trampa de Madera');
@@ -42,7 +43,7 @@ describe('Responding to an attack', () => {
     passAll(state);
     expect(state.players[1].vp).toBe(STARTING_VP);
     expect(state.players[1].graveyard).toContain(trampa);
-    expect(state.phase).toBe('main2');
+    expect(state.phase).toBe('battle');
   });
 
   it('Trampa de Madera cannot be used when no direct attack is happening', async () => {
@@ -75,6 +76,7 @@ describe('Battle events', () => {
     toPhase(state, 'battle', 0);
     const second = await toDeckTop(state, 0, 'Matón'); // after the turn's draws
     attack(state, 0, maton, slime);
+    resolveAll(state);
     expect(monster(state, slime)).toBeUndefined();
     expect(monster(state, second)).toBeDefined();
   });
@@ -86,6 +88,7 @@ describe('Battle events', () => {
     toPhase(state, 'battle', 0);
     const next = await toDeckTop(state, 1, 'Gárgola');
     attack(state, 0, orco, gargola);
+    resolveAll(state);
     expect(state.players[1].graveyard).toContain(gargola);
     expect(monster(state, next)).toBeDefined();
   });
@@ -137,6 +140,15 @@ describe('Battle events', () => {
     expect(state.players[1].vp).toBe(STARTING_VP);
   });
 
+  it('Serpiente de Muelle attacking directly stays on the field and deals its damage', async () => {
+    const state = await makeDuel();
+    const serpiente = await onField(state, 0, 'Serpiente de Muelle');
+    toPhase(state, 'battle', 0);
+    attack(state, 0, serpiente);
+    expect(monster(state, serpiente)).toBeDefined();
+    expect(state.players[1].vp).toBeLessThan(STARTING_VP);
+  });
+
   it('Relicario de Engranaje gains an Engranaje when a TIERRA monster of yours deals direct damage', async () => {
     const state = await makeDuel();
     const relicarioId = await instance(0, 'Relicario de Engranaje');
@@ -157,20 +169,19 @@ describe('Battle events', () => {
 });
 
 describe('Flags effects set are honored', () => {
-  it('Bálor: its extra attack lets it attack twice that turn', async () => {
+  it('Bálor: one extra attack per rival monster with QUEMADURA', async () => {
+    const { addStatus } = require('../../game/statuses');
     const state = await makeDuel();
-    const balor = await onField(state, 0, 'Bálor');
     toPhase(state, 'main1', 0);
     toPhase(state, 'main1', 1);
     toPhase(state, 'main1', 0); // turn 3: this turn has a Battle Phase
+    const balor = await onField(state, 0, 'Bálor');
+    const slimes = [await onField(state, 1, 'Slime'), await onField(state, 1, 'Slime'), await onField(state, 1, 'Slime')];
+    addStatus(state, slimes[0], 'Quemadura');
+    addStatus(state, slimes[1], 'Quemadura');
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'BALOR_EXTRA_ATTACK', sourceInstanceId: balor }).ok).toBe(true);
     passAll(state);
-    applyAction(state, 0, { type: 'ADVANCE_PHASE' });
-    expect(attack(state, 0, balor).ok).toBe(true);
-    expect(attack(state, 0, balor).ok).toBe(true);
-    expect(attack(state, 0, balor)).toMatchObject({ ok: false, reason: 'already-attacked' });
-    // Two direct hits of 11, plus its own "En cada fase de espera: inflige 3 VP" in turns 1-3.
-    expect(state.players[1].vp).toBe(STARTING_VP - 3 * 3 - 22);
+    expect(monster(state, balor).extraAttacksTurn).toEqual({ turn: state.turnNumber, count: 2 });
   });
 
   it('Damarco attacks once more per material under it', async () => {
@@ -252,5 +263,61 @@ describe('Timing', () => {
     toPhase(state, 'main1', 1);
     toPhase(state, 'battle', 0);
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'CUBO_GELATINOSO_NEGATE', sourceInstanceId: mine })).toMatchObject({ ok: false, reason: 'not-main-phase' });
+  });
+});
+
+describe('A face-down defender is turned over before the damage step', () => {
+  const setUp = async () => {
+    const state = await makeDuel();
+    const attacker = await onField(state, 0, 'Orco Guerrero');
+    const bystander = await onField(state, 0, 'Orco Gladiador');
+    const espora = await onField(state, 1, 'Espora Venenosa', { position: 'defense', faceDown: true });
+    toPhase(state, 'battle', 0);
+    expect(declare(state, 0, attacker, espora).ok).toBe(true);
+    passAll(state);
+    return { state, attacker, bystander, espora };
+  };
+
+  it('its "al ser girada" effect resolves first, and stays after it is destroyed', async () => {
+    const { state, bystander, espora } = await setUp();
+    // Turned face-up, waiting on its owner's pick: no damage yet.
+    expect(monster(state, espora)).toMatchObject({ faceDown: false });
+    expect(viewFor(state, 1).pendingTriggerChoice).toMatchObject({ kind: 'effect' });
+    expect(state.players[1].graveyard).not.toContain(espora);
+
+    expect(applyAction(state, 1, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [bystander] }).ok).toBe(true);
+    // Then the battle carries on: Orco Guerrero (Atk 3) beats Espora's Vida 1.
+    expect(state.players[1].graveyard).toContain(espora);
+    expect(state.pausedBattle).toBeUndefined();
+    const poisoned = viewFor(state, 0).players[0].field.monsters.find((m) => m && m.instanceId === bystander);
+    expect(poisoned).toMatchObject({ statuses: ['Veneno'], atk: 1 });
+    expect(state.players[0].vp).toBe(STARTING_VP - 2);
+  });
+
+  it('poisoning the attacker changes the damage it deals', async () => {
+    const { state, attacker, espora } = await setUp();
+    expect(applyAction(state, 1, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [attacker] }).ok).toBe(true);
+    // Atk 3 - 2 = 1 against Vida 1: nothing is destroyed.
+    expect(monster(state, espora)).toBeTruthy();
+    expect(monster(state, attacker)).toBeTruthy();
+    expect(state.lastBattle.steps).toEqual(expect.arrayContaining(['Espora Venenosa estaba boca abajo: se giró para el combate.', 'Se compara Atk 1 con Vida 1.']));
+  });
+});
+
+describe('An attacker that stops being in attack position', () => {
+  it('Hechizo de volteo on the attacker in response: the attack stops, nothing is destroyed', async () => {
+    const state = await makeDuel();
+    const attacker = await onField(state, 0, 'Vampiro');
+    const defender = await onField(state, 1, 'Vampiro');
+    const hechizo = await toHand(state, 1, 'Hechizo de volteo');
+    state.players[1].pixelcoins = 12;
+    toPhase(state, 'battle', 0);
+    expect(declare(state, 0, attacker, defender).ok).toBe(true);
+    expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: hechizo, targets: [attacker] }).ok).toBe(true);
+    passAll(state);
+    expect(monster(state, attacker)).toMatchObject({ position: 'defense', faceDown: true });
+    expect(monster(state, defender)).toBeDefined();
+    expect(state.players.map((p) => p.vp)).toEqual([STARTING_VP, STARTING_VP]);
+    expect(state.log.some((l) => /ya no está en posición de ataque: el ataque se detiene/.test(l.message))).toBe(true);
   });
 });

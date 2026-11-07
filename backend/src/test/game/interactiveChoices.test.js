@@ -103,7 +103,7 @@ describe('Equipo cards must name a target to activate', () => {
 
     const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Armadura de Insecto'), targets: [insect] });
     expect(res.ok).toBe(true);
-    expect(monsterOf(state, 0, insect).tempBuff.atk).toBe(3);
+    expect(monsterOf(state, 0, insect).tempBuff.atk).toBe(2);
     expect(monsterOf(state, 0, other).tempBuff.atk).toBe(0);
   });
 
@@ -168,16 +168,20 @@ describe('Search effects offer real choices instead of grabbing whichever card i
     passChain(state);
     expect(state.players[0].hand).toContain(chosen);
     expect(state.players[0].deck).not.toContain(chosen);
-    expect(state.players[0].pixelcoins).toBe(4);
+    const cost = (await Card.findOne({ name: 'Enjambre de Avispas' }).lean()).activationCost.args.amount;
+    expect(state.players[0].pixelcoins).toBe(6 - cost);
   });
 
-  it('does not ask when there is only one legal match', async () => {
+  it('asks even when there is only one legal match: the player always makes the pick', async () => {
     const { state, inHand } = await makeMatch(['Enjambre de Avispas', 'Kraken'], ['Kraken']);
     const only = (await Card.findOne({ name: 'Avispa gigante' }).lean())._id;
     state.players[0].deck.push(`0:${only}:w0`);
     toMain1(state);
     state.players[0].pixelcoins = 6;
-    const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Enjambre de Avispas') });
+    const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Enjambre de Avispas') });
+    expect(ask).toMatchObject({ ok: false, reason: 'choose-target' });
+    expect(ask.options).toHaveLength(1);
+    const res = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: inHand('Enjambre de Avispas'), targets: [ask.options[0].instanceId] });
     expect(res.ok).toBe(true);
     passChain(state);
     expect(state.players[0].hand.some((id) => id.startsWith('0:' + only))).toBe(true);

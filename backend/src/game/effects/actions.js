@@ -1,7 +1,7 @@
 const { getCard } = require('../cardIndex');
-const { player, opponentIndex, moveToZone, log, findInstanceLocation, removeFromZone, findEmptySlot, corrodedSlots, releaseEquipment, getFieldMonster } = require('../zones');
+const { player, opponentIndex, moveToZone, log, findInstanceLocation, removeFromZone, findEmptySlot, corrodedSlots, releaseEquipment, getFieldMonster, ownerOfInstance } = require('../zones');
 const { addStatus, setStatusDebuff, FREEZE, BURN, POISON } = require('../statuses');
-const { matchesFilter } = require('../filters');
+const { matchesFilter, matchesCardFilter } = require('../filters');
 const { cardIdFromInstance } = require('../deckUtils');
 const { checkWin, declareWin } = require('../outcome');
 const { negateCard, END_OF_TURN } = require('../negation');
@@ -43,24 +43,90 @@ function damageSelf(ctx, args) {
 function gainVP(ctx, args) {
   const idx = resolvePlayerIndex(ctx, args.player);
   const pl = player(ctx.state, idx);
-  const amount = args.amount || 0;
-  pl.vp += amount;
-  log(ctx.state, `${pl.userId} gana ${amount} VP (VP: ${pl.vp}).`);
+  // "Gana VP igual a su Atk": the Atk of what the step before exiled — or of the monster whose
+  // destruction set the effect off (Noche Eterna). "Gana N VP por cada X que controles" (Cáliz de
+  // Sangre): N times the controller's face-up monsters that match.
+  let amount = args.amountFrom === 'previousTargetsAtk' ? ctx.lastTargetsAtk || 0
+    : args.amountFrom === 'eventAtk' ? (ctx.event && ctx.event.atk) || 0
+      : args.amount || 0;
+  if (args.perControlled) amount *= player(ctx.state, ctx.controllerIndex).field.monsters.filter((m) => m && !m.faceDown && matchesFilter(m, args.perControlled)).length;
+  // "Recupera" (Sátiro Vengador, Herida Sangrante, Drácula, Noche Eterna) heals up to the player's
+  // maximum VP — the VP the duel starts with; "gana" has no ceiling.
+  if (args.recover) {
+    const max = ctx.state.startingVp ?? require('../rules').rules().startingVp;
+    amount = Math.max(0, Math.min(amount, max - pl.vp));
+    pl.vp += amount;
+    log(ctx.state, `${pl.userId} recupera ${amount} VP (VP: ${pl.vp}).`);
+  } else {
+    pl.vp += amount;
+    log(ctx.state, `${pl.userId} gana ${amount} VP (VP: ${pl.vp}).`);
+  }
   // Anillo de Boda: "si tu oponente gana VP, tú también lo harás".
   if (amount > 0) require('../draw').runMirrors(ctx.state, 'gainVP', idx, amount);
   checkWin(ctx.state);
 }
 
+// `perCostLevel`: N per level of the monster the cost took (El poder de las plantas);
+// `perMovedCard`: N per card an earlier step moved (Guardián del Bosque Oscuro).
 function generatePixels(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
-  pl.pixelcoins += args.amount || 0;
-  log(ctx.state, `${pl.userId} genera ${args.amount} pixel(es).`);
+  let amount = args.amount || 0;
+  if (args.perCostLevel) amount *= [...(ctx.costPaid || []), ...(ctx.paidCards || [])].reduce((s, id) => s + (getCard(cardIdFromInstance(id)).level || 0), 0);
+  if (args.perMovedCard) amount *= (ctx.movedCards || []).length;
+  pl.pixelcoins += amount;
+  log(ctx.state, `${pl.userId} genera ${amount} pixel(es).`);
 }
 
+// Otyugh: "Aplica -N de Vida a todos los monstruos en el Campo" — for good; one left at 0 Vida is
+// destroyed.
+function weakenAllMonsters(ctx, args) {
+  const { getEffectiveStats } = require('../effectEngine');
+  const all = allFieldMonsters(ctx.state);
+  all.forEach((m) => addPermanentMod(m, { atk: 0, def: -(args.amount || 0) }, ctxSource(ctx)));
+  log(ctx.state, `Todos los monstruos pierden ${args.amount} de Vida (por ${ctxSource(ctx)}).`);
+  require('../effectEngine').recomputeContinuous(ctx.state);
+  const dead = all.filter((m) => getFieldMonster(ctx.state, m.instanceId) && getEffectiveStats(m).def <= 0).map((m) => m.instanceId);
+  if (args.destroyAtZero && dead.length) require('./fieldActions').destroy(ctx, { target: 'selected' }, dead);
+}
+
+// Koi Mágico: the matching monsters (both sides with `scope: 'field'`) can't be picked by card
+// effects while it lasts (targets.canAffect reads the flag).
+function makeUntargetable(ctx, args) {
+  const pool = args.scope === 'field' ? allFieldMonsters(ctx.state) : allOwnedMonsters(ctx.state, ctx.controllerIndex);
+  pool.filter((m) => monsterMatches(m, args.filter || {})).forEach((m) => { m.untargetable = true; });
+}
+function grantHandSpecialSummon() {} // read by summon.grantedSummonRule
+
+// Hidra: "no recibes daño de batallas que involucren a esta carta" (combat.js reads it).
+function noBattleDamage(ctx) {
+  const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
+  if (m) m.noBattleDamage = true;
+}
+
+// Raiz Asfixiante: "no puede declarar ataques" (the equipped monster, while it lasts).
+function preventAttacks(ctx, args, targets) {
+  (targets || []).map((id) => getFieldMonster(ctx.state, id)).filter(Boolean).forEach((m) => { m.cannotAttack = true; });
+}
+
+// "Genera N píxel por cada monstruo (que controlas / en el Campo / con un estado)": `scope: 'field'`
+// counts both sides, `status` only the monsters that have it (Can del Infierno: QUEMADURA).
 function generatePixelsPerCreature(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
-  const count = pl.field.monsters.filter(Boolean).length;
-  pl.pixelcoins += (args.amount || 0) * count;
+  const { hasStatus } = require('../statuses');
+  const pool = args.scope === 'field' ? allFieldMonsters(ctx.state) : pl.field.monsters.filter(Boolean);
+  const count = pool.filter((m) => !args.status || hasStatus(ctx.state, m.instanceId, args.status)).length;
+  const amount = (args.amount || 0) * count;
+  pl.pixelcoins += amount;
+  log(ctx.state, `${pl.userId} genera ${amount} pixel(es).`);
+}
+
+// Sátiro Vengador: "Recupera VP iguales al Atk de un monstruo de Hada en tu Cementerio" — the
+// picked one (targets.js pools them).
+function gainVPFromGraveyard(ctx, args, targets) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const id = (targets || []).find((t) => pl.graveyard.includes(t));
+  if (!id) return;
+  gainVP(ctx, { amount: getCard(cardIdFromInstance(id)).atk || 0, recover: !!args.recover });
 }
 
 function banishSelf(ctx) {
@@ -97,18 +163,46 @@ function discardRandomCard(ctx, args) {
   const id = pl.hand[i];
   moveToZone(ctx.state, id, 'graveyard');
   log(ctx.state, `${pl.userId} descarta una carta al azar.`);
+  require('../effectEngine').announceSentToGraveyard(ctx.state, id, idx, { from: 'hand', reason: 'discard' });
 }
 
 // "Exilia esa carta" — the picked cards (targets.js pools them), never a protected one.
+// "Exilia ...". With `duration: 'endOfTurn'` ("hasta la Fase Final" / "hasta el final del turno")
+// a monster comes back to its owner's field in this turn's Fase Final (turns.js returnExiled).
+// `ctx.lastTargetsAtk` keeps the Atk the exiled monsters had, for a following "gana VP igual a su
+// Atk" (Traición de Vida).
 function exileTarget(ctx, args, targets) {
   const { canAffect } = require('../targets');
-  (targets || []).forEach((instanceId) => {
+  const { getEffectiveStats } = require('../effectEngine');
+  const nextTurn = args.duration === 'endOfNextTurn';
+  // "Hasta tu próxima Fase de Espera" (Araña de Fase): back when its owner's Standby comes.
+  const untilStandby = args.duration === 'untilOwnerStandby';
+  const temporary = nextTurn || untilStandby || END_OF_TURN.includes(args.duration);
+  ctx.lastTargetsAtk = 0;
+  const picked = args.target === 'self' ? [ctx.sourceInstanceId]
+    : args.target === 'allMonsters' ? allFieldMonsters(ctx.state).map((m) => m.instanceId)
+      : targets || [];
+  picked.forEach((instanceId) => {
     const loc = findInstanceLocation(ctx.state, instanceId);
     if (!loc) return;
     const entry = loc.zone.startsWith('field:') ? [...ctx.state.players[loc.ownerIndex].field.monsters, ...ctx.state.players[loc.ownerIndex].field.support, ctx.state.players[loc.ownerIndex].field.territory].find((e) => e && e.instanceId === instanceId) : null;
     if (entry && (!canAffect(ctx, entry) || (entry.immuneToOpponentEffects && loc.ownerIndex !== ctx.controllerIndex))) return;
+    const isMonster = loc.zone === 'field:monster';
+    if (isMonster) ctx.lastTargetsAtk += getEffectiveStats(entry).atk;
     moveToZone(ctx.state, instanceId, 'banished');
-    log(ctx.state, `${getCard(cardIdFromInstance(instanceId)).name} es exiliada.`);
+    if (isMonster) {
+      const owner = ownerOfInstance(instanceId) ?? loc.ownerIndex;
+      require('../effectEngine').answerLoss(ctx.state, 'banishedByOpponent', owner, ctx.controllerIndex);
+    }
+    if (untilStandby && isMonster && !String(instanceId).startsWith('token:')) {
+      ctx.state.returnAtStandby = ctx.state.returnAtStandby || [];
+      ctx.state.returnAtStandby.push({ instanceId, ownerIndex: ownerOfInstance(instanceId) ?? loc.ownerIndex, position: entry.position });
+    } else if (temporary && isMonster && !String(instanceId).startsWith('token:')) {
+      ctx.state.returnAtEndPhase = ctx.state.returnAtEndPhase || [];
+      ctx.state.returnAtEndPhase.push({ instanceId, ownerIndex: ownerOfInstance(instanceId) ?? loc.ownerIndex, position: entry.position, returnTurn: ctx.state.turnNumber + (nextTurn ? 1 : 0) });
+    }
+    const until = untilStandby ? ' hasta la próxima Fase de Espera de su dueño' : nextTurn ? ' hasta el final del siguiente turno' : ' hasta la Fase Final';
+    log(ctx.state, `${sourceName(ctx.state, instanceId)} es exiliada${temporary && isMonster ? until : ''} (por ${ctxSource(ctx)}).`);
   });
 }
 
@@ -117,9 +211,15 @@ function changePosition(ctx, args, targets) {
     const m = ctx.state.players.flatMap((p) => p.field.monsters).find((x) => x && x.instanceId === instanceId);
     if (!m) return;
     if (args.position === 'defenseDown') {
+      log(ctx.state, `${sourceName(ctx.state, instanceId)} pasa a defensa boca abajo (por ${ctxSource(ctx)}).`);
       m.position = 'defense';
       m.faceDown = true;
       releaseEquipment(ctx.state, instanceId); // "volteado boca abajo" also releases its Equipo cards
+    } else if (args.position === 'toggle') {
+      // "Cambia la posición de batalla" (Goblin Ardiente): attack <-> defense, staying face-up.
+      if (m.positionLocked) return;
+      m.position = m.position === 'attack' ? 'defense' : 'attack';
+      log(ctx.state, `${sourceName(ctx.state, instanceId)} pasa a ${m.position === 'attack' ? 'ataque' : 'defensa'} (por ${ctxSource(ctx)}).`);
     } else if (args.position === 'defense') m.position = 'defense';
     else if (args.position === 'attack') { m.position = 'attack'; m.faceDown = false; }
   });
@@ -142,6 +242,11 @@ function sourceIsCompiled(ctx) {
 // Rulebook "Estados": Congelado / Quemadura / Envenenado(Veneno). Lasts until the end of the
 // turn, or 2 turns when it comes from a compiled monster (see statuses.js).
 function applyStatus(ctx, args, targets) {
+  if (args.status === 'random') {
+    const all = [FREEZE, BURN, POISON];
+    applyStatus(ctx, { ...args, status: all[Math.floor(Math.random() * all.length)] }, targets);
+    return;
+  }
   if (![FREEZE, BURN, POISON].includes(args.status)) {
     log(ctx.state, `[motor] estado "${args.status}" desconocido — se ignora.`);
     return;
@@ -154,7 +259,8 @@ function applyStatus(ctx, args, targets) {
       fromCompiled: sourceIsCompiled(ctx),
       debuff: args.debuff || null,
     });
-    log(ctx.state, `Un monstruo queda en estado ${args.status}.`);
+    const target = m.faceDown ? 'Un monstruo boca abajo' : sourceName(ctx.state, instanceId);
+    log(ctx.state, `${target} queda en estado ${args.status} (por ${ctxSource(ctx)}).`);
   });
   if (args.burnOpponent) damageOpponent(ctx, { amount: args.burnOpponent });
 }
@@ -176,11 +282,20 @@ function corrodeZone(ctx, args, targets) {
   log(ctx.state, 'Una zona del rival queda corroída.');
 }
 
+// "Descompílala" — the picked Compilación, by its owner, whatever the phase or turn. With
+// `negateMaterials` (Des - Compilación: "y si lo haces, niega los efectos de los materiales
+// invocados") the materials that come back have their effects negated.
 function decompileMonster(ctx, args, targets) {
   const { decompile } = require('../summon');
   (Array.isArray(targets) ? targets : []).forEach((id) => {
     const loc = findInstanceLocation(ctx.state, id);
-    if (loc) decompile(ctx.state, loc.ownerIndex, id, { force: true });
+    const entry = loc && getFieldMonster(ctx.state, id);
+    if (!entry) return;
+    const materials = [...(entry.materials || [])];
+    if (!decompile(ctx.state, loc.ownerIndex, id, { force: true }).ok) return;
+    if (!args.negateMaterials) return;
+    materials.forEach((m) => negateCard(ctx.state, m, { sourceInstanceId: ctx.sourceInstanceId }));
+    if (materials.length) log(ctx.state, `Se niegan los efectos de ${materials.map((m) => sourceName(ctx.state, m)).join(', ')}.`);
   });
 }
 
@@ -192,7 +307,7 @@ function negateEffect(ctx, args, targets) {
   (targets || []).forEach((instanceId) => {
     const entry = fieldEntry(ctx.state, instanceId);
     if (!entry || !canAffect(ctx, entry)) return;
-    if (isContinuous(ctx)) entry.negatedByContinuous = true;
+    if (isContinuous(ctx)) { entry.negatedByContinuous = true; entry.effectsLost = true; }
     else negateCard(ctx.state, instanceId, { sourceInstanceId: ctx.sourceInstanceId, duration: args.duration });
     if (!isContinuous(ctx)) log(ctx.state, `Se niegan los efectos de ${entry.isToken ? 'una ficha' : getCard(entry.cardId).name}${END_OF_TURN.includes(args.duration) ? ' hasta el final del turno' : ''}.`);
     if (args.destroyIfControls && controlsNamed(ctx, args.destroyIfControls)) {
@@ -261,7 +376,12 @@ function negateAndSendToGraveyard(ctx, args) {
 }
 
 function grantBuff(ctx, args, targets) {
-  const buff = args.buff || { atk: args.atk, def: args.def };
+  let buff = args.buff || { atk: args.atk, def: args.def };
+  if (args.amountFrom === 'attackerAtk') {
+    const attacker = ctx.event && getFieldMonster(ctx.state, ctx.event.attackerInstanceId);
+    if (!attacker) return;
+    buff = { atk: require('../effectEngine').getEffectiveStats(attacker).atk, def: 0 };
+  }
   // "whileStatus": the penalty lives on the status itself, so it ends when the status does.
   if (args.duration === 'whileStatus' && args.status) {
     resolveStatusTargets(ctx, args, targets).forEach((id) => setStatusDebuff(ctx.state, id, args.status, buff));
@@ -274,7 +394,14 @@ function grantBuff(ctx, args, targets) {
   }
   if (!buffPhaseActive(ctx.state, args.phase)) return;
   const filter = args.filter || { attribute: args.attribute || args.atribute, breed: args.breed, family: args.family, name: args.name };
-  const matched = buffTargets(ctx, args, targets).filter((m) => monsterMatches(m, filter));
+  let matched = buffTargets(ctx, args, targets).filter((m) => monsterMatches(m, filter));
+  if (args.excludeSelf) matched = matched.filter((m) => m.instanceId !== ctx.sourceInstanceId);
+  if (args.perCounter) {
+    const source = ctx.state.players.flatMap((p) => [...p.field.support, ...p.field.monsters]).find((e) => e && e.instanceId === ctx.sourceInstanceId);
+    const n = (source && source.counters && source.counters[args.perCounter]) || 0;
+    buff = { atk: (buff.atk || 0) * n, def: (buff.def || 0) * n };
+    if (!n) return;
+  }
   if (args.duration === 'endOfTurn' || args.duration === 'thisTurn') {
     // Recorded on the state so the buff survives the board recomputes until the turn ends.
     require('./fieldActions').grantTimedBuff(ctx, matched.map((m) => m.instanceId), buff, ctx.state.turnNumber);
@@ -298,8 +425,6 @@ function buffPhaseActive(state, phase) {
 
 // A token has no card data, so it can only satisfy an empty filter.
 function monsterMatches(entry, filter) {
-  const hasFilter = Object.values(filter || {}).some((v) => v !== undefined && v !== null && v !== '');
-  if (entry.isToken) return !hasFilter;
   return matchesFilter(entry, filter);
 }
 
@@ -307,12 +432,14 @@ function allFieldMonsters(state) {
   return state.players.flatMap((p) => p.field.monsters).filter(Boolean);
 }
 
-// The monsters in the same column as `instanceId` (same zone index on both sides of the board, as
-// the board shows them), not counting it (Íncubo/Súcubo).
+// The monsters in the same column as `instanceId`, not counting it (Íncubo/Súcubo). The rival's side
+// is turned 180° on the board, so the zone facing yours is the mirrored one: your zone 1 (from the
+// left) faces their zone 1 as you see it, which is their last zone.
 function columnMonsters(state, instanceId) {
-  for (const pl of state.players) {
-    const slot = pl.field.monsters.findIndex((m) => m && m.instanceId === instanceId);
-    if (slot !== -1) return state.players.map((p) => p.field.monsters[slot]).filter((m) => m && m.instanceId !== instanceId);
+  for (let p = 0; p < state.players.length; p++) {
+    const slot = state.players[p].field.monsters.findIndex((m) => m && m.instanceId === instanceId);
+    if (slot === -1) continue;
+    return state.players.map((pl, i) => pl.field.monsters[i === p ? slot : pl.field.monsters.length - 1 - slot]).filter((m) => m && m.instanceId !== instanceId);
   }
   return [];
 }
@@ -323,7 +450,13 @@ function columnMonsters(state, instanceId) {
 function buffTargets(ctx, args, targets) {
   const all = allFieldMonsters(ctx.state);
   if (targets && targets.length) return all.filter((m) => targets.includes(m.instanceId));
+  if (args.target === 'equipped') {
+    const equip = ctx.state.players.flatMap((p) => p.field.support).find((s) => s && s.instanceId === ctx.sourceInstanceId);
+    return all.filter((m) => equip && m.instanceId === equip.equippedTo);
+  }
   if (args.target === 'self') return all.filter((m) => m.instanceId === ctx.sourceInstanceId);
+  // "El monstruo Compilación gana..." (Avispa de Respaldo used as a material).
+  if (args.target === 'compiled') return all.filter((m) => ctx.event && m.instanceId === ctx.event.compiledInstanceId);
   const enemies = player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean);
   if (args.target === 'allEnemyMonsters' || args.target === 'opponentMonsters' || args.scope === 'opponentField') return enemies;
   if (args.scope === 'column') return columnMonsters(ctx.state, ctx.sourceInstanceId);
@@ -335,35 +468,31 @@ function allOwnedMonsters(state, controllerIndex) {
   return state.players[controllerIndex].field.monsters.filter(Boolean);
 }
 
-function summonTokenEntry(ctx, tokenDef) {
-  const pl = player(ctx.state, ctx.controllerIndex);
-  const slot = findEmptySlot(pl.field.monsters, corrodedSlots(pl, 'monsters'));
-  if (slot === -1) return;
-  const instanceId = `token:${tokenDef.name}:${Date.now()}:${Math.random().toString(36).slice(2, 6)}`;
-  pl.field.monsters[slot] = {
-    instanceId,
-    cardId: null,
-    isToken: true,
+// `side: 'opponent'`: the token goes to the rival's field, and they pick its zone (Caballo de Paja:
+// "dale a tu oponente esta carta como un monstruo").
+function summonTokenEntry(ctx, tokenDef, side) {
+  const { requestPlacement, freeMonsterSlots } = require('../placement');
+  const ownerIndex = side === 'opponent' ? opponentIndex(ctx.controllerIndex) : ctx.controllerIndex;
+  if (!freeMonsterSlots(ctx.state, ownerIndex).length) {
+    log(ctx.state, `No hay espacio para la ficha ${tokenDef.name}.`);
+    return;
+  }
+  requestPlacement(ctx.state, {
+    purpose: 'token',
+    controllerIndex: ownerIndex,
     tokenDef,
-    position: 'attack',
-    faceDown: false,
-    baseAtk: tokenDef.atk || 0,
-    baseDef: tokenDef.def || 0,
-    summonedTurn: ctx.state.turnNumber,
-    hasAttacked: false,
-    attacksThisTurn: 0,
-    equips: [],
-    counters: {},
-  };
+    sourceInstanceId: ctx.sourceInstanceId,
+    prompt: `Elige dónde colocas la ficha ${tokenDef.name}`,
+  });
 }
 
 function summonTokens(ctx, args) {
   const count = args.count || 1;
-  for (let i = 0; i < count; i++) summonTokenEntry(ctx, args.token);
+  for (let i = 0; i < count; i++) summonTokenEntry(ctx, args.token, args.side);
 }
 
 function summonToken(ctx, args) {
-  summonTokenEntry(ctx, args.token);
+  summonTokenEntry(ctx, args.token, args.side);
 }
 
 // addCardToHandFromDeck / searchDeck / searchFromDeck / recoverCardsToHand / addCardToHandFromGraveyard
@@ -394,7 +523,11 @@ function millDeck(ctx, args) {
   const idx = resolvePlayerIndex(ctx, args.target);
   const pl = player(ctx.state, idx);
   const amount = args.amount || 1;
-  for (let i = 0; i < amount && pl.deck.length; i++) moveToZone(ctx.state, pl.deck[0], 'graveyard', idx);
+  for (let i = 0; i < amount && pl.deck.length; i++) {
+    const id = pl.deck[0];
+    moveToZone(ctx.state, id, 'graveyard', idx);
+    require('../effectEngine').announceSentToGraveyard(ctx.state, id, idx, { from: 'deck', reason: 'mill' });
+  }
 }
 
 // "Gana un ataque extra": for this turn when it's an activated effect (Bálor, Orco Gladiador), for
@@ -403,7 +536,14 @@ function millDeck(ctx, args) {
 function grantExtraAttack(ctx, args) {
   const m = getFieldMonster(ctx.state, ctx.sourceInstanceId);
   if (!m) return;
-  const amount = args.perMaterial ? (m.materials || []).length : (args.amount || 1);
+  const { hasStatus } = require('../statuses');
+  const enemies = player(ctx.state, opponentIndex(ctx.controllerIndex)).field.monsters.filter(Boolean);
+  // Hidra: "ataques extra hasta la cantidad de tokens en el Campo".
+  const amount = args.perMaterial ? (m.materials || []).length
+    : args.perEnemyWithStatus ? enemies.filter((e) => hasStatus(ctx.state, e.instanceId, args.perEnemyWithStatus)).length
+      : args.perTokenOnField ? allFieldMonsters(ctx.state).filter((x) => x.isToken).length
+        : (args.amount || 1);
+  if (!amount) return;
   if (isContinuous(ctx)) {
     m.extraAttacksContinuous = (m.extraAttacksContinuous || 0) + amount;
     return;
@@ -427,8 +567,10 @@ function cannotBeNegated() {
 //   scope "field"         : count the matches on the whole field (else only the controller's);
 //   scope "opponentField" : count and buff the rival's monsters;
 //   scope "equippedToSelf": count the cards equipped to this one (Carnívora Bestia-Moss);
+//   scope "destroyedThisTurn": count the matching monsters destroyed this turn (Orco Gigante);
 //   target "self"         : the buff lands on the card that has the effect;
-//   excludeSelf           : that card doesn't count itself ("excepto el mismo").
+//   excludeSelf           : that card doesn't count itself ("excepto el mismo");
+//   applyTo "field"       : the buff lands on the matching monsters of both sides.
 // The buff it applied is kept on ctx.lastScaledBuff for a following mirrorStatToOpponent step.
 function applyScaledBuff(ctx, args, targets) {
   const filter = args.filter || { name: args.name, nameContains: args.nameContains, breed: args.breed, family: args.family, attribute: args.attribute };
@@ -439,6 +581,11 @@ function applyScaledBuff(ctx, args, targets) {
   let scaleBy;
   if (args.scope === 'equippedToSelf') {
     scaleBy = equipsOn(ctx.state, ctx.sourceInstanceId).length;
+  } else if (args.scope === 'destroyedThisTurn' || args.scope === 'sacrificedThisTurn') {
+    const log = ctx.state[args.scope];
+    scaleBy = log && log.turn === ctx.state.turnNumber ? log.cardIds.filter((id) => matchesCardFilter(getCard(id), filter)).length : 0;
+  } else if (args.scope === 'ownGraveyard') {
+    scaleBy = player(ctx.state, ctx.controllerIndex).graveyard.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), filter)).length;
   } else {
     const pool = args.scope === 'field' ? allFieldMonsters(ctx.state) : args.scope === 'opponentField' ? enemyMonsters : controllerMonsters;
     const counted = pool.filter((m) => monsterMatches(m, filter) && !(args.excludeSelf && m.instanceId === ctx.sourceInstanceId));
@@ -446,7 +593,9 @@ function applyScaledBuff(ctx, args, targets) {
   }
   // Explicit targets (an equipped monster, a picked one) always win over the filter-based default.
   let targetSet = targets && targets.length ? allFieldMonsters(ctx.state).filter((m) => targets.includes(m.instanceId)) : hasFilter ? controllerMonsters.filter((m) => monsterMatches(m, filter)) : controllerMonsters;
-  if (!(targets && targets.length)) {
+  // `applyTo: 'field'`: the matching monsters on both sides get it ("los monstruos Dragón en el Campo").
+  if (!(targets && targets.length) && args.applyTo === 'field') targetSet = allFieldMonsters(ctx.state).filter((m) => monsterMatches(m, filter));
+  if (!(targets && targets.length) && args.applyTo !== 'field') {
     if (args.target === 'self' || args.scope === 'equippedToSelf') targetSet = controllerMonsters.filter((m) => m.instanceId === ctx.sourceInstanceId);
     else if (args.scope === 'opponentField') targetSet = enemyMonsters;
   }
@@ -466,13 +615,18 @@ function disableEffects(ctx, args, targets) {
   const { canAffect } = require('../targets');
   const filter = args.filter || {};
   const hasFilter = Object.values(filter).some((v) => v !== undefined && v !== null && v !== '');
+  // `scope: 'field'` (Espectro): every monster on the field — it picks none, so a monster that
+  // "can't be selected" (Koi Mágico) is negated too.
+  const all = args.scope === 'field' && !(targets && targets.length);
   const list = targets && targets.length
     ? allFieldMonsters(ctx.state).filter((m) => targets.includes(m.instanceId))
-    : hasFilter
-      ? allFieldMonsters(ctx.state).filter((m) => monsterMatches(m, filter))
-      : [];
-  list.filter((m) => canAffect(ctx, m)).forEach((m) => {
-    if (isContinuous(ctx)) m.negatedByContinuous = true;
+    : all
+      ? allFieldMonsters(ctx.state).filter((m) => !hasFilter || monsterMatches(m, filter))
+      : hasFilter
+        ? allFieldMonsters(ctx.state).filter((m) => monsterMatches(m, filter))
+        : [];
+  list.filter((m) => all || canAffect(ctx, m)).forEach((m) => {
+    if (isContinuous(ctx)) { m.negatedByContinuous = true; m.effectsLost = true; }
     else negateCard(ctx.state, m.instanceId, { sourceInstanceId: ctx.sourceInstanceId, duration: args.duration });
   });
 }
@@ -480,11 +634,12 @@ function disableEffects(ctx, args, targets) {
 // Continuous negation of a whole group, for as long as its source stays: Espectro ("los monstruos
 // en el Campo"), Héroe del Caos ("los monstruos boca arriba en el Campo del oponente"), Caballo de
 // Paja ("tus Apoyos").
-function negateActivationOfEffects(ctx, args) {
+function negateActivationOfEffects(ctx, args, targets) {
   const opp = player(ctx.state, opponentIndex(ctx.controllerIndex));
   const mine = player(ctx.state, ctx.controllerIndex);
   let list;
-  if (args.target === 'opponentFaceUpMonsters') list = opp.field.monsters.filter((m) => m && !m.faceDown);
+  if (args.target === 'equipped') list = (targets || []).map((id) => getFieldMonster(ctx.state, id)).filter(Boolean);
+  else if (args.target === 'opponentFaceUpMonsters') list = opp.field.monsters.filter((m) => m && !m.faceDown);
   else if (args.target === 'controller' && args.cardType === 'support') list = mine.field.support.filter(Boolean);
   else list = allFieldMonsters(ctx.state);
   list.forEach((m) => { m.negatedByContinuous = true; });
@@ -535,6 +690,18 @@ function returnFromGraveyardToDeck(ctx, args, targets) {
 
 // "Regresa esta carta / la carta al Mazo".
 function returnToDeck(ctx, args, targets) {
+  // "Selecciona N ... del Cementerio: barájalos al Mazo" (Gato del Destino): the picked cards, never
+  // the card itself.
+  // Noche Eterna: "desde el Cementerio o Exilio" (`from` a list of zones).
+  const zones = [].concat(args.from || []);
+  if (zones.length && zones.every((z) => z === 'graveyard' || z === 'banished')) {
+    const pl = player(ctx.state, ctx.controllerIndex);
+    const picked = (targets || []).filter((id) => zones.some((z) => pl[z].includes(id)));
+    picked.forEach((id) => moveToZone(ctx.state, id, 'deck', undefined, { deckPosition: 'shuffle' }));
+    if (picked.length) log(ctx.state, `${pl.userId} baraja en el Mazo ${picked.map((id) => sourceName(ctx.state, id)).join(', ')}.`);
+    ctx.previousSucceeded = picked.length === (args.count || 1);
+    return;
+  }
   const list = args.target === 'self' || !(targets && targets.length) ? [ctx.sourceInstanceId] : targets;
   list.forEach((id) => moveToZone(ctx.state, id, 'deck', undefined, { deckPosition: 'shuffle' }));
 }
@@ -617,8 +784,9 @@ function changeBeed(ctx, args, targets) {
   list.forEach((id) => {
     const target = getFieldMonster(ctx.state, id);
     if (!target) return;
-    target.breedOverride = args.breed || args.family;
-    log(ctx.state, `${getCard(target.cardId).name} se convierte en ${target.breedOverride}.`);
+    if (args.family) target.familyOverride = args.family;
+    else target.breedOverride = args.breed;
+    log(ctx.state, `${getCard(target.cardId).name} se convierte en ${args.family || args.breed}.`);
   });
 }
 
@@ -644,8 +812,18 @@ function setAtk(ctx, args, targets) {
   });
 }
 
+// "Todos los monstruos del Inframundo pasan a tener 0 de Atk y Vida" (Solar): from a continuous
+// effect with a filter, every matching monster (`scope: 'field'`: both sides) while it lasts —
+// recomputeContinuous applies it after every other change. Otherwise it's setAtk.
 function setStatValue(ctx, args, targets) {
-  setAtk(ctx, args, targets);
+  if (!isContinuous(ctx) || !args.filter) {
+    setAtk(ctx, args, targets);
+    return;
+  }
+  const list = args.scope === 'field' ? allFieldMonsters(ctx.state) : allOwnedMonsters(ctx.state, ctx.controllerIndex);
+  list.filter((m) => m.instanceId !== ctx.sourceInstanceId && monsterMatches(m, args.filter)).forEach((m) => {
+    m.statOverride = { atk: args.atk, def: args.def, source: ctxSource(ctx) };
+  });
 }
 
 function damageMonster(ctx, args, targets) {
@@ -661,8 +839,15 @@ function damageMonster(ctx, args, targets) {
 // "Tus monstruos de Metal pueden atacar este turno en Posición de Defensa" (Relicario): an ability
 // kept on each monster until the turn ends (combat.js reads `attackInDefense`).
 function grantAbility(ctx, args, targets) {
-  const filter = { attribute: args.attribute || args.atribute, breed: args.breed, name: args.name };
-  const list = targets && targets.length ? targets.map((id) => getFieldMonster(ctx.state, id)).filter(Boolean) : allOwnedMonsters(ctx.state, ctx.controllerIndex).filter((m) => monsterMatches(m, filter));
+  const filter = args.filter || { attribute: args.attribute || args.atribute, breed: args.breed, name: args.name };
+  const list = targets && targets.length ? targets.map((id) => getFieldMonster(ctx.state, id)).filter(Boolean)
+    : args.target === 'self' ? [getFieldMonster(ctx.state, ctx.sourceInstanceId)].filter(Boolean)
+      : allOwnedMonsters(ctx.state, ctx.controllerIndex).filter((m) => monsterMatches(m, filter));
+  // From a continuous effect (Ciudadela, Grover Guardián): only while it lasts, rebuilt every recompute.
+  if (isContinuous(ctx)) {
+    list.forEach((m) => { m.continuousAbilities = [...(m.continuousAbilities || []), args.ability]; });
+    return;
+  }
   const expiresTurn = END_OF_TURN.includes(args.duration) ? ctx.state.turnNumber : null;
   list.forEach((m) => {
     m.abilities = (m.abilities || []).filter((a) => a.name !== args.ability);
@@ -692,8 +877,75 @@ function chooseEffect() {
   // "uno de estos efectos": handled by effect.choice (targets.js / effectEngine.resolveActions)
 }
 
-function opponentChoosesEffect() {
-  // same as chooseEffect — kept so an authored effect naming it doesn't hit the fallback
+// Beholder: "tu oponente elige uno de estos efectos" — each alternative is something the rival does
+// to their own cards: sacrifice a monster, exile a card from their Cementerio, discard. They pick
+// which (only among the ones they can actually do), then which card.
+const PENALTY_POOLS = {
+  sacrifice: (pl) => pl.field.monsters.filter(Boolean).map((m) => m.instanceId),
+  exileFromGraveyard: (pl) => [...pl.graveyard],
+  discard: (pl) => [...pl.hand],
+};
+const PENALTY_PROMPTS = {
+  sacrifice: 'Elige el monstruo que sacrificas',
+  exileFromGraveyard: 'Elige la carta de tu Cementerio que exilias',
+  discard: 'Elige qué carta descartas',
+};
+
+function opponentChoosesEffect(ctx, args) {
+  const rival = opponentIndex(ctx.controllerIndex);
+  const pl = player(ctx.state, rival);
+  const labels = require('../targets').choiceLabels(ctx, { actions: args.options || [] });
+  const options = (args.options || []).map((o, i) => ({ ...o, label: labels[i] }))
+    .filter((o) => PENALTY_POOLS[o.fn] && PENALTY_POOLS[o.fn](pl).length);
+  if (!options.length) {
+    log(ctx.state, `${pl.userId} no puede aplicar ninguno de los efectos.`);
+    return;
+  }
+  if (options.length === 1) {
+    applyPenalty(ctx.state, rival, options[0]);
+    return;
+  }
+  ctx.state.pendingTriggerChoices = ctx.state.pendingTriggerChoices || [];
+  ctx.state.pendingTriggerChoices.push({
+    kind: 'penalty',
+    controllerIndex: rival,
+    penalties: options,
+    options: options.map((o, i) => ({ instanceId: `choice:${i}`, name: o.label, image: null })),
+    prompt: `${ctxSource(ctx)}: elige qué efecto aplicas`,
+  });
+}
+
+// The penalty the rival chose: done at once when there's no card to choose between.
+function applyPenalty(state, playerIndex, option) {
+  const count = (option.args && option.args.count) || 1;
+  if (option.fn === 'discard') {
+    requestDiscard(state, playerIndex, count, PENALTY_PROMPTS.discard);
+    return;
+  }
+  const pool = PENALTY_POOLS[option.fn](player(state, playerIndex));
+  if (pool.length <= count) {
+    payPenalty(state, playerIndex, option.fn, pool);
+    return;
+  }
+  const { describeCandidate } = require('../targets');
+  state.pendingTriggerChoices = state.pendingTriggerChoices || [];
+  state.pendingTriggerChoices.push({ kind: 'ownPick', action: option.fn, count, controllerIndex: playerIndex, options: pool.map((id) => describeCandidate(state, id)), prompt: PENALTY_PROMPTS[option.fn] });
+}
+
+function payPenalty(state, playerIndex, action, ids) {
+  const pl = player(state, playerIndex);
+  ids.forEach((id) => {
+    if (action === 'sacrifice') {
+      const name = sourceName(state, id);
+      if (!String(id).startsWith('token:')) require('../zones').markSacrificed(state, cardIdFromInstance(id));
+      moveToZone(state, id, 'graveyard');
+      log(state, `${pl.userId} sacrifica a ${name}.`);
+      require('../effectEngine').announceSentToGraveyard(state, id, playerIndex, { from: 'field', reason: 'cost' });
+    } else if (action === 'exileFromGraveyard') {
+      moveToZone(state, id, 'banished');
+      log(state, `${pl.userId} exilia ${sourceName(state, id)} de su Cementerio.`);
+    }
+  });
 }
 
 const registry = {
@@ -756,10 +1008,16 @@ const registry = {
   destroyAndCopyEffect,
   chooseEffect,
   opponentChoosesEffect,
+  gainVPFromGraveyard,
+  weakenAllMonsters,
+  preventAttacks,
+  noBattleDamage,
+  makeUntargetable,
+  grantHandSpecialSummon,
 };
 
 const fieldActions = require('./fieldActions');
-['destroy', 'destroyTarget', 'destroyCards', 'growSelf', 'takeControl', 'addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck', 'searchFromDeck', 'addCardToHandFromGraveyard', 'preventBattleDestruction', 'cannotBeDestroyedOrExiled', 'cannotBeDestroyedByOpponentEffects', 'summonFromDeck', 'specialSummonFromDeck', 'summonFromHand', 'specialSummonFromGY', 'summonFromZones', 'summon', 'sendFromDeckToGY']
+['destroy', 'destroyTarget', 'destroyCards', 'growSelf', 'takeControl', 'addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck', 'searchFromDeck', 'addCardToHandFromGraveyard', 'preventBattleDestruction', 'cannotBeDestroyedOrExiled', 'cannotBeDestroyedByOpponentEffects', 'summonFromDeck', 'specialSummonFromDeck', 'summonFromHand', 'specialSummonFromGY', 'summonFromZones', 'summon', 'sendFromDeckToGY', 'protectFromEffectDestruction', 'attacksOnlyOnStrongest', 'excavate']
   .forEach((fn) => { registry[fn] = fieldActions[fn]; });
 Object.assign(registry, require('./extraActions'));
 
@@ -769,7 +1027,12 @@ function runAction(ctx, step, targets) {
     log(ctx.state, `[motor] acción "${step.fn}" aún no implementada — se ignora.`);
     return;
   }
+  // "...y si lo haces, X": X only runs when the step before it did its job.
+  if (step.args && step.args.conditionalOn && ctx.previousSucceeded === false) return;
+  // "Destruye ..., y si lo haces, X" (Héroe Fénix, Héroe de la Esperanza): the destroy before it
+  // destroyed something.
+  if (step.args && step.args.ifPreviousSucceeded && !(ctx.destroyedCount > 0)) return;
   impl(ctx, step.args || {}, targets);
 }
 
-module.exports = { runAction, registry, checkWin, requestDiscard, relocateSelfFromChoice, equipsOn, columnMonsters, allFieldMonsters, fieldEntry, graveyardMonstersToReturn };
+module.exports = { applyPenalty, payPenalty, PENALTY_POOLS, runAction, registry, checkWin, requestDiscard, relocateSelfFromChoice, equipsOn, columnMonsters, allFieldMonsters, fieldEntry, graveyardMonstersToReturn };

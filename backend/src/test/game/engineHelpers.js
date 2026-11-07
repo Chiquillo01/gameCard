@@ -70,17 +70,20 @@ async function onField(state, p, name, opts = {}) {
   return id;
 }
 
+// Response windows the rival gets along the way are passed.
 function toPhase(state, phase, turnPlayer = state.turnPlayer) {
   let guard = 0;
-  while ((state.phase !== phase || state.turnPlayer !== turnPlayer) && guard++ < 40) {
-    applyAction(state, state.turnPlayer, { type: 'ADVANCE_PHASE' });
+  while ((state.phase !== phase || state.turnPlayer !== turnPlayer) && guard++ < 60) {
+    if (state.window && !state.chain.length) applyAction(state, state.window.priorityPlayer, { type: 'PASS_CHAIN' });
+    else applyAction(state, state.turnPlayer, { type: 'ADVANCE_PHASE' });
   }
+  if (state.window && !state.chain.length) applyAction(state, state.window.priorityPlayer, { type: 'PASS_CHAIN' });
 }
 
 // Both players pass until the Pila is empty.
 function passAll(state) {
   let guard = 0;
-  while (state.chain.length && guard++ < 20) applyAction(state, state.priorityPlayer, { type: 'PASS_CHAIN' });
+  while ((state.chain.length || state.window) && guard++ < 20) applyAction(state, state.chain.length ? state.priorityPlayer : state.window.priorityPlayer, { type: 'PASS_CHAIN' });
 }
 
 const monster = (state, id) => state.players.flatMap((p) => p.field.monsters).find((m) => m && m.instanceId === id);

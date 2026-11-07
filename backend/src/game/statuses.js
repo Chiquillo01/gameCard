@@ -11,7 +11,6 @@ const FREEZE = 'Congelado';
 const BURN = 'Quemadura';
 const POISON = 'Veneno'; // the book's "Envenenado"; the effect data spells it "Veneno"
 
-const BURN_END_OF_TURN_DAMAGE = 5; // per burning monster its controller has, every end of turn
 
 function addStatus(state, instanceId, type, { sourceInstanceId = null, fromCompiled = false, debuff = null } = {}) {
   state.statuses = state.statuses || {};
@@ -71,7 +70,8 @@ module.exports = {
   FREEZE,
   BURN,
   POISON,
-  BURN_END_OF_TURN_DAMAGE,
+  // per burning monster its controller has, every end of turn (game rules)
+  get BURN_END_OF_TURN_DAMAGE() { return require('./rules').rules().burnEndOfTurnDamage; },
   addStatus,
   setStatusDebuff,
   hasStatus,

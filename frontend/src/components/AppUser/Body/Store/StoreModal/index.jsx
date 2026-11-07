@@ -2,14 +2,15 @@ import React from 'react';
 import Modal from 'react-modal';
 import styles from './storemodal.module.css';
 import { useUser } from '../../../../../context/userContext';
+import { PIXELCOIN_ICON, PIXELGEM_ICON } from '../../../../../lib/utils/storeConstants';
 
 const PAYMENT_LABELS = {
   pixelcoins: {
-    icon: 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png',
+    icon: PIXELCOIN_ICON,
     unit: 'Pixelcoins',
   },
   pixelgems: {
-    icon: 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100320/gema4tcg_laiqk5.png',
+    icon: PIXELGEM_ICON,
     unit: 'Pixelgems',
   },
 };

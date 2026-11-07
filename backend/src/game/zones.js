@@ -104,8 +104,23 @@ function log(state, message) {
 // explicit owner it goes to its real owner's zone (a stolen monster goes back to its owner's
 // Cementerio/Mano), falling back to whoever holds it now for ids that carry no owner.
 // `deckPosition: 'shuffle'` inserts it at a random spot ("baraja/regresa al Mazo") instead of on top.
+// "Por cada X sacrificado este turno" (Orco Gigante): the cards of the monsters sacrificed this
+// turn — as a cost, a summon's tribute or by an effect that says "sacrifica".
+function markSacrificed(state, cardId) {
+  if (!state.sacrificedThisTurn || state.sacrificedThisTurn.turn !== state.turnNumber) state.sacrificedThisTurn = { turn: state.turnNumber, cardIds: [] };
+  state.sacrificedThisTurn.cardIds.push(cardId);
+}
+
 function moveToZone(state, instanceId, toZone, ownerIndexOverride, { deckPosition = 'top' } = {}) {
   const loc = findInstanceLocation(state, instanceId);
+  // A token that leaves the field stops existing — it never reaches a hand, Mazo or Cementerio.
+  if (String(instanceId).startsWith('token:')) {
+    if (loc) removeFromZone(state, instanceId, loc);
+    clearStatus(state, instanceId, BURN);
+    return true;
+  }
+  // A Compilación never sits in a hand or the Mazo: sent there, it goes back to its Mazo-C.
+  if ((toZone === 'hand' || toZone === 'deck') && getCard(require('./deckUtils').cardIdFromInstance(instanceId)).category === 'fusion') toZone = 'extra';
   const ownerIndex = ownerIndexOverride ?? ownerOfInstance(instanceId) ?? (loc ? loc.ownerIndex : null);
   if (ownerIndex === null) return false;
   const leaving = loc && loc.zone === 'field:monster' ? state.players[loc.ownerIndex].field.monsters[loc.slot] : null;
@@ -121,16 +136,14 @@ function moveToZone(state, instanceId, toZone, ownerIndexOverride, { deckPositio
     markSentToGraveyard(state, instanceId);
   } else if (toZone === 'banished') pl.banished.push(instanceId);
   else return false;
+  if (leaving && !leaving.isToken) {
+    state.leftField = state.leftField || [];
+    state.leftField.push({ cardId: leaving.cardId, ownerIndex: loc.ownerIndex });
+  }
   if (leaving) {
     // A burning monster that is destroyed stops burning; other statuses stay with the card.
     clearStatus(state, instanceId, BURN);
     releaseMaterials(state, leaving, ownerIndex, toZone);
-    // Rulebook, Aboleth: "al destruir un monstruo Agua en el Campo" — opens its special-summon
-    // window for the rest of the turn (see game/summonRules "waterMonsterDestroyed" condition).
-    if (toZone === 'graveyard' && !leaving.isToken && getCard(leaving.cardId).attribute === 'Agua') {
-      state.specialSummonWindows = state.specialSummonWindows || {};
-      state.specialSummonWindows.waterMonsterDestroyed = state.turnNumber;
-    }
   }
   return true;
 }
@@ -217,7 +230,7 @@ function placeTerritory(state, instanceId, ownerIndex) {
   return true;
 }
 
-module.exports = {
+module.exports = { markSacrificed,
   player,
   opponentIndex,
   ownerOfInstance,

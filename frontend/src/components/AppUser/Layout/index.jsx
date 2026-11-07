@@ -18,7 +18,9 @@ const Layout = () => {
 
   return (
     <main>
-      <ToastContainer />
+      {/* Bottom-right, out of the way of the top bars (the duel's phase button lives up there).
+          Toasts don't set their own position, so this is the one place it's decided. */}
+      <ToastContainer position='bottom-right' theme='dark' />
       {!isHomePage && !isActiveDuelPath(location.pathname) && (
         <Link to={isDeckBuilder ? '/deck' : '/'} className={styles.backToTavern}>
           ← Volver a {isDeckBuilder ? 'los mazos' : 'la taberna'}

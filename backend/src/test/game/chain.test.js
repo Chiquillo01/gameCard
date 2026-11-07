@@ -86,7 +86,7 @@ describe('Activating a card opens a chain instead of resolving right away', () =
     applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: id });
 
     passChain(state);
-    expect(state.players[1].vp).toBe(STARTING_VP - 10); // Chispa: 10 de daño
+    expect(state.players[1].vp).toBe(STARTING_VP - effects.find((e) => e._id === 'CHISPA_BURN').actions[0].args.amount); // Chispa's damage
     expect(state.players[0].field.support.some((s) => s && s.instanceId === id)).toBe(false);
     expect(state.players[0].graveyard).toContain(id);
     expect(state.chain).toEqual([]);

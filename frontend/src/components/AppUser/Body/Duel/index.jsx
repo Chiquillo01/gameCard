@@ -10,11 +10,13 @@ import { fetchCards } from '../../../../lib/utils/apiCard';
 import CardFace from '../CreateNewDeck/CardModal/CardFace';
 import { getUserToken } from '../../../../lib/utils/localStorage.utils';
 import { isDeckPlayable } from '../../../../lib/utils/deckRules';
-import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
+import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, WindowBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
+import { ChoiceOptionList } from './ChoiceOptions';
+import CompileModal from './CompileModal';
+import { PIXELCOIN_ICON } from '../../../../lib/utils/storeConstants';
 
-const PIXELCOIN_ICON = 'https://res.cloudinary.com/dsd7efrba/image/upload/v1739100321/moneda3tcg_hmxpum.png';
 
-const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', extra: 'Mazo-C' };
+const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', materials: 'Materiales', extra: 'Mazo-C' };
 
 // "WASP_SWARM_GRAVE" -> "Wasp Swarm Grave" — the server only sends an effect id, no human label.
 const formatEffectId = (id) =>
@@ -26,7 +28,6 @@ const formatEffectId = (id) =>
 
 const showToast = (type, message) =>
   toast[type](message, {
-    position: 'top-right',
     autoClose: 2500,
     hideProgressBar: true,
     closeOnClick: true,
@@ -45,7 +46,7 @@ const DuelPage = () => {
   const [selectedAttacker, setSelectedAttacker] = useState(null);
   // A monster from hand is waiting on the player to pick attack/defense/set.
   const [pendingSummon, setPendingSummon] = useState(null);
-  // A Veloz/Contraataque support from hand is waiting on activate-now-vs-set-face-down.
+  // A Veloz/Contraefecto support from hand is waiting on activate-now-vs-set-face-down.
   const [pendingSupportChoice, setPendingSupportChoice] = useState(null);
   // One of your own monsters was clicked in a main phase: pick the position to switch it to.
   const [pendingPosition, setPendingPosition] = useState(null);
@@ -216,9 +217,10 @@ const DuelPage = () => {
     setPendingPosition(null);
   };
 
-  const startFusion = (card) => {
+  // `preset`: materials already picked (the Mazo-C's suggestion) — the player can still change them.
+  const startFusion = (card, preset = []) => {
     closeChoices();
-    setFusion({ instanceId: card.instanceId, materials: new Set() });
+    setFusion({ instanceId: card.instanceId, materials: new Set(preset) });
     setOpenPile(null);
   };
 
@@ -226,8 +228,8 @@ const DuelPage = () => {
     const isMyTurn = view.turnPlayer === view.you;
     const isMainPhase = view.phase === 'main1' || view.phase === 'main2';
     const chainOpen = !!view.chain;
-    const canRespondToChain = chainOpen && view.chain.priorityPlayer === view.you;
-    // Rulebook, Velocidades: an Apoyo Veloz/Contraataque (Speed 2/3) can be activated from hand in
+    const canRespondToChain = (chainOpen && view.chain.priorityPlayer === view.you) || (!!view.window && view.window.priorityPlayer === view.you);
+    // Rulebook, Velocidades: an Apoyo Veloz/Contraefecto (Speed 2/3) can be activated from hand in
     // any phase of its controller's own turn, not just Main Phase — and, like any Speed 2+ card,
     // as a response whenever it's this player's priority on an open Pila.
     const isFastSupport = card.category === 'support' && (card.subtype === 'instant' || card.subtype === 'counter');
@@ -374,7 +376,7 @@ const DuelPage = () => {
     return hovered.atk != null ? { ...card, atk: hovered.atk, def: hovered.def } : card;
   })();
 
-  // Clicking one of your own face-down supports in a main phase activates it (Veloz/Contraataque
+  // Clicking one of your own face-down supports in a main phase activates it (Veloz/Contraefecto
   // cards have their own effect buttons instead).
   const onFieldSupportClick = (support) => {
     if (!support.faceDown || support.subtype === 'instant' || support.subtype === 'counter') return;
@@ -613,10 +615,22 @@ const DuelPage = () => {
         />
       )}
 
-      {openPile && (
-        <PileModal
-          title={PILE_LABELS[openPile.zone]}
-          cards={openPile.side === 'me' ? me[openPile.zone] : enemy[openPile.zone]}
+      {openPile && openPile.side === 'me' && openPile.zone === 'extra' && (
+        <CompileModal
+          cards={me.extra || []}
+          cardsById={cardsById}
+          canCompileNow={isMyTurn && (view.phase === 'main1' || view.phase === 'main2') && !view.chain && !view.pendingTriggerChoice}
+          onCompile={(card, suggested) => startFusion(card, suggested)}
+          onClose={() => setOpenPile(null)}
+        />
+      )}
+
+      {openPile && !(openPile.side === 'me' && openPile.zone === 'extra') && (
+        <PileViewer
+          pile={openPile.zone === 'extra' ? { ...openPile, zone: 'graveyard' } : openPile}
+          me={me}
+          enemy={enemy}
+          onChange={setOpenPile}
           onClose={() => setOpenPile(null)}
           renderCardExtra={(card) =>
             openPile.side === 'me' && openPile.zone === 'extra' ? (
@@ -666,6 +680,7 @@ const DuelPage = () => {
       {/* On wide screens these two move into the column beside the board (sidePanel), leaving the
           height above the board to the board itself. */}
       {view.chain && <ChainBar className={styles.topOnly} chain={view.chain} you={you} names={names} onPass={() => act({ type: 'PASS_CHAIN' })} />}
+      {view.window && <WindowBar className={styles.topOnly} window={view.window} you={you} onPass={() => act({ type: 'PASS_CHAIN' })} />}
       <GuideBar className={styles.topOnly} guide={guide} forecast={forecast} />
 
       <div className={styles.board} ref={boardRef}>
@@ -691,7 +706,7 @@ const DuelPage = () => {
           selectedAttacker={selectedAttacker}
           fusion={fusion}
           onMonsterClick={(m) => onFieldMonsterClick(m, false)}
-          onOpenPile={(zone) => setOpenPile({ side: 'enemy', zone })}
+          onOpenPile={(zone, focus) => setOpenPile({ side: 'enemy', zone, focus })}
           renderEffectButtons={renderEffectButtons}
           onHover={setHovered}
           flashes={flashes}
@@ -710,7 +725,7 @@ const DuelPage = () => {
           onDecompile={(instanceId) => act({ type: 'DECOMPILE', instanceId })}
           onMonsterClick={(m) => onFieldMonsterClick(m, true)}
           onSupportClick={onFieldSupportClick}
-          onOpenPile={(zone) => setOpenPile({ side: 'me', zone })}
+          onOpenPile={(zone, focus) => setOpenPile({ side: 'me', zone, focus })}
           renderEffectButtons={renderEffectButtons}
           onHover={setHovered}
           slotPicker={boardSlotPicker}
@@ -721,6 +736,7 @@ const DuelPage = () => {
 
         <div className={styles.sidePanel}>
           {view.chain && <ChainBar className={styles.sideOnly} chain={view.chain} you={you} names={names} onPass={() => act({ type: 'PASS_CHAIN' })} />}
+          {view.window && <WindowBar className={styles.sideOnly} window={view.window} you={you} onPass={() => act({ type: 'PASS_CHAIN' })} />}
           <GuideBar className={styles.sideOnly} guide={guide} forecast={forecast} />
           <DetailsPanel hovered={hovered} isMyBattle={isMyBattle} />
           <LastBattlePanel battle={view.lastBattle} you={you} names={names} />
@@ -780,14 +796,15 @@ const DuelPage = () => {
   );
 };
 
-// Renders one player's side of the board as the rulebook's 7-column grid:
+// Renders one player's side of the board as a 7-column grid, from its owner's point of view:
 //   row 1: 5 Monster zones, Cementerio, Exilio
-//   row 2: Territorio, 4 Apoyo zones, (—), Mazo-C
-//   row 3: (—) x6, Mazo
-// `flipped` mirrors the row order (used for the opponent) so both players' monster rows sit
-// next to the shared battle line in the middle of the screen, backrow/deck furthest from it.
+//   row 2: Territorio, 4 Apoyo zones, Mazo, Mazo-C
+// `flipped` (the opponent) turns it 180°, as if they sat across the table: rows and columns
+// both reversed, so their monsters sit next to the battle line and their Mazo is on THEIR right
+// (our left), like ours is on ours.
 function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDecompile, onDecompile, onMonsterClick, onOpenPile, renderEffectButtons, onHover, onSupportClick, slotPicker, onPickSlot, flashes, isMyBattle, attackTargetMode }) {
   const row = (r) => (flipped ? 3 - r : r);
+  const col = (c) => (flipped ? 8 - c : c);
   // In your Battle Phase your monsters that can still attack glow and the spent ones fade; once an
   // attacker is picked, the rival's monsters are marked as targets.
   const attackStateClass = (m) => {
@@ -807,7 +824,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       {player.field.monsters.map((m, i) => (
         <div
           key={`m${i}`}
-          style={{ gridRow: row(1), gridColumn: i + 1 }}
+          style={{ gridRow: row(1), gridColumn: col(i + 1) }}
           className={`${styles.slot} ${styles.monsterSlot} ${m?.position === 'defense' ? styles.defense : ''} ${
             m && (m.instanceId === selectedAttacker || (fusion && isOwner && fusion.materials.has(m.instanceId))) ? styles.selected : ''
           } ${isPickable('monster', m, i) ? styles.pickable : ''} ${attackStateClass(m)}`}
@@ -832,10 +849,15 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
             <>
               {m.isToken ? <div className={styles.tokenFace}>{m.name}</div> : <img src={m.image} alt={m.name} title={m.name} />}
               <StatBar m={m} />
-              <SlotTags m={m} />
-              {m.statuses && m.statuses.length > 0 && (
+              <SlotTags m={m} onMaterials={() => onOpenPile('materials', m.instanceId)} />
+              {((m.statuses && m.statuses.length > 0) || m.negated) && (
                 <span className={styles.statusBadges}>
-                  {m.statuses.map((st) => (
+                  {m.negated && (
+                    <span className={`${styles.statusBadge} ${styles.statusNegado}`} title="Efectos negados">
+                      ⊘
+                    </span>
+                  )}
+                  {(m.statuses || []).map((st) => (
                     <span key={st} className={`${styles.statusBadge} ${styles['status' + st]}`} title={st}>
                       {STATUS_ICONS[st] || st}
                     </span>
@@ -864,19 +886,19 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       ))}
 
       <PileSlot
-        style={{ gridRow: row(1), gridColumn: 6 }}
+        style={{ gridRow: row(1), gridColumn: col(6) }}
         label='Cementerio'
         count={player.graveyard.length}
         onClick={() => onOpenPile('graveyard')}
       />
       <PileSlot
-        style={{ gridRow: row(1), gridColumn: 7 }}
+        style={{ gridRow: row(1), gridColumn: col(7) }}
         label='Exilio'
         count={player.banished.length}
         onClick={() => onOpenPile('banished')}
       />
 
-      <div style={{ gridRow: row(2), gridColumn: 1 }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio' onMouseEnter={() => player.field.territory && onHover({ cardId: player.field.territory.cardId, entry: player.field.territory, owner: isOwner ? 'me' : 'enemy', kind: 'support' })}>
+      <div style={{ gridRow: row(2), gridColumn: col(1) }} className={`${styles.slot} ${styles.territorySlot}`} title='Territorio' onMouseEnter={() => player.field.territory && onHover({ cardId: player.field.territory.cardId, entry: player.field.territory, owner: isOwner ? 'me' : 'enemy', kind: 'support' })}>
         {player.field.territory && (
           <>
             <img src={player.field.territory.image} alt={player.field.territory.name} title={player.field.territory.name} />
@@ -888,7 +910,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
       {player.field.support.map((s, i) => (
         <div
           key={`s${i}`}
-          style={{ gridRow: row(2), gridColumn: i + 2 }}
+          style={{ gridRow: row(2), gridColumn: col(i + 2) }}
           className={`${styles.slot} ${isPickable('support', s, i) ? styles.pickable : ''}`}
           title='Soporte'
           onClick={() => (isPickable('support', s, i) ? onPickSlot(i) : s && isOwner && onSupportClick && onSupportClick(s))}
@@ -907,16 +929,16 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
 
       {isOwner ? (
         <PileSlot
-          style={{ gridRow: row(2), gridColumn: 7 }}
+          style={{ gridRow: row(2), gridColumn: col(7) }}
           label='Mazo-C'
           count={player.extra ? player.extra.length : player.extraCount}
           onClick={() => onOpenPile('extra')}
         />
       ) : (
-        <PileSlot style={{ gridRow: row(2), gridColumn: 7 }} label='Mazo-C' count={player.extraCount} />
+        <PileSlot style={{ gridRow: row(2), gridColumn: col(7) }} label='Mazo-C' count={player.extraCount} />
       )}
 
-      <PileSlot style={{ gridRow: row(2), gridColumn: 6 }} label='Mazo' count={player.deckCount} />
+      <PileSlot style={{ gridRow: row(2), gridColumn: col(6) }} label='Mazo' count={player.deckCount} />
     </div>
   );
 }
@@ -951,21 +973,37 @@ function VpBadge({ vp, max, flash, onDirectAttack }) {
 }
 
 // Small markers on a monster's top-left corner: equips, materials and counters on it.
-function SlotTags({ m }) {
+function SlotTags({ m, onMaterials }) {
   const tags = [];
   if (m.equips && m.equips.length) tags.push({ text: `✚${m.equips.length}`, title: `Equipos: ${m.equips.join(', ')}` });
-  if (m.materialCount) tags.push({ text: `◆${m.materialCount}`, title: `Compilado con ${m.materialCount} material(es)` });
+  // The materials mark opens them (Materiales tab of the pile viewer).
+  if (m.materialCount) tags.push({ text: `◆${m.materialCount}`, title: `Compilado con ${m.materialCount} material(es) — pulsa para verlos`, onClick: onMaterials });
   Object.entries(m.counters || {}).forEach(([k, v]) => {
     if (v > 0) tags.push({ text: `⚙${v}`, title: `${k === 'gear' ? 'Engranajes' : k}: ${v}` });
   });
   if (!tags.length) return null;
   return (
     <span className={styles.slotTags}>
-      {tags.map((t) => (
-        <span key={t.text} className={styles.slotTag} title={t.title}>
-          {t.text}
-        </span>
-      ))}
+      {tags.map((t) =>
+        t.onClick ? (
+          <button
+            key={t.text}
+            type='button'
+            className={`${styles.slotTag} ${styles.slotTagButton}`}
+            title={t.title}
+            onClick={(e) => {
+              e.stopPropagation();
+              t.onClick();
+            }}
+          >
+            {t.text}
+          </button>
+        ) : (
+          <span key={t.text} className={styles.slotTag} title={t.title}>
+            {t.text}
+          </span>
+        )
+      )}
     </span>
   );
 }
@@ -1033,6 +1071,74 @@ function PileSlot({ style, label, count, onClick }) {
   );
 }
 
+// The public piles of both players in one window: Cementerio, Exilio and the materials under each
+// Compilación on the field, with a switch between your side and the rival's.
+function PileViewer({ pile, me, enemy, onChange, onClose, renderCardExtra }) {
+  const owner = pile.side === 'me' ? me : enemy;
+  const compiled = (owner.field.monsters || []).filter((m) => m && m.materials && m.materials.length);
+  const counts = {
+    graveyard: (owner.graveyard || []).length,
+    banished: (owner.banished || []).length,
+    materials: compiled.reduce((n, m) => n + m.materials.length, 0),
+  };
+  const tabs = ['graveyard', 'banished', 'materials'];
+  return (
+    <div className={styles.pileOverlay} onClick={onClose}>
+      <div className={styles.pileModal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.pileSides}>
+          {[['me', 'Tú'], ['enemy', 'Rival']].map(([side, label]) => (
+            <button key={side} className={`${styles.pileSide} ${pile.side === side ? styles.pileSideActive : ''}`} onClick={() => onChange({ ...pile, side })}>
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className={styles.pileTabs} role='tablist'>
+          {tabs.map((zone) => (
+            <button key={zone} role='tab' aria-selected={pile.zone === zone} className={`${styles.pileTab} ${pile.zone === zone ? styles.pileTabActive : ''}`} onClick={() => onChange({ ...pile, zone })}>
+              {PILE_LABELS[zone]} ({counts[zone]})
+            </button>
+          ))}
+        </div>
+        <div className={styles.pileModalList}>
+          {pile.zone === 'materials' ? (
+            compiled.length === 0 ? (
+              <p className={styles.pileEmpty}>No hay Compilaciones con materiales en el Campo.</p>
+            ) : (
+              compiled.map((m) => (
+                <div key={m.instanceId} className={`${styles.pileGroup} ${pile.focus === m.instanceId ? styles.pileGroupFocus : ''}`}>
+                  <h4 className={styles.pileGroupTitle}>◆ Bajo {m.name}</h4>
+                  <div className={styles.pileGroupCards}>
+                    {m.materials.map((card) => (
+                      <div key={card.instanceId} className={styles.pileModalCard}>
+                        {card.image && <img src={card.image} alt={card.name} />}
+                        <span className={styles.pileModalCardName}>{card.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )
+          ) : (
+            <>
+              {(owner[pile.zone] || []).length === 0 && <p className={styles.pileEmpty}>Vacío.</p>}
+              {(owner[pile.zone] || []).map((card) => (
+                <div key={card.instanceId} className={styles.pileModalCard}>
+                  {card.image && <img src={card.image} alt={card.name} />}
+                  <span className={styles.pileModalCardName}>{card.name}</span>
+                  {renderCardExtra && renderCardExtra(card)}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+        <button className={styles.surrenderButton} onClick={onClose}>
+          Cerrar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function PileModal({ title, cards, onClose, renderCardExtra }) {
   return (
     <div className={styles.pileOverlay} onClick={onClose || undefined}>
@@ -1042,13 +1148,18 @@ function PileModal({ title, cards, onClose, renderCardExtra }) {
         </h3>
         <div className={styles.pileModalList}>
           {cards.length === 0 && <p className={styles.pileEmpty}>Vacío.</p>}
-          {cards.map((card) => (
-            <div key={card.instanceId} className={styles.pileModalCard}>
-              {card.image && <img src={card.image} alt={card.name} />}
-              <span className={styles.pileModalCardName}>{card.name}</span>
-              {renderCardExtra && renderCardExtra(card)}
-            </div>
-          ))}
+          {/* A pick's options say where each card is: grouped by zone, with its position and a map. */}
+          {cards.some((card) => card.where) ? (
+            <ChoiceOptionList cards={cards} renderCardExtra={renderCardExtra} />
+          ) : (
+            cards.map((card) => (
+              <div key={card.instanceId} className={styles.pileModalCard}>
+                {card.image && <img src={card.image} alt={card.name} />}
+                <span className={styles.pileModalCardName}>{card.name}</span>
+                {renderCardExtra && renderCardExtra(card)}
+              </div>
+            ))
+          )}
         </div>
         {onClose && (
           <button className={styles.surrenderButton} onClick={onClose}>
@@ -1217,6 +1328,7 @@ function humanizeReason(reason) {
     'monster-not-found': 'No se encontró ese monstruo.',
     'not-battle-phase': 'Solo puedes atacar en la fase de batalla.',
     'must-target-a-monster': 'El rival tiene monstruos: debes elegir uno como objetivo.',
+    'must-attack-strongest': 'Un efecto del rival te obliga a atacar a su monstruo más fuerte.',
     'not-your-turn': 'No es tu turno.',
     'not-in-graveyard': 'Esa carta no está en el cementerio.',
     'not-in-exile': 'Esa carta no está en el exilio.',
@@ -1226,6 +1338,7 @@ function humanizeReason(reason) {
     'unknown-effect': 'Ese efecto no existe.',
     'cannot-be-summoned': 'Esa carta no puede ser invocada.',
     'special-summon-only': 'Esa carta solo puede invocarse de forma especial: cumple el requisito de su método de invocación.',
+    'summon-requirement': 'No cumples lo que esa carta necesita para ser invocada (mira su método de invocación).',
     'cannot-set-territory': 'Un Territorio no se puede colocar boca abajo.',
     'not-set-support': 'Ese apoyo no está colocado boca abajo.',
     'use-its-effect': 'Ese apoyo se activa con su efecto.',
@@ -1243,6 +1356,7 @@ function humanizeReason(reason) {
     'invalid-equip-target': 'Esa carta no se puede equipar a ese monstruo.',
     'not-your-card': 'Esa carta no es tuya.',
     'face-down': 'Una carta boca abajo no puede activar sus efectos.',
+    negated: 'Los efectos de ese monstruo están negados.',
     frozen: 'Esa carta está congelada y no puede activar efectos.',
     'attacker-not-found': 'Ese monstruo ya no está en el Campo.',
     'defender-not-found': 'El monstruo atacado ya no está en el Campo.',

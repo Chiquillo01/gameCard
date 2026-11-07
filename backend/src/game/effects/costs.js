@@ -75,12 +75,29 @@ function fillChoice(picked, pool, count) {
 }
 
 // Pays by moving `count` cards out of `pool` into `toZone`: the player's picks first.
-function payFromPool(ctx, pool, count, picks, toZone) {
+function payFromPool(ctx, pool, count, picks, toZone, { destroyed = false } = {}) {
   const picked = (picks || []).filter((id) => pool.includes(id));
   const chosen = fillChoice(picked, pool, count);
   if (chosen.length < count) return false;
+  // Cards that leave the field for the Cementerio this way still count as "enviada del Campo al
+  // Cementerio" (Aboleth), and a "destruye" cost as destroyed by an effect (Pez Leviatán).
+  const moved = chosen
+    .map((id) => ({ id, loc: findInstanceLocation(ctx.state, id) }))
+    .filter(({ id, loc }) => loc && !String(id).startsWith('token:'));
   chosen.forEach((id) => moveToZone(ctx.state, id, toZone));
   record(ctx, chosen);
+  // A monster of the field paid into the Cementerio is a sacrifice (unless the cost destroys it).
+  if (toZone === 'graveyard' && !destroyed) moved.filter(({ loc }) => loc.zone === 'field:monster').forEach(({ id }) => require('../zones').markSacrificed(ctx.state, cardIdFromInstance(id)));
+  if (toZone === 'graveyard') {
+    const { fireTrigger } = require('../effectEngine');
+    moved.forEach(({ id, loc }) => {
+      const from = loc.zone.startsWith('field') ? 'field' : loc.zone;
+      const by = ctx.sourceInstanceId && !String(ctx.sourceInstanceId).startsWith('token:') ? cardIdFromInstance(ctx.sourceInstanceId) : null;
+      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex, from, reason: 'cost', bySourceCardId: by };
+      fireTrigger(ctx.state, 'sentToGraveyard', event);
+      if (destroyed && loc.zone === 'field:monster') fireTrigger(ctx.state, 'onMonsterDestroyed', { ...event, reason: 'effect' });
+    });
+  }
   return true;
 }
 
@@ -168,9 +185,9 @@ function millSpecific(ctx, args, picks) {
   return payFromPool(ctx, deckPool(ctx, args), args.count || 1, picks, args.destination === 'banished' ? 'banished' : 'graveyard');
 }
 
-// "Destruye un monstruo en tu Campo:" — never the card paying.
+// "Destruye un monstruo [filter] en tu Campo:" — never the card paying (Aboleth: a monstruo Agua).
 function destroyOwnMonster(ctx, args, picks) {
-  return payFromPool(ctx, ownMonsterPool(ctx, {}), 1, picks, 'graveyard');
+  return payFromPool(ctx, ownMonsterPool(ctx, args), 1, picks, 'graveyard', { destroyed: true });
 }
 
 function sacrificeControlled(ctx, args, picks) {
@@ -178,7 +195,7 @@ function sacrificeControlled(ctx, args, picks) {
 }
 
 function destroyMonster(ctx, args, picks) {
-  return sacrificeControlled(ctx, { amount: 1 }, picks);
+  return payFromPool(ctx, ownMonsterPool(ctx, {}), 1, picks, 'graveyard', { destroyed: true });
 }
 
 function spendCounter(ctx, args) {
@@ -249,7 +266,7 @@ const CHOICE_COST_POOLS = {
   tributeMonster: (ctx, args) => ownMonsterPool(ctx, args),
   sacrificeControlled: (ctx) => ownMonsterPool(ctx, {}),
   destroyMonster: (ctx) => ownMonsterPool(ctx, {}),
-  destroyOwnMonster: (ctx) => ownMonsterPool(ctx, {}),
+  destroyOwnMonster: (ctx, args) => ownMonsterPool(ctx, args),
   exileFiltered: (ctx, args) => exilePool(ctx, args),
   millSpecific: (ctx, args) => deckPool(ctx, args),
 };
@@ -287,6 +304,11 @@ const COST_PROMPTS = {
   destroyMonster: 'Elige el monstruo que destruyes',
   destroyOwnMonster: 'Elige el monstruo que destruyes',
   exileFiltered: 'Elige las cartas que exilias',
+  discart: 'Elige la carta que descartas',
+  discardCard: 'Elige la carta que descartas',
+  discardFromHand: 'Elige la carta que descartas',
+  discardCards: 'Elige las cartas que descartas',
+  discardSelfAndCard: 'Elige la carta que descartas',
 };
 
 // Used right before payCost by anything that pays a cost off a player pick: null once there's
