@@ -222,7 +222,12 @@ function materialLocationSatisfies(loc, controllerIndex, req, defaultZones = ['f
 // Apoyo such as Nido de Avispas.
 function materialMatches(state, id, req) {
   const card = materialCard(state, id);
-  return !!card && (card.isToken || ['monster', 'fusion'].includes(card.category)) && matchesCardFilter(card, req);
+  if (!card || !(card.isToken || ['monster', 'fusion'].includes(card.category))) return false;
+  // On the field it counts as what it is right now: a monster an effect turned into another
+  // breed or family (Pegaso: "convierte al objetivo en Celestial"), or that took another name.
+  const loc = findInstanceLocation(state, id);
+  if (loc && loc.zone === 'field:monster') return require('./filters').matchesFilter(state.players[loc.ownerIndex].field.monsters[loc.slot], req);
+  return matchesCardFilter(card, req);
 }
 
 // What a material is for a recipe's filter: its card — or, for a token (Catapulta's "2 Tokens

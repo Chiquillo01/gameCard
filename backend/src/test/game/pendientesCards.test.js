@@ -122,6 +122,23 @@ describe('Deva', () => {
   });
 });
 
+describe('Materials count as what they are on the field', () => {
+  it('Pegaso turned into a Celestial is a Celestial material for Seraphine', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const pegaso = await onField(state, 0, 'Pegaso');
+    const mats = [pegaso, await onField(state, 0, 'Sátiro Cantante'), await onField(state, 0, 'Sátiro Vengador')];
+    const seraphine = await instance(0, 'Seraphine');
+    state.players[0].extra.push(seraphine);
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: seraphine, materialInstanceIds: mats }).ok).toBe(false);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'PEGASO', sourceInstanceId: pegaso, targets: [pegaso] }).ok).toBe(true);
+    passAll(state);
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: seraphine, materialInstanceIds: mats }).ok).toBe(true);
+    resolveAll(state);
+    expect(monster(state, seraphine)).toBeDefined();
+  });
+});
+
 describe('Balance changes', () => {
   it('Otyugh 5/3, Goblin Ardiente 3/2 with no material effect', async () => {
     const state = await makeDuel();
