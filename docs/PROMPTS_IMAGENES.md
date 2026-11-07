@@ -668,3 +668,11 @@ Se usa en las cartas boca abajo, en el Mazo y en la Mano del rival. Va en **vert
 ```text
 Detailed pixel art design of the BACK of a fantasy trading card, same style as the rest of the set: fine retro pixels, rich textures, warm dramatic lighting. Portrait 5:7 (480x700), the design fills the whole image edge to edge. No text, no letters, no numbers, no logo words. Perfectly symmetrical both vertically and horizontally, so it looks the same when the card is turned upside down. Design: a thick ornate border of polished gold filigree with small corner gems, framing a deep midnight-blue and dark purple leather background with a subtle diamond pattern; in the exact centre, a large glowing emblem: a faceted magical crystal shining with cyan light, surrounded by a circular golden ring engraved with arcane symbols, a crossed sword and wand behind it, and tiny pixel sparkles around it; thin golden lines radiate from the emblem towards the four corners. Elegant, mysterious, readable even when shown small.
 ```
+
+## Dorso de las cartas (versión taberna)
+
+A juego con la taberna del menú: cuero marrón, metal dorado y el escudo rojo con espadas cruzadas que cuelga en la pared. Mismo tamaño: **vertical 5:7 (480x700)**.
+
+```text
+Detailed pixel art design of the BACK of a fantasy trading card, 16-bit style, fine retro pixels, rich textures, warm candle-like lighting. Portrait 5:7 (480x700), the design fills the whole image edge to edge. No text, no letters, no numbers. Perfectly symmetrical both vertically and horizontally, so it looks the same when the card is turned upside down. Design: dark brown tooled leather background with a subtle stitched diamond pattern, framed by a thick border of worn brass and gold with riveted corners and a small red gem in each corner; in the exact centre, a large emblem: a red heraldic shield with a golden rim, two crossed swords behind it and a glowing golden pixel-gem in the middle of the shield, surrounded by a thin golden ring of tiny stars; faint golden filigree lines curl from the emblem towards the corners. Cozy medieval tavern feel, readable even when shown small.
+```
