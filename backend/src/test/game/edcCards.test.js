@@ -92,6 +92,7 @@ describe('Herida Sangrante', () => {
     const atk = require('../../game/effectEngine').getEffectiveStats(monster(state, kraken)).atk;
     const card = await toHand(state, 0, 'Herida Sangrante');
     state.players[0].pixelcoins = 10;
+    state.players[0].vp -= 20; // "recupera": it heals only what was lost
     const vp = state.players[0].vp;
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: card, targets: [kraken] }).ok).toBe(true);
     passAll(state);
@@ -188,6 +189,7 @@ describe('Noche Eterna', () => {
     const slime = await onField(state, 1, 'Slime');
     const reyDemonio = await onField(state, 0, 'Rey Demonio');
     const atk = require('../../game/effectEngine').getEffectiveStats(monster(state, kraken)).atk;
+    state.players[0].vp -= 20; // "recupera": it heals only what was lost
     const vp = state.players[0].vp;
     destroyBy(state, 0, 1, slime, reyDemonio);
     expect(state.players[0].vp).toBe(vp);

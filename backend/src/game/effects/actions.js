@@ -50,8 +50,17 @@ function gainVP(ctx, args) {
     : args.amountFrom === 'eventAtk' ? (ctx.event && ctx.event.atk) || 0
       : args.amount || 0;
   if (args.perControlled) amount *= player(ctx.state, ctx.controllerIndex).field.monsters.filter((m) => m && !m.faceDown && matchesFilter(m, args.perControlled)).length;
-  pl.vp += amount;
-  log(ctx.state, `${pl.userId} gana ${amount} VP (VP: ${pl.vp}).`);
+  // "Recupera" (Sátiro Vengador, Herida Sangrante, Drácula, Noche Eterna) heals up to the player's
+  // maximum VP — the VP the duel starts with; "gana" has no ceiling.
+  if (args.recover) {
+    const max = ctx.state.startingVp ?? require('../rules').rules().startingVp;
+    amount = Math.max(0, Math.min(amount, max - pl.vp));
+    pl.vp += amount;
+    log(ctx.state, `${pl.userId} recupera ${amount} VP (VP: ${pl.vp}).`);
+  } else {
+    pl.vp += amount;
+    log(ctx.state, `${pl.userId} gana ${amount} VP (VP: ${pl.vp}).`);
+  }
   // Anillo de Boda: "si tu oponente gana VP, tú también lo harás".
   if (amount > 0) require('../draw').runMirrors(ctx.state, 'gainVP', idx, amount);
   checkWin(ctx.state);
@@ -117,7 +126,7 @@ function gainVPFromGraveyard(ctx, args, targets) {
   const pl = player(ctx.state, ctx.controllerIndex);
   const id = (targets || []).find((t) => pl.graveyard.includes(t));
   if (!id) return;
-  gainVP(ctx, { amount: getCard(cardIdFromInstance(id)).atk || 0 });
+  gainVP(ctx, { amount: getCard(cardIdFromInstance(id)).atk || 0, recover: !!args.recover });
 }
 
 function banishSelf(ctx) {
@@ -606,12 +615,17 @@ function disableEffects(ctx, args, targets) {
   const { canAffect } = require('../targets');
   const filter = args.filter || {};
   const hasFilter = Object.values(filter).some((v) => v !== undefined && v !== null && v !== '');
+  // `scope: 'field'` (Espectro): every monster on the field — it picks none, so a monster that
+  // "can't be selected" (Koi Mágico) is negated too.
+  const all = args.scope === 'field' && !(targets && targets.length);
   const list = targets && targets.length
     ? allFieldMonsters(ctx.state).filter((m) => targets.includes(m.instanceId))
-    : hasFilter
-      ? allFieldMonsters(ctx.state).filter((m) => monsterMatches(m, filter))
-      : [];
-  list.filter((m) => canAffect(ctx, m)).forEach((m) => {
+    : all
+      ? allFieldMonsters(ctx.state).filter((m) => !hasFilter || monsterMatches(m, filter))
+      : hasFilter
+        ? allFieldMonsters(ctx.state).filter((m) => monsterMatches(m, filter))
+        : [];
+  list.filter((m) => all || canAffect(ctx, m)).forEach((m) => {
     if (isContinuous(ctx)) { m.negatedByContinuous = true; m.effectsLost = true; }
     else negateCard(ctx.state, m.instanceId, { sourceInstanceId: ctx.sourceInstanceId, duration: args.duration });
   });

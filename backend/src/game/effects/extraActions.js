@@ -338,7 +338,7 @@ function destroyAndGainVP(ctx, args, targets) {
   const m = getFieldMonster(ctx.state, id);
   const atk = m ? Math.max(0, m.baseAtk + ((m.tempBuff || {}).atk || 0)) : 0;
   require('./fieldActions').destroy(ctx, { target: 'selected' }, [id]);
-  if (ctx.destroyedCount && atk) lazy().registry.gainVP(ctx, { amount: atk });
+  if (ctx.destroyedCount && atk) lazy().registry.gainVP(ctx, { amount: atk, recover: !!args.recover });
 }
 
 // Paseo Temporal: "Añade otro turno después de este pero no puedes atacar este turno".

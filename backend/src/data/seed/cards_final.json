@@ -3602,7 +3602,7 @@
     "category": "support",
     "subtype": "continuous",
     "expansion": "IdL",
-    "effect": "Los monstruos en el Campo no pueden activar sus efectos.",
+    "effect": "Los efectos de monstruos en el Campo no pueden ser activados y sus efectos son negados.",
     "invocationText": "Activación - 30 VP",
     "state": 3,
     "number": 185,

@@ -1666,14 +1666,9 @@
     "conditions": [],
     "actions": [
       {
-        "fn": "negateActivationOfEffects",
+        "fn": "disableEffects",
         "args": {
-          "owner": {
-            "cantLose": false
-          },
-          "opponent": {
-            "cantWin": false
-          }
+          "scope": "field"
         }
       }
     ],
@@ -5429,7 +5424,8 @@
         "fn": "destroyAndGainVP",
         "args": {
           "target": "selected",
-          "vpEqualToAtk": true
+          "vpEqualToAtk": true,
+          "recover": true
         }
       }
     ]
@@ -8438,7 +8434,8 @@
         "args": {
           "target": "selected",
           "zone": "monster",
-          "prompt": "Elige el monstruo que se destruye"
+          "prompt": "Elige el monstruo que se destruye",
+          "recover": true
         }
       }
     ],
@@ -8669,7 +8666,8 @@
       {
         "fn": "gainVP",
         "args": {
-          "amountFrom": "eventAtk"
+          "amountFrom": "eventAtk",
+          "recover": true
         }
       }
     ],
@@ -8901,7 +8899,8 @@
           "filter": {
             "category": "monster",
             "breed": "Hada"
-          }
+          },
+          "recover": true
         }
       }
     ],

@@ -1356,6 +1356,7 @@ function humanizeReason(reason) {
     'invalid-equip-target': 'Esa carta no se puede equipar a ese monstruo.',
     'not-your-card': 'Esa carta no es tuya.',
     'face-down': 'Una carta boca abajo no puede activar sus efectos.',
+    negated: 'Los efectos de ese monstruo están negados.',
     frozen: 'Esa carta está congelada y no puede activar efectos.',
     'attacker-not-found': 'Ese monstruo ya no está en el Campo.',
     'defender-not-found': 'El monstruo atacado ya no está en el Campo.',

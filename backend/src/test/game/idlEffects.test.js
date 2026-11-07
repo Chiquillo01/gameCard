@@ -2,7 +2,7 @@
 const { connectDB, disconnectDB } = require('../../mongo/connection');
 const { applyAction, viewFor } = require('../../game/engine');
 const { getEffectiveStats } = require('../../game/effectEngine');
-const { seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
+const { seedCatalog, makeDuel, instance, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
 const { placePending } = require('./chainHelpers');
 
 beforeAll(async () => {
@@ -117,11 +117,43 @@ describe('Sátiro Vengador', () => {
     toPhase(state, 'main1', 0);
     const satiro = await onField(state, 0, 'Sátiro Vengador');
     const planetar = await toGraveyard(state, 0, 'Planetar');
-    const vp = state.players[0].vp;
+    const max = state.players[0].vp; // the VP the duel starts with
+    state.players[0].vp = max - 10;
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'SATIRO_VENGADOR_VP', sourceInstanceId: satiro, targets: [planetar] }).ok).toBe(true);
     passAll(state);
-    expect(state.players[0].vp).toBe(vp + 5); // Planetar: Atk 5
+    expect(state.players[0].vp).toBe(max - 5); // Planetar: Atk 5
     expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'SATIRO_VENGADOR_VP', sourceInstanceId: satiro, targets: [planetar] }).ok).toBe(false);
+  });
+
+  it('"recupera": never above the player\'s maximum VP', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const satiro = await onField(state, 0, 'Sátiro Vengador');
+    const planetar = await toGraveyard(state, 0, 'Planetar');
+    const max = state.players[0].vp;
+    state.players[0].vp = max - 2;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'SATIRO_VENGADOR_VP', sourceInstanceId: satiro, targets: [planetar] }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[0].vp).toBe(max);
+  });
+});
+
+describe('Espectro', () => {
+  it('monsters on the field can\'t activate their effects and lose them (Tarasca, Anguila\'s buff)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const tarasca = await instance(0, 'Tarasca, el Titán del Reino');
+    require('../../game/zones').placeMonster(state, tarasca, 0, { position: 'attack' });
+    const slime = await onField(state, 1, 'Slime');
+    const anguila = await onField(state, 1, 'Anguila'); // +1 Atk per Pez it controls (itself)
+    require('../../game/effectEngine').recomputeContinuous(state);
+    expect(getEffectiveStats(monster(state, anguila)).atk).toBe(3);
+    require('../../game/zones').placeSupport(state, await instance(0, 'Espectro'), 0, { faceDown: false });
+    require('../../game/effectEngine').recomputeContinuous(state);
+    expect(getEffectiveStats(monster(state, anguila)).atk).toBe(2);
+    expect(viewFor(state, 0).players[0].field.monsters.find((m) => m && m.instanceId === tarasca).availableEffects).toEqual([]);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'TARASCA_DESTROY_WEAKER', sourceInstanceId: tarasca })).toMatchObject({ ok: false, reason: 'negated' });
+    expect(monster(state, slime)).toBeDefined();
   });
 });
 

@@ -107,6 +107,7 @@ function activateEffect(state, controllerIndex, effectId, sourceInstanceId, targ
     return require('./support').activateSetSupport(state, controllerIndex, sourceInstanceId, { targets });
   }
   if (entry && entry.faceDown) return { ok: false, reason: 'face-down' };
+  if (entry && loc.zone === 'field:monster' && isNegated(state, entry)) return { ok: false, reason: 'negated' };
   if (entry && entry.isMonsterEquip) return { ok: false, reason: 'unknown-effect' };
   // Its "en activación" effect already went on the Pila with the card itself: a face-up Apoyo on
   // the field (Tifón Místico waiting to resolve, a Continuo) can't run it again for free.

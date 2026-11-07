@@ -37,6 +37,8 @@ function computeAvailableEffects(state, ownerIndex, instanceId, cardId) {
   // which pays its cost; only Veloz/Contraataque cards act through their own effects while set.
   if (loc.zone === 'field:support' && entry && entry.faceDown && card.subtype !== 'instant' && card.subtype !== 'counter') return [];
   if (loc.zone === 'field:monster' && entry && entry.faceDown) return [];
+  // Negated (Espectro, Sello Temporal...): no effect of it can be activated.
+  if (loc.zone === 'field:monster' && entry && isNegated(state, entry)) return [];
   const setFast = loc.zone === 'field:support' && entry && entry.faceDown;
   // Set face-down, only what turning it over runs (its "en activación" effects) — never an effect
   // meant for the Cementerio/Exilio (Anillo de Boda's second one).
