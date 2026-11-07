@@ -659,6 +659,12 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: an otyugh, a huge bloated aberration beast with a round, leathery, mottled grey-green body covered in warts and filth, standing on three short, thick elephant-like legs; a gaping mouth split across the whole front of its body, full of jagged yellow teeth and dripping slime; two long muscular tentacles ending in flat leaf-shaped pads covered in sharp spikes, lashing out; a third, thinner tentacle rising from its top with a cluster of three glowing yellow eyes. Setting: a dark, flooded dungeon sewer piled with rotting garbage, bones and broken barrels, green toxic mist rising from the murky water, flies buzzing, a faint torch glow from a distant tunnel.
 ```
 
+## Lamprea del Bosque Oscuro
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a giant lamprea, a long eel-like jawless fish with slimy dark olive-green skin mottled with moss-coloured spots and a row of small gill holes along its neck; it bursts out of the black water in an arc, its round suction-cup mouth wide open towards the viewer, lined with rings of hooked yellowish teeth spiralling inward; small pale glowing eyes, a ragged fin running along its back, water and swamp weeds spraying around it. Setting: the swamp of the Dark Forest at night, twisted black trees with roots sunk in murky green water, hanging moss, floating lily pads, drifting mist and faint green will-o'-the-wisp lights reflecting on the surface.
+```
+
 # Diseño del juego
 
 ## Dorso de las cartas
