@@ -287,6 +287,12 @@
   border-color: #3d8b5f;
 }
 
+/* The Apoyo zones, in blue, so they don't read as monster zones. */
+.supportSlot {
+  border-color: #4f6fa8;
+  background: linear-gradient(155deg, rgba(110, 150, 220, 0.18) 0%, rgba(79, 111, 168, 0.1) 100%);
+}
+
 .monsterSlot {
   cursor: pointer;
 }

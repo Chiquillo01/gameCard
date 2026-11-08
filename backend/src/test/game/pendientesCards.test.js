@@ -240,3 +240,41 @@ describe('Balance changes', () => {
     expect(fireTrigger).toBeDefined();
   });
 });
+
+describe('Correcciones: Cucaracha, Goblin Astuto, Catedral', () => {
+  it('Cucaracha de Combate is not destroyed in battle', async () => {
+    const state = await makeDuel();
+    const cucaracha = await onField(state, 1, 'Cucaracha de Combate'); // 1/1
+    const attacker = await onField(state, 0, 'Kraken');
+    toPhase(state, 'battle', 0);
+    expect(applyAction(state, 0, { type: 'DECLARE_ATTACK', attackerInstanceId: attacker, targetInstanceId: cucaracha }).ok).toBe(true);
+    passAll(state);
+    resolveAll(state);
+    expect(monster(state, cucaracha)).toBeDefined();
+  });
+
+  it('Goblin Astuto in the Cementerio offers no special summon (its method is from the Mano)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    await onField(state, 0, 'Goblin Solitario');
+    await onField(state, 0, 'Goblin Guardián');
+    const inGY = await toGraveyard(state, 0, 'Goblin Astuto');
+    const inHand = await toHand(state, 0, 'Goblin Astuto');
+    const view = viewFor(state, 0).players[0];
+    expect(view.graveyard.find((c) => c.instanceId === inGY).specialSummonAvailable).toBe(false);
+    expect(view.hand.find((c) => c.instanceId === inHand).specialSummonAvailable).toBe(true);
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: inGY }).ok).toBe(false);
+  });
+
+  it('Catedral de los Goblins goes back to the Mano from the Cementerio at the end of its player turn, controlling Grover', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const catedral = await toGraveyard(state, 0, 'Catedral de los Goblins');
+    toPhase(state, 'end', 0);
+    expect(state.players[0].graveyard).toContain(catedral); // no Grover
+    toPhase(state, 'main1', 0);
+    await onField(state, 0, 'Grover, el Goblin');
+    toPhase(state, 'end', 0);
+    expect(state.players[0].hand).toContain(catedral);
+  });
+});

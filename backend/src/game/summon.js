@@ -49,6 +49,13 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
 // condition/cost (own effectCodes carry a `summon_rule` effect) — doesn't touch normalSummonUsed,
 // since a special summon is an ADDITIONAL way to bring it out, not a replacement for the turn's
 // Normal Summon.
+// Where a special summon rule can take its card from: the Mano, unless the rule names other zones
+// with its own canBeSummonedFrom condition (Aboleth, Perro Esqueleto).
+function specialSummonZones(rule) {
+  const zoneRule = (rule.conditions || []).find((c) => c.fn === 'canBeSummonedFrom');
+  return zoneRule ? zoneRule.args.zones : ['hand'];
+}
+
 function specialSummon(state, controllerIndex, instanceId, targets = [], slot = null) {
   const pl = player(state, controllerIndex);
   const loc = findInstanceLocation(state, instanceId);
@@ -67,11 +74,7 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
     || (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && !e.trigger && (e.actions || []).some((a) => a.fn === 'specialSummon'));
   if (!rule) return { ok: false, reason: 'no-special-summon-method' };
 
-  // Most special summons are from hand; a few (Aboleth, Perro Esqueleto) name other zones via
-  // their own canBeSummonedFrom condition.
-  const zoneRule = (rule.conditions || []).find((c) => c.fn === 'canBeSummonedFrom');
-  const allowedZones = zoneRule ? zoneRule.args.zones : ['hand'];
-  if (!allowedZones.includes(loc.zone)) return { ok: false, reason: 'not-in-hand' };
+  if (!specialSummonZones(rule).includes(loc.zone)) return { ok: false, reason: 'not-in-hand' };
 
   // `slot` rides along on ctx for the rule's own `specialSummon` action (actions.js) to place it
   // where the player picked, rather than the engine's own first-empty fallback.
@@ -392,4 +395,4 @@ function grantedSummonRule(state, controllerIndex, instanceId, card) {
   return grants ? { _id: 'GRANTED_SPECIAL_SUMMON', type: 'summon_rule', oncePerTurn: false, conditions: [], actions: [{ fn: 'specialSummon', args: { card: 'self', zone: 'field' } }] } : null;
 }
 
-module.exports = { grantedSummonRule, summonRequirementsMet, assignMaterials, materialMatches, materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };
+module.exports = { specialSummonZones, grantedSummonRule, summonRequirementsMet, assignMaterials, materialMatches, materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };

@@ -8078,6 +8078,9 @@
     "oncePerTurn": false,
     "conditions": [
       {
+        "fn": "ownTurn"
+      },
+      {
         "fn": "controlsCard",
         "args": {
           "name": "Grover, el Goblin"
@@ -8086,22 +8089,21 @@
     ],
     "source": "authored",
     "_id": "CATEDRAL_BACK_FROM_GY",
-    "type": "activated",
+    "type": "trigger",
     "trigger": {
-      "fn": "onActivation",
+      "fn": "phase",
       "args": {
-        "phase": "main",
+        "timing": "endPhase",
         "from": "graveyard"
       }
     },
     "actions": [
       {
-        "fn": "addCardToHandFromGraveyard",
+        "fn": "bounceToHand",
         "args": {
-          "count": 1,
-          "filter": {
-            "name": "Catedral de los Goblins"
-          }
+          "targets": [
+            "self"
+          ]
         }
       }
     ]
@@ -10241,6 +10243,25 @@
           "upTo": true,
           "copiesOfFirst": true,
           "prompt": "Elige el Pez que invocas (y, si quieres, otra copia suya)"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CUCARACHA_COMBATE_BATTLE_IMMUNE",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
         }
       }
     ],

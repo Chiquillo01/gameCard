@@ -1068,7 +1068,7 @@
     "category": "support",
     "subtype": "continuous",
     "expansion": "CdG",
-    "effect": "Cuando se Invoca un monstruo Compilado, selecciona una carta en el Campo:\n• Destrúyela.\nSi esta carta está en el Cementerio y controlas a \"Grover, el Goblin\":\n• Añade esta carta a tu Mano.\nLos monstruos que mencionan a \"Grover, el Goblin\" en su texto ganan +2 Atk y Vida.",
+    "effect": "Cuando se Invoca un monstruo Compilado, selecciona una carta en el Campo:\n• Destrúyela.\nAl final de tu turno, si esta carta está en el Cementerio y controlas a \"Grover, el Goblin\":\n• Añade esta carta a tu Mano.\nLos monstruos que mencionan a \"Grover, el Goblin\" en su texto ganan +2 Atk y Vida.",
     "invocationText": "Activación - 4 Píxel",
     "state": 2,
     "number": 45,
@@ -1661,7 +1661,9 @@
     "level": 2,
     "state": 4,
     "number": 67,
-    "effectCodes": []
+    "effectCodes": [
+      "CUCARACHA_COMBATE_BATTLE_IMMUNE"
+    ]
   },
   {
     "name": "Insecto Buscador",

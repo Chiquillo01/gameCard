@@ -913,7 +913,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
         <div
           key={`s${i}`}
           style={{ gridRow: row(2), gridColumn: col(i + 2) }}
-          className={`${styles.slot} ${isPickable('support', s, i) ? styles.pickable : ''}`}
+          className={`${styles.slot} ${styles.supportSlot} ${isPickable('support', s, i) ? styles.pickable : ''}`}
           title='Soporte'
           onClick={() => (isPickable('support', s, i) ? onPickSlot(i) : s && isOwner && onSupportClick && onSupportClick(s))}
           onMouseEnter={() => s && onHover({ cardId: s.cardId, entry: s, owner: isOwner ? 'me' : 'enemy', kind: 'support' })}

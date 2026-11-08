@@ -337,6 +337,9 @@ function specialSummonRuleFor(card) {
 function specialSummonAvailable(state, ownerIndex, instanceId, card) {
   const rule = require('./summon').grantedSummonRule(state, ownerIndex, instanceId, card) || specialSummonRuleFor(card);
   if (!rule) return false;
+  // Only from a zone its method allows: a Goblin Astuto in the Cementerio offers nothing.
+  const loc = require('./zones').findInstanceLocation(state, instanceId);
+  if (!loc || !require('./summon').specialSummonZones(rule).includes(loc.zone)) return false;
   const ctx = { state, controllerIndex: ownerIndex, sourceInstanceId: instanceId, effect: rule };
   return checkConditions(ctx, rule.conditions);
 }

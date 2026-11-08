@@ -313,6 +313,8 @@ function answerLoss(state, event, ownerIndex, byPlayer) {
   });
 }
 
+const fromGraveyard = (effect) => !!(effect && (effect.type === 'triggered' || effect.type === 'trigger') && effect.trigger && effect.trigger.args && effect.trigger.args.from === 'graveyard');
+
 // Fires every triggered/trigger effect on the board that matches, in field order (turn player's
 // first). Sources are the face-up monsters and face-up Apoyo/Territorio cards on the field — plus the
 // card an event is about when it has just left the field ("cuando es enviada al Cementerio",
@@ -332,6 +334,13 @@ function fireTrigger(state, eventName, eventArgs = {}) {
     if ((eventName === 'sentToGraveyard' || eventName === 'onMonsterDestroyed') && eventArgs.ownerIndex === controllerIndex && eventArgs.cardId && !sources.some((s) => s.instanceId === eventArgs.instanceId)) {
       sources.push({ instanceId: eventArgs.instanceId, cardId: eventArgs.cardId, offField: true });
     }
+    // Cards whose trigger works from the Cementerio (`trigger.args.from: 'graveyard'` — Catedral de
+    // los Goblins: "Al final de tu turno, si esta carta está en el Cementerio...").
+    pl.graveyard.forEach((id) => {
+      if (sources.some((s) => s.instanceId === id)) return;
+      const cardId = cardIdFromInstance(id);
+      if ((getCard(cardId).effectCodes || []).some((code) => fromGraveyard(getEffect(code)))) sources.push({ instanceId: id, cardId, offField: true, inGraveyard: true });
+    });
     sources.forEach((m) => {
       if (m.faceDown || m.isToken || isNegated(state, m) || hasStatus(state, m.instanceId, FREEZE)) return;
       if (SELF_EVENTS.includes(eventName) && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
@@ -345,6 +354,7 @@ function fireTrigger(state, eventName, eventArgs = {}) {
         const effect = getEffect(effectId);
         if (!effect || (effect.type !== 'triggered' && effect.type !== 'trigger')) return;
         if (!effect.trigger || effect.trigger.fn !== eventName) return;
+        if (fromGraveyard(effect) !== !!m.inGraveyard) return;
         if (!triggerAccepts(state, { ...m, controllerIndex }, effect, eventName, eventArgs)) return;
         const ctx = { ...makeCtx(state, controllerIndex, effect, m.instanceId), event: eventArgs };
         if (!checkConditions(ctx, effect.conditions)) return;
