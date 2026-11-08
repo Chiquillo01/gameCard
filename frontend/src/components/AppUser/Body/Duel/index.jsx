@@ -689,7 +689,9 @@ const DuelPage = () => {
           {/* A direct attack hits the rival's VP, so their VP is where the player clicks for it —
               lit up only while the selected attacker can legally attack directly. */}
           <VpBadge vp={enemy.vp} max={view.startingVp} flash={flashes[`vp${opp}`]} onDirectAttack={canAttackDirectly ? onDirectAttack : null} />
-          <span className={styles.handCountBadge} title='Cartas en la Mano del rival'>✋ {enemy.handCount}</span>
+          <span className={styles.handCountBadge} title='Cartas en la Mano del rival'>
+            <span className={styles.handBackIcon} aria-hidden='true' /> {enemy.handCount}
+          </span>
           <span className={styles.handCountBadge} title='Píxeles del rival: sirven para pagar las activaciones de los apoyos'>
             <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {enemy.pixelcoins}
           </span>

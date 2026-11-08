@@ -228,6 +228,14 @@
   color: #4a2a10;
 }
 
+/* The rival's hand: a tiny card back next to how many they hold. */
+.handBackIcon {
+  width: 0.875rem;
+  height: 1.225rem;
+  background: url('https://res.cloudinary.com/dmngr7jkp/image/upload/v1794137170/reverse.jpg') center / cover no-repeat, #4a2a10;
+  border: 1px solid #241305;
+}
+
 /* The rival's VP while the selected attacker can attack them directly: click to attack. */
 .vpBadge.directTarget {
   font-family: 'VT323', monospace;
@@ -311,10 +319,17 @@
 .faceDown {
   width: 88%;
   height: 88%;
+  /* The card back (480x700, portrait like the zones); the stripes show until it loads. */
   background:
-    repeating-linear-gradient(45deg, #6b3d16 0 6px, #4a2a10 6px 12px),
-    linear-gradient(155deg, #6b3d16, #241305);
+    url('https://res.cloudinary.com/dmngr7jkp/image/upload/v1794137170/reverse.jpg') center / cover no-repeat,
+    repeating-linear-gradient(45deg, #6b3d16 0 6px, #4a2a10 6px 12px);
   border: 2px solid #241305;
+  box-sizing: border-box;
+}
+
+/* A set monster lies sideways, like a face-up one in Defensa. */
+.slot.defense .faceDown {
+  transform: rotate(-90deg) scale(0.7);
 }
 
 .statBadge {
@@ -1359,9 +1374,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: repeating-linear-gradient(45deg, #6b3d16 0 6px, #5a3212 6px 12px);
+  background:
+    url('https://res.cloudinary.com/dmngr7jkp/image/upload/v1794137170/reverse.jpg') center / cover no-repeat,
+    repeating-linear-gradient(45deg, #6b3d16 0 6px, #5a3212 6px 12px);
   border: 2px solid #4a2a10;
-  color: #f1ddab;
+  color: transparent;
   font-family: 'Press Start 2P', monospace;
   font-size: 1rem;
 }
