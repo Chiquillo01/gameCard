@@ -122,6 +122,37 @@ describe('Deva', () => {
   });
 });
 
+describe('Espectro', () => {
+  it('a monster summoned while Espectro is on the field gets no "Al ser invocado" effect (Planetar)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    await onField(state, 1, 'Espectro');
+    recomputeContinuous(state);
+    const planetar = await toHand(state, 0, 'Planetar');
+    const result = applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: planetar, position: 'attack' });
+    expect(result.ok).toBe(true);
+    placePending(state);
+    expect(monster(state, planetar)).toBeDefined();
+    expect((state.pendingTriggerChoices || []).some((p) => p.sourceInstanceId === planetar)).toBe(false);
+    expect(viewFor(state, 0).players[0].field.monsters.find((m) => m && m.instanceId === planetar).negated).toBe(true);
+  });
+
+  it('an effect waiting for its picks is dropped if Espectro negates the monster meanwhile', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const planetar = await toHand(state, 0, 'Planetar');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: planetar, position: 'attack' }).ok).toBe(true);
+    placePending(state);
+    expect((state.pendingTriggerChoices || []).some((p) => p.sourceInstanceId === planetar)).toBe(true);
+    await onField(state, 1, 'Espectro');
+    recomputeContinuous(state);
+    const hand = state.players[0].hand.length;
+    expect(applyAction(state, 0, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [] }).ok).toBe(true);
+    expect((state.pendingTriggerChoices || []).some((p) => p.sourceInstanceId === planetar)).toBe(false);
+    expect(state.players[0].hand.length).toBe(hand);
+  });
+});
+
 describe('Materials count as what they are on the field', () => {
   it('Pegaso turned into a Celestial is a Celestial material for Seraphine', async () => {
     const state = await makeDuel();

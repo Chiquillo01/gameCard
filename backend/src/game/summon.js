@@ -133,6 +133,9 @@ function announceSummon(state, controllerIndex, instanceId, card, faceDown = fal
   const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown, kind: 'special', ...rest };
   // A special summon: its player picks attack or defense, unless the card fixed it.
   if (event.kind === 'special' && !faceDown && !positionFixed) require('./placement').askPosition(state, controllerIndex, instanceId);
+  // The board's continuous effects reach the newcomer before it can react to its own summon: with
+  // Espectro on the field its "Al ser invocado" effect is already negated.
+  recomputeContinuous(state);
   if (!faceDown) fireTrigger(state, 'onSummon', event);
   fireTrigger(state, 'allySummoned', event);
   fireTrigger(state, 'opponentSummoned', event);

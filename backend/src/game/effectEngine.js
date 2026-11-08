@@ -508,6 +508,15 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
 
   const effect = getEffect(pending.effectId);
   const card = getCard(cardIdFromInstance(pending.sourceInstanceId));
+  // A monster negated while its effect waited for the picks (Espectro arrived) doesn't use it.
+  const waiting = getFieldMonster(state, pending.sourceInstanceId);
+  if (waiting && isNegated(state, waiting)) {
+    state.pendingTriggerChoices.shift();
+    log(state, `El efecto de ${card.name} está negado.`);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
   const ctx = { ...makeCtx(state, pending.controllerIndex, effect, pending.sourceInstanceId), event: pending.event };
   const costChoice = !declined(picks) && effect.cost && pendingCostChoice(ctx, effect.cost, picks);
   const costTaken = costPicks(ctx, effect.cost, picks);
