@@ -137,6 +137,22 @@ describe('Materials count as what they are on the field', () => {
     resolveAll(state);
     expect(monster(state, seraphine)).toBeDefined();
   });
+
+  it('a card that fits two requirements goes where it is needed: Solar with a Valkiria and another Celestial', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const valkiria = await onField(state, 0, 'Valkiria'); // Celestial and "Valkiria", the cheapest Celestial
+    const seraphine = await onField(state, 0, 'Seraphine');
+    const solar = await instance(0, 'Solar, el Vergudo de los Cielos');
+    state.players[0].extra.push(solar);
+    const info = viewFor(state, 0).players[0].extra.find((c) => c.instanceId === solar).compile;
+    expect(info.ready).toBe(true);
+    expect(info.suggested.sort()).toEqual([valkiria, seraphine].sort());
+    // The order the player picks them in doesn't matter either.
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: solar, materialInstanceIds: [valkiria, seraphine] }).ok).toBe(true);
+    resolveAll(state);
+    expect(monster(state, solar)).toBeDefined();
+  });
 });
 
 describe('Balance changes', () => {
