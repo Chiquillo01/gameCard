@@ -3815,7 +3815,7 @@
     "category": "monster",
     "expansion": "IdL",
     "effect": "Una vez por turno, elige uno de los siguientes efectos: \n• Inflige 5 VP a tu oponente.\n• Genera 1 Píxel por cada monstruo con QUEMADURA en el Campo.",
-    "invocationText": "Solo puede ser invocado especial al sacrificar un monstruo en tu Campo.",
+    "invocationText": "También puede ser invocado especial al sacrificar un monstruo en tu Campo.",
     "atk": 4,
     "def": 4,
     "level": 5,

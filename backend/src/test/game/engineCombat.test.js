@@ -5,7 +5,7 @@ const { applyAction, viewFor } = require('../../game/engine');
 const { recomputeContinuous } = require('../../game/effectEngine');
 const { placeSupport } = require('../../game/zones');
 const { checkWin } = require('../../game/outcome');
-const { seedCatalog, makeDuel, toHand, toDeckTop, onField, toPhase, passAll, monster, instance } = require('./engineHelpers');
+const { setSupport, seedCatalog, makeDuel, toHand, toDeckTop, onField, toPhase, passAll, monster, instance } = require('./engineHelpers');
 const { STARTING_VP } = require('../../game/constants');
 const { placePending, resolveAll } = require('./chainHelpers');
 
@@ -30,7 +30,7 @@ describe('Responding to an attack', () => {
   it('Trampa de Madera negates a direct attack; the Battle Phase goes on', async () => {
     const state = await makeDuel();
     const attacker = await onField(state, 0, 'Orco Gladiador');
-    const trampa = await toHand(state, 1, 'Trampa de Madera');
+    const trampa = await setSupport(state, 1, 'Trampa de Madera');
     toPhase(state, 'battle', 0);
 
     const res = declare(state, 0, attacker);
@@ -39,7 +39,7 @@ describe('Responding to an attack', () => {
     expect(state.priorityPlayer).toBe(1);
     expect(viewFor(state, 1).chain.links[0]).toMatchObject({ kind: 'attack' });
 
-    expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: trampa }).ok).toBe(true);
+    expect(applyAction(state, 1, { type: 'ACTIVATE_EFFECT', effectId: 'TRAMPA_MADERA_NEGATE_ATTACK', sourceInstanceId: trampa }).ok).toBe(true);
     passAll(state);
     expect(state.players[1].vp).toBe(STARTING_VP);
     expect(state.players[1].graveyard).toContain(trampa);
@@ -309,11 +309,11 @@ describe('An attacker that stops being in attack position', () => {
     const state = await makeDuel();
     const attacker = await onField(state, 0, 'Vampiro');
     const defender = await onField(state, 1, 'Vampiro');
-    const hechizo = await toHand(state, 1, 'Hechizo de volteo');
+    const hechizo = await setSupport(state, 1, 'Hechizo de volteo');
     state.players[1].pixelcoins = 12;
     toPhase(state, 'battle', 0);
     expect(declare(state, 0, attacker, defender).ok).toBe(true);
-    expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: hechizo, targets: [attacker] }).ok).toBe(true);
+    expect(applyAction(state, 1, { type: 'ACTIVATE_EFFECT', effectId: 'HECHIZO_VOLTEO_DEF_DOWN', sourceInstanceId: hechizo, targets: [attacker] }).ok).toBe(true);
     passAll(state);
     expect(monster(state, attacker)).toMatchObject({ position: 'defense', faceDown: true });
     expect(monster(state, defender)).toBeDefined();

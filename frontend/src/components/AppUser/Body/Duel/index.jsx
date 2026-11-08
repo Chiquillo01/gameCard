@@ -1332,6 +1332,7 @@ function humanizeReason(reason) {
     'must-target-a-monster': 'El rival tiene monstruos: debes elegir uno como objetivo.',
     'must-attack-strongest': 'Un efecto del rival te obliga a atacar a su monstruo más fuerte.',
     'not-your-turn': 'No es tu turno.',
+    'set-first': 'En el turno del rival un Apoyo no se juega desde la Mano: tiene que estar colocado boca abajo.',
     'not-in-graveyard': 'Esa carta no está en el cementerio.',
     'not-in-exile': 'Esa carta no está en el exilio.',
     'cannot-pay-cost': 'No puedes pagar el coste de este efecto.',

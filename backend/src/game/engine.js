@@ -93,7 +93,7 @@ function coinTossFirstPlayer(random = Math.random) {
 const CHAIN_RESPONSE_TYPES = ['ACTIVATE_SUPPORT', 'ACTIVATE_EFFECT', 'PASS_CHAIN'];
 
 // Rulebook: every action opens a window for the other player to answer it with a fast effect
-// (Speed 2 or more: an Apoyo Veloz from the hand or set, a quick effect) — or to pass. Activations
+// (Speed 2 or more: a set Apoyo Veloz — from the hand only in its own turn —, a quick effect) — or to pass. Activations
 // and attacks already open a Pila of their own; these are the rest.
 const WINDOW_ACTIONS = {
   NORMAL_SUMMON: (a) => (a.faceDown ? 'coloca un monstruo boca abajo' : 'invoca un monstruo'),
@@ -109,7 +109,8 @@ const WINDOW_ACTIONS = {
 // quick effect...) or an Apoyo Veloz in their hand. With nothing, the window passes on its own.
 function canRespondNow(state, idx) {
   const pl = state.players[idx];
-  if (pl.hand.some((id) => { const c = getCard(id.split(':')[1]); return c.category === 'support' && c.subtype === 'instant'; })) return true;
+  const { handActivationAllowed } = require('./support');
+  if (pl.hand.some((id) => { const c = getCard(id.split(':')[1]); return c.category === 'support' && c.subtype === 'instant' && handActivationAllowed(state, idx, c); })) return true;
   const ids = [...pl.hand, ...pl.graveyard, ...pl.banished, ...pl.field.monsters.filter(Boolean).map((m) => m.instanceId), ...pl.field.support.filter(Boolean).map((s) => s.instanceId), ...(pl.field.territory ? [pl.field.territory.instanceId] : [])];
   return ids.some((id) => !String(id).startsWith('token:') && computeAvailableEffects(state, idx, id, id.split(':')[1]).length > 0);
 }

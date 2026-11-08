@@ -107,6 +107,49 @@ describe('Response windows: every action can be answered', () => {
   });
 });
 
+describe('Apoyos from the Mano on the rival turn', () => {
+  it('a Veloz in the Mano cannot be played on the rival turn; set face-down it can', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 1); // the rival turn, in the window its action opened
+    state.window = { priorityPlayer: 0, openedBy: 1, label: 'invoca un monstruo' };
+    state.players[0].pixelcoins = 5;
+    const target = await instance(1, 'Herida Sangrante');
+    placeSupport(state, target, 1, { faceDown: false });
+    const tifon = await toHand(state, 0, 'Tifón Místico');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: tifon, targets: [target] })).toMatchObject({ ok: false, reason: 'set-first' });
+    const set = await instance(0, 'Tifón Místico');
+    placeSupport(state, set, 0, { faceDown: true });
+    state.players[0].field.support.find((s) => s && s.instanceId === set).setTurn = state.turnNumber - 1;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DESTRUIR_APOYO', sourceInstanceId: set, targets: [target] }).ok).toBe(true);
+  });
+
+  it('Sello Temporal: from the Mano on the rival turn only controlling no cards; set face-down, always', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 1);
+    state.players[0].pixelcoins = 5;
+    state.window = { priorityPlayer: 0, openedBy: 1, label: 'invoca un monstruo' };
+    const rival = await onField(state, 1, 'Slime');
+    const mine = await onField(state, 0, 'Slime'); // controls a card
+    const sello = await toHand(state, 0, 'Sello Temporal');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sello, targets: [rival] }).ok).toBe(false);
+    const set = await instance(0, 'Sello Temporal');
+    placeSupport(state, set, 0, { faceDown: true });
+    state.players[0].field.support.find((s) => s && s.instanceId === set).setTurn = state.turnNumber - 1;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'SELLO_TEMPORAL', sourceInstanceId: set, targets: [rival] }).ok).toBe(true);
+    expect(mine).toBeDefined();
+  });
+
+  it('Sello Temporal from the Mano on the rival turn when its player controls no cards', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 1);
+    state.players[0].pixelcoins = 5;
+    state.window = { priorityPlayer: 0, openedBy: 1, label: 'invoca un monstruo' };
+    const rival = await onField(state, 1, 'Slime');
+    const sello = await toHand(state, 0, 'Sello Temporal');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: sello, targets: [rival] }).ok).toBe(true);
+  });
+});
+
 describe('Deva', () => {
   it('summons a monster from a Cementerio, never a Compilación', async () => {
     const state = await makeDuel();

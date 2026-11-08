@@ -175,8 +175,11 @@ function effectIncludes(ctx, args) {
 // "Esta carta puede ser usada en el turno de tu oponente [si ...]": always fine on your own turn;
 // on the rival's, every condition in `requires` must hold too (Sello Temporal: "si no controlas
 // cartas").
+// Sello Temporal: "Si no controlas cartas, puede ser usada en el turno de tu oponente desde tu
+// Mano" — the requirement is only for playing it from the Mano; set face-down it's a normal Veloz.
 function canActivateOnOpponentTurn(ctx, args) {
   if (ctx.state.turnPlayer === ctx.controllerIndex) return true;
+  if (!player(ctx.state, ctx.controllerIndex).hand.includes(ctx.sourceInstanceId)) return true;
   return checkConditions(ctx, args.requires || []);
 }
 

@@ -39,6 +39,7 @@ function activateSupport(state, controllerIndex, instanceId, { targets = [], set
     return { ok: true };
   }
 
+  if (!handActivationAllowed(state, controllerIndex, card)) return { ok: false, reason: 'set-first' };
   return resolveActivation(state, controllerIndex, instanceId, card, targets, null, slot);
 }
 
@@ -215,4 +216,13 @@ function onPlayEffects(card) {
     .filter((effect) => ONE_SHOT_SUPPORTS.includes(card.subtype) || !(effect.trigger && effect.trigger.fn === 'onActivation'));
 }
 
-module.exports = { activateSupport, activateSetSupport, onPlayEffects };
+// Rulebook: an Apoyo is played from the Mano only in its player's own turn — on the rival's turn a
+// Veloz/Contraataque must already be set face-down. Unless the card itself says otherwise (Sello
+// Temporal: "puede ser usada en el turno de tu oponente desde tu Mano"), which its data marks with
+// a `canActivateOnOpponentTurn` condition (whose `requires` are then checked as usual).
+function handActivationAllowed(state, controllerIndex, card) {
+  if (state.turnPlayer === controllerIndex) return true;
+  return onPlayEffects(card).some((effect) => (effect.conditions || []).some((c) => c.fn === 'canActivateOnOpponentTurn'));
+}
+
+module.exports = { activateSupport, activateSetSupport, onPlayEffects, handActivationAllowed };

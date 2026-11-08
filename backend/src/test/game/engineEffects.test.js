@@ -10,7 +10,7 @@ const { getCard, getEffect, effectCodesOf } = require('../../game/cardIndex');
 const { registry } = require('../../game/effects/actions');
 const { canAffect } = require('../../game/targets');
 const effects = require('../../data/seed/effects_final.json');
-const { seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster, instance, idOf } = require('./engineHelpers');
+const { setSupport, seedCatalog, makeDuel, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster, instance, idOf } = require('./engineHelpers');
 const { STARTING_VP } = require('../../game/constants');
 const { placePending, resolveAll, actPicking } = require('./chainHelpers');
 
@@ -77,11 +77,11 @@ describe('Responding on the Pila', () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const olla = await toHand(state, 0, 'Olla de la Usura');
-    const djinni = await toHand(state, 1, 'Djinni');
-    expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: djinni })).toMatchObject({ ok: false });
+    const djinni = await setSupport(state, 1, 'Djinni');
+    expect(applyAction(state, 1, { type: 'ACTIVATE_EFFECT', effectId: 'DJINNI_COUNTER_NEGATE', sourceInstanceId: djinni })).toMatchObject({ ok: false });
     const hand = state.players[0].hand.length;
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: olla }).ok).toBe(true);
-    expect(applyAction(state, 1, { type: 'ACTIVATE_SUPPORT', instanceId: djinni }).ok).toBe(true);
+    expect(applyAction(state, 1, { type: 'ACTIVATE_EFFECT', effectId: 'DJINNI_COUNTER_NEGATE', sourceInstanceId: djinni }).ok).toBe(true);
     passAll(state);
     expect(state.players[0].hand.length).toBe(hand - 1); // Olla left the hand and drew nothing
     expect(state.players[0].graveyard).toContain(olla);
