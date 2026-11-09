@@ -4,7 +4,7 @@ const { normalSummon, specialSummon, compileSummon, decompile } = require('./sum
 const { canBeNormalSummoned, cannotBeSummoned } = require('./summonRules');
 const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport, activateSetSupport } = require('./support');
-const { declareAttack, attackBlockReason, allowedAttacks } = require('./combat');
+const { declareAttack, attackBlockReason, allowedAttacks, hasAbility } = require('./combat');
 const { changePosition } = require('./position');
 const { isOwnActivation, activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand, getEffectiveStats } = require('./effectEngine');
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
@@ -113,6 +113,20 @@ function canRespondNow(state, idx) {
   if (pl.hand.some((id) => { const c = getCard(id.split(':')[1]); return c.category === 'support' && c.subtype === 'instant' && handActivationAllowed(state, idx, c); })) return true;
   const ids = [...pl.hand, ...pl.graveyard, ...pl.banished, ...pl.field.monsters.filter(Boolean).map((m) => m.instanceId), ...pl.field.support.filter(Boolean).map((s) => s.instanceId), ...(pl.field.territory ? [pl.field.territory.instanceId] : [])];
   return ids.some((id) => !String(id).startsWith('token:') && computeAvailableEffects(state, idx, id, id.split(':')[1]).length > 0);
+}
+
+// Stricter than canRespondNow: an effect on the field/Mano/Cementerio only counts when its
+// conditions hold against what's on the Pila now (Kraken only answers effects that touch the
+// Cementerio). Decides whether an effect that activated on its own waits for a window.
+function canAnswerNow(state, idx) {
+  const pl = state.players[idx];
+  const { handActivationAllowed } = require('./support');
+  if (pl.hand.some((id) => { const c = getCard(id.split(':')[1]); return c.category === 'support' && c.subtype === 'instant' && handActivationAllowed(state, idx, c); })) return true;
+  const ids = [...pl.hand, ...pl.graveyard, ...pl.banished, ...pl.field.monsters.filter(Boolean).map((m) => m.instanceId), ...pl.field.support.filter(Boolean).map((s) => s.instanceId), ...(pl.field.territory ? [pl.field.territory.instanceId] : [])];
+  return ids.some((id) => !String(id).startsWith('token:') && computeAvailableEffects(state, idx, id, id.split(':')[1]).some((effectId) => {
+    const effect = getEffect(effectId);
+    return checkConditions({ state, controllerIndex: idx, sourceInstanceId: id, effect }, effect.conditions);
+  }));
 }
 
 function openWindow(state, actorIndex, label) {
@@ -406,6 +420,8 @@ function describeStats(state, m, printed) {
     equips: state.players.flatMap((p) => p.field.support).filter((s) => s && !s.faceDown && s.equippedTo === m.instanceId).map((s) => getCard(s.cardId).name),
     statusInfo: statusDetails(state, m.instanceId),
     attacksLeft: m.attackLockTurn === state.turnNumber ? 0 : Math.max(0, allowedAttacks(state, m) - (m.attacksThisTurn || 0)),
+    // "Puede atacar en Defensa" (Relicario de Engranaje, Grover Guardián): the board lights it up too.
+    canAttackInDefense: hasAbility(m, 'attackInDefense'),
   };
 }
 
@@ -426,4 +442,4 @@ function describeFieldSupport(state, s, ownerIndex, isViewerOwner) {
   return { ...described, ...effectsFor(state, ownerIndex, s.instanceId, s.cardId) };
 }
 
-module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer, computeAvailableEffects, specialSummonAvailable };
+module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer, computeAvailableEffects, specialSummonAvailable, canRespondNow, canAnswerNow };

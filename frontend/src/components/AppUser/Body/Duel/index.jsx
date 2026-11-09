@@ -813,7 +813,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
     if (!m) return '';
     if (!isOwner) return attackTargetMode ? styles.attackTarget : '';
     if (!isMyBattle || m.faceDown) return '';
-    return m.attacksLeft > 0 && m.position === 'attack' ? styles.canAttack : styles.spent;
+    return m.attacksLeft > 0 && (m.position === 'attack' || m.canAttackInDefense) ? styles.canAttack : styles.spent;
   };
   // A zone the player can click to place the card they're summoning/compiling/setting — either
   // empty, or one of a Compilación's own field materials that's about to vacate it.

@@ -6275,10 +6275,16 @@
     "oncePerTurn": false,
     "conditions": [
       {
-        "fn": "controlsMonster",
+        "fn": "countInZones",
         "args": {
-          "name": "Matón",
-          "count": 3
+          "filter": {
+            "name": "Matón"
+          },
+          "zones": [
+            "field",
+            "graveyard"
+          ],
+          "min": 5
         }
       }
     ],

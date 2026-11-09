@@ -52,16 +52,17 @@ function canAddLink(state, controllerIndex, speed) {
 //                      Contraataque support cards); null to leave it where it is (Continuo/Equipo/
 //                      Tierra stay on the field; a monster's own ignition/quick ability isn't a
 //                      card by itself).
-function addLink(state, { controllerIndex, sourceInstanceId, cardName, effects, targets, speed, afterResolve = null, costPaid = [] }) {
+//   triggered        — an effect that activated on its own (effectEngine.stackTriggered).
+function addLink(state, { controllerIndex, sourceInstanceId, cardName, effects, targets, speed, afterResolve = null, costPaid = [], triggered = false }) {
   state.chain.push({ controllerIndex, sourceInstanceId, cardName, effects, targets, speed, afterResolve, costPaid });
   state.priorityPlayer = opponentIndex(controllerIndex);
   state.chainLastActionWasPass = false;
-  log(state, `${player(state, controllerIndex).userId} activa ${cardName} (se abre una ventana para responder).`);
+  log(state, triggered ? `Se activa el efecto de ${cardName} (el rival puede responder).` : `${player(state, controllerIndex).userId} activa ${cardName} (se abre una ventana para responder).`);
   require('./effectEngine').announceEffectActivated(state, sourceInstanceId, controllerIndex, effects);
   // Lich: "Tu oponente pierde 5 VP cada vez que activa un efecto" (recomputeContinuous keeps the
   // tax on whoever it applies to).
   const pl = player(state, controllerIndex);
-  if (pl.activationTax) {
+  if (pl.activationTax && !triggered) {
     pl.vp = Math.max(0, pl.vp - pl.activationTax);
     log(state, `${pl.userId} pierde ${pl.activationTax} VP por activar un efecto (VP: ${pl.vp}).`);
     require('./outcome').checkWin(state);
@@ -104,19 +105,45 @@ function resolveChain(state) {
   // require here would be circular.
   const { resolveActions, recomputeContinuous } = require('./effectEngine');
   const { checkWin } = require('./outcome');
-  while (state.chain.length) {
-    const link = state.chain.pop();
-    if (link.kind === 'attack') {
-      if (link.negated) log(state, `${link.cardName}: el ataque es negado.`);
-      else require('./combat').performBattle(state, link);
-      continue;
+  const wasResolving = state.resolvingChain;
+  state.resolvingChain = true;
+  let paused = false;
+  try {
+    while (state.chain.length) {
+      // An effect that activated on its own while this Pila resolved (stackTriggered): the rival
+      // gets its window before anything else resolves.
+      if (state.chain[state.chain.length - 1].awaitingResponse) {
+        state.chain.forEach((l) => delete l.awaitingResponse);
+        paused = true;
+        break;
+      }
+      resolveLink(state, state.chain.pop(), resolveActions);
     }
-    (link.effects || []).forEach((effect) => {
-      resolveActions({ state, controllerIndex: link.controllerIndex, sourceInstanceId: link.sourceInstanceId, effect, costPaid: link.costPaid || [] }, effect, link.targets);
-    });
-    log(state, `Se resuelve ${link.cardName}.`);
-    if (link.afterResolve === 'graveyard') moveToZone(state, link.sourceInstanceId, 'graveyard');
+  } finally {
+    state.resolvingChain = wasResolving;
   }
+  if (paused) {
+    recomputeContinuous(state);
+    checkWin(state);
+    return;
+  }
+  finishChain(state, recomputeContinuous, checkWin);
+}
+
+function resolveLink(state, link, resolveActions) {
+  if (link.kind === 'attack') {
+    if (link.negated) log(state, `${link.cardName}: el ataque es negado.`);
+    else require('./combat').performBattle(state, link);
+    return;
+  }
+  (link.effects || []).forEach((effect) => {
+    resolveActions({ state, controllerIndex: link.controllerIndex, sourceInstanceId: link.sourceInstanceId, effect, costPaid: link.costPaid || [] }, effect, link.targets);
+  });
+  log(state, `Se resuelve ${link.cardName}.`);
+  if (link.afterResolve === 'graveyard') moveToZone(state, link.sourceInstanceId, 'graveyard');
+}
+
+function finishChain(state, recomputeContinuous, checkWin) {
   state.priorityPlayer = state.turnPlayer;
   state.chainLastActionWasPass = false;
   recomputeContinuous(state);

@@ -3,7 +3,7 @@ const { connectDB, disconnectDB } = require('../../mongo/connection');
 const { applyAction, viewFor } = require('../../game/engine');
 const { placeSupport } = require('../../game/zones');
 const { getEffectiveStats, recomputeContinuous, fireTrigger } = require('../../game/effectEngine');
-const { seedCatalog, makeDuel, instance, toHand, toGraveyard, onField, toPhase, passAll, monster } = require('./engineHelpers');
+const { seedCatalog, makeDuel, instance, toHand, toGraveyard, toDeckTop, onField, toPhase, passAll, monster, setSupport } = require('./engineHelpers');
 const { placePending, resolveAll } = require('./chainHelpers');
 const { STARTING_VP } = require('../../game/constants');
 
@@ -276,5 +276,72 @@ describe('Correcciones: Cucaracha, Goblin Astuto, Catedral', () => {
     await onField(state, 0, 'Grover, el Goblin');
     toPhase(state, 'end', 0);
     expect(state.players[0].hand).toContain(catedral);
+  });
+});
+
+describe('Effects that activate on their own can be answered', () => {
+  it('Djinni answers the Matón trigger "cuando destruye un monstruo en batalla": negated, Matón to the Cementerio, nothing summoned', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 1);
+    const maton = await onField(state, 1, 'Matón');
+    await onField(state, 0, 'Maestro de Dragones');
+    const target = state.players[0].field.monsters.find(Boolean).instanceId;
+    await toDeckTop(state, 1, 'Matón');
+    const djinni = await setSupport(state, 0, 'Djinni');
+    state.players[0].pixelcoins = 5;
+    toPhase(state, 'battle', 1);
+    expect(applyAction(state, 1, { type: 'DECLARE_ATTACK', attackerInstanceId: maton, targetInstanceId: target }).ok).toBe(true);
+    passAll(state);
+    // Which Matón it summons is picked first; then it waits on the Pila with the rival holding priority.
+    const pick = state.pendingTriggerChoices[0];
+    expect(applyAction(state, 1, { type: 'RESOLVE_TRIGGER_CHOICE', targets: [pick.options[0].instanceId] }).ok).toBe(true);
+    expect(state.chain.map((l) => l.cardName)).toEqual(['Matón']);
+    expect(state.priorityPlayer).toBe(0);
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'DJINNI_COUNTER_NEGATE', sourceInstanceId: djinni }).ok).toBe(true);
+    passAll(state);
+    expect(state.players[1].graveyard).toContain(maton);
+    expect(state.players[1].field.monsters.filter(Boolean)).toHaveLength(0);
+  });
+
+  it('with nothing to answer it, the effect resolves at once as before', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 1);
+    state.players[0].hand = [];
+    const maton = await onField(state, 1, 'Matón');
+    await onField(state, 0, 'Maestro de Dragones');
+    const target = state.players[0].field.monsters.find(Boolean).instanceId;
+    await toDeckTop(state, 1, 'Matón');
+    toPhase(state, 'battle', 1);
+    applyAction(state, 1, { type: 'DECLARE_ATTACK', attackerInstanceId: maton, targetInstanceId: target });
+    passAll(state);
+    resolveAll(state);
+    expect(state.chain).toHaveLength(0);
+    expect(state.players[1].field.monsters.filter(Boolean)).toHaveLength(2);
+  });
+});
+
+describe('Ataque en Defensa on the board', () => {
+  it('a monster that can attack in Defense shows as able to attack', async () => {
+    const state = await makeDuel();
+    const m = await onField(state, 0, 'Goblin Solitario', { position: 'defense' });
+    toPhase(state, 'battle', 0);
+    const view = () => viewFor(state, 0).players[0].field.monsters.find((x) => x && x.instanceId === m);
+    expect(view().canAttackInDefense).toBe(false);
+    monster(state, m).abilities = [{ name: 'attackInDefense', expiresTurn: null }];
+    expect(view().canAttackInDefense).toBe(true);
+    expect(view().attacksLeft).toBe(1);
+  });
+});
+
+describe('Capitán Bandido', () => {
+  it('special summon with 5 "Matón" between the Campo and the Cementerio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const capitan = await toHand(state, 0, 'Capitán Bandido');
+    for (let i = 0; i < 3; i++) await onField(state, 0, 'Matón');
+    await toGraveyard(state, 0, 'Matón');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: capitan }).ok).toBe(false);
+    await toGraveyard(state, 0, 'Matón');
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: capitan }).ok).toBe(true);
   });
 });

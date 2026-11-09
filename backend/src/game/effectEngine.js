@@ -395,9 +395,38 @@ function runTriggered(state, ctx, effect, card, targets) {
     log(state, `No se puede pagar el coste de ${card.name}.`);
     return false;
   }
+  if (stackTriggered(state, ctx, effect, card, targets.filter((t) => !costTaken.includes(t)))) return true;
   log(state, `Se activa el efecto de ${card.name}.`);
   announceEffectActivated(state, ctx.sourceInstanceId, ctx.controllerIndex, [effect]);
   resolveActions({ ...ctx, costPaid: ctx.paidCards || [] }, effect, targets.filter((t) => !costTaken.includes(t)));
+  return true;
+}
+
+// Rulebook, Apilar: an effect that activates on its own (Matón "cuando destruye un monstruo en
+// batalla") is still an activation the rival may answer (Djinni "cuando tu oponente activa el efecto
+// de una carta"). When they hold something that could, it goes onto the Pila and they get the
+// window; when nothing could, it resolves at once as before. Never while the turn is moving from one
+// phase to the next: that can't stop half-way.
+function stackTriggered(state, ctx, effect, card, targets) {
+  if (state.changingPhase || state.status !== 'active') return false;
+  const opp = ctx.controllerIndex === 0 ? 1 : 0;
+  const link = { controllerIndex: ctx.controllerIndex, sourceInstanceId: ctx.sourceInstanceId, cardName: card.name, effects: [effect], targets, speed: speedOf(card, effect), costPaid: ctx.paidCards || [], triggered: true };
+  const savedPriority = state.priorityPlayer;
+  const savedPass = state.chainLastActionWasPass;
+  state.chain.push(link);
+  state.priorityPlayer = opp;
+  let answerable = false;
+  try {
+    answerable = require('./engine').canAnswerNow(state, opp);
+  } finally {
+    state.chain.pop();
+    state.priorityPlayer = savedPriority;
+    state.chainLastActionWasPass = savedPass;
+  }
+  if (!answerable) return false;
+  addLink(state, link);
+  // Added while the Pila is resolving (Matón's battle): resolution stops there for the window.
+  if (state.resolvingChain) state.chain[state.chain.length - 1].awaitingResponse = true;
   return true;
 }
 

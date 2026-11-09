@@ -1169,7 +1169,7 @@
     "category": "monster",
     "expansion": "CdG",
     "effect": "Una vez por turno, selecciona un monstruo en el Campo de tu oponente:\n• Toma el control de ese monstruo, y si lo haces, pasa a ser un Ladrón y destruye los otros monstruos que controle.\nEsta carta no puede ser destruida en batalla.\nLos monstruos \"Matón\" ganan +4 Atk/Vida.",
-    "invocationText": "Solo puede ser invocado especial si controlas 3 \"Matón\" en Campo.",
+    "invocationText": "Solo puede ser invocado especial si controlas 5 \"Matón\" en Campo y/o Cementerio.",
     "atk": 7,
     "def": 5,
     "level": 6,
