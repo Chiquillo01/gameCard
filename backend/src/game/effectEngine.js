@@ -232,6 +232,8 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   if (eventName === 'sentToGraveyard') {
     if (args.from && eventArgs.from && args.from !== eventArgs.from) return false;
     if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
+    // "Si es sacrificado" (the Gigantes' elementals): a monster paid from the field, not destroyed.
+    if (args.sacrificed && !eventArgs.sacrificed) return false;
     // "Si es sacrificado para activar el efecto de un monstruo \"Orco\"".
     if (args.bySource && !(eventArgs.bySourceCardId && matchesCardFilter(getCard(eventArgs.bySourceCardId), args.bySource))) return false;
   }
@@ -289,9 +291,9 @@ function announceEffectActivated(state, instanceId, controllerIndex, effects = [
 
 // A card just reached its owner's Cementerio: its "cuando es enviada al Cementerio" effects get to
 // fire. `from`: 'field' | 'hand' | 'deck'; `reason`: 'battle' | 'effect' | 'cost' | 'discard' | 'mill'.
-function announceSentToGraveyard(state, instanceId, ownerIndex, { from, reason } = {}) {
+function announceSentToGraveyard(state, instanceId, ownerIndex, { from, reason, sacrificed = false } = {}) {
   if (!instanceId || String(instanceId).startsWith('token:')) return;
-  fireTrigger(state, 'sentToGraveyard', { instanceId, cardId: cardIdFromInstance(instanceId), ownerIndex, from, reason });
+  fireTrigger(state, 'sentToGraveyard', { instanceId, cardId: cardIdFromInstance(instanceId), ownerIndex, from, reason, sacrificed });
 }
 
 // Anillo de Boda: when a player who has its Cementerio effect this turn loses a monster to the rival

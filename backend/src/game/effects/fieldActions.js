@@ -295,7 +295,7 @@ function summonPicked(ctx, args, targets) {
     moveToZone(ctx.state, self.instanceId, 'graveyard');
     require('../zones').markSacrificed(ctx.state, self.cardId);
     log(ctx.state, `${getCard(self.cardId).name} es sacrificada.`);
-    require('../effectEngine').announceSentToGraveyard(ctx.state, self.instanceId, ctx.controllerIndex, { from: 'field', reason: 'cost' });
+    require('../effectEngine').announceSentToGraveyard(ctx.state, self.instanceId, ctx.controllerIndex, { from: 'field', reason: 'cost', sacrificed: true });
   }
   // "Invoca especial esta carta del Cementerio" (Héroe Fénix).
   const picks = args.target === 'self' ? [ctx.sourceInstanceId].filter((id) => player(ctx.state, ctx.controllerIndex).graveyard.includes(id)) : targets || [];

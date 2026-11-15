@@ -940,7 +940,7 @@ function payPenalty(state, playerIndex, action, ids) {
       if (!String(id).startsWith('token:')) require('../zones').markSacrificed(state, cardIdFromInstance(id));
       moveToZone(state, id, 'graveyard');
       log(state, `${pl.userId} sacrifica a ${name}.`);
-      require('../effectEngine').announceSentToGraveyard(state, id, playerIndex, { from: 'field', reason: 'cost' });
+      require('../effectEngine').announceSentToGraveyard(state, id, playerIndex, { from: 'field', reason: 'cost', sacrificed: true });
     } else if (action === 'exileFromGraveyard') {
       moveToZone(state, id, 'banished');
       log(state, `${pl.userId} exilia ${sourceName(state, id)} de su Cementerio.`);

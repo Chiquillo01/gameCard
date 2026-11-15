@@ -10272,5 +10272,235 @@
       }
     ],
     "source": "authored"
+  },
+  {
+    "_id": "ESPIRITU_ESCARCHA_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante de Hielo"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ESPIRITU_ESCARCHA_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "enemyMonster",
+          "status": "Congelado"
+        }
+      }
+    ]
+  },
+  {
+    "_id": "SILFO_VENDAVAL_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante de las Nubes"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SILFO_VENDAVAL_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "returnCardToHand",
+        "args": {
+          "target": "support",
+          "prompt": "Elige el Apoyo que vuelve a la Mano"
+        }
+      }
+    ]
+  },
+  {
+    "_id": "GOLEM_GUIJARROS_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante de Rocas"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "GOLEM_GUIJARROS_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "actions": [
+      {
+        "fn": "addCardToHandFromGraveyard",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "breed": "Roca"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "_id": "CENTELLA_ERRANTE_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante del Trueno"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CENTELLA_ERRANTE_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "actions": [
+      {
+        "fn": "burnOpponent",
+        "args": {
+          "amount": 3
+        }
+      }
+    ]
+  },
+  {
+    "_id": "SALAMANDRA_BRASAS_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante de Fuego"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SALAMANDRA_BRASAS_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "enemyMonster",
+          "status": "Quemadura"
+        }
+      }
+    ]
   }
 ]

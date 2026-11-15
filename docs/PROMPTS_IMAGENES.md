@@ -118,18 +118,6 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: an ancient spellbook bound in deep blue leather with silver corners and a jagged lightning-bolt emblem on the cover, floating open in mid-air, its pages flipping wildly; a blinding bolt of white-blue lightning bursts out of the open pages and strikes a glowing magical artefact on a stone pedestal (an enchanted crystal shield wrapped in arcane chains), shattering it into shards and sparks; electric arcs crackle around the book. Setting: a tall, dim arcane library with towering bookshelves and floating candles, the flash of the lightning lighting up the scene in cold blue tones, loose pages swirling in the air.
 ```
 
-## 236 · Gigante de Hielo (rediseño)
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a colossal ice giant made of living glacier rock, its massive body of pale-blue stone crusted with thick ice armour and jagged icicles along its shoulders and back, a long beard and hair of frozen frost, deep glowing icy-white eyes; it holds an enormous greataxe forged of frozen steel with a blade of clear blue ice; freezing mist pours from its mouth and snow swirls around it, the ground freezing solid under its feet. Setting: a frozen mountain pass in a raging blizzard, snow-covered rocks, a huge frozen waterfall behind it, pale blue moonlight cutting through the storm.
-```
-
-## 237 · Gigante de las Nubes (rediseño)
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a colossal serene cloud giant made of pale grey and white storm-cloud rock, its radiant skin lit by sunlight from above, long hair and beard made of flowing, moving clouds, calm glowing pale-green eyes; strong winds spiral around its arms and legs, carrying leaves and feathers, its lower body half wrapped in drifting clouds as if it were descending from the sky. Setting: a high windswept cliff above a sea of clouds, bent trees and tall grass flattened by a strong gale, bright sky with fast-moving clouds and golden sunbeams breaking through.
-```
-
 ## 238 · Gigante de Rocas (rediseño)
 
 ```text
@@ -160,36 +148,6 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 
 ```text
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a giant lamprea, a long eel-like jawless fish with slimy dark olive-green skin mottled with moss-coloured spots and a row of small gill holes along its neck; it bursts out of the black water in an arc, its round suction-cup mouth wide open towards the viewer, lined with rings of hooked yellowish teeth spiralling inward; small pale glowing eyes, a ragged fin running along its back, water and swamp weeds spraying around it. Setting: the swamp of the Dark Forest at night, twisted black trees with roots sunk in murky green water, hanging moss, floating lily pads, drifting mist and faint green will-o'-the-wisp lights reflecting on the surface.
-```
-
-## Espíritu de Escarcha (Hielo · apoyo de los Gigantes)
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a small ice elemental spirit, a floating childlike figure made entirely of translucent pale-blue ice and packed snow, jagged icicle shards forming its hair and shoulders, a glowing frosty-white core visible inside its chest, cold mist pouring from its hands and leaving a trail of snowflakes; around it, frost crystals grow on everything it passes near. Behind it, half hidden in the blizzard, the enormous shadowy silhouette of an ice giant made of glacier rock. Setting: a frozen mountain pass in a blizzard, snow-covered rocks, frozen waterfall, pale blue moonlight.
-```
-
-## Silfo del Vendaval (Viento · apoyo de los Gigantes)
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a small air elemental sylph, a slender semi-transparent figure made of swirling pale-green and white wind currents, its lower body a spinning little whirlwind instead of legs, long flowing streamers of air for hair, bright white glowing eyes; leaves, feathers and dust whirl in spirals around it. Behind it, among the clouds, the faint colossal silhouette of a cloud giant made of grey storm rock. Setting: a high windswept cliff above a sea of clouds, bent trees and tall grass flattened by a strong gale, bright sky with fast-moving clouds.
-```
-
-## Gólem de Guijarros (Tierra · apoyo de los Gigantes)
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a small sturdy earth elemental golem, a stocky knee-high figure made of stacked brown and grey river pebbles and packed soil held together by roots and moss, small sprouts and a tiny flower growing on its head, two warm amber glowing eyes in a stone face; the ground cracks under its feet and loose rocks float up around it. Behind it, the enormous silhouette of a rock giant emerging from the mountainside. Setting: a rocky canyon at sunset, layered red and ochre cliffs, boulders and dust in the warm light.
-```
-
-## Centella Errante (Electricidad · apoyo de los Gigantes)
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a small lightning elemental, a crackling ball of bright yellow and electric-blue energy shaped like a little wild creature with jagged lightning-bolt limbs and a spiky mane of sparks, two intense white eyes; arcs of electricity jump from it to nearby metal and rocks, its outline flickering. Behind it, lit by a flash of lightning, the huge silhouette of a thunder giant made of dark storm stone. Setting: a stormy hilltop at night under black thunderclouds, lightning striking the ground, rain and scorched rocks, an old iron lightning rod glowing hot.
-```
-
-## Salamandra de Brasas (Fuego · apoyo de los Gigantes)
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a small fire elemental salamander, a lizard made of glowing embers and cracked black charcoal skin with molten orange light shining through the cracks, a crest and tail of living flames, bright yellow eyes; it leaves burning footprints and sparks rise from its back. Behind it, in the smoke, the enormous silhouette of a fire giant made of volcanic rock and magma. Setting: the slopes of an erupting volcano, rivers of lava, ash falling, red-orange glowing sky.
 ```
 
 # Diseño del juego

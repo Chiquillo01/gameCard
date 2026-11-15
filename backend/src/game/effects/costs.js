@@ -93,7 +93,7 @@ function payFromPool(ctx, pool, count, picks, toZone, { destroyed = false } = {}
     moved.forEach(({ id, loc }) => {
       const from = loc.zone.startsWith('field') ? 'field' : loc.zone;
       const by = ctx.sourceInstanceId && !String(ctx.sourceInstanceId).startsWith('token:') ? cardIdFromInstance(ctx.sourceInstanceId) : null;
-      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex, from, reason: 'cost', bySourceCardId: by };
+      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex, from, reason: 'cost', bySourceCardId: by, sacrificed: !destroyed && loc.zone === 'field:monster' };
       fireTrigger(ctx.state, 'sentToGraveyard', event);
       if (destroyed && loc.zone === 'field:monster') fireTrigger(ctx.state, 'onMonsterDestroyed', { ...event, reason: 'effect' });
     });

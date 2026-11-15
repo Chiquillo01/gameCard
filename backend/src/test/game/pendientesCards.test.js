@@ -376,3 +376,67 @@ describe('Diana, diosa del Inframundo', () => {
     expect(state.players[0].graveyard).toContain(caos);
   });
 });
+
+describe('The elementals of the Gigantes', () => {
+  // Normal Summon the elemental (it searches its Gigante), then sacrifice it to Special Summon the
+  // Gigante. Returns the ids involved for each card's own check.
+  async function playElemental(name, giant, setup = async () => ({})) {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    state.players[0].deck = [];
+    const inDeck = await toDeckTop(state, 0, giant);
+    const extra = await setup(state);
+    const elemental = await toHand(state, 0, name);
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: elemental, position: 'attack' }).ok).toBe(true);
+    resolveAll(state);
+    passAll(state);
+    expect(state.players[0].hand).toContain(inDeck);
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: inDeck, targets: [elemental] }).ok).toBe(true);
+    resolveAll(state);
+    passAll(state);
+    expect(monster(state, inDeck)).toBeDefined();
+    expect(state.players[0].graveyard).toContain(elemental);
+    return { state, elemental, giant: inDeck, ...extra };
+  }
+
+  it('Espíritu de Escarcha freezes a rival monster when sacrificed', async () => {
+    const { state, target } = await playElemental('Espíritu de Escarcha', 'Gigante de Hielo', async (s) => ({ target: await onField(s, 1, 'Kraken') }));
+    const { hasStatus, FREEZE } = require('../../game/statuses');
+    expect(hasStatus(state, target, FREEZE)).toBe(true);
+  });
+
+  it('Silfo del Vendaval returns an Apoyo on the field to its owner hand when sacrificed', async () => {
+    const { state, apoyo } = await playElemental('Silfo del Vendaval', 'Gigante de las Nubes', async (s) => ({ apoyo: await setSupport(s, 1, 'Djinni') }));
+    expect(state.players[1].hand).toContain(apoyo);
+  });
+
+  it('Gólem de Guijarros gets a Roca monster back from the Cementerio when sacrificed', async () => {
+    const { state, roca } = await playElemental('Gólem de Guijarros', 'Gigante de Rocas', async (s) => ({ roca: await toGraveyard(s, 0, 'Gigante de Fuego') }));
+    expect(state.players[0].hand).toContain(roca);
+  });
+
+  it('Centella Errante makes the rival lose 3 VP when sacrificed', async () => {
+    const before = STARTING_VP;
+    const { state } = await playElemental('Centella Errante', 'Gigante del Trueno');
+    expect(state.players[1].vp).toBe(before - 3);
+  });
+
+  it('Salamandra de Brasas burns a rival monster when sacrificed', async () => {
+    const { state, target } = await playElemental('Salamandra de Brasas', 'Gigante de Fuego', async (s) => ({ target: await onField(s, 1, 'Kraken') }));
+    const { hasStatus, BURN } = require('../../game/statuses');
+    expect(hasStatus(state, target, BURN)).toBe(true);
+  });
+
+  it('destroyed instead of sacrificed, nothing happens (Centella Errante)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    await onField(state, 0, 'Centella Errante');
+    await onField(state, 1, 'Kraken');
+    const tormenta = await toHand(state, 0, 'Tormenta de Relámpagos');
+    state.players[0].pixelcoins = 5;
+    expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: tormenta }).ok).toBe(true);
+    passAll(state);
+    resolveAll(state);
+    expect(state.players[1].vp).toBe(STARTING_VP);
+  });
+});
