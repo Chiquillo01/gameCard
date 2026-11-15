@@ -80,10 +80,16 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a leather-bound necronomicon with a skull on the cover, green necrotic glow. Setting: a dark crypt.
 ```
 
-## 230 · Héroe Aprendiz
+## 230 · Bulette
 
 ```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a young apprentice hero with a wooden sword and a wooden shield. Setting: a green meadow.
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a bulette, a huge burrowing "land shark" beast with a heavy armoured body of overlapping grey-blue plates, a tall dorsal crest-fin, a massive wedge-shaped head with a gaping maw full of jagged teeth and small fierce yellow eyes, short powerful clawed legs; it bursts upward out of the ground mid-leap, the earth exploding around it in chunks of rock, dirt and dust. Setting: a dry rocky badlands plain at midday, cracked earth, scattered boulders, a ruined wooden fence torn apart by its tunnel.
+```
+
+## 259 · La Tortuga Pagos, las Pesar del Mundo
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a colossal ancient cosmic turtle, older than time, its wrinkled grey-green skin covered in moss and barnacles, wise glowing golden eyes; on its enormous domed shell rest several small kingdoms — tiny castles, forests, mountains and a waterfall spilling over the edge — as if it carried the whole world on its back; around it float faint golden clock rings and hourglass runes, symbols of time. Setting: drifting slowly through a starry purple-blue cosmos, nebulae and distant planets behind it, stardust trailing from its flippers.
 ```
 
 ## 272 · Engranaje maestro

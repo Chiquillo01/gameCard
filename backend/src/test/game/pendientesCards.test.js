@@ -440,3 +440,110 @@ describe('The elementals of the Gigantes', () => {
     expect(state.players[1].vp).toBe(STARTING_VP);
   });
 });
+
+describe('Bulette', () => {
+  it('digs the top 5 cards and special summons a Tierra monster found among them', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const bulette = await onField(state, 0, 'Bulette');
+    state.players[0].deck = [];
+    const tierra = await toDeckTop(state, 0, 'Matón');
+    for (let i = 0; i < 4; i++) await toDeckTop(state, 0, 'Kraken'); // Agua: not found
+    const res = actPicking(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'BULETTE_EXCAVATE_SUMMON', sourceInstanceId: bulette });
+    expect(res.ok).toBe(true);
+    passAll(state);
+    resolveAll(state);
+    expect(monster(state, tierra)).toBeDefined();
+    expect(state.players[0].deck).toHaveLength(4);
+  });
+
+  it('with no Tierra monster among the top 5, nothing is summoned', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const bulette = await onField(state, 0, 'Bulette');
+    state.players[0].deck = [];
+    const sixth = await toDeckTop(state, 0, 'Matón');
+    for (let i = 0; i < 5; i++) await toDeckTop(state, 0, 'Kraken');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'BULETTE_EXCAVATE_SUMMON', sourceInstanceId: bulette }).ok).toBe(true);
+    passAll(state);
+    resolveAll(state);
+    expect(monster(state, sixth)).toBeUndefined();
+    expect(state.players[0].deck).toHaveLength(6);
+  });
+});
+
+describe('La Tortuga Pagos, las Pesar del Mundo', () => {
+  const TORTUGA = 'La Tortuga Pagos, las Pesar del Mundo';
+  const { placeTerritory } = require('../../game/zones');
+  async function reino(state, p) {
+    const id = await instance(p, 'Oceano');
+    placeTerritory(state, id, p);
+    return id;
+  }
+
+  it('is special summoned only with 2 Reinos on the board', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const tortuga = await toHand(state, 0, TORTUGA);
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: tortuga, position: 'attack' }).ok).toBe(false);
+    await reino(state, 0);
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: tortuga }).ok).toBe(false);
+    await reino(state, 1);
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: tortuga }).ok).toBe(true);
+    resolveAll(state);
+    passAll(state);
+    expect(monster(state, tortuga)).toBeDefined();
+  });
+
+  it('monsters lose 1 Atk/Vida per Reino; Reinos and itself (with a Reino) can not be destroyed or exiled by effects', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const tortuga = await onField(state, 0, TORTUGA);
+    const kraken = await onField(state, 1, 'Kraken');
+    const r0 = await reino(state, 0);
+    const r1 = await reino(state, 1);
+    recomputeContinuous(state);
+    // Oceano gives the Agua monsters +1/+1 each: Kraken 1/1 +2 -2.
+    expect(getEffectiveStats(monster(state, tortuga))).toMatchObject({ atk: 8, def: 8 });
+    expect(getEffectiveStats(monster(state, kraken))).toMatchObject({ atk: 1, def: 1 });
+    const { registry } = require('../../game/effects/actions');
+    const ctx = { state, controllerIndex: 1, sourceInstanceId: kraken, effect: {} };
+    registry.destroy(ctx, { target: 'selected' }, [r0, tortuga]);
+    registry.exileTarget(ctx, {}, [r1, tortuga]);
+    expect(state.players[0].field.territory.instanceId).toBe(r0);
+    expect(state.players[1].field.territory.instanceId).toBe(r1);
+    expect(monster(state, tortuga)).toBeDefined();
+  });
+
+  it('destroys as many cards as there are Reinos (and then can not use the other effect that turn)', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const tortuga = await onField(state, 0, TORTUGA);
+    await reino(state, 0);
+    await reino(state, 1);
+    const a = await onField(state, 1, 'Kraken');
+    const b = await onField(state, 1, 'Matón');
+    recomputeContinuous(state);
+    const res = applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'TORTUGA_PAGOS_DESTROY', sourceInstanceId: tortuga, targets: [a, b] });
+    expect(res.ok).toBe(true);
+    passAll(state);
+    resolveAll(state);
+    expect(monster(state, a)).toBeUndefined();
+    expect(monster(state, b)).toBeUndefined();
+    // Only one of the two a turn.
+    await toGraveyard(state, 0, 'Oceano');
+    expect(applyAction(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'TORTUGA_PAGOS_RECOVER_REINO', sourceInstanceId: tortuga }).ok).toBe(false);
+  });
+
+  it('brings a Reino back to the Mano from the Cementerio or the Exilio', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const tortuga = await onField(state, 0, TORTUGA);
+    const inGY = await toGraveyard(state, 0, 'Oceano');
+    const res = actPicking(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'TORTUGA_PAGOS_RECOVER_REINO', sourceInstanceId: tortuga });
+    expect(res.ok).toBe(true);
+    passAll(state);
+    resolveAll(state);
+    expect(state.players[0].hand).toContain(inGY);
+  });
+});

@@ -538,9 +538,9 @@ const slug = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().rep
 function batch2Cards() {
   const all = require('../../backend/src/data/seed/cards_final.json');
   const draws = require('./batch2');
-  return Object.entries(draws).map(([number, draw]) => {
+  // A number the sheet no longer uses (cards renumbered or parked since) is skipped.
+  return Object.entries(draws).filter(([number]) => all.some((c) => c.number === Number(number))).map(([number, draw]) => {
     const card = all.find((c) => c.number === Number(number));
-    if (!card) throw new Error('no card ' + number);
     const twin = all.filter((c) => c.name === card.name).length > 1;
     return { number: card.number, file: slug(card.name) + (twin ? '-' + card.number : '') + '.png', tier: card.category === 'fusion' ? 'bit16' : 'bit8', draw };
   });

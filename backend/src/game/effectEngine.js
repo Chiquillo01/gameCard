@@ -612,6 +612,7 @@ function recomputeContinuous(state) {
       addTempMod(m, poisonDebuff(state, m.instanceId), 'Veneno', 'status');
       m.cannotBeDestroyedByBattle = false;
       m.cannotBeDestroyedByEffects = false;
+      m.cannotBeExiledByEffects = false;
       m.immuneToOpponentEffects = false;
       m.negatedByContinuous = false;
       m.canAttackDirectly = false;
@@ -629,7 +630,11 @@ function recomputeContinuous(state) {
       m.cannotAttack = false;
       m.noBattleDamage = false;
     });
-    [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => { s.negatedByContinuous = false; });
+    [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => {
+      s.negatedByContinuous = false;
+      s.cannotBeDestroyedByEffects = false;
+      s.cannotBeExiledByEffects = false;
+    });
   });
   applyTimedBuffs(state);
   // Two passes: first the effects that take others' effects away (Fuegos Fatuos, Seraphine, Sello

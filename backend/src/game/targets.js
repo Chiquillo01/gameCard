@@ -230,6 +230,8 @@ function heroCount(ctx, countBy = {}) {
 function stepCount(ctx, step) {
   const args = step.args || {};
   if (step.fn === 'destroyUpToHeroCount') return heroCount(ctx, args.countBy);
+  // "Destruye cartas en el Campo igual al número de Reinos" (La Tortuga Pagos).
+  if (args.countOnField) return require('./effects/conditions').countCardsOnField(ctx.state, ctx.controllerIndex, args.countOnField);
   const { SEARCH_FNS, normalizeSearchArgs } = require('./effects/fieldActions');
   if (SEARCH_FNS.includes(step.fn)) return normalizeSearchArgs(step.fn, args).count;
   return args.count || 1;

@@ -10502,5 +10502,197 @@
         }
       }
     ]
+  },
+  {
+    "_id": "BULETTE_EXCAVATE_SUMMON",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "excavate",
+        "args": {
+          "cards": 5,
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "attribute": "Tierra"
+          },
+          "then": "summon",
+          "prompt": "Elige el monstruo excavado que invocas"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "countOnField",
+        "args": {
+          "filter": {
+            "subtype": "field"
+          },
+          "min": 2
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_RECOVER_REINO",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "La Tortuga Pagos, las Pesar del Mundo",
+          "max": 1
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "recoverCardsToHand",
+        "args": {
+          "count": 1,
+          "scope": [
+            "graveyard",
+            "banished"
+          ],
+          "filter": {
+            "subtype": "field"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_DESTROY",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "La Tortuga Pagos, las Pesar del Mundo",
+          "max": 1
+        }
+      },
+      {
+        "fn": "countOnField",
+        "args": {
+          "filter": {
+            "subtype": "field"
+          },
+          "min": 1
+        }
+      }
+    ],
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "zone": "field",
+          "countOnField": {
+            "filter": {
+              "subtype": "field"
+            }
+          },
+          "prompt": "Elige las cartas que se destruyen"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_PROTECT_REINOS",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "protectFromRemoval",
+        "args": {
+          "filter": {
+            "subtype": "field"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_SELF_PROTECT",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      },
+      {
+        "fn": "countOnField",
+        "args": {
+          "filter": {
+            "subtype": "field"
+          },
+          "min": 1
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "protectFromRemoval",
+        "args": {
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_REINO_WEIGHT",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "atk": -1,
+          "def": -1,
+          "scope": "fieldCards",
+          "countFilter": {
+            "subtype": "field"
+          },
+          "applyTo": "field"
+        }
+      }
+    ],
+    "source": "authored"
   }
 ]

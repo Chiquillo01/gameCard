@@ -98,6 +98,20 @@ function countInZones(ctx, args) {
   return ids.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {})).length >= (args.min || 1);
 }
 
+// Face-up cards on the field (monsters, Apoyos and Territorios) whose card matches `filter` —
+// `side`: 'any' (default, both sides), 'self' or 'opponent'. "Por cada Reino en el Campo" (La
+// Tortuga Pagos: `{ subtype: 'field' }`).
+function countCardsOnField(state, controllerIndex, { filter = {}, side = 'any' } = {}) {
+  const sides = side === 'self' ? [controllerIndex] : side === 'opponent' ? [opponentIndex(controllerIndex)] : [0, 1];
+  return sides.flatMap((i) => { const f = player(state, i).field; return [...f.monsters, ...f.support, f.territory]; })
+    .filter((e) => e && !e.faceDown && !e.isToken && matchesCardFilter(getCard(e.cardId), filter)).length;
+}
+
+// "Si hay N [filter] en el Campo/tablero" (La Tortuga Pagos: "si hay 2 Reinos en el tablero").
+function countOnField(ctx, args) {
+  return countCardsOnField(ctx.state, ctx.controllerIndex, args) >= (args.min || 1);
+}
+
 // Extensor de Vida: "si tu oponente tiene más VP que tú".
 function opponentHasMoreVP(ctx) {
   return player(ctx.state, opponentIndex(ctx.controllerIndex)).vp > player(ctx.state, ctx.controllerIndex).vp;
@@ -278,6 +292,7 @@ function onFieldSinceLastTurn(ctx) {
 
 const registry = {
   countInZones,
+  countOnField,
   opponentHasMoreVP,
   ownTurn,
   inOwnPhase,
@@ -324,4 +339,5 @@ function markLimitUsed(state, name, sourceInstanceId) {
   state.turnLimits[key] = (state.turnLimits[key] || 0) + 1;
 }
 
-module.exports = { checkConditions, markLimitUsed, markCardEffectUsed, markDuelLimitUsed, actionTags, registry };
+module.exports = {
+  countCardsOnField, checkConditions, markLimitUsed, markCardEffectUsed, markDuelLimitUsed, actionTags, registry };

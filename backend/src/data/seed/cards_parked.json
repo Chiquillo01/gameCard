@@ -24,6 +24,26 @@
       "effectCodes": [
         "ENGRANAJE_MAESTRO_SUMMON"
       ]
+    },
+    {
+      "name": "Héroe Aprendiz",
+      "image": "/assets/CardImg/generated/heroe-aprendiz.png",
+      "attribute": "Tierra",
+      "type": "Héroe",
+      "breed": "Héroe",
+      "family": "Humano",
+      "description": "-",
+      "rarity": "common",
+      "category": "monster",
+      "expansion": "PAO",
+      "effect": "Manda 1 monstruo \"Héroe\" al Cementerio y esta carta gana el siguiente efecto:\n• Esta carta gana el nombre y el Atributo del monstruo enviado.",
+      "invocationText": "Si controlas un \"Héroe\", puede ser invocada de forma especial pero solo una vez por turno de esta forma.",
+      "atk": 5,
+      "def": 1,
+      "level": 2,
+      "state": 4,
+      "number": 230,
+      "effectCodes": []
     }
   ],
   "effects": [

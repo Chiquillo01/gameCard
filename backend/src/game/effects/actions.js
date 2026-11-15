@@ -187,6 +187,10 @@ function exileTarget(ctx, args, targets) {
     if (!loc) return;
     const entry = loc.zone.startsWith('field:') ? [...ctx.state.players[loc.ownerIndex].field.monsters, ...ctx.state.players[loc.ownerIndex].field.support, ctx.state.players[loc.ownerIndex].field.territory].find((e) => e && e.instanceId === instanceId) : null;
     if (entry && (!canAffect(ctx, entry) || (entry.immuneToOpponentEffects && loc.ownerIndex !== ctx.controllerIndex))) return;
+    if (entry && entry.cannotBeExiledByEffects) {
+      log(ctx.state, `${sourceName(ctx.state, instanceId)} no puede ser exiliada por efectos de cartas.`);
+      return;
+    }
     const isMonster = loc.zone === 'field:monster';
     if (isMonster) ctx.lastTargetsAtk += getEffectiveStats(entry).atk;
     moveToZone(ctx.state, instanceId, 'banished');
@@ -584,6 +588,9 @@ function applyScaledBuff(ctx, args, targets) {
   } else if (args.scope === 'destroyedThisTurn' || args.scope === 'sacrificedThisTurn') {
     const log = ctx.state[args.scope];
     scaleBy = log && log.turn === ctx.state.turnNumber ? log.cardIds.filter((id) => matchesCardFilter(getCard(id), filter)).length : 0;
+  } else if (args.scope === 'fieldCards') {
+    // "Por cada Reino en el Campo" (La Tortuga Pagos): any face-up card, `countFilter` says which.
+    scaleBy = require('./conditions').countCardsOnField(ctx.state, ctx.controllerIndex, { filter: args.countFilter || {}, side: args.countSide || 'any' });
   } else if (args.scope === 'ownGraveyard') {
     scaleBy = player(ctx.state, ctx.controllerIndex).graveyard.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), filter)).length;
   } else {
@@ -1017,7 +1024,7 @@ const registry = {
 };
 
 const fieldActions = require('./fieldActions');
-['destroy', 'destroyTarget', 'destroyCards', 'growSelf', 'takeControl', 'addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck', 'searchFromDeck', 'addCardToHandFromGraveyard', 'preventBattleDestruction', 'cannotBeDestroyedOrExiled', 'cannotBeDestroyedByOpponentEffects', 'summonFromDeck', 'specialSummonFromDeck', 'summonFromHand', 'specialSummonFromGY', 'summonFromZones', 'summon', 'sendFromDeckToGY', 'protectFromEffectDestruction', 'attacksOnlyOnStrongest', 'excavate']
+['destroy', 'destroyTarget', 'destroyCards', 'growSelf', 'takeControl', 'addCardToHandFromDeck', 'recoverCardsToHand', 'searchDeck', 'searchFromDeck', 'addCardToHandFromGraveyard', 'preventBattleDestruction', 'cannotBeDestroyedOrExiled', 'cannotBeDestroyedByOpponentEffects', 'summonFromDeck', 'specialSummonFromDeck', 'summonFromHand', 'specialSummonFromGY', 'summonFromZones', 'summon', 'sendFromDeckToGY', 'protectFromEffectDestruction', 'attacksOnlyOnStrongest', 'excavate', 'protectFromRemoval']
   .forEach((fn) => { registry[fn] = fieldActions[fn]; });
 Object.assign(registry, require('./extraActions'));
 

@@ -4674,24 +4674,25 @@
     ]
   },
   {
-    "name": "Héroe Aprendiz",
-    "image": "/assets/CardImg/generated/heroe-aprendiz.png",
+    "name": "Bulette",
+    "image": "/assets/CardImg/generated/bulette.png",
     "attribute": "Tierra",
-    "type": "Héroe",
-    "breed": "Héroe",
-    "family": "Humano",
+    "type": "Roca",
+    "breed": "Roca",
+    "family": "Bestia",
     "description": "-",
-    "rarity": "common",
+    "rarity": "rare",
     "category": "monster",
     "expansion": "PAO",
-    "effect": "Manda 1 monstruo \"Héroe\" al Cementerio y esta carta gana el siguiente efecto:\n• Esta carta gana el nombre y el Atributo del monstruo enviado.",
-    "invocationText": "Si controlas un \"Héroe\", puede ser invocada de forma especial pero solo una vez por turno de esta forma.",
-    "atk": 5,
-    "def": 1,
-    "level": 2,
-    "state": 4,
+    "effect": "Una vez por turno, excava las 5 primeras cartas de tu Mazo:\n• Si encontraste un monstruo de Tierra, invocalo especial.",
+    "atk": 4,
+    "def": 4,
+    "level": 4,
+    "state": 3,
     "number": 230,
-    "effectCodes": []
+    "effectCodes": [
+      "BULETTE_EXCAVATE_SUMMON"
+    ]
   },
   {
     "name": "Anguila",
@@ -5369,6 +5370,33 @@
     "effectCodes": [
       "SALAMANDRA_BRASAS_SEARCH",
       "SALAMANDRA_BRASAS_SACRIFICED"
+    ]
+  },
+  {
+    "name": "La Tortuga Pagos, las Pesar del Mundo",
+    "image": "/assets/CardImg/generated/la-tortuga-pagos-las-pesar-del-mundo.png",
+    "attribute": "Tiempo",
+    "type": "Leyenda",
+    "breed": "Leyenda",
+    "family": "Bestia",
+    "description": "-",
+    "rarity": "epic",
+    "category": "monster",
+    "expansion": "PAO",
+    "effect": "Una vez por turno, puedes activar 1 de los siguientes efectos:\n• Devuelve a la Mano 1 Reino del Cementerio o del Exilio.\n• Destruye cartas en el Campo igual al número de Reinos en el tablero.\nMientras esta carta esté en el Campo, ninguna carta de Reino puede ser Destruida o Exiliada por efectos de cartas.\nMientras haya un Reino en el Campo, esta carta no puede ser Destruida ni Exiliada por efectos de cartas.\nLos monstruos en el Campo pierden 1 ATK y Vida por cada Reino en el Campo.",
+    "invocationText": "Solo puede ser invocado si hay 2 Reinos en el tablero.",
+    "atk": 10,
+    "def": 10,
+    "level": 8,
+    "state": 2,
+    "number": 259,
+    "effectCodes": [
+      "TORTUGA_PAGOS_SPECIAL_SUMMON",
+      "TORTUGA_PAGOS_RECOVER_REINO",
+      "TORTUGA_PAGOS_DESTROY",
+      "TORTUGA_PAGOS_PROTECT_REINOS",
+      "TORTUGA_PAGOS_SELF_PROTECT",
+      "TORTUGA_PAGOS_REINO_WEIGHT"
     ]
   },
   {

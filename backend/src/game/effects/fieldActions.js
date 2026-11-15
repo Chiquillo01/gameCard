@@ -352,13 +352,30 @@ function excavate(ctx, args, targets) {
   const chosen = (targets || []).filter((id) => found.includes(id)).slice(0, args.count || 1);
   const picked = chosen.length ? chosen : found.slice(0, args.count || 1);
   if (!picked.length) {
-    log(ctx.state, 'No encuentra ninguna carta que añadir a la Mano.');
+    log(ctx.state, args.then === 'summon' ? 'No encuentra ningún monstruo que invocar.' : 'No encuentra ninguna carta que añadir a la Mano.');
+    return;
+  }
+  // Bulette: "si encontraste un monstruo de Tierra, invócalo especial".
+  if (args.then === 'summon') {
+    ctx.lastSummoned = picked.filter((id) => summonByEffect(ctx, id, { position: args.position || 'attack', positionFixed: !!args.position }));
     return;
   }
   picked.forEach((id) => {
     pl.deck = pl.deck.filter((x) => x !== id);
     pl.hand.push(id);
     log(ctx.state, `${pl.userId} añade ${getCard(cardIdFromInstance(id)).name} a la mano.`);
+  });
+}
+
+// "No puede ser destruida ni exiliada por efectos de cartas" (La Tortuga Pagos): `target: 'self'`,
+// or every face-up card on the field matching `filter` ("ninguna carta de Reino..."). Continuous —
+// recomputeContinuous clears the flags first.
+function protectFromRemoval(ctx, args) {
+  const entries = ctx.state.players.flatMap((p) => [...p.field.monsters, ...p.field.support, p.field.territory]).filter((e) => e && !e.isToken);
+  const picked = args.target === 'self' ? entries.filter((e) => e.instanceId === ctx.sourceInstanceId) : entries.filter((e) => !e.faceDown && matchesCardFilter(getCard(e.cardId), args.filter || {}));
+  picked.forEach((e) => {
+    if (args.destroy !== false) e.cannotBeDestroyedByEffects = true;
+    if (args.exile !== false) e.cannotBeExiledByEffects = true;
   });
 }
 
@@ -390,6 +407,7 @@ module.exports = {
   protectFromEffectDestruction,
   attacksOnlyOnStrongest,
   excavate,
+  protectFromRemoval,
   cannotBeDestroyedOrExiled: protectFromOpponentEffects,
   cannotBeDestroyedByOpponentEffects: protectFromOpponentEffects,
   grantTimedBuff,

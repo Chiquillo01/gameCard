@@ -119,7 +119,8 @@ module.exports = {
   225: (bg, fg) => { A.plain(bg, ['#0a0206', '#1a0a10', '#2a1420']); softGlow(bg, bg.w * 0.5, bg.h * 0.5, bg.h * 0.5, '#60ff60', 100); A.bookIcon(fg, ...at(fg, 0.5, 0.5), fg.h * 0.75, t3('#2a1a10', '#4a3020', '#6a4a30')); A.head(fg, fg.w * 0.48, fg.h * 0.5, fg.h * 0.6, { head: 'skull', eye: '#60ff60' }); },
 
   // ---------- PAO ----------
-  230: (bg, fg) => { A.meadow(bg, 230); figure(fg, ...at(fg, 0.5, 0.5), fg.h * 0.4, { cloth: P.blue, hair: t3('#8a5a1a', '#c88a3a', '#f0c070'), item: 'woodSword', shield: P.wood, shieldBoss: P.blue, build: 'small' }); },
+  // Bulette: a burrowing land-shark breaking out of the earth.
+  230: (bg, fg) => { A.plain(bg, ['#e8b878', '#c88a4a', '#6a4426']); gradient(bg, [hex('#8a5a2a'), hex('#4a2e16')], { y0: Math.round(bg.h * 0.7) }); A.fish(fg, ...at(fg, 0.48, 0.5), fg.h * 0.5, { kind: 'shark', tones: t3('#3a3a40', '#6a6a70', '#a8a8b0'), fin: P.brown }); for (let k = 0; k < 7; k++) fg.ball(fg.w * (0.2 + k * 0.1), fg.h * (0.8 + (k % 2) * 0.05), fg.h * 0.05, fg.h * 0.04, P.brown); },
   243: (bg, fg) => { A.underwater(bg, 243, ['#2a8ab0', '#1a6a8a', '#0a3a5a']); softGlow(bg, bg.w * 0.5, bg.h * 0.5, bg.h * 0.5, '#fff0a0', 110); A.fish(fg, ...at(fg, 0.46, 0.5), fg.h * 0.55, { tones: P.white, fin: t3('#c8c8d8', '#f0f0ff', '#ffffff'), spots: P.orange, whiskers: true, seed: 5 }); },
   245: (bg, fg) => { A.underwater(bg, 245, ['#1a5a8a', '#0e3a5a', '#061a30']); A.fish(fg, ...at(fg, 0.45, 0.5), fg.h * 0.5, { kind: 'shark', tones: P.grey, fin: P.grey }); },
   249: (bg, fg) => { A.underwater(bg, 249); A.fish(fg, ...at(fg, 0.5, 0.42), fg.h * 0.5, { kind: 'manta', tones: t3('#1a2a4a', '#3a5a8a', '#7a9ac8') }); },
@@ -143,6 +144,8 @@ module.exports = {
   284: (bg, fg) => { A.plain(bg, ['#0a1a0a', '#1a3a14', '#3a6a2a']); require('./make').vineEmblem(fg, ...at(fg, 0.5, 0.5), fg.h * 0.42); A.claws(fg, ...at(fg, 0.5, 0.5), fg.h * 0.4, '#a8ff60', 2); },
   286: (bg, fg) => { A.darkForest(bg, 286); figure(fg, ...at(fg, 0.5, 0.5), fg.h * 0.42, { robe: P.moss, hat: 'hood', hood: P.moss, beard: P.white, item: 'staff', orb: P.leaf, itemGlow: '#a8ff80', offhand: 'book', cover2: P.green, aura: '#80c060' }); },
   287: (bg, fg) => { A.darkForest(bg, 287, { fog: '#80c0d0' }); gradient(bg, [hex('#2a6a8a'), hex('#1a4a6a')], { y0: Math.round(bg.h * 0.8) }); figure(fg, ...at(fg, 0.5, 0.48), fg.h * 0.4, { skin: P.pale, robe: P.teal, hair: t3('#c8a020', '#f0d050', '#fff0a0'), hairStyle: 'long', offhand: 'orb', orb2: P.ice, item: 'lantern' }); },
+  // La Tortuga Pagos: the turtle carrying the world, under the stars (Tiempo).
+  259: (bg, fg) => { A.night(bg, 259, { color: '#e0d8ff' }); softGlow(bg, bg.w * 0.5, bg.h * 0.4, bg.h * 0.55, '#a890ff', 90); A.tarasca(fg, ...at(fg, 0.55, 0.6), fg.h * 0.48); fg.ball(fg.w * 0.58, fg.h * 0.3, fg.h * 0.13, fg.h * 0.13, t3('#1a4a8a', '#3a8ad8', '#8ad0ff')); fg.ball(fg.w * 0.56, fg.h * 0.28, fg.h * 0.06, fg.h * 0.04, P.green); },
   290: (bg, fg) => { A.swamp(bg, 290); A.tarasca(fg, ...at(fg, 0.52, 0.55), fg.h * 0.5); },
 
   // ---------- TP ----------
