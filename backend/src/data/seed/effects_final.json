@@ -2331,7 +2331,7 @@
       {
         "fn": "limitPerTurn",
         "args": {
-          "name": "Ba-o la diosa del Inframundo",
+          "name": "Diana, diosa del Inframundo",
           "max": 1
         }
       }
@@ -2361,7 +2361,7 @@
       {
         "fn": "limitPerTurn",
         "args": {
-          "name": "Ba-o la diosa del Inframundo",
+          "name": "Diana, diosa del Inframundo",
           "max": 1
         }
       }
@@ -2385,7 +2385,7 @@
         "args": {
           "player": "self",
           "filter": {
-            "category": "Compilado"
+            "family": "Inframundo"
           },
           "scope": "ownGY"
         }

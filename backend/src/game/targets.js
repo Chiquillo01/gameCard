@@ -103,7 +103,7 @@ function summonZonePool(ctx, zones, args) {
   const exclude = args.exclude || (args.filter && args.filter.exclude);
   const excludedName = exclude === 'self' ? cardOf(ctx.sourceInstanceId).name : exclude;
   // "Invoca un monstruo" brings out monsters, not Compilaciones — only a card that says so does
-  // (Ba-o: "invoca una Compilación de tu Cementerio").
+  // ("invoca una Compilación de tu Cementerio").
   const wantsCompile = /^(compilado|compilaci[oó]n|fusion)$/i.test(String((args.filter && args.filter.category) || ''));
   // "De cualquier Cementerio" (Deva): the rival's too.
   const rivalGY = args.scope === 'anyGY' && zones.includes('graveyard') ? player(ctx.state, opponentIndex(ctx.controllerIndex)).graveyard : [];

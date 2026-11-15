@@ -3668,18 +3668,18 @@
     ]
   },
   {
-    "name": "Ba-o la diosa del Inframundo",
+    "name": "Diana, diosa del Inframundo",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173668/baodiosainframundotcg.png",
     "attribute": "Oscuridad",
     "type": "Demonio",
     "breed": "Demonio",
     "family": "Inframundo",
-    "description": "Una figura envuelta en un aura de misterio y poder oscuro, Ba-o gobierna el Inframundo con su báculo negro, símbolo de autoridad absoluta. Su corona de espino negra refleja su conexión con la tragedia y la redención, mientras su cabello largo y blanco ondea como un manto de niebla etérea. Su vestido gótico, que se funde con las sombras, oculta secretos y terrores ancestrales. Aquellos que se atrevan a buscar su favor deben enfrentarse a su juicio inquebrantable. Su sola presencia drena la luz, dejando solo un vacío eterno que susurra promesas y amenazas a partes iguales. Ba-o es la sombra en la que todos los secretos duermen.",
+    "description": "Una figura envuelta en un aura de misterio y poder oscuro, Diana gobierna el Inframundo con su báculo negro, símbolo de autoridad absoluta. Su corona de espino negra refleja su conexión con la tragedia y la redención, mientras su cabello largo y blanco ondea como un manto de niebla etérea. Su vestido gótico, que se funde con las sombras, oculta secretos y terrores ancestrales. Aquellos que se atrevan a buscar su favor deben enfrentarse a su juicio inquebrantable. Su sola presencia drena la luz, dejando solo un vacío eterno que susurra promesas y amenazas a partes iguales. Diana es la sombra en la que todos los secretos duermen.",
     "rarity": "legendary",
     "category": "fusion",
     "expansion": "IdL",
-    "effect": "Una vez por turno, cómo efecto rápido descarta una carta y aplica un efecto:\n• Destruye una carta en el Campo.\n• Exilia esta carta hasta el final del turno, si lo haces, invoca una Compilación de tu Cementerio.",
-    "invocationText": "Compilación - 1 Compilacion + 2 monstruos Nivel 4 o superior",
+    "effect": "Una vez por turno, cómo efecto rápido descarta una carta y aplica un efecto:\n• Destruye una carta en el Campo.\n• Exilia esta carta hasta el final del turno, si lo haces, invoca un monstruo Inframundo de tu Cementerio.",
+    "invocationText": "Compilación - 3 monstruos de Inframundo",
     "atk": 8,
     "def": 8,
     "level": 8,
@@ -3690,16 +3690,8 @@
       "args": {
         "materials": [
           {
-            "category": "Compilado",
-            "count": 1
-          },
-          {
-            "minLevel": 5,
-            "count": 2,
-            "zone": [
-              "field",
-              "graveyard"
-            ]
+            "family": "Inframundo",
+            "count": 3
           }
         ]
       }

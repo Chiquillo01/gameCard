@@ -4,7 +4,7 @@ const { applyAction, viewFor } = require('../../game/engine');
 const { placeSupport } = require('../../game/zones');
 const { getEffectiveStats, recomputeContinuous, fireTrigger } = require('../../game/effectEngine');
 const { seedCatalog, makeDuel, instance, toHand, toGraveyard, toDeckTop, onField, toPhase, passAll, monster, setSupport } = require('./engineHelpers');
-const { placePending, resolveAll } = require('./chainHelpers');
+const { placePending, resolveAll, actPicking } = require('./chainHelpers');
 const { STARTING_VP } = require('../../game/constants');
 
 beforeAll(async () => {
@@ -343,5 +343,36 @@ describe('Capitán Bandido', () => {
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: capitan }).ok).toBe(false);
     await toGraveyard(state, 0, 'Matón');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: capitan }).ok).toBe(true);
+  });
+});
+
+describe('Diana, diosa del Inframundo', () => {
+  it('is compiled from 3 Inframundo monsters and brings back an Inframundo monster (not a Compilación) when it exiles itself', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const diana = await instance(0, 'Diana, diosa del Inframundo');
+    state.players[0].extra.push(diana);
+    const mats = [await onField(state, 0, 'Slime'), await onField(state, 0, 'Murciélago')];
+    const other = await onField(state, 0, 'Goblin Solitario');
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: diana, materialInstanceIds: [...mats, other] }).ok).toBe(false);
+    mats.push(await onField(state, 0, 'Banshee'));
+    expect(applyAction(state, 0, { type: 'COMPILE_SUMMON', instanceId: diana, materialInstanceIds: mats }).ok).toBe(true);
+    resolveAll(state);
+    passAll(state);
+    expect(monster(state, diana)).toBeDefined();
+
+    state.players[0].graveyard = [];
+    // The Compilación is first in the Cementerio: it must not be the one offered.
+    const caos = await toGraveyard(state, 0, 'Héroe del Caos');
+    const vampiro = await toGraveyard(state, 0, 'Vampiro');
+    state.players[0].hand = [];
+    await toHand(state, 0, 'Goblin Astuto');
+    const res = actPicking(state, 0, { type: 'ACTIVATE_EFFECT', effectId: 'BAO_EXILE_REVIVE', sourceInstanceId: diana });
+    expect(res.ok).toBe(true);
+    passAll(state);
+    resolveAll(state);
+    expect(state.players[0].banished).toContain(diana);
+    expect(monster(state, vampiro)).toBeDefined();
+    expect(state.players[0].graveyard).toContain(caos);
   });
 });
