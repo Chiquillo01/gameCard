@@ -118,6 +118,42 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: an ancient spellbook bound in deep blue leather with silver corners and a jagged lightning-bolt emblem on the cover, floating open in mid-air, its pages flipping wildly; a blinding bolt of white-blue lightning bursts out of the open pages and strikes a glowing magical artefact on a stone pedestal (an enchanted crystal shield wrapped in arcane chains), shattering it into shards and sparks; electric arcs crackle around the book. Setting: a tall, dim arcane library with towering bookshelves and floating candles, the flash of the lightning lighting up the scene in cold blue tones, loose pages swirling in the air.
 ```
 
+## 236 · Gigante de Hielo (rediseño)
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a colossal ice giant made of living glacier rock, its massive body of pale-blue stone crusted with thick ice armour and jagged icicles along its shoulders and back, a long beard and hair of frozen frost, deep glowing icy-white eyes; it holds an enormous greataxe forged of frozen steel with a blade of clear blue ice; freezing mist pours from its mouth and snow swirls around it, the ground freezing solid under its feet. Setting: a frozen mountain pass in a raging blizzard, snow-covered rocks, a huge frozen waterfall behind it, pale blue moonlight cutting through the storm.
+```
+
+## 237 · Gigante de las Nubes (rediseño)
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a colossal serene cloud giant made of pale grey and white storm-cloud rock, its radiant skin lit by sunlight from above, long hair and beard made of flowing, moving clouds, calm glowing pale-green eyes; strong winds spiral around its arms and legs, carrying leaves and feathers, its lower body half wrapped in drifting clouds as if it were descending from the sky. Setting: a high windswept cliff above a sea of clouds, bent trees and tall grass flattened by a strong gale, bright sky with fast-moving clouds and golden sunbeams breaking through.
+```
+
+## 238 · Gigante de Rocas (rediseño)
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a colossal ancient rock giant carved from living brown and ochre stone, its sturdy primitive body covered in deep cracks that glow with faint amber light revealing ancient runes, moss and small trees growing on its shoulders, glowing amber eyes; it raises a huge maul made of a single boulder bound to a tree trunk, the ground cracking and boulders rising around its feet. Setting: a rocky canyon valley full of ancient megaliths at sunset, layered red and ochre cliffs, dust drifting in warm golden light.
+```
+
+## 239 · Gigante del Trueno (rediseño)
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a colossal thunder giant made of dark slate-grey storm stone, its body split by bright cracks crackling with yellow and electric-blue lightning, eyes blazing white like lightning bolts, a mane of sparks; it draws a gigantic bow of black stone, nocking an arrow of pure electricity, arcs of lightning jumping from its body to the ground. Setting: a stormy mountain peak at night under black thunderclouds, lightning striking all around, rain and scorched rocks lit by the flashes.
+```
+
+## 253 · Gigante de Fuego (rediseño)
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a colossal fire giant made of black volcanic rock and molten magma, bright orange lava glowing through deep cracks in its skin, flames rising from its head and shoulders like a burning crown, blazing yellow eyes; torrents of fire pour from its raised hands, embers and ash swirling around it, lava dripping from its fists. Setting: the slopes of an erupting volcano, rivers of lava, explosions of fire in the distance, ash falling from a red-orange glowing sky.
+```
+
+## 248 · Gigante Elemental (rediseño)
+
+```text
+Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a titanic elemental giant whose body is formed by five fused elements of living stone: one arm of blue glacier ice with icicles, the other arm of black volcanic rock with flowing lava and flames, the legs of brown runed boulders, the shoulders wrapped in swirling white wind and clouds, and bright blue-yellow lightning crackling through cracks across its chest; a glowing golden infinity symbol engraved in the centre of its chest, eyes shining with white light; it stands with arms spread, the five elements orbiting around it. Setting: standing on the edge of a giant cliff, behind it the sky is split into five zones — a blizzard, a sea of clouds, a rocky canyon, a thunderstorm and an erupting volcano — wind whipping around its figure, majestic and overwhelming.
+```
+
 # Prompts para cartas que aún no están en la BD
 
 ## Lamprea del Bosque Oscuro
