@@ -17,6 +17,8 @@ const gameRulesSchema = new Schema(
     maxDeckSize: Number,
     maxFusionCards: Number,
     maxCopiesByRarity: { type: Schema.Types.Mixed },
+    // What a finished duel pays each player (see services/duelRewards.js).
+    duelRewards: { type: Schema.Types.Mixed },
   },
   { timestamps: true, _id: false },
 );

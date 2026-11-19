@@ -84,6 +84,8 @@ function matchesCardFilter(card, filter = {}) {
   if (filter.category && !categoryMatches(card.category, filter.category)) return false;
   // "Monstruos \"Bosque Oscuro\"": monsters and Compilaciones alike.
   if (filter.isMonster && !['monster', 'fusion', 'token'].includes(card.category)) return false;
+  if (filter.excludeAttribute && [card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, filter.excludeAttribute))) return false;
+  if (filter.excludeNames && filter.excludeNames.some((n) => sameText(card.name, n))) return false;
   if (filter.attribute && ![card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, filter.attribute))) return false;
   // "Un monstruo de Fuego o Lava" (Hoguera).
   if (filter.attributeIn && !filter.attributeIn.some((w) => [card.attribute, ...extraAttributesOf(card)].some((a) => attributeMatches(a, w)))) return false;

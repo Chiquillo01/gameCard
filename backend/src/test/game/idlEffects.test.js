@@ -91,11 +91,20 @@ describe('El Vacío / Sombra', () => {
 });
 
 describe('Can del Infierno', () => {
+  it('can also be Normal Summoned ("También puede ser invocado especial...")', async () => {
+    const state = await makeDuel();
+    toPhase(state, 'main1', 0);
+    const can = await toHand(state, 0, 'Can del Infierno');
+    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: can, position: 'attack' }).ok).toBe(true);
+    placePending(state);
+    expect(monster(state, can)).toBeDefined();
+  });
+
   it('is special summoned by sacrificing a monster; once per turn 5 VP to the rival', async () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const can = await toHand(state, 0, 'Can del Infierno');
-    expect(applyAction(state, 0, { type: 'NORMAL_SUMMON', instanceId: can }).ok).toBe(false);
+    expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: can }).ok).toBe(false); // nothing to sacrifice
     const fodder = await onField(state, 0, 'Slime');
     let res = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: can });
     if (res.reason === 'choose-target') res = applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: can, targets: [fodder] });

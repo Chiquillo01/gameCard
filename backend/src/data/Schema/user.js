@@ -56,6 +56,10 @@ const userSchema = new Schema(
       type: Number,
       default: 0,
     },
+    // When the player last opened the news: anything published after it shows as unread.
+    newsSeenAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

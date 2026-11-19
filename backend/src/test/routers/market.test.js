@@ -1,4 +1,5 @@
 jest.mock('../../services/sendgrid', () => jest.fn().mockResolvedValue());
+jest.mock('../../services/notify', () => ({ emitToUser: jest.fn() }));
 
 const supertest = require('supertest');
 const { bootstrapApp } = require('../../bootstrap');
@@ -10,6 +11,8 @@ const { User } = require('../../data/Schema/user');
 const { Deck } = require('../../data/Schema/deck');
 const { Market } = require('../../data/Schema/market');
 const { UserCollection } = require('../../data/Schema/userCollection');
+const { UserNotice } = require('../../data/Schema/userNotice');
+const { emitToUser } = require('../../services/notify');
 
 beforeAll(async () => {
   await connectDB();
@@ -22,7 +25,7 @@ afterAll(async () => {
 let seq = 0;
 async function player(name, pixelcoins = 1000) {
   const email = `market.${name.toLowerCase()}${seq++}@gmail.com`;
-  const registered = await fakeRequest.post('/auth/register').send({ userName: `${name}${seq}`, email, password: '123456Ab' });
+  const registered = await fakeRequest.post('/auth/register').send({ userName: `${name}${seq}`, email, password: '123456Ab!' });
   const user = await User.findOneAndUpdate({ email }, { pixelcoins }, { new: true });
   return { token: registered.body.token, id: user._id };
 }
@@ -127,6 +130,29 @@ describe('Card market', () => {
     const listing = await Market.findById(listingId);
     expect(listing).toMatchObject({ amount: 1, status: 'activo' });
     expect(listing.sales).toHaveLength(1);
+  });
+
+  it('tells the seller who bought what: live over the socket and kept for their next visit', async () => {
+    const buyerName = (await User.findById(buyer.id)).userName;
+    const expected = `${buyerName} te ha comprado Sellable Card por 30 monedas`;
+    expect(emitToUser).toHaveBeenCalledWith(seller.id, 'market:sold', expect.objectContaining({ message: expected }));
+    const notices = (path = '') => fakeRequest.get(`/notices${path}`);
+
+    // The seller sees it as unread; the buyer has no notice.
+    const unread = await notices().set('Authorization', `Bearer ${seller.token}`);
+    expect(unread.status).toBe(200);
+    expect(unread.body).toHaveLength(1);
+    expect(unread.body[0]).toMatchObject({ kind: 'market:sold', message: expected, data: { cardName: 'Sellable Card', buyerName, amount: 1, cost: 30 } });
+    expect((await notices().set('Authorization', `Bearer ${buyer.token}`)).body).toHaveLength(0);
+
+    // Only the owner can mark it read.
+    const id = unread.body[0]._id;
+    await fakeRequest.post('/notices/read').set('Authorization', `Bearer ${buyer.token}`).send({ ids: [id] });
+    expect((await UserNotice.findById(id)).read).toBe(false);
+    const marked = await fakeRequest.post('/notices/read').set('Authorization', `Bearer ${seller.token}`).send({ ids: [id] });
+    expect(marked.body).toEqual({ marked: 1 });
+    expect((await notices().set('Authorization', `Bearer ${seller.token}`)).body).toHaveLength(0);
+    expect((await fakeRequest.get('/notices')).status).toBe(401);
   });
 
   it('two buyers racing for the last copy: only one gets it and only one pays', async () => {

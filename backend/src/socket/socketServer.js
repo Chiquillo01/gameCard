@@ -13,17 +13,8 @@ const CreateSocketServer = (server) => {
   io.on('connection', (socket) => {
     console.log(`${socket.id} Connected`);
 
-    io.emit('ping', {
-      form: 'Server',
-      body: 'Te mando un ping',
-    });
-
-    socket.on('pong', (message) => {
-      console.log('He recibido el pong:', message);
-    });
-
-    // Joins this socket to a per-user room so duel invitations/state updates can be targeted
-    // instead of broadcast to everyone.
+    // Joins this socket to a per-user room so friend requests, duel invitations and duel state
+    // updates reach only that player (services/notify.js), instead of being broadcast to everyone.
     socket.on('auth', (token) => {
       try {
         const payload = verifyToken(token);

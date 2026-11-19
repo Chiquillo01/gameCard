@@ -8,7 +8,7 @@ const cards = require('../../data/seed/cards_final.json');
 const effects = require('../../data/seed/effects_final.json');
 const { createMatch, applyAction } = require('../../game/engine');
 const { loadCardIndex } = require('../../game/cardIndex');
-const { placeMonster } = require('../../game/zones');
+const { placeMonster, placeSupport } = require('../../game/zones');
 
 async function seedCatalog() {
   await Promise.all(effects.map((e) => Effect.findByIdAndUpdate(e._id, e, { upsert: true })));
@@ -88,4 +88,12 @@ function passAll(state) {
 
 const monster = (state, id) => state.players.flatMap((p) => p.field.monsters).find((m) => m && m.instanceId === id);
 
-module.exports = { seedCatalog, makeDuel, instance, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster, idOf };
+// An Apoyo set face-down on an earlier turn, ready to be used on the rival's turn too.
+async function setSupport(state, p, name) {
+  const id = await instance(p, name);
+  placeSupport(state, id, p, { faceDown: true });
+  state.players[p].field.support.find((s) => s && s.instanceId === id).setTurn = state.turnNumber - 1;
+  return id;
+}
+
+module.exports = { setSupport, seedCatalog, makeDuel, instance, toHand, toDeckTop, toGraveyard, onField, toPhase, passAll, monster, idOf };

@@ -4,6 +4,8 @@ const { User } = require('../data/Schema/user');
 const { createMatch, applyAction, viewFor, coinTossFirstPlayer, botStep, matchStore } = require('../game');
 const { isDeckPlayable } = require('../game/deckRules');
 const { getIo } = require('../socket/socketServer');
+const { areFriends } = require('../services/friends');
+const { emitToUser } = require('../services/notify');
 
 const { rules } = require('../game/rules');
 
@@ -57,10 +59,9 @@ function botIndexToAct(state) {
 // turn can be followed (a longer one after a real move than after just changing phase).
 const BOT_ACTION_MS = 1100;
 const BOT_PHASE_MS = 450;
-const botTimers = new Set();
+const botTimers = new Map(); // matchId -> the bot's next scheduled move
 function maybeRunBot(state, delay = BOT_ACTION_MS) {
   if (botIndexToAct(state) === -1 || botTimers.has(state.id)) return;
-  botTimers.add(state.id);
   const timer = setTimeout(() => {
     botTimers.delete(state.id);
     const live = matchStore.get(state.id) || state;
@@ -76,8 +77,17 @@ function maybeRunBot(state, delay = BOT_ACTION_MS) {
     broadcastState(live.id);
     if (did) maybeRunBot(live, did === 'phase' ? BOT_PHASE_MS : BOT_ACTION_MS);
   }, delay);
+  botTimers.set(state.id, timer);
   // A pending bot move never keeps the process alive on its own (tests, shutdown).
   if (timer.unref) timer.unref();
+}
+
+// Cancels every bot move still waiting to happen. unref() keeps those timers from holding the
+// process open, but one can still fire after its caller is gone: a test file that started a PvE
+// duel ends, Jest unloads the modules, and the late move then crashes on a torn-down require.
+function stopAllBots() {
+  botTimers.forEach((timer) => clearTimeout(timer));
+  botTimers.clear();
 }
 
 const startPve = async (req, res) => {
@@ -109,28 +119,71 @@ const startPve = async (req, res) => {
   }
 };
 
+// A duel against another player can only be proposed to a friend. The challenge waits in memory
+// (matchStore, PENDING_CHALLENGE_MS) until the friend accepts it with a deck of their own, or
+// declines it.
 const challenge = async (req, res) => {
   try {
     const userId = req.jwtPayload.id;
     const { friendUserId, deckId } = req.body;
-    const deck = await Deck.findOne({ _id: deckId, owner: userId });
+    const deck = await Deck.findOne({ _id: deckId, owner: userId }).populate('cards.card').populate('fusionCards.card');
     if (!deck) return res.status(404).json({ error: 'Mazo no encontrado' });
     if (!isDeckPlayable(deck)) return res.status(400).json({ error: unplayableDeckError() });
-    const friend = await User.findById(friendUserId);
+    if (String(friendUserId) === String(userId)) return res.status(400).json({ error: 'No puedes desafiarte a ti mismo' });
+    const friend = require('mongoose').Types.ObjectId.isValid(friendUserId) ? await User.findById(friendUserId) : null;
     if (!friend) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (!(await areFriends(userId, friendUserId))) return res.status(403).json({ error: 'Solo puedes desafiar a tus amigos' });
 
+    const challenger = await User.findById(userId).select('userName');
     const matchId = randomUUID();
-    matchStore.savePending({ matchId, challengerId: userId.toString(), challengerDeckId: deckId, opponentId: friendUserId });
+    matchStore.savePending({
+      matchId,
+      challengerId: userId.toString(),
+      challengerName: challenger && challenger.userName,
+      challengerDeckId: deckId,
+      opponentId: friendUserId.toString(),
+    });
 
-    try {
-      getIo().to(`user:${friendUserId}`).emit('duel:invitation', { matchId, fromUserId: userId });
-    } catch (e) {
-      /* socket layer optional */
-    }
+    emitToUser(friendUserId, 'duel:invitation', { matchId, fromUserId: userId, fromUserName: challenger && challenger.userName });
 
     res.status(201).json({ matchId, message: 'Desafío enviado' });
   } catch (error) {
     res.status(500).json({ error: 'Error al enviar el desafío' });
+  }
+};
+
+// GET /duel/challenges — the duels friends have proposed to the player, still waiting on an answer.
+const listChallenges = async (req, res) => {
+  try {
+    const userId = req.jwtPayload.id;
+    const challenges = matchStore.pendingFor(userId).map((p) => ({
+      matchId: p.matchId,
+      fromUserId: p.challengerId,
+      fromUserName: p.challengerName,
+      createdAt: p.createdAt,
+    }));
+    res.status(200).json(challenges);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al cargar los desafíos' });
+  }
+};
+
+// POST /duel/:matchId/decline — the challenged player says no; the challenger is told.
+const declineChallenge = async (req, res) => {
+  try {
+    const userId = req.jwtPayload.id;
+    const { matchId } = req.params;
+    const pending = matchStore.getPending(matchId);
+    if (!pending) return res.status(404).json({ error: 'Desafío no encontrado o ya expirado' });
+    if (pending.opponentId.toString() !== userId.toString()) {
+      return res.status(403).json({ error: 'Este desafío no es para ti' });
+    }
+    matchStore.removePending(matchId);
+    const me = await User.findById(userId).select('userName');
+    emitToUser(pending.challengerId, 'duel:declined', { matchId, byUserName: me && me.userName });
+    res.status(200).json({ message: 'Desafío rechazado' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al rechazar el desafío' });
   }
 };
 
@@ -170,11 +223,7 @@ const acceptChallenge = async (req, res) => {
     matchStore.save(state);
     matchStore.removePending(matchId);
 
-    try {
-      getIo().to(`user:${pending.challengerId}`).emit('duel:accepted', { matchId });
-    } catch (e) {
-      /* socket layer optional */
-    }
+    emitToUser(pending.challengerId, 'duel:accepted', { matchId });
 
     res.status(200).json(viewFor(state, 1));
   } catch (error) {
@@ -235,6 +284,8 @@ function _handleSocketAction(userId, matchId, action) {
 module.exports = {
   startPve,
   challenge,
+  listChallenges,
+  declineChallenge,
   acceptChallenge,
   getState,
   sendAction,
@@ -242,5 +293,6 @@ module.exports = {
   pickBotDeck,
   broadcastState,
   maybeRunBot,
+  stopAllBots,
   _handleSocketAction,
 };

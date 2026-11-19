@@ -88,7 +88,8 @@ function controlsAnotherOfFamily(ctx, args) {
 // `side: 'any'`: on either side ("si \"Hada del Bosque Oscuro\" está en el Campo").
 function controlsCard(ctx, args) {
   const players = args.side === 'any' ? ctx.state.players : [player(ctx.state, ctx.controllerIndex)];
-  return players.some((pl) => [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && getCard(e.cardId).name === args.name));
+  const fits = (card) => (args.name ? card.name === args.name : matchesCardFilter(card, { nameContains: args.nameContains }));
+  return players.some((pl) => [...pl.field.monsters, ...pl.field.support, pl.field.territory].some((e) => e && !e.faceDown && !e.isToken && fits(getCard(e.cardId))));
 }
 
 // "Si tienes N monstruos X en Campo o Cementerio" (Hidra): the player's own cards in those zones.
@@ -96,6 +97,20 @@ function countInZones(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
   const ids = (args.zones || ['field', 'graveyard']).flatMap((z) => (z === 'field' ? pl.field.monsters.filter((m) => m && !m.isToken && !m.faceDown).map((m) => m.instanceId) : pl[z] || []));
   return ids.filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {})).length >= (args.min || 1);
+}
+
+// Face-up cards on the field (monsters, Apoyos and Territorios) whose card matches `filter` —
+// `side`: 'any' (default, both sides), 'self' or 'opponent'. "Por cada Reino en el Campo" (La
+// Tortuga Pagos: `{ subtype: 'field' }`).
+function countCardsOnField(state, controllerIndex, { filter = {}, side = 'any' } = {}) {
+  const sides = side === 'self' ? [controllerIndex] : side === 'opponent' ? [opponentIndex(controllerIndex)] : [0, 1];
+  return sides.flatMap((i) => { const f = player(state, i).field; return [...f.monsters, ...f.support, f.territory]; })
+    .filter((e) => e && !e.faceDown && !e.isToken && matchesCardFilter(getCard(e.cardId), filter)).length;
+}
+
+// "Si hay N [filter] en el Campo/tablero" (La Tortuga Pagos: "si hay 2 Reinos en el tablero").
+function countOnField(ctx, args) {
+  return countCardsOnField(ctx.state, ctx.controllerIndex, args) >= (args.min || 1);
 }
 
 // Extensor de Vida: "si tu oponente tiene más VP que tú".
@@ -175,8 +190,11 @@ function effectIncludes(ctx, args) {
 // "Esta carta puede ser usada en el turno de tu oponente [si ...]": always fine on your own turn;
 // on the rival's, every condition in `requires` must hold too (Sello Temporal: "si no controlas
 // cartas").
+// Sello Temporal: "Si no controlas cartas, puede ser usada en el turno de tu oponente desde tu
+// Mano" — the requirement is only for playing it from the Mano; set face-down it's a normal Veloz.
 function canActivateOnOpponentTurn(ctx, args) {
   if (ctx.state.turnPlayer === ctx.controllerIndex) return true;
+  if (!player(ctx.state, ctx.controllerIndex).hand.includes(ctx.sourceInstanceId)) return true;
   return checkConditions(ctx, args.requires || []);
 }
 
@@ -274,7 +292,10 @@ function onFieldSinceLastTurn(ctx) {
 }
 
 const registry = {
+  notSummonedThisTurn,
+  usedThisTurn,
   countInZones,
+  countOnField,
   opponentHasMoreVP,
   ownTurn,
   inOwnPhase,
@@ -307,6 +328,26 @@ const registry = {
 
 // A condition the engine doesn't know is never met: an effect whose requirement can't be checked
 // stays unusable rather than firing when it shouldn't.
+// "Por cada \"Libro de hechizos\" usado en este turno" (Bibliotecaria): how many Apoyo cards matching
+// `filter` this player activated this turn (support.resolveActivation keeps the list).
+function activatedThisTurn(state, controllerIndex, filter = {}) {
+  const log = state.activationsThisTurn;
+  if (!log || log.turn !== state.turnNumber) return 0;
+  return log.list.filter((a) => a.controllerIndex === controllerIndex && matchesCardFilter(getCard(a.cardId), filter)).length;
+}
+
+// "Solo puede ser invocada una vez por turno": no card with this name summoned by this player yet.
+function notSummonedThisTurn(ctx, args) {
+  const log = ctx.state.summonedThisTurn;
+  if (!log || log.turn !== ctx.state.turnNumber) return true;
+  const name = args.name || getCard(cardIdFromInstance(ctx.sourceInstanceId)).name;
+  return !log.list.some((s) => s.controllerIndex === ctx.controllerIndex && getCard(s.cardId).name === name);
+}
+
+function usedThisTurn(ctx, args) {
+  return activatedThisTurn(ctx.state, ctx.controllerIndex, args.filter) >= (args.min || 1);
+}
+
 function checkConditions(ctx, conditions = []) {
   return conditions.every((c) => {
     const impl = registry[c.fn];
@@ -321,4 +362,5 @@ function markLimitUsed(state, name, sourceInstanceId) {
   state.turnLimits[key] = (state.turnLimits[key] || 0) + 1;
 }
 
-module.exports = { checkConditions, markLimitUsed, markCardEffectUsed, markDuelLimitUsed, actionTags, registry };
+module.exports = {
+  countCardsOnField, activatedThisTurn, checkConditions, markLimitUsed, markCardEffectUsed, markDuelLimitUsed, actionTags, registry };

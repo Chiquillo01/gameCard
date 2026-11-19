@@ -49,6 +49,13 @@ function normalSummon(state, controllerIndex, instanceId, { position = 'attack',
 // condition/cost (own effectCodes carry a `summon_rule` effect) — doesn't touch normalSummonUsed,
 // since a special summon is an ADDITIONAL way to bring it out, not a replacement for the turn's
 // Normal Summon.
+// Where a special summon rule can take its card from: the Mano, unless the rule names other zones
+// with its own canBeSummonedFrom condition (Aboleth, Perro Esqueleto).
+function specialSummonZones(rule) {
+  const zoneRule = (rule.conditions || []).find((c) => c.fn === 'canBeSummonedFrom');
+  return zoneRule ? zoneRule.args.zones : ['hand'];
+}
+
 function specialSummon(state, controllerIndex, instanceId, targets = [], slot = null) {
   const pl = player(state, controllerIndex);
   const loc = findInstanceLocation(state, instanceId);
@@ -67,11 +74,7 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
     || (card.effectCodes || []).map(getEffect).find((e) => e && e.type === 'summon_rule' && !e.trigger && (e.actions || []).some((a) => a.fn === 'specialSummon'));
   if (!rule) return { ok: false, reason: 'no-special-summon-method' };
 
-  // Most special summons are from hand; a few (Aboleth, Perro Esqueleto) name other zones via
-  // their own canBeSummonedFrom condition.
-  const zoneRule = (rule.conditions || []).find((c) => c.fn === 'canBeSummonedFrom');
-  const allowedZones = zoneRule ? zoneRule.args.zones : ['hand'];
-  if (!allowedZones.includes(loc.zone)) return { ok: false, reason: 'not-in-hand' };
+  if (!specialSummonZones(rule).includes(loc.zone)) return { ok: false, reason: 'not-in-hand' };
 
   // `slot` rides along on ctx for the rule's own `specialSummon` action (actions.js) to place it
   // where the player picked, rather than the engine's own first-empty fallback.
@@ -131,8 +134,14 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
 function announceSummon(state, controllerIndex, instanceId, card, faceDown = false, by = {}) {
   const { positionFixed, ...rest } = by;
   const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown, kind: 'special', ...rest };
+  // "Solo puede ser invocada una vez por turno" (the Armaduras Sunna): what each player summoned.
+  if (!state.summonedThisTurn || state.summonedThisTurn.turn !== state.turnNumber) state.summonedThisTurn = { turn: state.turnNumber, list: [] };
+  state.summonedThisTurn.list.push({ controllerIndex, cardId: event.cardId });
   // A special summon: its player picks attack or defense, unless the card fixed it.
   if (event.kind === 'special' && !faceDown && !positionFixed) require('./placement').askPosition(state, controllerIndex, instanceId);
+  // The board's continuous effects reach the newcomer before it can react to its own summon: with
+  // Espectro on the field its "Al ser invocado" effect is already negated.
+  recomputeContinuous(state);
   if (!faceDown) fireTrigger(state, 'onSummon', event);
   fireTrigger(state, 'allySummoned', event);
   fireTrigger(state, 'opponentSummoned', event);
@@ -221,6 +230,11 @@ function materialLocationSatisfies(loc, controllerIndex, req, defaultZones = ['f
 // Rulebook: a Compilación's materials are monsters — a recipe like "2 \"Avispa\"" doesn't take an
 // Apoyo such as Nido de Avispas.
 function materialMatches(state, id, req) {
+  // "X o Y": any one of the alternatives (each a filter of its own).
+  if (req.anyOf) {
+    const { anyOf, ...rest } = req;
+    return anyOf.some((alt) => materialMatches(state, id, { ...rest, ...alt }));
+  }
   const card = materialCard(state, id);
   if (!card || !(card.isToken || ['monster', 'fusion'].includes(card.category))) return false;
   // On the field it counts as what it is right now: a monster an effect turned into another
@@ -239,6 +253,33 @@ function materialCard(state, id) {
   return m ? { ...m.tokenDef, category: 'monster', isToken: true } : null;
 }
 
+// Which of `ids` cover each requirement of a recipe, each card used once: a search over every way
+// to share them out, so a card that fits two requirements (a Valkiria is a Celestial and a
+// "Valkiria") goes where it's needed and not just to the first one listed. Every card must be the
+// player's own and sit in a zone the requirement allows — otherwise a crafted request could
+// "borrow" the opponent's card. Tries each slot's cards in the given order (`cost`, cheapest first,
+// when given). Returns the ids used, or null if no sharing works.
+function assignMaterials(state, controllerIndex, reqs, ids, { defaultZones = ['field'], cost = null } = {}) {
+  const fits = (id, req) => materialLocationSatisfies(findInstanceLocation(state, id), controllerIndex, req, defaultZones) && materialMatches(state, id, req);
+  const ordered = cost ? [...ids].sort((a, b) => cost(a) - cost(b)) : ids;
+  // One slot per card a requirement needs; the pickiest slots first keeps the search short.
+  const slots = reqs
+    .flatMap((req) => Array.from({ length: req.count || 1 }, () => ordered.filter((id) => fits(id, req))))
+    .sort((a, b) => a.length - b.length);
+  const used = new Set();
+  const fill = (i) => {
+    if (i === slots.length) return true;
+    for (const id of slots[i]) {
+      if (used.has(id)) continue;
+      used.add(id);
+      if (fill(i + 1)) return true;
+      used.delete(id);
+    }
+    return false;
+  };
+  return reqs.length && fill(0) ? [...used] : null;
+}
+
 // Fusion/compilado summon. `materialInstanceIds` must satisfy every requirement in
 // card.activationCost.args.materials (see backend game docs / compilate_costs.json).
 function compileSummon(state, controllerIndex, compiladoInstanceId, materialInstanceIds, slot = null, { defaultZones = ['field'] } = {}) {
@@ -249,25 +290,12 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
   const cardId = cardIdFromInstance(compiladoInstanceId);
   const card = getCard(cardId);
   if (violatesUnique(state, controllerIndex, card)) return { ok: false, reason: 'unique-card' };
+  if (!summonRequirementsMet(state, controllerIndex, compiladoInstanceId, card)) return { ok: false, reason: 'summon-requirement' };
   const materials = (card.activationCost && card.activationCost.args && card.activationCost.args.materials) || [];
 
-  const pool = new Set(materialInstanceIds);
-  const usedIds = new Set();
-  for (const req of materials) {
-    let matched = 0;
-    for (const id of pool) {
-      if (usedIds.has(id)) continue;
-      // Every candidate must be owned by the summoning player and sitting in a zone this
-      // requirement actually allows — otherwise a crafted request could "borrow" a card the
-      // opponent owns (or one that's already on the field/graveyard for a hand-only recipe)
-      // and have it moved into the summoner's own graveyard.
-      const loc = findInstanceLocation(state, id);
-      if (!materialLocationSatisfies(loc, controllerIndex, req, defaultZones)) continue;
-      if (materialMatches(state, id, req)) { usedIds.add(id); matched++; }
-      if (matched >= req.count) break;
-    }
-    if (matched < req.count) return { ok: false, reason: `missing-material:${JSON.stringify(req)}` };
-  }
+  const assigned = assignMaterials(state, controllerIndex, materials, [...new Set(materialInstanceIds)], { defaultZones });
+  if (!assigned) return { ok: false, reason: 'missing-material' };
+  const usedIds = new Set(assigned);
 
   // Check there will be a free zone before touching anything: materials on the field free theirs.
   // Rulebook: the player chooses where the compiled monster lands, same as any other summon.
@@ -376,4 +404,4 @@ function grantedSummonRule(state, controllerIndex, instanceId, card) {
   return grants ? { _id: 'GRANTED_SPECIAL_SUMMON', type: 'summon_rule', oncePerTurn: false, conditions: [], actions: [{ fn: 'specialSummon', args: { card: 'self', zone: 'field' } }] } : null;
 }
 
-module.exports = { grantedSummonRule, summonRequirementsMet, materialMatches, materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };
+module.exports = { specialSummonZones, grantedSummonRule, summonRequirementsMet, assignMaterials, materialMatches, materialCard, materialLocationSatisfies, normalSummon, specialSummon, compileSummon, decompile, fireHandTrigger, finishHandTrigger, announceSummon };

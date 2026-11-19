@@ -13,6 +13,7 @@ const { User } = require('../data/Schema/user');
 const { Deck } = require('../data/Schema/deck');
 const { UserCollection } = require('../data/Schema/userCollection');
 const { addCardsToCollection, charge, refund } = require('./storeRewards');
+const { notifyUser } = require('./notices');
 
 const MAX_PRICE = 1000000;
 const MAX_LISTING_COPIES = 99;
@@ -150,7 +151,33 @@ async function buyListing(buyerId, listingId, amount = 1) {
   await Market.updateOne({ _id: listingId }, { $push: { sales: { buyerId, amount: copies, unitPrice: listing.price.pixelcoins } } });
   await Market.updateOne({ _id: listingId, amount: 0, status: 'activo' }, { status: 'vendido' });
 
+  // 5. Tell the seller (live if online, and kept for their next visit). Never fails the purchase.
+  await notifySale(listing, buyerId, copies, cost);
+
   return { bought: copies, cost, newBalance: { pixelcoins: charged.pixelcoins, pixelgems: charged.pixelgems } };
+}
+
+// "<comprador> te ha comprado <carta> por <precio> monedas", for the seller.
+async function notifySale(listing, buyerId, copies, cost) {
+  try {
+    const [buyer, card] = await Promise.all([
+      User.findById(buyerId).select('userName').lean(),
+      Card.findById(listing.cardId).select('name').lean(),
+    ]);
+    const buyerName = (buyer && buyer.userName) || 'Alguien';
+    const cardName = (card && card.name) || 'una carta';
+    const what = copies > 1 ? `${copies} copias de ${cardName}` : cardName;
+    await notifyUser(listing.userId, 'market:sold', `${buyerName} te ha comprado ${what} por ${cost} monedas`, {
+      listingId: listing._id,
+      cardId: listing.cardId,
+      cardName,
+      buyerName,
+      amount: copies,
+      cost,
+    });
+  } catch (e) {
+    console.error('No se pudo avisar al vendedor:', e.message);
+  }
 }
 
 const SELLER_FIELDS = 'userName';

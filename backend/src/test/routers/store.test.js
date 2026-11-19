@@ -91,19 +91,19 @@ describe('Store Controller TEST', () => {
     const user = await fakeRequest.post('/auth/register').send({
       userName: 'Store Buyer',
       email: 'store.buyer@gmail.com',
-      password: '123456Ab',
+      password: '123456Ab!',
     });
     userToken = user.body.token;
 
     await fakeRequest.post('/auth/register').send({
       userName: 'Store Admin',
       email: 'store.admin@gmail.com',
-      password: '123456Ab',
+      password: '123456Ab!',
     });
     await User.updateOne({ email: 'store.admin@gmail.com' }, { admin: true });
     const adminLogin = await fakeRequest.post('/auth/login').send({
       email: 'store.admin@gmail.com',
-      password: '123456Ab',
+      password: '123456Ab!',
     });
     adminToken = adminLogin.body.token;
   });
@@ -147,8 +147,8 @@ describe('Store Controller TEST', () => {
 
     const register = async (name) => {
       const email = `${name.toLowerCase()}@gmail.com`;
-      await fakeRequest.post('/auth/register').send({ userName: name, email, password: '123456Ab' });
-      const login = await fakeRequest.post('/auth/login').send({ email, password: '123456Ab' });
+      await fakeRequest.post('/auth/register').send({ userName: name, email, password: '123456Ab!' });
+      const login = await fakeRequest.post('/auth/login').send({ email, password: '123456Ab!' });
       const user = await User.findOne({ email });
       return { token: login.body.token, userId: user._id };
     };
@@ -228,11 +228,11 @@ describe('Store Controller TEST', () => {
       await fakeRequest.post('/auth/register').send({
         userName: 'Bulk Buyer',
         email: 'bulk.buyer@gmail.com',
-        password: '123456Ab',
+        password: '123456Ab!',
       });
       const login = await fakeRequest.post('/auth/login').send({
         email: 'bulk.buyer@gmail.com',
-        password: '123456Ab',
+        password: '123456Ab!',
       });
       bulkBuyerToken = login.body.token;
 

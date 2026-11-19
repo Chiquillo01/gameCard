@@ -103,7 +103,7 @@ function summonZonePool(ctx, zones, args) {
   const exclude = args.exclude || (args.filter && args.filter.exclude);
   const excludedName = exclude === 'self' ? cardOf(ctx.sourceInstanceId).name : exclude;
   // "Invoca un monstruo" brings out monsters, not Compilaciones — only a card that says so does
-  // (Ba-o: "invoca una Compilación de tu Cementerio").
+  // ("invoca una Compilación de tu Cementerio").
   const wantsCompile = /^(compilado|compilaci[oó]n|fusion)$/i.test(String((args.filter && args.filter.category) || ''));
   // "De cualquier Cementerio" (Deva): the rival's too.
   const rivalGY = args.scope === 'anyGY' && zones.includes('graveyard') ? player(ctx.state, opponentIndex(ctx.controllerIndex)).graveyard : [];
@@ -167,6 +167,11 @@ function stepPool(ctx, step) {
     case 'destroyCards':
       return isSelect(args) ? ids(selectRows(ctx, args).filter((r) => !protectedFromRemoval(ctx, r))) : null;
     case 'exileTarget':
+      // Equipo Sunna - Astas de Combate: "exilia 2 cartas del Cementerio del oponente".
+      if (args.from === 'graveyard') {
+        const sides = args.side === 'opponent' ? [opponentIndex(ctx.controllerIndex)] : args.side === 'self' ? [ctx.controllerIndex] : [ctx.controllerIndex, opponentIndex(ctx.controllerIndex)];
+        return sides.flatMap((i) => player(ctx.state, i).graveyard).filter((id) => id !== ctx.sourceInstanceId && matchesCardFilter(cardOf(id), args.filter || {}));
+      }
       return args.target === 'self' || args.target === 'allMonsters' ? null : ids(selectRows(ctx, { ...args, target: args.target || 'selected' }).filter((r) => !protectedFromRemoval(ctx, r)));
     case 'excavate': {
       // Nothing found is a fine result (it was a dig), so an empty dig is no pick, not "no target".
@@ -186,6 +191,12 @@ function stepPool(ctx, step) {
     case 'damageMonster':
     case 'setAtk':
       return isSelect(args) ? ids(faceUpMonsters(selectRows(ctx, args))) : null;
+    // Familiar Mágico: "puede ser equipada a un Mago en el Campo" (one of its controller's).
+    case 'equipSelfTo':
+      return ids(faceUpMonsters(selectRows(ctx, { ...args, side: 'self', zone: 'monster' })).filter((r) => !r.entry.isToken));
+    // Libro de hechizos - Dragar: the rival's top cards.
+    case 'excavateOpponentToGY':
+      return require('./effects/extraActions').opponentTopCards(ctx.state, ctx.controllerIndex, args);
     case 'returnCardToHand':
     case 'bounceToHand':
       return isSelect(args) ? ids(selectRows(ctx, args).filter((r) => !r.entry.isToken)) : null;
@@ -230,8 +241,16 @@ function heroCount(ctx, countBy = {}) {
 function stepCount(ctx, step) {
   const args = step.args || {};
   if (step.fn === 'destroyUpToHeroCount') return heroCount(ctx, args.countBy);
-  const { SEARCH_FNS, normalizeSearchArgs } = require('./effects/fieldActions');
-  if (SEARCH_FNS.includes(step.fn)) return normalizeSearchArgs(step.fn, args).count;
+  // "Destruye cartas en el Campo igual al número de Reinos" (La Tortuga Pagos).
+  if (args.countOnField) return require('./effects/conditions').countCardsOnField(ctx.state, ctx.controllerIndex, args.countOnField);
+  const { SEARCH_FNS, searchCount } = require('./effects/fieldActions');
+  if (SEARCH_FNS.includes(step.fn)) return searchCount(ctx, step.fn, args);
+  // "Por cada una" (Equipo Sunna - Plan Maestro): as many as the player picked for step N.
+  if (args.countPerPicksOfStep != null) {
+    const other = ((ctx.effect && ctx.effect.actions) || [])[args.countPerPicksOfStep];
+    const pool = other ? stepPool(ctx, other) || [] : [];
+    return (ctx.pickedSoFar || []).filter((t) => pool.includes(t)).length;
+  }
   return args.count || 1;
 }
 
@@ -312,6 +331,8 @@ const STEP_PROMPTS = {
   decompileMonster: 'Elige la Compilación que se descompila',
   gainVPFromGraveyard: 'Elige el monstruo de tu Cementerio',
   excavate: 'Elige la carta excavada que añades a tu Mano',
+  excavateOpponentToGY: 'Elige la carta excavada que envías al Cementerio',
+  equipSelfTo: 'Elige el monstruo al que se equipa',
   setAtk: 'Elige el monstruo cuyo Atk cambia',
   destroyAndGainVP: 'Elige la carta que se destruye',
   setFaceDownDefense: 'Elige el monstruo que pasa a defensa boca abajo',
@@ -399,6 +420,6 @@ function hasNoLegalTarget(ctx, effect) {
   if (steps.some((s) => empty(s) && TARGET_REQUIRED.has(s.step.fn))) return true;
   return steps.length > 0 && steps[0].index === 0 && empty(steps[0]);
 }
-const TARGET_REQUIRED = new Set(['negateEffect', 'negateEffects', 'target', 'changeBeed', 'equipMonster', 'equipMonsterToSelf', 'destroyAndCopyEffect', 'destroyAndGainVP']);
+const TARGET_REQUIRED = new Set(['equipSelfTo', 'negateEffect', 'negateEffects', 'target', 'changeBeed', 'equipMonster', 'equipMonsterToSelf', 'destroyAndCopyEffect', 'destroyAndGainVP']);
 
 module.exports = { choiceLabels, stepPool, stepCount, assignPicks, activeSteps, chosenIndex, pendingEffectChoice, pendingOptionalChoice, declined, isToken, isUpTo, hasNoLegalTarget, canAffect, selectRows, fieldRows, describeCandidate, getEffect };

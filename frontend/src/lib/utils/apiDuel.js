@@ -22,6 +22,17 @@ export const acceptChallenge = async (matchId, deckId) => {
   return response.data;
 };
 
+// The duels friends have proposed to you: [{ matchId, fromUserId, fromUserName, createdAt }].
+export const getDuelChallenges = async () => {
+  const response = await API.get('/challenges', authHeaders());
+  return response.data;
+};
+
+export const declineChallenge = async (matchId) => {
+  const response = await API.post(`/${matchId}/decline`, {}, authHeaders());
+  return response.data;
+};
+
 export const getDuelState = async (matchId) => {
   const response = await API.get(`/${matchId}`, authHeaders());
   return response.data;

@@ -14,6 +14,8 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
+  // The PvE duels below can leave the bot's next move scheduled; cancel it before Jest tears down.
+  require('../../controllers/duelController').stopAllBots();
   await disconnectDB();
 });
 
@@ -26,7 +28,7 @@ describe('Duel Controller TEST', () => {
     const user = await fakeRequest.post('/auth/register').send({
       userName: 'Duel Starter',
       email: 'duel.starter@gmail.com',
-      password: '123456Ab',
+      password: '123456Ab!',
     });
     token = user.body.token;
 
@@ -109,6 +111,87 @@ describe('Duel Controller TEST', () => {
       }
       expect(firsts.size).toBe(2); // 12 tosses: both outcomes show up (odds of failing ~0.05%)
     });
+  });
+});
+
+describe('Duel challenges between friends', () => {
+  const { makeFriends } = require('../../services/friends');
+  const { Deck } = require('../../data/Schema/deck');
+  const matchStore = require('../../game/matchStore');
+  let seq = 0;
+
+  // A player with a playable 40-card deck of their own.
+  async function duelist(name) {
+    const userName = `${name}${seq++}`;
+    const reg = await fakeRequest.post('/auth/register').send({ userName, email: `duelist.${userName.toLowerCase()}@gmail.com`, password: '123456Ab!' });
+    const user = await User.findOne({ userName });
+    const cards = await Promise.all(
+      Array.from({ length: 10 }, (_, i) =>
+        new Card({
+          number: 3000 + seq * 20 + i,
+          name: `Challenge Card ${userName} ${i}`,
+          attribute: 'fire',
+          type: 'dragon',
+          description: 'A card used for tests',
+          rarity: 'common',
+          category: 'monster',
+          expansion: 'TestExpansion',
+          atk: 100,
+          def: 100,
+          effect: 'none',
+          level: 1,
+        }).save(),
+      ),
+    );
+    // The engine reads cards from an in-memory index refreshed every minute: include these now.
+    await require('../../game/cardIndex').loadCardIndex(true);
+    // Saved straight to the database: these tests are about challenges, not the deck builder.
+    const deck = await Deck.create({ deckTitle: 'Challenge Deck', owner: user._id, cards: cards.map((c) => ({ card: c._id, amount: 4 })) });
+    return { token: reg.body.token, id: String(user._id), userName, deckId: String(deck._id) };
+  }
+
+  const post = (p, path, body = {}) => fakeRequest.post(`/duel${path}`).set('Authorization', `Bearer ${p.token}`).send(body);
+  const get = (p, path) => fakeRequest.get(`/duel${path}`).set('Authorization', `Bearer ${p.token}`);
+
+  it('only a friend can be challenged', async () => {
+    const ana = await duelist('Ana');
+    const beto = await duelist('Beto');
+    expect((await post(ana, '/challenge', { friendUserId: beto.id, deckId: ana.deckId })).status).toBe(403);
+    expect((await post(ana, '/challenge', { friendUserId: ana.id, deckId: ana.deckId })).status).toBe(400);
+    expect((await post(ana, '/challenge', { friendUserId: 'not-an-id', deckId: ana.deckId })).status).toBe(404);
+  });
+
+  it('the friend sees the challenge, and accepting it starts a duel between the two', async () => {
+    const ana = await duelist('Ana');
+    const beto = await duelist('Beto');
+    await makeFriends(ana.id, beto.id);
+
+    const sent = await post(ana, '/challenge', { friendUserId: beto.id, deckId: ana.deckId });
+    expect(sent.status).toBe(201);
+
+    const list = await get(beto, '/challenges');
+    expect(list.status).toBe(200);
+    expect(list.body).toEqual([expect.objectContaining({ matchId: sent.body.matchId, fromUserId: ana.id, fromUserName: ana.userName })]);
+    expect((await get(ana, '/challenges')).body).toEqual([]);
+
+    const accepted = await post(beto, `/${sent.body.matchId}/accept`, { deckId: beto.deckId });
+    expect(accepted.status).toBe(200);
+    const state = matchStore.get(sent.body.matchId);
+    expect(state.players.map((p) => p.userId)).toEqual([ana.id, beto.id]);
+    expect(state.vsBot).toBe(false);
+    expect((await get(beto, '/challenges')).body).toEqual([]);
+  });
+
+  it('a declined challenge is gone, and only the challenged player can decline it', async () => {
+    const ana = await duelist('Ana');
+    const beto = await duelist('Beto');
+    await makeFriends(ana.id, beto.id);
+    const sent = await post(ana, '/challenge', { friendUserId: beto.id, deckId: ana.deckId });
+
+    expect((await post(ana, `/${sent.body.matchId}/decline`)).status).toBe(403);
+    expect((await post(beto, `/${sent.body.matchId}/decline`)).status).toBe(200);
+    expect((await get(beto, '/challenges')).body).toEqual([]);
+    expect((await post(beto, `/${sent.body.matchId}/accept`, { deckId: beto.deckId })).status).toBe(404);
   });
 });
 

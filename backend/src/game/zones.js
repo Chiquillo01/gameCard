@@ -138,7 +138,7 @@ function moveToZone(state, instanceId, toZone, ownerIndexOverride, { deckPositio
   else return false;
   if (leaving && !leaving.isToken) {
     state.leftField = state.leftField || [];
-    state.leftField.push({ cardId: leaving.cardId, ownerIndex: loc.ownerIndex });
+    state.leftField.push({ cardId: leaving.cardId, ownerIndex: loc.ownerIndex, byPlayer: state.actingController ?? null });
   }
   if (leaving) {
     // A burning monster that is destroyed stops burning; other statuses stay with the card.

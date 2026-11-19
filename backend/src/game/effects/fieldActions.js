@@ -101,7 +101,8 @@ function destroy(ctx, args, targets) {
     }
     // With nothing chosen and no side given, go for the rival's cards first.
     // ("Todos los monstruos" means both sides.)
-    if (!all && side === 'any' && rows.some((r) => r.ownerIndex !== ctx.controllerIndex)) rows = rows.filter((r) => r.ownerIndex !== ctx.controllerIndex);
+    // ("Todos los monstruos" means both sides, and so does "la carta con mayor Atk del Campo".)
+    if (!all && !args.wholeField && side === 'any' && rows.some((r) => r.ownerIndex !== ctx.controllerIndex)) rows = rows.filter((r) => r.ownerIndex !== ctx.controllerIndex);
     rows = pickRows(rows, { pick: own ? 'weakest' : 'strongest', ...args, count: all ? 999 : args.count });
   }
   rows.forEach((row) => {
@@ -200,8 +201,11 @@ function searchCandidates(state, controllerIndex, fn, args) {
   const fieldAttributes = filter.matchAttributeWithFieldMonster
     ? pl.field.monsters.filter((m) => m && !m.faceDown).map((m) => (m.isToken ? m.tokenDef.attribute : getCard(m.cardId).attribute))
     : null;
+  // Armadura Sunna, Líquida: "con nombre distinto a las que tienes en Cementerio".
+  const graveNames = args.notNamedLikeGraveyard ? pl.graveyard.map((id) => getCard(cardIdFromInstance(id)).name) : [];
   const ids = [];
   zones.forEach((zone) => pl[zone].forEach((id) => {
+    if (graveNames.includes(getCard(cardIdFromInstance(id)).name)) return;
     const card = getCard(cardIdFromInstance(id));
     // A Compilación never goes to the hand (it lives in the Mazo-C), so a search can't offer one.
     if (card.category === 'fusion') return;
@@ -214,9 +218,19 @@ function searchCandidates(state, controllerIndex, fn, args) {
 
 // Moves the player's chosen `targets` to hand; with none given (called outside the usual pick
 // flow) falls back to the first legal matches.
+// How many cards a search step takes. Bibliotecaria: "y si es invocada por el efecto de
+// \"Bibliotecario\" puedes añadir dos en su lugar" (`countIfSummonedBy`).
+function searchCount(ctx, fn, args) {
+  const by = args.countIfSummonedBy;
+  const source = ctx && ctx.event && ctx.event.bySourceCardId;
+  if (by && source && matchesCardFilter(getCard(source), by.filter || {})) return by.count;
+  return normalizeSearchArgs(fn, args).count;
+}
+
 function runSearch(ctx, fn, args, targets) {
   const pl = player(ctx.state, ctx.controllerIndex);
-  const { filter, zones, count } = normalizeSearchArgs(fn, args);
+  const { filter, zones } = normalizeSearchArgs(fn, args);
+  const count = searchCount(ctx, fn, args);
   const candidates = searchCandidates(ctx.state, ctx.controllerIndex, fn, args);
   const picked = (targets && targets.length ? targets.filter((id) => candidates.includes(id)) : candidates).slice(0, count);
   const moved = [];
@@ -295,7 +309,7 @@ function summonPicked(ctx, args, targets) {
     moveToZone(ctx.state, self.instanceId, 'graveyard');
     require('../zones').markSacrificed(ctx.state, self.cardId);
     log(ctx.state, `${getCard(self.cardId).name} es sacrificada.`);
-    require('../effectEngine').announceSentToGraveyard(ctx.state, self.instanceId, ctx.controllerIndex, { from: 'field', reason: 'cost' });
+    require('../effectEngine').announceSentToGraveyard(ctx.state, self.instanceId, ctx.controllerIndex, { from: 'field', reason: 'cost', sacrificed: true });
   }
   // "Invoca especial esta carta del Cementerio" (Héroe Fénix).
   const picks = args.target === 'self' ? [ctx.sourceInstanceId].filter((id) => player(ctx.state, ctx.controllerIndex).graveyard.includes(id)) : targets || [];
@@ -351,14 +365,43 @@ function excavate(ctx, args, targets) {
   const found = excavateCandidates(ctx.state, ctx.controllerIndex, args);
   const chosen = (targets || []).filter((id) => found.includes(id)).slice(0, args.count || 1);
   const picked = chosen.length ? chosen : found.slice(0, args.count || 1);
+  // "Envía al Cementerio las demás cartas" (Zona de Impacto): whatever was dug up and not taken.
+  const sendRest = () => {
+    if (args.restTo !== 'graveyard') return;
+    const rest = top.filter((id) => !picked.includes(id) && pl.deck.includes(id));
+    rest.forEach((id) => {
+      moveToZone(ctx.state, id, 'graveyard');
+      require('../effectEngine').announceSentToGraveyard(ctx.state, id, ctx.controllerIndex, { from: 'deck', reason: 'effect' });
+    });
+    if (rest.length) log(ctx.state, `${rest.map((id) => getCard(cardIdFromInstance(id)).name).join(', ')} van al Cementerio.`);
+  };
   if (!picked.length) {
-    log(ctx.state, 'No encuentra ninguna carta que añadir a la Mano.');
+    log(ctx.state, args.then === 'summon' ? 'No encuentra ningún monstruo que invocar.' : 'No encuentra ninguna carta que añadir a la Mano.');
+    sendRest();
+    return;
+  }
+  // Bulette: "si encontraste un monstruo de Tierra, invócalo especial".
+  if (args.then === 'summon') {
+    ctx.lastSummoned = picked.filter((id) => summonByEffect(ctx, id, { position: args.position || 'attack', positionFixed: !!args.position }));
     return;
   }
   picked.forEach((id) => {
     pl.deck = pl.deck.filter((x) => x !== id);
     pl.hand.push(id);
     log(ctx.state, `${pl.userId} añade ${getCard(cardIdFromInstance(id)).name} a la mano.`);
+  });
+  sendRest();
+}
+
+// "No puede ser destruida ni exiliada por efectos de cartas" (La Tortuga Pagos): `target: 'self'`,
+// or every face-up card on the field matching `filter` ("ninguna carta de Reino..."). Continuous —
+// recomputeContinuous clears the flags first.
+function protectFromRemoval(ctx, args) {
+  const entries = ctx.state.players.flatMap((p) => [...p.field.monsters, ...p.field.support, p.field.territory]).filter((e) => e && !e.isToken);
+  const picked = args.target === 'self' ? entries.filter((e) => e.instanceId === ctx.sourceInstanceId) : entries.filter((e) => !e.faceDown && matchesCardFilter(getCard(e.cardId), args.filter || {}));
+  picked.forEach((e) => {
+    if (args.destroy !== false) e.cannotBeDestroyedByEffects = true;
+    if (args.exile !== false) e.cannotBeExiledByEffects = true;
   });
 }
 
@@ -390,6 +433,7 @@ module.exports = {
   protectFromEffectDestruction,
   attacksOnlyOnStrongest,
   excavate,
+  protectFromRemoval,
   cannotBeDestroyedOrExiled: protectFromOpponentEffects,
   cannotBeDestroyedByOpponentEffects: protectFromOpponentEffects,
   grantTimedBuff,
@@ -405,6 +449,7 @@ module.exports = {
   summonByEffect,
   searchCandidates,
   normalizeSearchArgs,
+  searchCount,
   SEARCH_FNS,
 };
 Object.defineProperty(module.exports, 'excavateCandidates', { value: excavateCandidates, enumerable: false });

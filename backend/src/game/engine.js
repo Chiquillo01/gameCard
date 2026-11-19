@@ -4,7 +4,7 @@ const { normalSummon, specialSummon, compileSummon, decompile } = require('./sum
 const { canBeNormalSummoned, cannotBeSummoned } = require('./summonRules');
 const { hasStatus, statusesOf, FREEZE } = require('./statuses');
 const { activateSupport, activateSetSupport } = require('./support');
-const { declareAttack, attackBlockReason, allowedAttacks } = require('./combat');
+const { declareAttack, attackBlockReason, allowedAttacks, hasAbility } = require('./combat');
 const { changePosition } = require('./position');
 const { isOwnActivation, activateEffect, resolveTriggerChoice, requiredZoneFor, locationIsInZone, effectIdsAt, fieldEntryAt, describeHand, getEffectiveStats } = require('./effectEngine');
 const { passPriority, speedOf, linkBlockReason, responseWindowOpen } = require('./chain');
@@ -93,7 +93,7 @@ function coinTossFirstPlayer(random = Math.random) {
 const CHAIN_RESPONSE_TYPES = ['ACTIVATE_SUPPORT', 'ACTIVATE_EFFECT', 'PASS_CHAIN'];
 
 // Rulebook: every action opens a window for the other player to answer it with a fast effect
-// (Speed 2 or more: an Apoyo Veloz from the hand or set, a quick effect) — or to pass. Activations
+// (Speed 2 or more: a set Apoyo Veloz — from the hand only in its own turn —, a quick effect) — or to pass. Activations
 // and attacks already open a Pila of their own; these are the rest.
 const WINDOW_ACTIONS = {
   NORMAL_SUMMON: (a) => (a.faceDown ? 'coloca un monstruo boca abajo' : 'invoca un monstruo'),
@@ -109,9 +109,24 @@ const WINDOW_ACTIONS = {
 // quick effect...) or an Apoyo Veloz in their hand. With nothing, the window passes on its own.
 function canRespondNow(state, idx) {
   const pl = state.players[idx];
-  if (pl.hand.some((id) => { const c = getCard(id.split(':')[1]); return c.category === 'support' && c.subtype === 'instant'; })) return true;
+  const { handActivationAllowed } = require('./support');
+  if (pl.hand.some((id) => { const c = getCard(id.split(':')[1]); return c.category === 'support' && c.subtype === 'instant' && handActivationAllowed(state, idx, c); })) return true;
   const ids = [...pl.hand, ...pl.graveyard, ...pl.banished, ...pl.field.monsters.filter(Boolean).map((m) => m.instanceId), ...pl.field.support.filter(Boolean).map((s) => s.instanceId), ...(pl.field.territory ? [pl.field.territory.instanceId] : [])];
   return ids.some((id) => !String(id).startsWith('token:') && computeAvailableEffects(state, idx, id, id.split(':')[1]).length > 0);
+}
+
+// Stricter than canRespondNow: an effect on the field/Mano/Cementerio only counts when its
+// conditions hold against what's on the Pila now (Kraken only answers effects that touch the
+// Cementerio). Decides whether an effect that activated on its own waits for a window.
+function canAnswerNow(state, idx) {
+  const pl = state.players[idx];
+  const { handActivationAllowed } = require('./support');
+  if (pl.hand.some((id) => { const c = getCard(id.split(':')[1]); return c.category === 'support' && c.subtype === 'instant' && handActivationAllowed(state, idx, c); })) return true;
+  const ids = [...pl.hand, ...pl.graveyard, ...pl.banished, ...pl.field.monsters.filter(Boolean).map((m) => m.instanceId), ...pl.field.support.filter(Boolean).map((s) => s.instanceId), ...(pl.field.territory ? [pl.field.territory.instanceId] : [])];
+  return ids.some((id) => !String(id).startsWith('token:') && computeAvailableEffects(state, idx, id, id.split(':')[1]).some((effectId) => {
+    const effect = getEffect(effectId);
+    return checkConditions({ state, controllerIndex: idx, sourceInstanceId: id, effect }, effect.conditions);
+  }));
 }
 
 function openWindow(state, actorIndex, label) {
@@ -265,6 +280,8 @@ function viewFor(state, viewerIndex) {
     startingVp: rules().startingVp, // what the VP bars are measured against
     // Why the duel ended ("se queda sin VP", "se rinde"...), once it has.
     endReason: state.endReason ? readableLogLine(state, { message: state.endReason }, names).message : null,
+    // What the duel paid this viewer, once it's over ({ pixelcoins, pixelgems }, or null).
+    reward: (state.rewards && state.rewards[viewerIndex]) || null,
     you: viewerIndex,
     players: state.players.map(redactPlayer),
     log: state.log.slice(-80).map((line) => readableLogLine(state, line, names)),
@@ -336,6 +353,9 @@ function specialSummonRuleFor(card) {
 function specialSummonAvailable(state, ownerIndex, instanceId, card) {
   const rule = require('./summon').grantedSummonRule(state, ownerIndex, instanceId, card) || specialSummonRuleFor(card);
   if (!rule) return false;
+  // Only from a zone its method allows: a Goblin Astuto in the Cementerio offers nothing.
+  const loc = require('./zones').findInstanceLocation(state, instanceId);
+  if (!loc || !require('./summon').specialSummonZones(rule).includes(loc.zone)) return false;
   const ctx = { state, controllerIndex: ownerIndex, sourceInstanceId: instanceId, effect: rule };
   return checkConditions(ctx, rule.conditions);
 }
@@ -402,6 +422,8 @@ function describeStats(state, m, printed) {
     equips: state.players.flatMap((p) => p.field.support).filter((s) => s && !s.faceDown && s.equippedTo === m.instanceId).map((s) => getCard(s.cardId).name),
     statusInfo: statusDetails(state, m.instanceId),
     attacksLeft: m.attackLockTurn === state.turnNumber ? 0 : Math.max(0, allowedAttacks(state, m) - (m.attacksThisTurn || 0)),
+    // "Puede atacar en Defensa" (Relicario de Engranaje, Grover Guardián): the board lights it up too.
+    canAttackInDefense: hasAbility(m, 'attackInDefense'),
   };
 }
 
@@ -422,4 +444,4 @@ function describeFieldSupport(state, s, ownerIndex, isViewerOwner) {
   return { ...described, ...effectsFor(state, ownerIndex, s.instanceId, s.cardId) };
 }
 
-module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer, computeAvailableEffects, specialSummonAvailable };
+module.exports = { createMatch, applyAction, viewFor, coinTossFirstPlayer, computeAvailableEffects, specialSummonAvailable, canRespondNow, canAnswerNow };

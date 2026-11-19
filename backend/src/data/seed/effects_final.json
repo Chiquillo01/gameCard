@@ -2331,7 +2331,7 @@
       {
         "fn": "limitPerTurn",
         "args": {
-          "name": "Ba-o la diosa del Inframundo",
+          "name": "Diana, diosa del Inframundo",
           "max": 1
         }
       }
@@ -2361,7 +2361,7 @@
       {
         "fn": "limitPerTurn",
         "args": {
-          "name": "Ba-o la diosa del Inframundo",
+          "name": "Diana, diosa del Inframundo",
           "max": 1
         }
       }
@@ -2385,7 +2385,7 @@
         "args": {
           "player": "self",
           "filter": {
-            "category": "Compilado"
+            "family": "Inframundo"
           },
           "scope": "ownGY"
         }
@@ -4034,28 +4034,6 @@
         "args": {
           "counter": "gear",
           "to": "compiledMonster"
-        }
-      }
-    ]
-  },
-  {
-    "_id": "DUERGAR_BUFF",
-    "type": "continuous",
-    "oncePerTurn": false,
-    "conditions": [
-      {
-        "fn": "opponentHasMoreMonsters"
-      }
-    ],
-    "requiresTarget": false,
-    "actions": [
-      {
-        "fn": "grantBuff",
-        "args": {
-          "target": "self",
-          "buff": {
-            "atk": 2
-          }
         }
       }
     ]
@@ -6275,10 +6253,16 @@
     "oncePerTurn": false,
     "conditions": [
       {
-        "fn": "controlsMonster",
+        "fn": "countInZones",
         "args": {
-          "name": "Matón",
-          "count": 3
+          "filter": {
+            "name": "Matón"
+          },
+          "zones": [
+            "field",
+            "graveyard"
+          ],
+          "min": 5
         }
       }
     ],
@@ -8078,6 +8062,9 @@
     "oncePerTurn": false,
     "conditions": [
       {
+        "fn": "ownTurn"
+      },
+      {
         "fn": "controlsCard",
         "args": {
           "name": "Grover, el Goblin"
@@ -8086,22 +8073,21 @@
     ],
     "source": "authored",
     "_id": "CATEDRAL_BACK_FROM_GY",
-    "type": "activated",
+    "type": "trigger",
     "trigger": {
-      "fn": "onActivation",
+      "fn": "phase",
       "args": {
-        "phase": "main",
+        "timing": "endPhase",
         "from": "graveyard"
       }
     },
     "actions": [
       {
-        "fn": "addCardToHandFromGraveyard",
+        "fn": "bounceToHand",
         "args": {
-          "count": 1,
-          "filter": {
-            "name": "Catedral de los Goblins"
-          }
+          "targets": [
+            "self"
+          ]
         }
       }
     ]
@@ -10241,6 +10227,1403 @@
           "upTo": true,
           "copiesOfFirst": true,
           "prompt": "Elige el Pez que invocas (y, si quieres, otra copia suya)"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CUCARACHA_COMBATE_BATTLE_IMMUNE",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "preventBattleDestruction",
+        "args": {
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ESPIRITU_ESCARCHA_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante de Hielo"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ESPIRITU_ESCARCHA_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "enemyMonster",
+          "status": "Congelado"
+        }
+      }
+    ]
+  },
+  {
+    "_id": "SILFO_VENDAVAL_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante de las Nubes"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SILFO_VENDAVAL_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "returnCardToHand",
+        "args": {
+          "target": "support",
+          "prompt": "Elige el Apoyo que vuelve a la Mano"
+        }
+      }
+    ]
+  },
+  {
+    "_id": "GOLEM_GUIJARROS_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante de Rocas"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "GOLEM_GUIJARROS_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "actions": [
+      {
+        "fn": "addCardToHandFromGraveyard",
+        "args": {
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "breed": "Roca"
+          }
+        }
+      }
+    ]
+  },
+  {
+    "_id": "CENTELLA_ERRANTE_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante del Trueno"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "CENTELLA_ERRANTE_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "actions": [
+      {
+        "fn": "burnOpponent",
+        "args": {
+          "amount": 3
+        }
+      }
+    ]
+  },
+  {
+    "_id": "SALAMANDRA_BRASAS_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "name": "Gigante de Fuego"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SALAMANDRA_BRASAS_SACRIFICED",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "sentToGraveyard",
+      "args": {
+        "from": "field",
+        "reason": "cost",
+        "sacrificed": true
+      }
+    },
+    "conditions": [],
+    "source": "authored",
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "enemyMonster",
+          "status": "Quemadura"
+        }
+      }
+    ]
+  },
+  {
+    "_id": "BULETTE_EXCAVATE_SUMMON",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "excavate",
+        "args": {
+          "cards": 5,
+          "count": 1,
+          "filter": {
+            "category": "monster",
+            "attribute": "Tierra"
+          },
+          "then": "summon",
+          "prompt": "Elige el monstruo excavado que invocas"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_SPECIAL_SUMMON",
+    "type": "summon_rule",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "countOnField",
+        "args": {
+          "filter": {
+            "subtype": "field"
+          },
+          "min": 2
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "specialSummon",
+        "args": {
+          "card": "self",
+          "zone": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_RECOVER_REINO",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "La Tortuga Pagos, las Pesar del Mundo",
+          "max": 1
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "recoverCardsToHand",
+        "args": {
+          "count": 1,
+          "scope": [
+            "graveyard",
+            "banished"
+          ],
+          "filter": {
+            "subtype": "field"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_DESTROY",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [
+      {
+        "fn": "limitPerTurn",
+        "args": {
+          "name": "La Tortuga Pagos, las Pesar del Mundo",
+          "max": 1
+        }
+      },
+      {
+        "fn": "countOnField",
+        "args": {
+          "filter": {
+            "subtype": "field"
+          },
+          "min": 1
+        }
+      }
+    ],
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "selected",
+          "zone": "field",
+          "countOnField": {
+            "filter": {
+              "subtype": "field"
+            }
+          },
+          "prompt": "Elige las cartas que se destruyen"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_PROTECT_REINOS",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "protectFromRemoval",
+        "args": {
+          "filter": {
+            "subtype": "field"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_SELF_PROTECT",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      },
+      {
+        "fn": "countOnField",
+        "args": {
+          "filter": {
+            "subtype": "field"
+          },
+          "min": 1
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "protectFromRemoval",
+        "args": {
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "TORTUGA_PAGOS_REINO_WEIGHT",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "atk": -1,
+          "def": -1,
+          "scope": "fieldCards",
+          "countFilter": {
+            "subtype": "field"
+          },
+          "applyTo": "field"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SUNNE_ASTAS_EXILE",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Armadura Sunn"
+          }
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "exileTarget",
+        "args": {
+          "from": "graveyard",
+          "side": "opponent",
+          "count": 2,
+          "prompt": "Elige las cartas del Cementerio rival que exilias"
+        }
+      }
+    ],
+    "source": "authored",
+    "requiresTarget": true
+  },
+  {
+    "_id": "SUNNE_ESPADA_DESTROY",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Armadura Sunn"
+          }
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "Monstruo"
+        }
+      }
+    ],
+    "source": "authored",
+    "requiresTarget": true
+  },
+  {
+    "_id": "SUNNE_RESONADOR_DESTROY",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "conditions": [
+      {
+        "fn": "controlsMonster",
+        "args": {
+          "filter": {
+            "nameContains": "Armadura Sunn"
+          }
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "support"
+        }
+      }
+    ],
+    "source": "authored",
+    "requiresTarget": true
+  },
+  {
+    "_id": "FAMILIAR_GUS_EQUIP",
+    "type": "ignition",
+    "oncePerTurn": false,
+    "conditions": [],
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "equipSelfTo",
+        "args": {
+          "filter": {
+            "breed": "Mago"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "FAMILIAR_GUS_GRANT",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileEquipped"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "grantEquippedFlags",
+        "args": {
+          "flags": {
+            "cannotBeDestroyedByBattle": true
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "FAMILIAR_MOCHI_EQUIP",
+    "type": "ignition",
+    "oncePerTurn": false,
+    "conditions": [],
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "equipSelfTo",
+        "args": {
+          "filter": {
+            "breed": "Mago"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "FAMILIAR_MOCHI_GRANT",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileEquipped"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "grantEquippedFlags",
+        "args": {
+          "flags": {
+            "cannotBeExiledByEffects": true
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "FAMILIAR_MONIN_EQUIP",
+    "type": "ignition",
+    "oncePerTurn": false,
+    "conditions": [],
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "equipSelfTo",
+        "args": {
+          "filter": {
+            "breed": "Mago"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "FAMILIAR_MONIN_GRANT",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileEquipped"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "grantEquippedFlags",
+        "args": {
+          "flags": {
+            "untargetable": true
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "LIBRO_CASTIGO",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "Monstruo"
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "ifConditions": [
+            {
+              "fn": "controlsCard",
+              "args": {
+                "name": "Anciana de los libros"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "source": "authored",
+    "requiresTarget": true
+  },
+  {
+    "_id": "LIBRO_FULMINAR",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "target": "support"
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "ifConditions": [
+            {
+              "fn": "controlsCard",
+              "args": {
+                "name": "Anciana de los libros"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "source": "authored",
+    "requiresTarget": true
+  },
+  {
+    "_id": "ANCIANA_ONSUMMON_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "scope": [
+            "deck",
+            "graveyard"
+          ],
+          "count": 1,
+          "filter": {
+            "nameContains": "Libro de hechizos"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ANCIANA_DISCARD_DESTROY",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "cost": {
+      "fn": "discardCards",
+      "args": {
+        "count": 1,
+        "filter": {
+          "nameContains": "Libro de hechizos"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "destroy",
+        "args": {
+          "side": "any",
+          "zone": "monster",
+          "wholeField": true,
+          "pick": "strongest",
+          "count": 1,
+          "excludeSelf": false
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ANCIANA_OPPONENT_OWN_TURN",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "restrictOpponentToOwnTurn"
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "BIBLIOTECARIA_ONSUMMON_SEARCH",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Libro de hechizos"
+          },
+          "countIfSummonedBy": {
+            "filter": {
+              "name": "Bibliotecario"
+            },
+            "count": 2
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "BIBLIOTECARIA_GY_DRAW",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "conditions": [
+      {
+        "fn": "usedThisTurn",
+        "args": {
+          "filter": {
+            "nameContains": "Libro de hechizos"
+          },
+          "min": 1
+        }
+      }
+    ],
+    "cost": {
+      "fn": "banishSelfAndFromGraveyard",
+      "args": {
+        "count": 1,
+        "filter": {
+          "name": "Bibliotecario"
+        }
+      }
+    },
+    "actions": [
+      {
+        "fn": "drawPerActivatedThisTurn",
+        "args": {
+          "filter": {
+            "nameContains": "Libro de hechizos"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PLAN_MAESTRO_SEARCH",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Equipo Sunna",
+            "excludeName": "Equipo Sunna - Plan Maestro"
+          }
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "ifConditions": [
+            {
+              "fn": "controlsMonster",
+              "args": {
+                "filter": {
+                  "nameContains": "Armadura Sunn"
+                }
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PLAN_MAESTRO_GY_BOUNCE",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main",
+        "from": "graveyard"
+      }
+    },
+    "conditions": [
+      {
+        "fn": "graveyardCount",
+        "args": {
+          "filter": {
+            "nameContains": "Equipo Sunna"
+          },
+          "min": 2
+        }
+      }
+    ],
+    "cost": {
+      "fn": "banishSelf",
+      "args": {
+        "from": "graveyard"
+      }
+    },
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "graveyard",
+          "filter": {
+            "nameContains": "Equipo Sunna"
+          },
+          "count": 30,
+          "upTo": true,
+          "prompt": "Elige las cartas \"Equipo Sunna\" que devuelves al Mazo"
+        }
+      },
+      {
+        "fn": "bounceToHand",
+        "args": {
+          "target": "selected",
+          "side": "opponent",
+          "countPerPicksOfStep": 0,
+          "prompt": "Elige la carta rival que vuelve a la Mano"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SUNNE_PRINCESA_SUMMON_ARMADURA",
+    "type": "quick",
+    "oncePerTurn": true,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "summonFromZones",
+        "args": {
+          "zones": [
+            "extra"
+          ],
+          "filter": {
+            "nameContains": "Armadura Sunn",
+            "category": "Compilado"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "SUNNE_PRINCESA_GY_REVIVE",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "monstersLeftField",
+      "args": {
+        "from": "graveyard",
+        "filter": {
+          "nameContains": "Armadura Sunn"
+        },
+        "byOpponentEffect": true
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ZONA_IMPACTO_ON_PLAY",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onPlay"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "upTo": true,
+          "filter": {
+            "name": "Sunna, Princesa Llama"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "ZONA_IMPACTO_EXCAVATE",
+    "type": "activated",
+    "oncePerTurn": true,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "excavate",
+        "args": {
+          "cards": 3,
+          "count": 1,
+          "filter": {
+            "nameContains": "Equipo Sunna"
+          },
+          "restTo": "graveyard",
+          "prompt": "Elige el \"Equipo Sunna\" excavado que añades a tu Mano"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "BIBLIOTECA_ON_PLAY",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onPlay"
+    },
+    "conditions": [],
+    "choice": true,
+    "optional": true,
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Bibliotecari",
+            "category": "monster"
+          }
+        }
+      },
+      {
+        "fn": "returnToDeck",
+        "args": {
+          "from": "banished",
+          "count": 2,
+          "filter": {
+            "nameContains": "Bibliotecari",
+            "category": "monster"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "BIBLIOTECA_RECYCLE_LIBROS",
+    "type": "activated",
+    "oncePerTurn": true,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "phase": "main"
+      }
+    },
+    "conditions": [
+      {
+        "fn": "graveyardCount",
+        "args": {
+          "filter": {
+            "nameContains": "Libro de hechizos"
+          },
+          "min": 1
+        }
+      }
+    ],
+    "actions": [
+      {
+        "fn": "returnAllToDeck",
+        "args": {
+          "from": "graveyard",
+          "filter": {
+            "nameContains": "Libro de hechizos"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "BIBLIOTECA_EMPOWER_LIBROS",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "whileOnField"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "empowerCards",
+        "args": {
+          "filter": {
+            "nameContains": "Libro de hechizos"
+          },
+          "costReduction": 1,
+          "fromHandOnOpponentTurn": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "BIBLIOTECARIO_DISCARD_SUMMON",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "trigger": {
+      "fn": "onActivation",
+      "args": {
+        "from": "hand"
+      }
+    },
+    "conditions": [],
+    "cost": {
+      "fn": "discardSelf"
+    },
+    "actions": [
+      {
+        "fn": "specialSummonFromDeck",
+        "args": {
+          "filter": {
+            "name": "Bibliotecaria"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "LIBRO_DRAGAR",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "excavateOpponentToGY",
+        "args": {
+          "cards": 3,
+          "count": 1
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "ifConditions": [
+            {
+              "fn": "controlsCard",
+              "args": {
+                "name": "Anciana de los libros"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "LIBRO_NECRONOMICON",
+    "type": "activated",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onActivation"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "specialSummonFromGY",
+        "args": {
+          "filter": {
+            "nameContains": "Biblio"
+          }
+        }
+      },
+      {
+        "fn": "drawCards",
+        "args": {
+          "amount": 1,
+          "ifConditions": [
+            {
+              "fn": "controlsCard",
+              "args": {
+                "name": "Anciana de los libros"
+              }
+            }
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PROMETEA_ATK_PER_EQUIPO",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "scope": "ownGraveyard",
+          "filter": {
+            "nameContains": "Equipo Sunna -"
+          },
+          "atk": 1,
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PROMETEA_ONSUMMON_RECOVER",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "addCardToHandFromGraveyard",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Equipo Sunna -"
+          }
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PROMETEA_BURN",
+    "type": "ignition",
+    "oncePerTurn": true,
+    "conditions": [],
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "enemyMonster",
+          "status": "Quemadura",
+          "count": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "PROMETEA_ONCE_PER_TURN",
+    "type": "rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "summonRequires",
+        "args": {
+          "conditions": [
+            {
+              "fn": "notSummonedThisTurn"
+            }
+          ]
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "LIQUIDA_DEF_PER_EQUIPO",
+    "type": "continuous",
+    "oncePerTurn": false,
+    "conditions": [
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "buffPerCount",
+        "args": {
+          "scope": "ownGraveyard",
+          "filter": {
+            "nameContains": "Equipo Sunna -"
+          },
+          "def": 1,
+          "target": "self"
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "LIQUIDA_ONSUMMON_FREEZE",
+    "type": "triggered",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "onSummon"
+    },
+    "conditions": [],
+    "requiresTarget": true,
+    "actions": [
+      {
+        "fn": "applyStatus",
+        "args": {
+          "target": "selected",
+          "status": "Congelado",
+          "count": 1
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "LIQUIDA_END_PHASE_SEARCH",
+    "type": "trigger",
+    "oncePerTurn": false,
+    "trigger": {
+      "fn": "phase",
+      "args": {
+        "timing": "endPhase"
+      }
+    },
+    "conditions": [
+      {
+        "fn": "ownTurn"
+      },
+      {
+        "fn": "faceUp"
+      }
+    ],
+    "actions": [
+      {
+        "fn": "addCardToHandFromDeck",
+        "args": {
+          "count": 1,
+          "filter": {
+            "nameContains": "Equipo Sunna -"
+          },
+          "notNamedLikeGraveyard": true
+        }
+      }
+    ],
+    "source": "authored"
+  },
+  {
+    "_id": "LIQUIDA_ONCE_PER_TURN",
+    "type": "rule",
+    "oncePerTurn": false,
+    "conditions": [],
+    "actions": [
+      {
+        "fn": "summonRequires",
+        "args": {
+          "conditions": [
+            {
+              "fn": "notSummonedThisTurn"
+            }
+          ]
         }
       }
     ],

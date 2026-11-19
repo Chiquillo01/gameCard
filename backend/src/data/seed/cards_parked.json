@@ -24,6 +24,47 @@
       "effectCodes": [
         "ENGRANAJE_MAESTRO_SUMMON"
       ]
+    },
+    {
+      "name": "Héroe Aprendiz",
+      "image": "/assets/CardImg/generated/heroe-aprendiz.png",
+      "attribute": "Tierra",
+      "type": "Héroe",
+      "breed": "Héroe",
+      "family": "Humano",
+      "description": "-",
+      "rarity": "common",
+      "category": "monster",
+      "expansion": "PAO",
+      "effect": "Manda 1 monstruo \"Héroe\" al Cementerio y esta carta gana el siguiente efecto:\n• Esta carta gana el nombre y el Atributo del monstruo enviado.",
+      "invocationText": "Si controlas un \"Héroe\", puede ser invocada de forma especial pero solo una vez por turno de esta forma.",
+      "atk": 5,
+      "def": 1,
+      "level": 2,
+      "state": 4,
+      "number": 230,
+      "effectCodes": []
+    },
+    {
+      "name": "Duérgar",
+      "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173725/duergartcg.png",
+      "attribute": "Oscuridad",
+      "type": "Enano",
+      "breed": "Enano",
+      "family": "Humano",
+      "description": "El Duérgar, un enano de las profundidades, combina fuerza y astucia en las sombras de su hogar subterráneo. Con su piel cenicienta y barba blanca trenzada con adornos metálicos, es un maestro de la tiranía y el engaño. Porta un arco que refleja su habilidad para cazar y defender su dominio con precisión mortal. Nacido en la oscuridad y vinculado a pactos oscuros, el Duérgar es capaz de volverse invisible o cambiar de tamaño, habilidades que utiliza para capturar esclavos y cumplir con los mandatos de sus amos siniestros. Su entorno, una mina sombría llena de herramientas y cristales resplandecientes, es testigo de su dominio sobre las profundidades.",
+      "rarity": "common",
+      "category": "monster",
+      "expansion": "NdM",
+      "effect": "Esta carta gana +2 Atk si tu oponente controla más monstruos que tu.",
+      "atk": 2,
+      "def": 2,
+      "level": 4,
+      "state": 4,
+      "number": 228,
+      "effectCodes": [
+        "DUERGAR_BUFF"
+      ]
     }
   ],
   "effects": [
@@ -50,6 +91,28 @@
         }
       ],
       "source": "authored"
+    },
+    {
+      "_id": "DUERGAR_BUFF",
+      "type": "continuous",
+      "oncePerTurn": false,
+      "conditions": [
+        {
+          "fn": "opponentHasMoreMonsters"
+        }
+      ],
+      "requiresTarget": false,
+      "actions": [
+        {
+          "fn": "grantBuff",
+          "args": {
+            "target": "self",
+            "buff": {
+              "atk": 2
+            }
+          }
+        }
+      ]
     }
   ]
 }

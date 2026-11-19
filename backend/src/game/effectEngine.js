@@ -232,6 +232,8 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   if (eventName === 'sentToGraveyard') {
     if (args.from && eventArgs.from && args.from !== eventArgs.from) return false;
     if (args.reason && !([].concat(args.reason)).includes(eventArgs.reason)) return false;
+    // "Si es sacrificado" (the Gigantes' elementals): a monster paid from the field, not destroyed.
+    if (args.sacrificed && !eventArgs.sacrificed) return false;
     // "Si es sacrificado para activar el efecto de un monstruo \"Orco\"".
     if (args.bySource && !(eventArgs.bySourceCardId && matchesCardFilter(getCard(eventArgs.bySourceCardId), args.bySource))) return false;
   }
@@ -260,6 +262,9 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   if ((eventName === 'monstersLeftField' || eventName === 'addedFromDeckToHand') && args.filter && !(eventArgs.cardIds || []).some((id) => matchesCardFilter(getCard(id), args.filter))) return false;
   // "Si un/os monstruo Hada que controles dejan el Campo": only the effect's controller's ones.
   if (eventName === 'monstersLeftField' && args.ownOnly && !(eventArgs.left || []).some((l) => l.ownerIndex === m.controllerIndex && (!args.filter || matchesCardFilter(getCard(l.cardId), args.filter)))) return false;
+  // Sunna, Princesa Llama: "si un monstruo \"Armadura Sunna\" deja el Campo por un efecto de carta de
+  // tu oponente" — one of its controller's, moved by the rival's effect (not a battle, not a cost).
+  if (eventName === 'monstersLeftField' && args.byOpponentEffect && !(eventArgs.left || []).some((l) => l.ownerIndex === m.controllerIndex && l.byPlayer != null && l.byPlayer !== m.controllerIndex && (!args.filter || matchesCardFilter(getCard(l.cardId), args.filter)))) return false;
   if (eventName === 'involvedInBattle') {
     // Hidra: "cada vez que esta carta batalla con un monstruo con más Atk que ella".
     if (args.selfInvolved || args.againstStronger) {
@@ -289,9 +294,9 @@ function announceEffectActivated(state, instanceId, controllerIndex, effects = [
 
 // A card just reached its owner's Cementerio: its "cuando es enviada al Cementerio" effects get to
 // fire. `from`: 'field' | 'hand' | 'deck'; `reason`: 'battle' | 'effect' | 'cost' | 'discard' | 'mill'.
-function announceSentToGraveyard(state, instanceId, ownerIndex, { from, reason } = {}) {
+function announceSentToGraveyard(state, instanceId, ownerIndex, { from, reason, sacrificed = false } = {}) {
   if (!instanceId || String(instanceId).startsWith('token:')) return;
-  fireTrigger(state, 'sentToGraveyard', { instanceId, cardId: cardIdFromInstance(instanceId), ownerIndex, from, reason });
+  fireTrigger(state, 'sentToGraveyard', { instanceId, cardId: cardIdFromInstance(instanceId), ownerIndex, from, reason, sacrificed });
 }
 
 // Anillo de Boda: when a player who has its Cementerio effect this turn loses a monster to the rival
@@ -313,6 +318,8 @@ function answerLoss(state, event, ownerIndex, byPlayer) {
   });
 }
 
+const fromGraveyard = (effect) => !!(effect && (effect.type === 'triggered' || effect.type === 'trigger') && effect.trigger && effect.trigger.args && effect.trigger.args.from === 'graveyard');
+
 // Fires every triggered/trigger effect on the board that matches, in field order (turn player's
 // first). Sources are the face-up monsters and face-up Apoyo/Territorio cards on the field — plus the
 // card an event is about when it has just left the field ("cuando es enviada al Cementerio",
@@ -332,6 +339,13 @@ function fireTrigger(state, eventName, eventArgs = {}) {
     if ((eventName === 'sentToGraveyard' || eventName === 'onMonsterDestroyed') && eventArgs.ownerIndex === controllerIndex && eventArgs.cardId && !sources.some((s) => s.instanceId === eventArgs.instanceId)) {
       sources.push({ instanceId: eventArgs.instanceId, cardId: eventArgs.cardId, offField: true });
     }
+    // Cards whose trigger works from the Cementerio (`trigger.args.from: 'graveyard'` — Catedral de
+    // los Goblins: "Al final de tu turno, si esta carta está en el Cementerio...").
+    pl.graveyard.forEach((id) => {
+      if (sources.some((s) => s.instanceId === id)) return;
+      const cardId = cardIdFromInstance(id);
+      if ((getCard(cardId).effectCodes || []).some((code) => fromGraveyard(getEffect(code)))) sources.push({ instanceId: id, cardId, offField: true, inGraveyard: true });
+    });
     sources.forEach((m) => {
       if (m.faceDown || m.isToken || isNegated(state, m) || hasStatus(state, m.instanceId, FREEZE)) return;
       if (SELF_EVENTS.includes(eventName) && eventArgs.instanceId && m.instanceId !== eventArgs.instanceId) return;
@@ -345,6 +359,7 @@ function fireTrigger(state, eventName, eventArgs = {}) {
         const effect = getEffect(effectId);
         if (!effect || (effect.type !== 'triggered' && effect.type !== 'trigger')) return;
         if (!effect.trigger || effect.trigger.fn !== eventName) return;
+        if (fromGraveyard(effect) !== !!m.inGraveyard) return;
         if (!triggerAccepts(state, { ...m, controllerIndex }, effect, eventName, eventArgs)) return;
         const ctx = { ...makeCtx(state, controllerIndex, effect, m.instanceId), event: eventArgs };
         if (!checkConditions(ctx, effect.conditions)) return;
@@ -385,9 +400,38 @@ function runTriggered(state, ctx, effect, card, targets) {
     log(state, `No se puede pagar el coste de ${card.name}.`);
     return false;
   }
+  if (stackTriggered(state, ctx, effect, card, targets.filter((t) => !costTaken.includes(t)))) return true;
   log(state, `Se activa el efecto de ${card.name}.`);
   announceEffectActivated(state, ctx.sourceInstanceId, ctx.controllerIndex, [effect]);
   resolveActions({ ...ctx, costPaid: ctx.paidCards || [] }, effect, targets.filter((t) => !costTaken.includes(t)));
+  return true;
+}
+
+// Rulebook, Apilar: an effect that activates on its own (Matón "cuando destruye un monstruo en
+// batalla") is still an activation the rival may answer (Djinni "cuando tu oponente activa el efecto
+// de una carta"). When they hold something that could, it goes onto the Pila and they get the
+// window; when nothing could, it resolves at once as before. Never while the turn is moving from one
+// phase to the next: that can't stop half-way.
+function stackTriggered(state, ctx, effect, card, targets) {
+  if (state.changingPhase || state.status !== 'active') return false;
+  const opp = ctx.controllerIndex === 0 ? 1 : 0;
+  const link = { controllerIndex: ctx.controllerIndex, sourceInstanceId: ctx.sourceInstanceId, cardName: card.name, effects: [effect], targets, speed: speedOf(card, effect), costPaid: ctx.paidCards || [], triggered: true, event: ctx.event || null };
+  const savedPriority = state.priorityPlayer;
+  const savedPass = state.chainLastActionWasPass;
+  state.chain.push(link);
+  state.priorityPlayer = opp;
+  let answerable = false;
+  try {
+    answerable = require('./engine').canAnswerNow(state, opp);
+  } finally {
+    state.chain.pop();
+    state.priorityPlayer = savedPriority;
+    state.chainLastActionWasPass = savedPass;
+  }
+  if (!answerable) return false;
+  addLink(state, link);
+  // Added while the Pila is resolving (Matón's battle): resolution stops there for the window.
+  if (state.resolvingChain) state.chain[state.chain.length - 1].awaitingResponse = true;
   return true;
 }
 
@@ -508,6 +552,15 @@ function resolveTriggerChoice(state, controllerIndex, targets, slot = null) {
 
   const effect = getEffect(pending.effectId);
   const card = getCard(cardIdFromInstance(pending.sourceInstanceId));
+  // A monster negated while its effect waited for the picks (Espectro arrived) doesn't use it.
+  const waiting = getFieldMonster(state, pending.sourceInstanceId);
+  if (waiting && isNegated(state, waiting)) {
+    state.pendingTriggerChoices.shift();
+    log(state, `El efecto de ${card.name} está negado.`);
+    require('./placement').settlePlacements(state);
+    require('./combat').resumeBattle(state);
+    return { ok: true };
+  }
   const ctx = { ...makeCtx(state, pending.controllerIndex, effect, pending.sourceInstanceId), event: pending.event };
   const costChoice = !declined(picks) && effect.cost && pendingCostChoice(ctx, effect.cost, picks);
   const costTaken = costPicks(ctx, effect.cost, picks);
@@ -557,11 +610,15 @@ function recomputeContinuous(state) {
     pl.attacksOnlyOnStrongest = false;
     pl.cantWin = false;
     pl.activationTax = 0;
+    pl.onlyOwnTurn = false;
+    pl.costReductions = [];
+    pl.handOnOpponentTurn = [];
     pl.field.monsters.filter(Boolean).forEach((m) => {
       resetTempMods(m);
       addTempMod(m, poisonDebuff(state, m.instanceId), 'Veneno', 'status');
       m.cannotBeDestroyedByBattle = false;
       m.cannotBeDestroyedByEffects = false;
+      m.cannotBeExiledByEffects = false;
       m.immuneToOpponentEffects = false;
       m.negatedByContinuous = false;
       m.canAttackDirectly = false;
@@ -579,7 +636,11 @@ function recomputeContinuous(state) {
       m.cannotAttack = false;
       m.noBattleDamage = false;
     });
-    [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => { s.negatedByContinuous = false; });
+    [...pl.field.support, pl.field.territory].filter(Boolean).forEach((s) => {
+      s.negatedByContinuous = false;
+      s.cannotBeDestroyedByEffects = false;
+      s.cannotBeExiledByEffects = false;
+    });
   });
   applyTimedBuffs(state);
   // Two passes: first the effects that take others' effects away (Fuegos Fatuos, Seraphine, Sello
@@ -590,11 +651,14 @@ function recomputeContinuous(state) {
   const lostEffects = (entry) => entry.effectsLost || (state.negations || []).some((n) => n.targetInstanceId === entry.instanceId && (n.expiresTurn === null || n.expiresTurn >= state.turnNumber));
   [true, false].forEach((negatingPass) => state.players.forEach((pl, controllerIndex) => {
     [...pl.field.monsters, ...pl.field.support, pl.field.territory].filter(Boolean).forEach((entry) => {
-      if (entry.faceDown || entry.isToken || entry.isMonsterEquip || hasStatus(state, entry.instanceId, FREEZE)) return;
+      if (entry.faceDown || entry.isToken || hasStatus(state, entry.instanceId, FREEZE)) return;
       if (lostEffects(entry)) return;
       effectCodesOf(entry).forEach((effectId) => {
         const effect = getEffect(effectId);
         if (!effect || effect.type !== 'continuous') return;
+        // A monster equipped as an Equipo (Carnívora's prey, a Familiar Mágico) keeps only what it
+        // gives the monster it's equipped to.
+        if (entry.isMonsterEquip && !(effect.trigger && effect.trigger.fn === 'whileEquipped')) return;
         if (negates(effect) !== negatingPass) return;
         // An Equipo card's effect only runs for the monster it's equipped to; with none (or that
         // monster gone) it does nothing until the field-leave cleanup sends the card to the graveyard.

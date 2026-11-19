@@ -15,9 +15,17 @@ const { cardIdFromInstance } = require('../deckUtils');
 const cardOf = (id) => getCard(cardIdFromInstance(id));
 const record = (ctx, ids) => { ctx.paidCards = [...(ctx.paidCards || []), ...ids]; };
 
+// Biblioteca Ancestral: "las cartas \"Libro de hechizos\" ven reducido su costo de activación en 1".
+function pixelDiscount(ctx) {
+  const reductions = player(ctx.state, ctx.controllerIndex).costReductions || [];
+  if (!reductions.length || !ctx.sourceInstanceId || String(ctx.sourceInstanceId).startsWith('token:')) return 0;
+  const card = cardOf(ctx.sourceInstanceId);
+  return reductions.filter((r) => matchesCardFilter(card, r.filter)).reduce((sum, r) => sum + r.amount, 0);
+}
+
 function payPixels(ctx, args) {
   const pl = player(ctx.state, ctx.controllerIndex);
-  const amount = args.amount || 0;
+  const amount = Math.max(0, (args.amount || 0) - (ctx.effect ? 0 : pixelDiscount(ctx)));
   if (pl.pixelcoins < amount) return false;
   pl.pixelcoins -= amount;
   return true;
@@ -93,7 +101,7 @@ function payFromPool(ctx, pool, count, picks, toZone, { destroyed = false } = {}
     moved.forEach(({ id, loc }) => {
       const from = loc.zone.startsWith('field') ? 'field' : loc.zone;
       const by = ctx.sourceInstanceId && !String(ctx.sourceInstanceId).startsWith('token:') ? cardIdFromInstance(ctx.sourceInstanceId) : null;
-      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex, from, reason: 'cost', bySourceCardId: by };
+      const event = { instanceId: id, cardId: cardIdFromInstance(id), ownerIndex: loc.ownerIndex, from, reason: 'cost', bySourceCardId: by, sacrificed: !destroyed && loc.zone === 'field:monster' };
       fireTrigger(ctx.state, 'sentToGraveyard', event);
       if (destroyed && loc.zone === 'field:monster') fireTrigger(ctx.state, 'onMonsterDestroyed', { ...event, reason: 'effect' });
     });
@@ -136,6 +144,22 @@ function exilePool(ctx, args) {
   const fromField = pl.field.monsters.filter((m) => m && matchesFilter(m, filter)).map((m) => m.instanceId);
   const fromGrave = pl.graveyard.filter((id) => matchesCardFilter(cardOf(id), filter));
   return [...fromField, ...fromGrave];
+}
+
+// "Exilia esta carta y a \"Bibliotecario\"" (Bibliotecaria, from the Cementerio): this card and
+// `count` [filter] cards of its controller's Cementerio go to the Exilio.
+function graveyardPool(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const filter = cleanFilter(filterOf(args));
+  return pl.graveyard.filter((id) => id !== ctx.sourceInstanceId && matchesCardFilter(cardOf(id), filter));
+}
+
+function banishSelfAndFromGraveyard(ctx, args, picks) {
+  const pool = graveyardPool(ctx, args);
+  const count = args.count || 1;
+  if (fillChoice((picks || []).filter((id) => pool.includes(id)), pool, count).length < count) return false;
+  if (!banishSelf(ctx, { from: 'graveyard' })) return false;
+  return payFromPool(ctx, pool, count, picks, 'banished');
 }
 
 // "Descarta [count] [filter] de tu Mano" — any hand card when there's no filter.
@@ -229,6 +253,7 @@ const registry = {
   discardCards,
   discardSelfAndCard,
   exileFiltered,
+  banishSelfAndFromGraveyard,
   sacrificeControlled,
   sacrificeFiltered,
   tributeSelf,
@@ -268,6 +293,7 @@ const CHOICE_COST_POOLS = {
   destroyMonster: (ctx) => ownMonsterPool(ctx, {}),
   destroyOwnMonster: (ctx, args) => ownMonsterPool(ctx, args),
   exileFiltered: (ctx, args) => exilePool(ctx, args),
+  banishSelfAndFromGraveyard: (ctx, args) => graveyardPool(ctx, args),
   millSpecific: (ctx, args) => deckPool(ctx, args),
 };
 

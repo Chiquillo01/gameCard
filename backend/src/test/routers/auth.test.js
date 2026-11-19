@@ -5,6 +5,7 @@ const { bootstrapApp } = require('../../bootstrap');
 const app = bootstrapApp();
 const fakeRequest = supertest(app);
 const { disconnectDB, connectDB } = require('../../mongo/connection');
+const sendWelcomeEmail = require('../../services/sendgrid');
 
 beforeAll(async () => {
   await connectDB();
@@ -18,7 +19,7 @@ describe('Auth Controller TEST', () => {
   const userData = {
     userName: 'Jose Manuel',
     email: 'jose.cano@gmail.com',
-    password: '123456Ab',
+    password: '123456Ab!',
   };
 
   describe('POST /auth/register', () => {
@@ -28,10 +29,25 @@ describe('Auth Controller TEST', () => {
       expect(response.body.token).toBeDefined();
     });
 
+    it('sends the welcome email to the new player without waiting for it', async () => {
+      sendWelcomeEmail.mockClear();
+      sendWelcomeEmail.mockImplementationOnce(() => new Promise(() => {})); // never finishes
+      const response = await fakeRequest.post('/auth/register').send({ userName: 'Lenta', email: 'Lenta.Email@gmail.com', password: '123456Ab!' });
+      expect(response.status).toBe(201);
+      expect(sendWelcomeEmail).toHaveBeenCalledWith('lenta.email@gmail.com', 'Lenta');
+    });
+
+    it('registers even if the welcome email fails', async () => {
+      sendWelcomeEmail.mockImplementationOnce(() => { throw new Error('SendGrid caído'); });
+      const response = await fakeRequest.post('/auth/register').send({ userName: 'SinEmail', email: 'sin.email@gmail.com', password: '123456Ab!' });
+      expect(response.status).toBe(201);
+      expect(response.body.token).toBeDefined();
+    });
+
     it('should reject registration with a missing field', async () => {
       const response = await fakeRequest.post('/auth/register').send({
         email: 'incomplete@gmail.com',
-        password: '123456Ab',
+        password: '123456Ab!',
       });
       expect(response.status).toBe(400);
     });
@@ -45,11 +61,27 @@ describe('Auth Controller TEST', () => {
       expect(response.status).toBe(400);
     });
 
+    it('applies the same password rule as the frontend, with its message', async () => {
+      const message =
+        'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial';
+      const tryPassword = (password, i) =>
+        fakeRequest.post('/auth/register').send({ userName: `Rule ${i}`, email: `rule${i}@gmail.com`, password });
+      // No special character / no uppercase / no lowercase / no digit / too short / a space / an accent.
+      const rejected = ['123456Ab', '123456ab!', '123456AB!', 'Abcdefgh!', 'Ab1!xyz', 'Abc 1234!', 'Ábcdef12!'];
+      for (const [i, password] of rejected.entries()) {
+        const response = await tryPassword(password, i);
+        expect(response.status).toBe(400);
+        expect(response.body.error).toBe(message);
+      }
+      const accepted = await tryPassword('Valid_Pass9', 99);
+      expect(accepted.status).toBe(201);
+    });
+
     it('should reject registration with an invalid email format', async () => {
       const response = await fakeRequest.post('/auth/register').send({
         userName: 'Bad Email User',
         email: 'not-an-email',
-        password: '123456Ab',
+        password: '123456Ab!',
       });
       expect(response.status).toBe(400);
     });
@@ -98,10 +130,18 @@ describe('Auth Controller TEST', () => {
       expect(response.body.token).toBeDefined();
     });
 
+    it('still lets an account with an older password (no special character) log in', async () => {
+      const { User } = require('../../data/Schema/user');
+      await new User({ userName: 'Legacy', email: 'legacy@gmail.com', password: '123456Ab' }).save();
+      const response = await fakeRequest.post('/auth/login').send({ email: 'legacy@gmail.com', password: '123456Ab' });
+      expect(response.status).toBe(200);
+      expect(response.body.token).toBeDefined();
+    });
+
     it('answers a non-existent email exactly like a wrong password (no way to tell which emails exist)', async () => {
       const response = await fakeRequest.post('/auth/login').send({
         email: 'doesnotexist@gmail.com',
-        password: '123456Ab',
+        password: '123456Ab!',
       });
       expect(response.status).toBe(401);
       expect(response.body).toEqual({ error: 'Email o contraseña incorrectos' });

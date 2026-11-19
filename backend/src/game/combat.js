@@ -329,4 +329,4 @@ function destroyInBattle(state, ownerIndex, victim, destroyer) {
   }
 }
 
-module.exports = { declareAttack, attackBlockReason, performBattle, resumeBattle, canStillAttack, allowedAttacks };
+module.exports = { declareAttack, attackBlockReason, performBattle, resumeBattle, canStillAttack, allowedAttacks, hasAbility };

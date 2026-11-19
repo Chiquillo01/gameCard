@@ -1,7 +1,7 @@
 const { default: mongoose } = require('mongoose');
 const { User } = require('../data/Schema/user');
 const cloudinary = require('cloudinary').v2;
-const { validateEmailFormat } = require('../middlewares');
+const { validateEmailFormat, validatePasswordFormat, PASSWORD_RULE_MESSAGE } = require('../middlewares');
 
 const getUsers = async (req, res) => {
   try {
@@ -62,7 +62,7 @@ const updateUser = async (req, res) => {
     if (req.file) {
       const { buffer, mimetype } = req.file;
       const imageUrl = `data:${mimetype};base64,${buffer.toString('base64')}`;
-      const imageUploaded = await cloudinary.uploader.upload(imageUrl);
+      const imageUploaded = await cloudinary.uploader.upload(imageUrl, { folder: 'tcg/profile-pictures' });
       userUpdated.profilePicture = imageUploaded.secure_url;
     }
 
@@ -75,6 +75,7 @@ const updateUser = async (req, res) => {
   } catch (error) {
     // Duplicate userName/email (unique index).
     if (error && error.code === 11000) return res.status(409).json({ error: 'Ese nombre de usuario o email ya está en uso' });
+    console.error('updateUser failed:', error && (error.message || error.error?.message));
     res.status(500).send();
   }
 };
@@ -119,6 +120,10 @@ const createUser = async (req, res) => {
 
     if (!requestingUser.admin) {
       return res.status(403).json({ error: 'Permiso denegado. Sólo los administradores pueden eliminar usuarios.' });
+    }
+
+    if (!validatePasswordFormat(body.newUser?.password)) {
+      return res.status(400).json({ error: PASSWORD_RULE_MESSAGE });
     }
 
     const data = {

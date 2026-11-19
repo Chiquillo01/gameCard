@@ -9,7 +9,23 @@ const { burningMonsters, expireStatuses } = require('./statuses');
 const { expireNegations } = require('./negation');
 const { drawCards, expireMirrors } = require('./draw');
 
+// While the turn moves between phases, effects that activate on their own resolve at once instead
+// of stopping it for a response window (effectEngine.stackTriggered).
+function changingPhase(state, run) {
+  const was = state.changingPhase;
+  state.changingPhase = true;
+  try {
+    return run();
+  } finally {
+    state.changingPhase = was;
+  }
+}
+
 function advancePhase(state) {
+  return changingPhase(state, () => advancePhaseNow(state));
+}
+
+function advancePhaseNow(state) {
   if (state.status !== 'active') return { ok: false, reason: 'match-finished' };
 
   const idx = PHASES.indexOf(state.phase);
@@ -37,6 +53,10 @@ function advancePhase(state) {
 }
 
 function runPhaseEntry(state) {
+  changingPhase(state, () => runPhaseEntryNow(state));
+}
+
+function runPhaseEntryNow(state) {
   const pl = player(state, state.turnPlayer);
 
   if (state.phase === 'draw') {
@@ -168,6 +188,10 @@ function applyBurnDamage(state) {
 }
 
 function endTurn(state) {
+  changingPhase(state, () => endTurnNow(state));
+}
+
+function endTurnNow(state) {
   expireStatuses(state);
   expireTimedBuffs(state);
   expireNegations(state);

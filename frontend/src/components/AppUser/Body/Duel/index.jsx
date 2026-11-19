@@ -1,6 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import io from 'socket.io-client';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from './duel.module.css';
@@ -8,12 +7,12 @@ import { getUserDecks } from '../../../../lib/utils/apiDeck';
 import { startPveDuel, getDuelState, sendDuelAction } from '../../../../lib/utils/apiDuel';
 import { fetchCards } from '../../../../lib/utils/apiCard';
 import CardFace from '../CreateNewDeck/CardModal/CardFace';
-import { getUserToken } from '../../../../lib/utils/localStorage.utils';
+import { getSocket } from '../../../../lib/socket';
 import { isDeckPlayable } from '../../../../lib/utils/deckRules';
 import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, WindowBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
 import { ChoiceOptionList } from './ChoiceOptions';
 import CompileModal from './CompileModal';
-import { PIXELCOIN_ICON } from '../../../../lib/utils/storeConstants';
+import { PIXELCOIN_ICON, PIXELGEM_ICON } from '../../../../lib/utils/storeConstants';
 
 
 const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', materials: 'Materiales', extra: 'Mazo-C' };
@@ -136,14 +135,15 @@ const DuelPage = () => {
     if (!matchId) return;
     refreshState(matchId);
 
-    const socket = io('http://localhost:3001');
+    // The tab's shared connection (lib/socket.js): only this listener is removed on the way out.
+    const socket = getSocket();
     socketRef.current = socket;
-    socket.emit('auth', getUserToken());
-    socket.on('duel:state', (data) => {
+    const onState = (data) => {
       if (data.id === matchId) applyView(data);
-    });
+    };
+    socket.on('duel:state', onState);
 
-    return () => socket.disconnect();
+    return () => socket.off('duel:state', onState);
   }, [matchId, refreshState]);
 
   const handleStart = async () => {
@@ -588,6 +588,27 @@ const DuelPage = () => {
             <p className={styles.gameOverScore}>
               VP finales — {me.name}: {me.vp} · {enemy.name}: {enemy.vp}
             </p>
+            {view.reward && (
+              <div className={styles.gameOverReward}>
+                {view.reward.pixelcoins || view.reward.pixelgems ? (
+                  <>
+                    <span>Recompensa:</span>
+                    {view.reward.pixelcoins > 0 && (
+                      <span className={styles.gameOverRewardItem}>
+                        +{view.reward.pixelcoins} <img src={PIXELCOIN_ICON} alt='Pixelcoins' className={styles.pixelIcon} />
+                      </span>
+                    )}
+                    {view.reward.pixelgems > 0 && (
+                      <span className={styles.gameOverRewardItem}>
+                        +{view.reward.pixelgems} <img src={PIXELGEM_ICON} alt='Pixelgems' className={styles.pixelIcon} />
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span>Sin recompensa en esta partida.</span>
+                )}
+              </div>
+            )}
             <div className={styles.gameOverActions}>
               <button className={styles.actionButton} onClick={() => navigate('/duel')}>
                 Jugar de nuevo
@@ -689,7 +710,9 @@ const DuelPage = () => {
           {/* A direct attack hits the rival's VP, so their VP is where the player clicks for it —
               lit up only while the selected attacker can legally attack directly. */}
           <VpBadge vp={enemy.vp} max={view.startingVp} flash={flashes[`vp${opp}`]} onDirectAttack={canAttackDirectly ? onDirectAttack : null} />
-          <span className={styles.handCountBadge} title='Cartas en la Mano del rival'>✋ {enemy.handCount}</span>
+          <span className={styles.handCountBadge} title='Cartas en la Mano del rival'>
+            <span className={styles.handBackIcon} aria-hidden='true' /> {enemy.handCount}
+          </span>
           <span className={styles.handCountBadge} title='Píxeles del rival: sirven para pagar las activaciones de los apoyos'>
             <img src={PIXELCOIN_ICON} alt='Pixeles' className={styles.pixelIcon} /> {enemy.pixelcoins}
           </span>
@@ -811,7 +834,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
     if (!m) return '';
     if (!isOwner) return attackTargetMode ? styles.attackTarget : '';
     if (!isMyBattle || m.faceDown) return '';
-    return m.attacksLeft > 0 && m.position === 'attack' ? styles.canAttack : styles.spent;
+    return m.attacksLeft > 0 && (m.position === 'attack' || m.canAttackInDefense) ? styles.canAttack : styles.spent;
   };
   // A zone the player can click to place the card they're summoning/compiling/setting — either
   // empty, or one of a Compilación's own field materials that's about to vacate it.
@@ -911,7 +934,7 @@ function PlayerField({ player, isOwner, flipped, selectedAttacker, fusion, canDe
         <div
           key={`s${i}`}
           style={{ gridRow: row(2), gridColumn: col(i + 2) }}
-          className={`${styles.slot} ${isPickable('support', s, i) ? styles.pickable : ''}`}
+          className={`${styles.slot} ${styles.supportSlot} ${isPickable('support', s, i) ? styles.pickable : ''}`}
           title='Soporte'
           onClick={() => (isPickable('support', s, i) ? onPickSlot(i) : s && isOwner && onSupportClick && onSupportClick(s))}
           onMouseEnter={() => s && onHover({ cardId: s.cardId, entry: s, owner: isOwner ? 'me' : 'enemy', kind: 'support' })}
@@ -1330,6 +1353,7 @@ function humanizeReason(reason) {
     'must-target-a-monster': 'El rival tiene monstruos: debes elegir uno como objetivo.',
     'must-attack-strongest': 'Un efecto del rival te obliga a atacar a su monstruo más fuerte.',
     'not-your-turn': 'No es tu turno.',
+    'set-first': 'En el turno del rival un Apoyo no se juega desde la Mano: tiene que estar colocado boca abajo.',
     'not-in-graveyard': 'Esa carta no está en el cementerio.',
     'not-in-exile': 'Esa carta no está en el exilio.',
     'cannot-pay-cost': 'No puedes pagar el coste de este efecto.',

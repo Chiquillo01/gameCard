@@ -78,7 +78,9 @@ const UserPage = () => {
       setIsModalOpen(false);
       setForm({ userName: '', email: '', password: '', level: '', admin: false });
     } catch (error) {
-      toast.error('Error al crear el usuario');
+      const serverData = error?.response?.data;
+      const serverMessage = serverData?.error || serverData?.message || serverData?.[0]?.Error;
+      toast.error(typeof serverMessage === 'string' && serverMessage ? serverMessage : 'Error al crear el usuario');
     }
   };
 

@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from 'react-query';
 import styles from './homePage.module.css';
 import { removeSession } from '../../../../lib/utils/userSession';
+import { closeSocket } from '../../../../lib/socket';
+import NewsBell from '../../Layout/NewsBell';
+import { useUser } from '../../../../context/userContext';
 
 const BagIcon = () => (
   <svg viewBox='0 0 16 16' shapeRendering='crispEdges'>
@@ -22,6 +25,9 @@ const PlayerIcon = () => (
   </svg>
 );
 
+// Only a photo the player uploaded counts: the schema default (/assets/UserImg/...) keeps the pixel icon.
+const isUploadedPicture = (url) => typeof url === 'string' && /^https?:///.test(url);
+
 const ZONES = {
   bar: { title: 'LA BARRA', buttons: [{ label: 'TIENDA', to: '/store' }, { label: 'MERCADO', to: '/market' }] },
   table: { title: 'LA MESA', buttons: [{ label: 'DUELO', to: '/duel' }] },
@@ -35,6 +41,10 @@ const HomePage = () => {
   const [isDay, setIsDay] = useState(false);
   const [playerMenuOpen, setPlayerMenuOpen] = useState(false);
   const playerWrapRef = useRef(null);
+  const { data: user } = useUser() ?? {};
+  const [brokenPicture, setBrokenPicture] = useState(null);
+  const picture = user?.profilePicture;
+  const showPicture = isUploadedPicture(picture) && brokenPicture !== picture;
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -48,6 +58,7 @@ const HomePage = () => {
 
   const handleLogout = () => {
     removeSession();
+    closeSocket();
     queryClient.clear();
     navigate('/auth');
   };
@@ -170,14 +181,20 @@ const HomePage = () => {
         </div>
       </div>
 
+      <NewsBell className={styles.homeNewsBell} />
+
       <div className={styles.playerWrap} ref={playerWrapRef}>
         <div className={styles.playerIcon} onClick={() => setPlayerMenuOpen((o) => !o)} role='button' tabIndex={0}>
-          <PlayerIcon />
+          {showPicture ? (
+            <img className={styles.playerAvatar} src={picture} alt={user?.userName || 'Perfil'} onError={() => setBrokenPicture(picture)} />
+          ) : (
+            <PlayerIcon />
+          )}
         </div>
 
         {playerMenuOpen && (
           <div className={styles.playerMenu}>
-            <div className={styles.playerMenuTitle}>MENÚ</div>
+            <div className={styles.playerMenuTitle}>{user?.userName || 'MENÚ'}</div>
             <button className={styles.playerMenuItem} onClick={() => navigate('/profile')}>
               Perfil
             </button>
@@ -186,6 +203,9 @@ const HomePage = () => {
             </button>
             <button className={styles.playerMenuItem} onClick={() => navigate('/friends')}>
               Amigos
+            </button>
+            <button className={styles.playerMenuItem} onClick={() => navigate('/news')}>
+              Noticias
             </button>
             <button className={styles.playerMenuItem} onClick={handleLogout}>
               Cerrar sesión

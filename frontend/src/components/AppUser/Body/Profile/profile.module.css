@@ -75,3 +75,12 @@
     font-size: 14px;
   }
 }
+
+.currentPicture {
+  width: 96px;
+  height: 96px;
+  margin: 0.5rem auto;
+  object-fit: cover;
+  border: 2px solid var(--color-border-1);
+  image-rendering: auto;
+}

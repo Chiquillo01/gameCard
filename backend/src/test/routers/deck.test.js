@@ -29,14 +29,14 @@ describe('Deck Controller TEST', () => {
     const owner = await fakeRequest.post('/auth/register').send({
       userName: 'Deck Owner',
       email: 'deck.owner@gmail.com',
-      password: '123456Ab',
+      password: '123456Ab!',
     });
     ownerToken = owner.body.token;
 
     const other = await fakeRequest.post('/auth/register').send({
       userName: 'Deck Intruder',
       email: 'deck.intruder@gmail.com',
-      password: '123456Ab',
+      password: '123456Ab!',
     });
     otherToken = other.body.token;
 

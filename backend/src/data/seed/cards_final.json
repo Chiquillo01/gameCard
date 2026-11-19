@@ -1068,7 +1068,7 @@
     "category": "support",
     "subtype": "continuous",
     "expansion": "CdG",
-    "effect": "Cuando se Invoca un monstruo Compilado, selecciona una carta en el Campo:\n• Destrúyela.\nSi esta carta está en el Cementerio y controlas a \"Grover, el Goblin\":\n• Añade esta carta a tu Mano.\nLos monstruos que mencionan a \"Grover, el Goblin\" en su texto ganan +2 Atk y Vida.",
+    "effect": "Cuando se Invoca un monstruo Compilado, selecciona una carta en el Campo:\n• Destrúyela.\nAl final de tu turno, si esta carta está en el Cementerio y controlas a \"Grover, el Goblin\":\n• Añade esta carta a tu Mano.\nLos monstruos que mencionan a \"Grover, el Goblin\" en su texto ganan +2 Atk y Vida.",
     "invocationText": "Activación - 4 Píxel",
     "state": 2,
     "number": 45,
@@ -1169,7 +1169,7 @@
     "category": "monster",
     "expansion": "CdG",
     "effect": "Una vez por turno, selecciona un monstruo en el Campo de tu oponente:\n• Toma el control de ese monstruo, y si lo haces, pasa a ser un Ladrón y destruye los otros monstruos que controle.\nEsta carta no puede ser destruida en batalla.\nLos monstruos \"Matón\" ganan +4 Atk/Vida.",
-    "invocationText": "Solo puede ser invocado especial si controlas 3 \"Matón\" en Campo.",
+    "invocationText": "Solo puede ser invocado especial si controlas 5 \"Matón\" en Campo y/o Cementerio.",
     "atk": 7,
     "def": 5,
     "level": 6,
@@ -1661,7 +1661,9 @@
     "level": 2,
     "state": 4,
     "number": 67,
-    "effectCodes": []
+    "effectCodes": [
+      "CUCARACHA_COMBATE_BATTLE_IMMUNE"
+    ]
   },
   {
     "name": "Insecto Buscador",
@@ -3666,18 +3668,18 @@
     ]
   },
   {
-    "name": "Ba-o la diosa del Inframundo",
+    "name": "Diana, diosa del Inframundo",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173668/baodiosainframundotcg.png",
     "attribute": "Oscuridad",
     "type": "Demonio",
     "breed": "Demonio",
     "family": "Inframundo",
-    "description": "Una figura envuelta en un aura de misterio y poder oscuro, Ba-o gobierna el Inframundo con su báculo negro, símbolo de autoridad absoluta. Su corona de espino negra refleja su conexión con la tragedia y la redención, mientras su cabello largo y blanco ondea como un manto de niebla etérea. Su vestido gótico, que se funde con las sombras, oculta secretos y terrores ancestrales. Aquellos que se atrevan a buscar su favor deben enfrentarse a su juicio inquebrantable. Su sola presencia drena la luz, dejando solo un vacío eterno que susurra promesas y amenazas a partes iguales. Ba-o es la sombra en la que todos los secretos duermen.",
+    "description": "Una figura envuelta en un aura de misterio y poder oscuro, Diana gobierna el Inframundo con su báculo negro, símbolo de autoridad absoluta. Su corona de espino negra refleja su conexión con la tragedia y la redención, mientras su cabello largo y blanco ondea como un manto de niebla etérea. Su vestido gótico, que se funde con las sombras, oculta secretos y terrores ancestrales. Aquellos que se atrevan a buscar su favor deben enfrentarse a su juicio inquebrantable. Su sola presencia drena la luz, dejando solo un vacío eterno que susurra promesas y amenazas a partes iguales. Diana es la sombra en la que todos los secretos duermen.",
     "rarity": "legendary",
     "category": "fusion",
     "expansion": "IdL",
-    "effect": "Una vez por turno, cómo efecto rápido descarta una carta y aplica un efecto:\n• Destruye una carta en el Campo.\n• Exilia esta carta hasta el final del turno, si lo haces, invoca una Compilación de tu Cementerio.",
-    "invocationText": "Compilación - 1 Compilacion + 2 monstruos Nivel 4 o superior",
+    "effect": "Una vez por turno, cómo efecto rápido descarta una carta y aplica un efecto:\n• Destruye una carta en el Campo.\n• Exilia esta carta hasta el final del turno, si lo haces, invoca un monstruo Inframundo de tu Cementerio.",
+    "invocationText": "Compilación - 3 monstruos de Inframundo",
     "atk": 8,
     "def": 8,
     "level": 8,
@@ -3688,16 +3690,8 @@
       "args": {
         "materials": [
           {
-            "category": "Compilado",
-            "count": 1
-          },
-          {
-            "minLevel": 5,
-            "count": 2,
-            "zone": [
-              "field",
-              "graveyard"
-            ]
+            "family": "Inframundo",
+            "count": 3
           }
         ]
       }
@@ -3815,7 +3809,7 @@
     "category": "monster",
     "expansion": "IdL",
     "effect": "Una vez por turno, elige uno de los siguientes efectos: \n• Inflige 5 VP a tu oponente.\n• Genera 1 Píxel por cada monstruo con QUEMADURA en el Campo.",
-    "invocationText": "Solo puede ser invocado especial al sacrificar un monstruo en tu Campo.",
+    "invocationText": "También puede ser invocado especial al sacrificar un monstruo en tu Campo.",
     "atk": 4,
     "def": 4,
     "level": 5,
@@ -3995,7 +3989,7 @@
     ]
   },
   {
-    "name": "Equipo Sunne - Astas de Combate",
+    "name": "Equipo Sunna - Astas de Combate",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260376/esAstasCombateTCG.jpg",
     "attribute": "none",
     "type": "instant",
@@ -4004,7 +3998,7 @@
     "category": "support",
     "subtype": "instant",
     "expansion": "NdM",
-    "effect": "En activación:\n• Exilia 2 cartas del Cementerio del oponente.\nSolo puedes activar el efecto de \"Equipo Sunne - Astas de Combate\" si controlas un \"Armadura Sunne\"",
+    "effect": "En activación:\n• Exilia 2 cartas del Cementerio del oponente.\nSolo puedes activar el efecto de \"Equipo Sunna - Astas de Combate\" si controlas un \"Armadura Sunna\"",
     "invocationText": "Activación - 2 Píxel",
     "state": 4,
     "number": 200,
@@ -4014,10 +4008,12 @@
         "amount": 2
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "SUNNE_ASTAS_EXILE"
+    ]
   },
   {
-    "name": "Equipo Sunne - Espada Solar",
+    "name": "Equipo Sunna - Espada Solar",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260377/esEspadaSolarTCG.jpg",
     "attribute": "none",
     "type": "instant",
@@ -4026,7 +4022,7 @@
     "category": "support",
     "subtype": "instant",
     "expansion": "NdM",
-    "effect": "En activación, selecciona un monstruo en el Campo:\n• Destruyelo;\nSolo puedes activar el efecto de \"Equipo Sunne - Espada Solar\" si controlas un \"Armadura Sunne\"",
+    "effect": "En activación, selecciona un monstruo en el Campo:\n• Destruyelo.\nSolo puedes activar el efecto de \"Equipo Sunna - Espada Solar\" si controlas un \"Armadura Sunna\"",
     "invocationText": "Activación - 2 Píxel",
     "state": 4,
     "number": 201,
@@ -4036,10 +4032,12 @@
         "amount": 2
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "SUNNE_ESPADA_DESTROY"
+    ]
   },
   {
-    "name": "Equipo Sunne - Resonador",
+    "name": "Equipo Sunna - Resonador",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260373/esResonadorTCG.jpg",
     "attribute": "none",
     "type": "instant",
@@ -4048,7 +4046,7 @@
     "category": "support",
     "subtype": "instant",
     "expansion": "NdM",
-    "effect": "En activación, selecciona un Apoyo en el Campo:\n• Destruyelo\nSolo puedes activar el efecto de \"Equipo Sunne - Resonador\" si controlas un \"Armadura Sunne\"",
+    "effect": "En activación, selecciona un Apoyo en el Campo:\n• Destruyelo.\nSolo puedes activar el efecto de \"Equipo Sunna - Resonador\" si controlas un \"Armadura Sunna\"",
     "invocationText": "Activación - 2 Píxel",
     "state": 4,
     "number": 202,
@@ -4058,7 +4056,9 @@
         "amount": 2
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "SUNNE_RESONADOR_DESTROY"
+    ]
   },
   {
     "name": "Familiar Mágico - Gus",
@@ -4077,7 +4077,10 @@
     "level": 2,
     "state": 4,
     "number": 203,
-    "effectCodes": []
+    "effectCodes": [
+      "FAMILIAR_GUS_EQUIP",
+      "FAMILIAR_GUS_GRANT"
+    ]
   },
   {
     "name": "Familiar Mágico - Mochi",
@@ -4096,7 +4099,10 @@
     "level": 2,
     "state": 4,
     "number": 204,
-    "effectCodes": []
+    "effectCodes": [
+      "FAMILIAR_MOCHI_EQUIP",
+      "FAMILIAR_MOCHI_GRANT"
+    ]
   },
   {
     "name": "Familiar Mágico - Monin",
@@ -4115,10 +4121,13 @@
     "level": 2,
     "state": 4,
     "number": 205,
-    "effectCodes": []
+    "effectCodes": [
+      "FAMILIAR_MONIN_EQUIP",
+      "FAMILIAR_MONIN_GRANT"
+    ]
   },
   {
-    "name": "Hechizo de volteo",
+    "name": "Libro de hechizos - Volteo",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173784/hechizovolteotcg.png",
     "attribute": "none",
     "type": "instant",
@@ -4143,7 +4152,7 @@
   },
   {
     "name": "Libro de hechizos - Castigo",
-    "image": "/assets/CardImg/generated/libro-de-hechizos-castigo.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794754898/207.jpg",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -4161,11 +4170,13 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "LIBRO_CASTIGO"
+    ]
   },
   {
     "name": "Libro de hechizos - Fulminar",
-    "image": "/assets/CardImg/generated/libro-de-hechizos-fulminar.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794754899/208.jpg",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -4183,7 +4194,9 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "LIBRO_FULMINAR"
+    ]
   },
   {
     "name": "Anciana de los libros",
@@ -4218,7 +4231,11 @@
         ]
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "ANCIANA_ONSUMMON_SEARCH",
+      "ANCIANA_DISCARD_DESTROY",
+      "ANCIANA_OPPONENT_OWN_TURN"
+    ]
   },
   {
     "name": "Bibliotecaria",
@@ -4237,7 +4254,10 @@
     "level": 2,
     "state": 2,
     "number": 210,
-    "effectCodes": []
+    "effectCodes": [
+      "BIBLIOTECARIA_ONSUMMON_SEARCH",
+      "BIBLIOTECARIA_GY_DRAW"
+    ]
   },
   {
     "name": "Chatarra",
@@ -4265,7 +4285,7 @@
     ]
   },
   {
-    "name": "Equipo Sunne - Plan Maestro",
+    "name": "Equipo Sunna - Plan Maestro",
     "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792260375/esPlanMaestroTCG.jpg",
     "attribute": "none",
     "type": "normal",
@@ -4274,7 +4294,7 @@
     "category": "support",
     "subtype": "normal",
     "expansion": "NdM",
-    "effect": "En activación:\n• Agrega a la mano una carta \"Equipo Sunne\" excepto \"Equipo Sunne - Plan Maestro\", después si controlas un \"Armadura Sunne\" roba 1 carta.\nExilia esta carta en Cementerio, selecciona \"Equipo Sunne\" en Cementerio:\n• Devuelvelos al Mazo, si lo hacer, levanta a la Mano una carta del Campo de tu oponente por cada una.",
+    "effect": "En activación:\n• Agrega a la mano una carta \"Equipo Sunna\" excepto \"Equipo Sunna - Plan Maestro\", después si controlas un \"Armadura Sunna\" roba 1 carta.\nExilia esta carta en Cementerio, selecciona \"Equipo Sunna\" en Cementerio:\n• Devuelvelos al Mazo, si lo hacer, levanta a la Mano una carta del Campo de tu oponente por cada una.",
     "invocationText": "Activación - 1 Píxel",
     "state": 2,
     "number": 212,
@@ -4284,7 +4304,10 @@
         "amount": 1
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "PLAN_MAESTRO_SEARCH",
+      "PLAN_MAESTRO_GY_BOUNCE"
+    ]
   },
   {
     "name": "Forja de los Herreros",
@@ -4339,8 +4362,8 @@
     ]
   },
   {
-    "name": "Sunne, Princesa Llama",
-    "image": "/assets/CardImg/generated/sunne-princesa-llama.png",
+    "name": "Sunna, Princesa Llama",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794754898/215.jpg",
     "attribute": "Lava",
     "type": "Fuego",
     "breed": "Fuego",
@@ -4349,17 +4372,20 @@
     "rarity": "epic",
     "category": "monster",
     "expansion": "NdM",
-    "effect": "Una vez por turno cómo (efecto rápido):\n• Invoca un \"Armadura Sunne\" Compilación de tu Mazo-ex.\nSi un monstruo “Armadura Sunne” deja el Campo por un efecto de carta de tu oponente y esta carta está en el Cementerio:\n• Invoca especial esta carta.",
+    "effect": "Una vez por turno cómo (efecto rápido):\n• Invoca un \"Armadura Sunna\" Compilación de tu Mazo-ex.\nSi un monstruo “Armadura Sunna” deja el Campo por un efecto de carta de tu oponente y esta carta está en el Cementerio:\n• Invoca especial esta carta.",
     "atk": 4,
     "def": 2,
     "level": 4,
     "state": 2,
     "number": 215,
-    "effectCodes": []
+    "effectCodes": [
+      "SUNNE_PRINCESA_SUMMON_ARMADURA",
+      "SUNNE_PRINCESA_GY_REVIVE"
+    ]
   },
   {
     "name": "Zona de Impacto",
-    "image": "/assets/CardImg/generated/zona-de-impacto.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794754899/216.jpg",
     "attribute": "none",
     "type": "field",
     "description": "-",
@@ -4367,7 +4393,7 @@
     "category": "support",
     "subtype": "field",
     "expansion": "NdM",
-    "effect": "En activación:\n• Agrega a la Mano un \"Sunne, Princesa Llama\" del Mazo.\nUna vez por turno excava las 3 primeras cartas de tu Mazo:\n• Agrega a la Mano 1 \"Equipo Sunne\" que haya sido excavado, envía al Cementerio las demás cartas.",
+    "effect": "En activación:\n• Agrega a la Mano un \"Sunna, Princesa Llama\" del Mazo.\nUna vez por turno excava las 3 primeras cartas de tu Mazo:\n• Agrega a la Mano 1 \"Equipo Sunna\" que haya sido excavado, envía al Cementerio las demás cartas.",
     "invocationText": "Activación - 2 Píxel",
     "state": 2,
     "number": 216,
@@ -4377,7 +4403,10 @@
         "amount": 2
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "ZONA_IMPACTO_ON_PLAY",
+      "ZONA_IMPACTO_EXCAVATE"
+    ]
   },
   {
     "name": "Biblioteca Ancestral",
@@ -4399,7 +4428,11 @@
         "amount": 4
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "BIBLIOTECA_ON_PLAY",
+      "BIBLIOTECA_RECYCLE_LIBROS",
+      "BIBLIOTECA_EMPOWER_LIBROS"
+    ]
   },
   {
     "name": "Motor de Engranaje",
@@ -4463,7 +4496,9 @@
     "level": 2,
     "state": 3,
     "number": 220,
-    "effectCodes": []
+    "effectCodes": [
+      "BIBLIOTECARIO_DISCARD_SUMMON"
+    ]
   },
   {
     "name": "Catapulta",
@@ -4542,7 +4577,7 @@
     "breed": "Maquina",
     "family": "Objeto",
     "description": "Forjado por una civilización perdida, el Aporreador de Engranaje es una máquina colosal diseñada para defender fortalezas y destruir cualquier amenaza con implacable fuerza. Su cuerpo, compuesto de placas metálicas y engranajes intrincados, emana vapor desde sus articulaciones mientras avanza con determinación. Los martillos integrados en sus brazos golpean con fuerza devastadora. Esta reliquia, creada para soportar los asedios más feroces, ha resistido el paso del tiempo como testigo de una era olvidada. Hoy, su mera presencia en una fortaleza es suficiente para sembrar el miedo en los corazones de los invasores.",
-    "rarity": "rare",
+    "rarity": "common",
     "category": "monster",
     "expansion": "NdM",
     "effect": "En invocación, si controlas a \"Enano Constructor\":\n• Genera 3 Engranajes en esta carta.\nSi se usa como material para un monstruo Maquina Compilación:\n• El monstruo gana los Engranajes que tenia esta carta.",
@@ -4550,7 +4585,7 @@
     "atk": 1,
     "def": 1,
     "level": 4,
-    "state": 3,
+    "state": 4,
     "number": 223,
     "effectCodes": [
       "GOLPEADOR_ONSUMMON_GEARS",
@@ -4559,7 +4594,7 @@
   },
   {
     "name": "Libro de hechizos - Dragar",
-    "image": "/assets/CardImg/generated/libro-de-hechizos-dragar.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794754898/224.jpg",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -4577,11 +4612,13 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "LIBRO_DRAGAR"
+    ]
   },
   {
     "name": "Libro de hechizos - Necronomicon",
-    "image": "/assets/CardImg/generated/libro-de-hechizos-necronomicon.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794754899/225.jpg",
     "attribute": "none",
     "type": "instant",
     "description": "-",
@@ -4599,7 +4636,9 @@
         "amount": 3
       }
     },
-    "effectCodes": []
+    "effectCodes": [
+      "LIBRO_NECRONOMICON"
+    ]
   },
   {
     "name": "Machacador de Engranaje",
@@ -4659,45 +4698,113 @@
     ]
   },
   {
-    "name": "Duérgar",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173725/duergartcg.png",
-    "attribute": "Oscuridad",
-    "type": "Enano",
-    "breed": "Enano",
-    "family": "Humano",
-    "description": "El Duérgar, un enano de las profundidades, combina fuerza y astucia en las sombras de su hogar subterráneo. Con su piel cenicienta y barba blanca trenzada con adornos metálicos, es un maestro de la tiranía y el engaño. Porta un arco que refleja su habilidad para cazar y defender su dominio con precisión mortal. Nacido en la oscuridad y vinculado a pactos oscuros, el Duérgar es capaz de volverse invisible o cambiar de tamaño, habilidades que utiliza para capturar esclavos y cumplir con los mandatos de sus amos siniestros. Su entorno, una mina sombría llena de herramientas y cristales resplandecientes, es testigo de su dominio sobre las profundidades.",
-    "rarity": "common",
-    "category": "monster",
+    "name": "Armadura Sunna, Prometea",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1795036824/228.jpg",
+    "attribute": "Fuego",
+    "type": "Maquina",
+    "breed": "Maquina",
+    "family": "Elemental",
+    "description": "",
+    "rarity": "rare",
+    "category": "fusion",
     "expansion": "NdM",
-    "effect": "Esta carta gana +2 Atk si tu oponente controla más monstruos que tu.",
-    "atk": 2,
-    "def": 2,
-    "level": 4,
-    "state": 4,
+    "effect": "Esta carta gana +1 Atk por cada \"Equipo Sunna -\" en el Cementerio.\nAl ser Compidado: \n• Agrega a tu mano una carta \"Equipo Sunna -\" en Cementerio.\nUna vez por turno, selecciona un monstruo en el Campo del Oponente:\n• Aplica el efecto de QUEMADURA a ese objetivo.\nSolo puede ser invocada una vez por turno.",
+    "invocationText": "Compilación - \"Sunna, Princesa Llama\" o una \"Armadura Sunna\" de distinto atributo.",
+    "atk": 10,
+    "def": 9,
+    "level": 5,
+    "state": 3,
     "number": 228,
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "count": 1,
+            "anyOf": [
+              {
+                "name": "Sunna, Princesa Llama"
+              },
+              {
+                "nameContains": "Armadura Sunn",
+                "excludeAttribute": "Fuego"
+              }
+            ]
+          }
+        ]
+      }
+    },
     "effectCodes": [
-      "DUERGAR_BUFF"
+      "PROMETEA_ATK_PER_EQUIPO",
+      "PROMETEA_ONSUMMON_RECOVER",
+      "PROMETEA_BURN",
+      "PROMETEA_ONCE_PER_TURN"
     ]
   },
   {
-    "name": "Héroe Aprendiz",
-    "image": "/assets/CardImg/generated/heroe-aprendiz.png",
+    "name": "Armadura Sunna, Líquida",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1795036825/229.jpg",
+    "attribute": "Agua",
+    "type": "Maquina",
+    "breed": "Maquina",
+    "family": "Elemental",
+    "description": "",
+    "rarity": "rare",
+    "category": "fusion",
+    "expansion": "NdM",
+    "effect": "Esta carta gana +1 Def por cada \"Equipo Sunna -\" en el Cementerio.\nAl ser Compidado, selecciona un monstruo: \n• Aplica el efecto de CONGELADO a ese objetivo.\nEn la fase final:\n• Agrega a tu mano una carta \"Equipo Sunna -\"  de mazo, con nombre distinto a las que tienes en Cementerio.\nSolo puede ser invocada una vez por turno.",
+    "invocationText": "Compilación - \"Sunna, Princesa Llama\" o una \"Armadura Sunna\" de distinto atributo.",
+    "atk": 9,
+    "def": 10,
+    "level": 5,
+    "state": 3,
+    "number": 229,
+    "activationCost": {
+      "fn": "compileFrom",
+      "args": {
+        "materials": [
+          {
+            "count": 1,
+            "anyOf": [
+              {
+                "name": "Sunna, Princesa Llama"
+              },
+              {
+                "nameContains": "Armadura Sunn",
+                "excludeAttribute": "Agua"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "effectCodes": [
+      "LIQUIDA_DEF_PER_EQUIPO",
+      "LIQUIDA_ONSUMMON_FREEZE",
+      "LIQUIDA_END_PHASE_SEARCH",
+      "LIQUIDA_ONCE_PER_TURN"
+    ]
+  },
+  {
+    "name": "Bulette",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1795036825/230.jpg",
     "attribute": "Tierra",
-    "type": "Héroe",
-    "breed": "Héroe",
-    "family": "Humano",
+    "type": "Roca",
+    "breed": "Roca",
+    "family": "Bestia",
     "description": "-",
-    "rarity": "common",
+    "rarity": "rare",
     "category": "monster",
     "expansion": "PAO",
-    "effect": "Manda 1 monstruo \"Héroe\" al Cementerio y esta carta gana el siguiente efecto:\n• Esta carta gana el nombre y el Atributo del monstruo enviado.",
-    "invocationText": "Si controlas un \"Héroe\", puede ser invocada de forma especial pero solo una vez por turno de esta forma.",
-    "atk": 5,
-    "def": 1,
-    "level": 2,
-    "state": 4,
+    "effect": "Una vez por turno, excava las 5 primeras cartas de tu Mazo:\n• Si encontraste un monstruo de Tierra, invocalo especial.",
+    "atk": 4,
+    "def": 4,
+    "level": 4,
+    "state": 3,
     "number": 230,
-    "effectCodes": []
+    "effectCodes": [
+      "BULETTE_EXCAVATE_SUMMON"
+    ]
   },
   {
     "name": "Anguila",
@@ -4819,7 +4926,7 @@
   },
   {
     "name": "Gigante de Hielo",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173765/giganteescarchatcg.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794762044/236.jpg",
     "attribute": "Hielo",
     "type": "Roca",
     "breed": "Roca",
@@ -4830,7 +4937,7 @@
     "expansion": "PAO",
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Hielo en tu Campo.",
-    "atk": 11,
+    "atk": 6,
     "def": 3,
     "level": 6,
     "state": 4,
@@ -4841,7 +4948,7 @@
   },
   {
     "name": "Gigante de las Nubes",
-    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1792173767/gigantenubetcg.png",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794762044/237.jpg",
     "attribute": "Viento",
     "type": "Roca",
     "breed": "Roca",
@@ -4852,7 +4959,7 @@
     "expansion": "PAO",
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Viento en tu Campo.",
-    "atk": 11,
+    "atk": 6,
     "def": 3,
     "level": 6,
     "state": 4,
@@ -4874,7 +4981,7 @@
     "expansion": "PAO",
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Tierra en tu Campo.",
-    "atk": 11,
+    "atk": 6,
     "def": 3,
     "level": 6,
     "state": 4,
@@ -4896,7 +5003,7 @@
     "expansion": "PAO",
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Electricidad en tu Campo.",
-    "atk": 11,
+    "atk": 6,
     "def": 3,
     "level": 6,
     "state": 4,
@@ -5261,13 +5368,147 @@
     "expansion": "PAO",
     "effect": "Monstruo sin efecto.",
     "invocationText": "Se puede invocar especial sacrificando un monstruo de Fuego en tu Campo.",
-    "atk": 11,
+    "atk": 6,
     "def": 3,
     "level": 6,
     "state": 4,
     "number": 253,
     "effectCodes": [
       "FIRE_GIANT_SPECIAL_SUMMON"
+    ]
+  },
+  {
+    "name": "Espíritu de Escarcha",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794762042/254.jpg",
+    "attribute": "Hielo",
+    "type": "Elemental",
+    "family": "Elemental",
+    "description": "Nace donde la ventisca nunca cesa. Allí donde flota, la escarcha trepa por las rocas, y se dice que su frío es lo único capaz de despertar a los Gigantes de Hielo dormidos bajo los glaciares.",
+    "rarity": "rare",
+    "category": "monster",
+    "expansion": "PAO",
+    "effect": "Cuando es invocado:\n• Añade a tu Mano un \"Gigante de Hielo\" de tu Mazo.\nSi es sacrificado:\n• Aplica CONGELACIÓN a un monstruo del Campo de tu oponente.",
+    "atk": 1,
+    "def": 3,
+    "level": 3,
+    "state": 3,
+    "number": 254,
+    "effectCodes": [
+      "ESPIRITU_ESCARCHA_SEARCH",
+      "ESPIRITU_ESCARCHA_SACRIFICED"
+    ]
+  },
+  {
+    "name": "Silfo del Vendaval",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794762042/255.jpg",
+    "attribute": "Viento",
+    "type": "Elemental",
+    "family": "Elemental",
+    "description": "Un remolino con voluntad propia que juguetea entre las cumbres. Cuando el Silfo se entrega al viento, las nubes se agitan y un Gigante desciende de ellas.",
+    "rarity": "rare",
+    "category": "monster",
+    "expansion": "PAO",
+    "effect": "Cuando es invocado:\n• Añade a tu Mano un \"Gigante de las Nubes\" de tu Mazo.\nSi es sacrificado:\n• Regresa a la Mano de su dueño un Apoyo del Campo.",
+    "atk": 2,
+    "def": 1,
+    "level": 3,
+    "state": 3,
+    "number": 255,
+    "effectCodes": [
+      "SILFO_VENDAVAL_SEARCH",
+      "SILFO_VENDAVAL_SACRIFICED"
+    ]
+  },
+  {
+    "name": "Gólem de Guijarros",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794762042/256.jpg",
+    "attribute": "Tierra",
+    "type": "Roca",
+    "breed": "Roca",
+    "family": "Elemental",
+    "description": "Un montón de cantos rodados unidos por raíces y musgo, testarudo como la montaña de la que salió. Su sacrificio devuelve a la tierra la fuerza que los Gigantes de Rocas necesitan para alzarse.",
+    "rarity": "rare",
+    "category": "monster",
+    "expansion": "PAO",
+    "effect": "Cuando es invocado:\n• Añade a tu Mano un \"Gigante de Rocas\" de tu Mazo.\nSi es sacrificado:\n• Añade a tu Mano un monstruo Roca de tu Cementerio.",
+    "atk": 1,
+    "def": 4,
+    "level": 3,
+    "state": 3,
+    "number": 256,
+    "effectCodes": [
+      "GOLEM_GUIJARROS_SEARCH",
+      "GOLEM_GUIJARROS_SACRIFICED"
+    ]
+  },
+  {
+    "name": "Centella Errante",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794762042/257.jpg",
+    "attribute": "Electricidad",
+    "type": "Elemental",
+    "family": "Elemental",
+    "description": "Una chispa viva que salta de tormenta en tormenta. Al estallar, su descarga recorre el cielo y llama al Gigante del Trueno.",
+    "rarity": "rare",
+    "category": "monster",
+    "expansion": "PAO",
+    "effect": "Cuando es invocado:\n• Añade a tu Mano un \"Gigante del Trueno\" de tu Mazo.\nSi es sacrificado:\n• Tu oponente pierde 3 VP.",
+    "atk": 3,
+    "def": 1,
+    "level": 3,
+    "state": 3,
+    "number": 257,
+    "effectCodes": [
+      "CENTELLA_ERRANTE_SEARCH",
+      "CENTELLA_ERRANTE_SACRIFICED"
+    ]
+  },
+  {
+    "name": "Salamandra de Brasas",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1794762043/258.jpg",
+    "attribute": "Fuego",
+    "type": "Reptil",
+    "breed": "Reptil",
+    "family": "Elemental",
+    "description": "Una lagartija de ascuas que deja huellas ardientes a su paso. Su fuego alimenta el corazón de magma de los Gigantes de Fuego.",
+    "rarity": "rare",
+    "category": "monster",
+    "expansion": "PAO",
+    "effect": "Cuando es invocado:\n• Añade a tu Mano un \"Gigante de Fuego\" de tu Mazo.\nSi es sacrificado:\n• Aplica QUEMADURA a un monstruo del Campo de tu oponente.",
+    "atk": 2,
+    "def": 2,
+    "level": 3,
+    "state": 3,
+    "number": 258,
+    "effectCodes": [
+      "SALAMANDRA_BRASAS_SEARCH",
+      "SALAMANDRA_BRASAS_SACRIFICED"
+    ]
+  },
+  {
+    "name": "La Tortuga Pagos, las Pesar del Mundo",
+    "image": "https://res.cloudinary.com/dmngr7jkp/image/upload/v1795036825/259.jpg",
+    "attribute": "Tiempo",
+    "type": "Leyenda",
+    "breed": "Leyenda",
+    "family": "Bestia",
+    "description": "-",
+    "rarity": "epic",
+    "category": "monster",
+    "expansion": "PAO",
+    "effect": "Una vez por turno, puedes activar 1 de los siguientes efectos:\n• Devuelve a la Mano 1 Reino del Cementerio o del Exilio.\n• Destruye cartas en el Campo igual al número de Reinos en el tablero.\nMientras esta carta esté en el Campo, ninguna carta de Reino puede ser Destruida o Exiliada por efectos de cartas.\nMientras haya un Reino en el Campo, esta carta no puede ser Destruida ni Exiliada por efectos de cartas.\nLos monstruos en el Campo pierden 1 ATK y Vida por cada Reino en el Campo.",
+    "invocationText": "Solo puede ser invocado si hay 2 Reinos en el tablero.",
+    "atk": 10,
+    "def": 10,
+    "level": 8,
+    "state": 2,
+    "number": 259,
+    "effectCodes": [
+      "TORTUGA_PAGOS_SPECIAL_SUMMON",
+      "TORTUGA_PAGOS_RECOVER_REINO",
+      "TORTUGA_PAGOS_DESTROY",
+      "TORTUGA_PAGOS_PROTECT_REINOS",
+      "TORTUGA_PAGOS_SELF_PROTECT",
+      "TORTUGA_PAGOS_REINO_WEIGHT"
     ]
   },
   {
@@ -5487,7 +5728,7 @@
     "effectCodes": [
       "PODER_PLANTAS_STRONGEST_ONLY"
     ],
-    "obtainable": false
+    "obtainable": true
   },
   {
     "name": "Raíz Centenaria",
@@ -5798,7 +6039,7 @@
     "effectCodes": [
       "CLIONNE_PLANT_PROTECTION"
     ],
-    "obtainable": false
+    "obtainable": true
   },
   {
     "name": "Grook, el Árbol Guardián",
@@ -5820,7 +6061,7 @@
     "effectCodes": [
       "GROOK_PLANT_GROW"
     ],
-    "obtainable": false
+    "obtainable": true
   },
   {
     "name": "Cactus Violento",
@@ -5922,7 +6163,7 @@
     "effectCodes": [
       "RENOVACION_VIDA_SUMMON"
     ],
-    "obtainable": false
+    "obtainable": true
   },
   {
     "name": "Sabio del Bosque Oscuro",

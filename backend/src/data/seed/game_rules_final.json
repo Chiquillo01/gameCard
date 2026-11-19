@@ -15,5 +15,28 @@
     "epic": 2,
     "rare": 3,
     "common": 4
+  },
+  "duelRewards": {
+    "minTurns": 3,
+    "vsBot": {
+      "win": {
+        "pixelcoins": 50,
+        "pixelgems": 0
+      },
+      "loss": {
+        "pixelcoins": 15,
+        "pixelgems": 0
+      }
+    },
+    "pvp": {
+      "win": {
+        "pixelcoins": 100,
+        "pixelgems": 2
+      },
+      "loss": {
+        "pixelcoins": 25,
+        "pixelgems": 0
+      }
+    }
   }
 }

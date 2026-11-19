@@ -3,7 +3,7 @@
 // suggested set of materials the board then shows already picked).
 const { getCard } = require('./cardIndex');
 const { findInstanceLocation, corrodedSlots } = require('./zones');
-const { materialCard, materialMatches, materialLocationSatisfies } = require('./summon');
+const { materialCard, materialMatches, materialLocationSatisfies, assignMaterials } = require('./summon');
 const { violatesUnique, getEffectiveStats } = require('./effectEngine');
 
 const ZONE_LABELS = { field: 'Campo', hand: 'Mano', graveyard: 'Cementerio', banished: 'Exilio' };
@@ -12,6 +12,7 @@ const ZONE_LABELS = { field: 'Campo', hand: 'Mano', graveyard: 'Cementerio', ban
 function requirementLabel(req) {
   const count = req.count || 1;
   const parts = [];
+  if (req.anyOf) return `${count} × ${req.anyOf.map((alt) => requirementLabel({ ...alt, count: 1 }).replace(/^1 × /, '')).join(' o ')}`;
   if (req.name) parts.push(`"${req.name}"`);
   else {
     parts.push(req.category && /compil/i.test(req.category) ? 'Compilación' : 'monstruo');
@@ -22,6 +23,7 @@ function requirementLabel(req) {
     if (req.level != null) parts.push(`de Nivel ${req.level}`);
     if (req.minLevel != null) parts.push(`de Nivel ${req.minLevel} o más`);
     if (req.nameContains) parts.push(`con «${req.nameContains}» en el nombre`);
+    if (req.excludeAttribute) parts.push(`que no sea de ${req.excludeAttribute}`);
   }
   return `${count} × ${parts.join(' ')}`;
 }
@@ -73,8 +75,10 @@ function compileInfo(state, controllerIndex, instanceId, { defaultZones = ['fiel
   const card = getCard(instanceId.split(':')[1]);
   const reqs = (card.activationCost && card.activationCost.args && card.activationCost.args.materials) || [];
   const owned = ownCards(state, controllerIndex).filter((id) => id !== instanceId);
-  const used = new Set();
-  let complete = reqs.length > 0;
+  // The cheapest way to share the cards out among the requirements, each card used once.
+  const assigned = assignMaterials(state, controllerIndex, reqs, owned, { defaultZones, cost: (id) => materialCost(state, id) });
+  const used = new Set(assigned || []);
+  const complete = !!assigned;
   const requirements = reqs.map((req) => {
     const count = req.count || 1;
     const zones = zonesOf(req, defaultZones);
@@ -82,9 +86,6 @@ function compileInfo(state, controllerIndex, instanceId, { defaultZones = ['fiel
       const loc = findInstanceLocation(state, id);
       return materialLocationSatisfies(loc, controllerIndex, req, defaultZones) && materialMatches(state, id, req);
     });
-    const suggested = candidates.filter((id) => !used.has(id)).sort((a, b) => materialCost(state, a) - materialCost(state, b)).slice(0, count);
-    suggested.forEach((id) => used.add(id));
-    if (suggested.length < count) complete = false;
     return {
       label: requirementLabel(req),
       zones: zones.map((z) => ZONE_LABELS[z] || z),
@@ -103,6 +104,7 @@ function compileInfo(state, controllerIndex, instanceId, { defaultZones = ['fiel
   else if (!complete) blockedBy = 'Te faltan materiales.';
   else if (!room) blockedBy = 'No tienes zona libre de monstruo.';
   else if (violatesUnique(state, controllerIndex, card)) blockedBy = 'Solo puedes tener una en el Campo.';
+  else if (!require('./summon').summonRequirementsMet(state, controllerIndex, instanceId, card)) blockedBy = 'Ahora no se puede invocar.';
 
   return { requirements, ready: !blockedBy, blockedBy, suggested: blockedBy ? [] : [...used] };
 }

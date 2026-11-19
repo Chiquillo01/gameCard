@@ -2,6 +2,7 @@ import styles from './profile.module.css';
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from 'react-query';
 import { useUser } from '../../../../context/userContext';
 import { updateUser } from '../../../../lib/utils/apiUser';
 import { successToast, errorToast } from '../../../../lib/toastify/toast';
@@ -9,6 +10,7 @@ import { successToast, errorToast } from '../../../../lib/toastify/toast';
 const ProfileEditForm = () => {
   const { data } = useUser();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -31,12 +33,18 @@ const ProfileEditForm = () => {
   const onSubmit = async (formData) => {
     try {
       await updateUser(formData);
+      // Refetch the current user so the new name/email/photo show up without a page reload.
+      queryClient.invalidateQueries('user');
       navigate('/');
       successToast('Datos actualizados correctamente');
     } catch (e) {
-      if (e.status === 400) {
+      const status = e.response?.status ?? e.status;
+      const serverMessage = e.response?.data?.error;
+      if (serverMessage) {
+        errorToast(serverMessage);
+      } else if (status === 400) {
         errorToast('Solicitud incorrecta');
-      } else if (e.status === 401) {
+      } else if (status === 401) {
         errorToast('Sin autorización necesaria');
       } else {
         errorToast('Interno del servidor');
@@ -77,7 +85,10 @@ const ProfileEditForm = () => {
 
         <div className={styles.field}>
           <label htmlFor='profilePicture'>Foto de Perfil:</label>
-          <input id='profilePicture' type='file' {...register('profilePicture')} />
+          {data.profilePicture && (
+            <img className={styles.currentPicture} src={data.profilePicture} alt='Foto de perfil actual' />
+          )}
+          <input id='profilePicture' type='file' accept='image/*' {...register('profilePicture')} />
         </div>
 
         <div className={styles.field}>

@@ -388,7 +388,110 @@ function compileFromExtra(ctx, args, targets) {
   });
 }
 
+// --- Nacimiento de la Magia ----------------------------------------------------------------------
+
+// Familiar Mágico: "esta carta puede ser equipada a un Mago en el Campo" — the card leaves its
+// monster zone and sits in its controller's support zone as an Equipo of the picked monster.
+function equipSelfTo(ctx, args, targets) {
+  const holderId = (targets || [])[0];
+  const holder = getFieldMonster(ctx.state, holderId);
+  const self = getFieldMonster(ctx.state, ctx.sourceInstanceId);
+  if (!holder || !self || holderId === ctx.sourceInstanceId) return;
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const blocked = corrodedSlots(pl, 'support');
+  const free = pl.field.support.map((s, i) => (s === null && !blocked.includes(i) ? i : -1)).filter((i) => i >= 0);
+  if (!free.length) {
+    log(ctx.state, 'No hay espacio en la zona de Apoyo para equiparlo.');
+    return;
+  }
+  if (free.length === 1) {
+    equipIntoSlot(ctx.state, ctx.controllerIndex, ctx.sourceInstanceId, holderId, free[0]);
+    return;
+  }
+  ctx.state.pendingTriggerChoices = ctx.state.pendingTriggerChoices || [];
+  ctx.state.pendingTriggerChoices.push({
+    kind: 'slot',
+    purpose: 'equip',
+    zone: 'support',
+    controllerIndex: ctx.controllerIndex,
+    sourceInstanceId: ctx.sourceInstanceId,
+    holderId,
+    slots: free,
+    prompt: `Elige en qué zona de Apoyo colocas ${getCard(self.cardId).name}`,
+  });
+}
+
+// What an equipped Familiar gives its Mago (continuous, `whileEquipped`): `flags` set on the
+// monster it's equipped to ("no puede ser destruido en Batalla" / "no puede ser Exiliado" / "no
+// puede ser seleccionado con efectos de cartas"). recomputeContinuous clears them first.
+const EQUIP_FLAGS = ['cannotBeDestroyedByBattle', 'cannotBeExiledByEffects', 'untargetable'];
+function grantEquippedFlags(ctx, args, targets) {
+  (targets || []).map((id) => getFieldMonster(ctx.state, id)).filter(Boolean).forEach((m) => {
+    EQUIP_FLAGS.filter((f) => args.flags && args.flags[f]).forEach((f) => { m[f] = true; });
+  });
+}
+
+// Libro de hechizos - Dragar: "excava las 3 primeras cartas del Mazo de tu oponente y envía una de
+// las cartas excavadas al Cementerio" — the one the player picked (targets.js pools the top cards).
+function opponentTopCards(state, controllerIndex, args) {
+  return player(state, opponentIndex(controllerIndex)).deck.slice(0, args.cards || 3);
+}
+
+function excavateOpponentToGY(ctx, args, targets) {
+  const oppIdx = opponentIndex(ctx.controllerIndex);
+  const top = opponentTopCards(ctx.state, ctx.controllerIndex, args);
+  if (!top.length) return;
+  log(ctx.state, `Se excavan ${top.map((id) => getCard(cardIdFromInstance(id)).name).join(', ')} del Mazo de ${player(ctx.state, oppIdx).userId}.`);
+  const picked = (targets || []).filter((id) => top.includes(id)).slice(0, args.count || 1);
+  const { moveToZone } = require('../zones');
+  picked.forEach((id) => {
+    moveToZone(ctx.state, id, 'graveyard');
+    log(ctx.state, `${getCard(cardIdFromInstance(id)).name} va al Cementerio.`);
+    require('../effectEngine').announceSentToGraveyard(ctx.state, id, oppIdx, { from: 'deck', reason: 'effect' });
+  });
+}
+
+// Biblioteca Ancestral: "selecciona todos los \"Libro de hechizos\" que estén en Cementerio:
+// devuelve esos objetivos al Mazo" — every matching card in its controller's Cementerio, shuffled in.
+function returnAllToDeck(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  const { matchesCardFilter } = require('../filters');
+  const { moveToZone } = require('../zones');
+  const from = args.from || 'graveyard';
+  const list = (pl[from] || []).filter((id) => matchesCardFilter(getCard(cardIdFromInstance(id)), args.filter || {}));
+  list.forEach((id) => moveToZone(ctx.state, id, 'deck', undefined, { deckPosition: 'shuffle' }));
+  if (list.length) log(ctx.state, `${pl.userId} devuelve al Mazo ${list.map((id) => getCard(cardIdFromInstance(id)).name).join(', ')}.`);
+}
+
+// Anciana de los libros: "tu oponente solo puede jugar cartas en el turno que sea el jugador
+// activo" (continuous: chain.linkBlockReason reads the flag).
+function restrictOpponentToOwnTurn(ctx) {
+  player(ctx.state, opponentIndex(ctx.controllerIndex)).onlyOwnTurn = true;
+}
+
+// Biblioteca Ancestral: "las cartas \"Libro de hechizos\" ven reducido su costo de activación en 1
+// y pueden ser activados en el turno de tu oponente desde la Mano" (continuous; costs.payPixels and
+// support.handActivationAllowed read these).
+function empowerCards(ctx, args) {
+  const pl = player(ctx.state, ctx.controllerIndex);
+  if (args.costReduction) pl.costReductions = [...(pl.costReductions || []), { filter: args.filter || {}, amount: args.costReduction }];
+  if (args.fromHandOnOpponentTurn) pl.handOnOpponentTurn = [...(pl.handOnOpponentTurn || []), args.filter || {}];
+}
+
+// Bibliotecaria: "roba 1 carta por cada \"Libro de hechizos\" usado en este turno".
+function drawPerActivatedThisTurn(ctx, args) {
+  const n = require('./conditions').activatedThisTurn(ctx.state, ctx.controllerIndex, args.filter) * (args.amount || 1);
+  if (n) require('../draw').drawCards(ctx.state, ctx.controllerIndex, n, { fromEffect: true });
+}
+
 module.exports = {
+  equipSelfTo,
+  grantEquippedFlags,
+  excavateOpponentToGY,
+  returnAllToDeck,
+  restrictOpponentToOwnTurn,
+  empowerCards,
+  drawPerActivatedThisTurn,
   compileFromExtra,
   target,
   fairyLeaveBonus,
@@ -432,3 +535,4 @@ module.exports = {
 // calls it once the player has picked the support zone for a monster being equipped.
 Object.defineProperty(module.exports, 'equipFromChoice', { value: equipFromChoice, enumerable: false });
 Object.defineProperty(module.exports, 'compilableFromExtra', { value: compilableFromExtra, enumerable: false });
+Object.defineProperty(module.exports, 'opponentTopCards', { value: opponentTopCards, enumerable: false });
