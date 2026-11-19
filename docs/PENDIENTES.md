@@ -2,41 +2,43 @@
 
 Cosas detectadas en la auditoría que se dejan para más adelante, agrupadas por cuándo tocarlas.
 
-## Perfil de usuario
-
-- **Cloudinary sin configurar.** El `.env` del backend no tiene las claves de Cloudinary, así que
-  subir una foto de perfil falla. Editar el perfil sin foto ya funciona (la foto es opcional).
-  Hace falta `CLOUDINARY_URL` (o `CLOUDINARY_CLOUD_NAME` + `CLOUDINARY_API_KEY` +
-  `CLOUDINARY_API_SECRET`) y revisar el flujo completo de subida.
-
 ## Admin de usuarios
 
 - La página `/user` se ve bien en escritorio, pero en ventanas estrechas la tabla se descoloca
   (cabeceras apiladas y la foto de perfil a tamaño completo). Falta hacerla responsive.
 
-## Email de bienvenida (SendGrid)
+## Email de bienvenida (SendGrid): configurarlo
 
-Se implementará desde cero más adelante. De momento no falla sin avisar: si no está configurado,
-no intenta enviarlo y lo dice una vez en el log del servidor. Lo que pide el código actual, por si
-sirve de referencia:
+El código ya está (`backend/src/services/sendgrid.js`): al registrarse se envía un email en español
+(HTML + texto) sin hacer esperar ni romper el registro. Hoy no hay nada en el `.env` del backend,
+así que no se envía (lo dice una vez en el log). Para activarlo:
 
-- `SENDGRID_API_KEY`: una API key de SendGrid con permiso "Mail Send" (empieza por `SG.`).
-- `EMAIL`: la dirección remitente, verificada en SendGrid (Single Sender o dominio).
-- `SENDGRID_WELCOME_TEMPLATE_ID` (opcional): la plantilla dinámica `d-...`. Si no se pone, usa
-  `d-88253b5135d245879f9cd3d23ead5191`, que tiene que existir en esa cuenta de SendGrid y usar la
-  variable `{{userName}}`.
+- Crear en SendGrid una API key con permiso "Mail Send" y ponerla en `SENDGRID_API_KEY`
+  (empieza por `SG.`).
+- Verificar en SendGrid la dirección remitente (Single Sender Verification, o el dominio) y ponerla
+  en `EMAIL`.
+- Opcional: `SENDGRID_WELCOME_TEMPLATE_ID` (`d-...`) para usar una plantilla dinámica de SendGrid
+  en vez del email del código; recibe la variable `{{userName}}`.
+- Reiniciar el backend, y en producción poner las mismas variables en el servidor.
 
-## Amigos (rama propia)
+## Amigos
 
-- La lista de amigos del frontend es falsa, está escrita a mano.
-- Las invitaciones se mandan a todos los sockets conectados (`io.emit`), no solo al destinatario.
-- No existe forma de aceptar una invitación.
-- El listener de invitaciones se limpia con el nombre equivocado (`'ping'`), así que se acumula.
-- La amistad no se comprueba al desafiar a un duelo.
+Hecho: solicitudes por nombre de usuario (enviar, aceptar, rechazar, cancelar), lista real de
+amigos, eliminar amigos, avisos en tiempo real solo al destinatario y desafíos a duelo solo entre
+amigos (con lista de desafíos pendientes y opción de rechazarlos), e intercambio de cartas
+repetidas entre amigos (proponer, aceptar, rechazar, cancelar). Queda:
+
+- Los desafíos a duelo viven en memoria: un reinicio del servidor los borra (igual que las
+  partidas).
+
+## Noticias
+
+Hecho: campana con noticias sin leer y página `/news` (noticias, cambios de balance, eventos,
+mantenimiento). Solo los administradores publican, editan y borran, desde la misma página (al
+editar se mantiene la fecha de publicación y se muestra la de edición).
 
 ## Mercado
 
-- El vendedor no recibe ningún aviso cuando le compran una carta (se ve en "Mis ventas").
 - **Brillo (foil):** se implementará más adelante. Hoy la colección no distingue copias con brillo,
   así que el Mercado no lo pide. Para hacerlo hará falta:
   - Guardar el brillo de cada copia en la colección (por ejemplo, las cantidades por tipo: normal,
@@ -46,11 +48,19 @@ sirve de referencia:
 
 ## Tienda
 
-- **Cómo se consiguen monedas y gemas:** se empieza con 1000 monedas y 0 gemas, las partidas no
-  dan recompensa y los packs de gemas son con euros (aún sin pasarela de pago). Se implementará más
-  adelante.
-- **Cofres de expansiones sin cartas:** Sombras del Bosque Encantado, Perdición del Arrecife Oculto
-  y Nacimiento de la Magia (SBE, PAO, NDM) no tienen cartas todavía; comprarlos da error sin cobrar.
+- **Cómo se consiguen monedas y gemas:** se empieza con 1000 monedas y 0 gemas. Los duelos ya dan
+  recompensa (`duelRewards` en `game_rules_final.json`: contra el bot 50 monedas al ganar y nada al
+  perder, para que no se pueda farmear; contra otro jugador 100 monedas y 2 gemas al ganar y 25 al perder; nada si te rindes o si
+  la partida acaba antes del turno 3). Falta: los packs de gemas con euros (sin pasarela de pago),
+  y quizá un límite diario o un bonus por la primera victoria del día.
+- **Cofres SBE, PAO y NdM:** ya dan sus cartas (30 de SBE, 30 de PAO y 30 de NdM). Después de
+  cambiar cartas o efectos hay que volver a cargar la semilla (`node src/data/seed/seedCardsAndEffects.js`
+  en backend/) para que el servidor los vea.
+- **Nacimiento de la Magia, por revisar:**
+  - Duérgar ya no está en la lista de NdM: está apartado en cards_parked.json.
+  - Sunna invoca la Armadura de su Mazo-C sin materiales (el texto dice «invoca», no «compila»).
+  - Anciana de los libros destruye la carta con más Atk de todo el Campo, ella incluida si es la
+    más fuerte (es lo que dice el texto).
 - **Tiempo Primitivo:**
   - Usa como imagen temporal la ilustración de Licántropo Alfa; falta su imagen propia.
   - Cuesta 400 gemas, cuando la relación de los cofres (100 monedas = 10 gemas) daría 40. Por
@@ -82,9 +92,9 @@ no le afectan. Siguientes fases:
 
 ## Antes de la beta
 
-- **URLs fijas en el código:** los sockets apuntan a `http://localhost:3001` (Duelo y Amigos) y el
-  CORS del socket solo acepta `http://localhost:3000`. Pasarlas a variables de entorno.
-- **Ping de depuración:** el servidor emite un `ping` a todos los clientes en cada conexión.
+- **URLs fijas en el código:** el cliente ya usa `VITE_SOCKET_URL` (o el origen de
+  `VITE_BACKEND_API_URL`), pero el CORS del socket solo acepta `http://localhost:3000`. Pasarlo a
+  una variable de entorno.
 - **Partidas en memoria:** un reinicio del servidor termina todas las partidas en curso. Para la
   beta, guardarlas en la base de datos (o en Redis) para poder recuperarlas.
 - **Límite de intentos de login en memoria:** con más de un servidor habría que compartirlo
@@ -95,7 +105,9 @@ no le afectan. Siguientes fases:
 - **Los tests del frontend no arrancan:** `jest.setup.js` importa
   `@testing-library/jest-dom/extend-expect`, que ya no existe en la versión instalada (ahora es
   `@testing-library/jest-dom`). La CI solo compila el frontend, así que no lo detecta.
-- **5 avisos moderados de `npm audit`** en las herramientas de test del frontend (vitest 3);
-  arreglarlos exige saltar a vitest 5.
-- **Validación de contraseña distinta** en el frontend (exige carácter especial) y en el backend
-  (no lo exige).
+- **12 avisos de `npm audit`** (9 moderados, 3 críticos), todos en herramientas de desarrollo,
+  nada que llegue a producción: la cadena de vitest 3 (`vitest`, `@vitest/browser`,
+  `@vitest/mocker`, `@vitest/coverage-v8`, `tinypool`, `test-exclude`, `glob`, `minimatch`) exige
+  saltar a vitest 5; `@storybook/experimental-addon-test` no tiene versión parcheada (en Storybook 9
+  pasa a ser `@storybook/addon-vitest`) y `@storybook/react-vite` + su plugin de docgen solo se
+  arreglan migrando a Storybook 9; `nodemon` arrastra un `minimatch` vulnerable.

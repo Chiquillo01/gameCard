@@ -309,7 +309,7 @@ describe('An attacker that stops being in attack position', () => {
     const state = await makeDuel();
     const attacker = await onField(state, 0, 'Vampiro');
     const defender = await onField(state, 1, 'Vampiro');
-    const hechizo = await setSupport(state, 1, 'Hechizo de volteo');
+    const hechizo = await setSupport(state, 1, 'Libro de hechizos - Volteo');
     state.players[1].pixelcoins = 12;
     toPhase(state, 'battle', 0);
     expect(declare(state, 0, attacker, defender).ok).toBe(true);

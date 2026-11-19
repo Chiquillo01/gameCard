@@ -262,6 +262,9 @@ function triggerAccepts(state, m, effect, eventName, eventArgs) {
   if ((eventName === 'monstersLeftField' || eventName === 'addedFromDeckToHand') && args.filter && !(eventArgs.cardIds || []).some((id) => matchesCardFilter(getCard(id), args.filter))) return false;
   // "Si un/os monstruo Hada que controles dejan el Campo": only the effect's controller's ones.
   if (eventName === 'monstersLeftField' && args.ownOnly && !(eventArgs.left || []).some((l) => l.ownerIndex === m.controllerIndex && (!args.filter || matchesCardFilter(getCard(l.cardId), args.filter)))) return false;
+  // Sunna, Princesa Llama: "si un monstruo \"Armadura Sunna\" deja el Campo por un efecto de carta de
+  // tu oponente" — one of its controller's, moved by the rival's effect (not a battle, not a cost).
+  if (eventName === 'monstersLeftField' && args.byOpponentEffect && !(eventArgs.left || []).some((l) => l.ownerIndex === m.controllerIndex && l.byPlayer != null && l.byPlayer !== m.controllerIndex && (!args.filter || matchesCardFilter(getCard(l.cardId), args.filter)))) return false;
   if (eventName === 'involvedInBattle') {
     // Hidra: "cada vez que esta carta batalla con un monstruo con más Atk que ella".
     if (args.selfInvolved || args.againstStronger) {
@@ -412,7 +415,7 @@ function runTriggered(state, ctx, effect, card, targets) {
 function stackTriggered(state, ctx, effect, card, targets) {
   if (state.changingPhase || state.status !== 'active') return false;
   const opp = ctx.controllerIndex === 0 ? 1 : 0;
-  const link = { controllerIndex: ctx.controllerIndex, sourceInstanceId: ctx.sourceInstanceId, cardName: card.name, effects: [effect], targets, speed: speedOf(card, effect), costPaid: ctx.paidCards || [], triggered: true };
+  const link = { controllerIndex: ctx.controllerIndex, sourceInstanceId: ctx.sourceInstanceId, cardName: card.name, effects: [effect], targets, speed: speedOf(card, effect), costPaid: ctx.paidCards || [], triggered: true, event: ctx.event || null };
   const savedPriority = state.priorityPlayer;
   const savedPass = state.chainLastActionWasPass;
   state.chain.push(link);
@@ -607,6 +610,9 @@ function recomputeContinuous(state) {
     pl.attacksOnlyOnStrongest = false;
     pl.cantWin = false;
     pl.activationTax = 0;
+    pl.onlyOwnTurn = false;
+    pl.costReductions = [];
+    pl.handOnOpponentTurn = [];
     pl.field.monsters.filter(Boolean).forEach((m) => {
       resetTempMods(m);
       addTempMod(m, poisonDebuff(state, m.instanceId), 'Veneno', 'status');
@@ -645,11 +651,14 @@ function recomputeContinuous(state) {
   const lostEffects = (entry) => entry.effectsLost || (state.negations || []).some((n) => n.targetInstanceId === entry.instanceId && (n.expiresTurn === null || n.expiresTurn >= state.turnNumber));
   [true, false].forEach((negatingPass) => state.players.forEach((pl, controllerIndex) => {
     [...pl.field.monsters, ...pl.field.support, pl.field.territory].filter(Boolean).forEach((entry) => {
-      if (entry.faceDown || entry.isToken || entry.isMonsterEquip || hasStatus(state, entry.instanceId, FREEZE)) return;
+      if (entry.faceDown || entry.isToken || hasStatus(state, entry.instanceId, FREEZE)) return;
       if (lostEffects(entry)) return;
       effectCodesOf(entry).forEach((effectId) => {
         const effect = getEffect(effectId);
         if (!effect || effect.type !== 'continuous') return;
+        // A monster equipped as an Equipo (Carnívora's prey, a Familiar Mágico) keeps only what it
+        // gives the monster it's equipped to.
+        if (entry.isMonsterEquip && !(effect.trigger && effect.trigger.fn === 'whileEquipped')) return;
         if (negates(effect) !== negatingPass) return;
         // An Equipo card's effect only runs for the monster it's equipped to; with none (or that
         // monster gone) it does nothing until the field-leave cleanup sends the card to the graveyard.

@@ -159,6 +159,9 @@ function resolveActivation(state, controllerIndex, instanceId, card, targets, se
   }
   if (pl.hand.includes(instanceId)) pl.hand = pl.hand.filter((id) => id !== instanceId);
   log(state, `${pl.userId} coloca ${card.name} en el Campo.`);
+  // "Por cada \"Libro de hechizos\" usado en este turno" (Bibliotecaria).
+  if (!state.activationsThisTurn || state.activationsThisTurn.turn !== state.turnNumber) state.activationsThisTurn = { turn: state.turnNumber, list: [] };
+  state.activationsThisTurn.list.push({ controllerIndex, cardId: cardIdFromInstance(instanceId) });
   if (card.subtype === 'equipment' && equipTarget) log(state, `${card.name} se equipa a ${require('./statMods').sourceName(state, equipTarget)}.`);
 
   const oneShot = card.subtype === 'normal' || card.subtype === 'instant' || card.subtype === 'counter';
@@ -222,6 +225,9 @@ function onPlayEffects(card) {
 // a `canActivateOnOpponentTurn` condition (whose `requires` are then checked as usual).
 function handActivationAllowed(state, controllerIndex, card) {
   if (state.turnPlayer === controllerIndex) return true;
+  // Biblioteca Ancestral: "los \"Libro de hechizos\" pueden ser activados en el turno de tu oponente
+  // desde la Mano".
+  if ((player(state, controllerIndex).handOnOpponentTurn || []).some((filter) => require('./filters').matchesCardFilter(card, filter))) return true;
   return onPlayEffects(card).some((effect) => (effect.conditions || []).some((c) => c.fn === 'canActivateOnOpponentTurn'));
 }
 

@@ -37,6 +37,7 @@ function checkWin(state) {
 function surrender(state, playerIndex) {
   state.winnerIndex = other(playerIndex);
   state.status = 'finished';
+  state.surrenderedBy = playerIndex; // a player who gives up earns nothing (services/duelRewards.js)
   state.endReason = `${state.players[playerIndex].userId} se rinde.`;
   log(state, state.endReason);
 }

@@ -22,9 +22,10 @@ const registerFunction = async (req, res) => {
 
     const newUserCollection = new UserCollection({ userId: createdUser._id, cards: [] });
     await newUserCollection.save();
-    sendWelcomeEmail(normalizedEmail, userName).catch((err) => {
-      console.error('Error al enviar el email de bienvenida:', (err.response && err.response.body) || err.message);
-    });
+    // Not awaited: the email can't slow down or break the registration (it logs its own errors).
+    Promise.resolve()
+      .then(() => sendWelcomeEmail(normalizedEmail, userName))
+      .catch(() => {});
 
     const token = createdUser.generateJWT();
 

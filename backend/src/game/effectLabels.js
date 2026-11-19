@@ -75,6 +75,10 @@ const ACTIONS = {
   banishSelf: () => 'Se exilia',
   mirrorEvent: () => 'Copia lo que haga el rival',
   afterOpponentSearch: () => 'Responde a una búsqueda rival',
+  equipSelfTo: () => 'Se equipa a un Mago',
+  excavateOpponentToGY: () => 'Excava el Mazo rival y manda una al Cementerio',
+  returnAllToDeck: (a) => `Devuelve al Mazo los ${what(a)} del Cementerio`,
+  drawPerActivatedThisTurn: (a) => `Roba por cada ${what(a)} usado este turno`,
   target: (a) => (a.effect && a.effect.fn === 'decompileMonster' ? 'Descompila un monstruo' : 'Elige un objetivo'),
 };
 
@@ -89,6 +93,7 @@ const COSTS = {
   tributeMonster: (a) => `Sacrifica ${count(a.count, 'monstruo(s)')}`,
   destroyOwnMonster: () => 'Destruye un monstruo tuyo',
   banishSelf: () => 'Exilia esta carta',
+  banishSelfAndFromGraveyard: (a) => `Exilia esta carta y ${count(a.count, what(a))}`,
   revealCards: () => 'Revela cartas',
   payVP: (a) => `Paga ${n(a.amount, 0)} VP`,
 };

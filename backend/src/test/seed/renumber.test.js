@@ -57,4 +57,11 @@ describe('renumberByName', () => {
     const deck = await Deck.findOne({ owner }).lean();
     expect(deck.cards.map((c) => c.card.toString())).toEqual([a._id.toString()]);
   });
+
+  it('parks a newly gone card below one parked by an earlier run', async () => {
+    const [old, gone] = await Card.insertMany([card('Viejo', -1), card('Gone', 2)]);
+    await renumberByName([card('A', 1)], {});
+    expect((await Card.findById(old._id)).number).toBe(-1);
+    expect((await Card.findById(gone._id)).number).toBeLessThan(-1);
+  });
 });

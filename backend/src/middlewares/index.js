@@ -1,6 +1,15 @@
+// The password rule, kept identical to the frontend's register form
+// (frontend/src/components/AuthPage/RegisterForm): at least 8 characters with one lowercase, one
+// uppercase, one digit and one special character, using only letters, digits and those specials.
+// Enforced wherever a password is set (register, admin user creation), never at login, so accounts
+// with passwords from before this rule can still sign in.
+const PASSWORD_PATTERN =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]{8,}$/;
+const PASSWORD_RULE_MESSAGE =
+  'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial';
+
 function validatePasswordFormat(password) {
-  const pattern = new RegExp(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/);
-  return pattern.test(password);
+  return typeof password === 'string' && PASSWORD_PATTERN.test(password);
 }
 
 function validateEmailFormat(email) {
@@ -18,9 +27,7 @@ const validateRegister = (req, res, next) => {
     return res.status(400).json({ error: 'password es obligatorio' });
   }
   if (!validatePasswordFormat(user.password)) {
-    return res.status(400).json({
-      error: 'La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número',
-    });
+    return res.status(400).json({ error: PASSWORD_RULE_MESSAGE });
   }
   if (!user.email) {
     return res.status(400).json({ error: 'email es obligatorio' });
@@ -40,6 +47,8 @@ const adminMiddleware = (req, res, next) => {
 };
 
 module.exports = {
+  PASSWORD_PATTERN,
+  PASSWORD_RULE_MESSAGE,
   validatePasswordFormat,
   validateEmailFormat,
   validateRegister,

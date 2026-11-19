@@ -134,6 +134,9 @@ function specialSummon(state, controllerIndex, instanceId, targets = [], slot = 
 function announceSummon(state, controllerIndex, instanceId, card, faceDown = false, by = {}) {
   const { positionFixed, ...rest } = by;
   const event = { breed: card.breed, instanceId, controllerIndex, cardId: cardIdFromInstance(instanceId), faceDown, kind: 'special', ...rest };
+  // "Solo puede ser invocada una vez por turno" (the Armaduras Sunna): what each player summoned.
+  if (!state.summonedThisTurn || state.summonedThisTurn.turn !== state.turnNumber) state.summonedThisTurn = { turn: state.turnNumber, list: [] };
+  state.summonedThisTurn.list.push({ controllerIndex, cardId: event.cardId });
   // A special summon: its player picks attack or defense, unless the card fixed it.
   if (event.kind === 'special' && !faceDown && !positionFixed) require('./placement').askPosition(state, controllerIndex, instanceId);
   // The board's continuous effects reach the newcomer before it can react to its own summon: with
@@ -227,6 +230,11 @@ function materialLocationSatisfies(loc, controllerIndex, req, defaultZones = ['f
 // Rulebook: a Compilación's materials are monsters — a recipe like "2 \"Avispa\"" doesn't take an
 // Apoyo such as Nido de Avispas.
 function materialMatches(state, id, req) {
+  // "X o Y": any one of the alternatives (each a filter of its own).
+  if (req.anyOf) {
+    const { anyOf, ...rest } = req;
+    return anyOf.some((alt) => materialMatches(state, id, { ...rest, ...alt }));
+  }
   const card = materialCard(state, id);
   if (!card || !(card.isToken || ['monster', 'fusion'].includes(card.category))) return false;
   // On the field it counts as what it is right now: a monster an effect turned into another
@@ -282,6 +290,7 @@ function compileSummon(state, controllerIndex, compiladoInstanceId, materialInst
   const cardId = cardIdFromInstance(compiladoInstanceId);
   const card = getCard(cardId);
   if (violatesUnique(state, controllerIndex, card)) return { ok: false, reason: 'unique-card' };
+  if (!summonRequirementsMet(state, controllerIndex, compiladoInstanceId, card)) return { ok: false, reason: 'summon-requirement' };
   const materials = (card.activationCost && card.activationCost.args && card.activationCost.args.materials) || [];
 
   const assigned = assignMaterials(state, controllerIndex, materials, [...new Set(materialInstanceIds)], { defaultZones });

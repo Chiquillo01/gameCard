@@ -1,6 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import io from 'socket.io-client';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import styles from './duel.module.css';
@@ -8,12 +7,12 @@ import { getUserDecks } from '../../../../lib/utils/apiDeck';
 import { startPveDuel, getDuelState, sendDuelAction } from '../../../../lib/utils/apiDuel';
 import { fetchCards } from '../../../../lib/utils/apiCard';
 import CardFace from '../CreateNewDeck/CardModal/CardFace';
-import { getUserToken } from '../../../../lib/utils/localStorage.utils';
+import { getSocket } from '../../../../lib/socket';
 import { isDeckPlayable } from '../../../../lib/utils/deckRules';
 import { PHASE_LABELS, STATUS_ICONS, PhaseTracker, GuideBar, guideFor, forecastBattle, ChainBar, WindowBar, DetailsPanel, LastBattlePanel, trend, advanceLabel } from './DuelInfo';
 import { ChoiceOptionList } from './ChoiceOptions';
 import CompileModal from './CompileModal';
-import { PIXELCOIN_ICON } from '../../../../lib/utils/storeConstants';
+import { PIXELCOIN_ICON, PIXELGEM_ICON } from '../../../../lib/utils/storeConstants';
 
 
 const PILE_LABELS = { graveyard: 'Cementerio', banished: 'Exilio', materials: 'Materiales', extra: 'Mazo-C' };
@@ -136,14 +135,15 @@ const DuelPage = () => {
     if (!matchId) return;
     refreshState(matchId);
 
-    const socket = io('http://localhost:3001');
+    // The tab's shared connection (lib/socket.js): only this listener is removed on the way out.
+    const socket = getSocket();
     socketRef.current = socket;
-    socket.emit('auth', getUserToken());
-    socket.on('duel:state', (data) => {
+    const onState = (data) => {
       if (data.id === matchId) applyView(data);
-    });
+    };
+    socket.on('duel:state', onState);
 
-    return () => socket.disconnect();
+    return () => socket.off('duel:state', onState);
   }, [matchId, refreshState]);
 
   const handleStart = async () => {
@@ -588,6 +588,27 @@ const DuelPage = () => {
             <p className={styles.gameOverScore}>
               VP finales — {me.name}: {me.vp} · {enemy.name}: {enemy.vp}
             </p>
+            {view.reward && (
+              <div className={styles.gameOverReward}>
+                {view.reward.pixelcoins || view.reward.pixelgems ? (
+                  <>
+                    <span>Recompensa:</span>
+                    {view.reward.pixelcoins > 0 && (
+                      <span className={styles.gameOverRewardItem}>
+                        +{view.reward.pixelcoins} <img src={PIXELCOIN_ICON} alt='Pixelcoins' className={styles.pixelIcon} />
+                      </span>
+                    )}
+                    {view.reward.pixelgems > 0 && (
+                      <span className={styles.gameOverRewardItem}>
+                        +{view.reward.pixelgems} <img src={PIXELGEM_ICON} alt='Pixelgems' className={styles.pixelIcon} />
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span>Sin recompensa en esta partida.</span>
+                )}
+              </div>
+            )}
             <div className={styles.gameOverActions}>
               <button className={styles.actionButton} onClick={() => navigate('/duel')}>
                 Jugar de nuevo

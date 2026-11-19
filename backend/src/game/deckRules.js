@@ -11,6 +11,11 @@ function maxCopiesOf(card) {
   return card?.state ?? (rules().maxCopiesByRarity || {})[card?.rarity] ?? 3;
 }
 
+// A card document (the deck was populated), not a bare ObjectId — which has an `_id` getter too,
+// so `_id` alone can't tell them apart: a bare id would fall back to the 3-copy default and turn a
+// legal 4x common into "over the limit".
+const isPopulatedCard = (card) => !!card && !!card._id && (card.rarity !== undefined || card.state !== undefined);
+
 const entryCardId = (entry) => String(entry.card && entry.card._id ? entry.card._id : entry.card);
 
 // Folds repeated entries of the same card into one { card, amount }, so two "x4" rows of the same
@@ -35,7 +40,7 @@ function deckSizes(deck) {
 function isDeckPlayable(deck) {
   const entries = [...(deck.cards || []), ...(deck.fusionCards || [])];
   if (entries.some((c) => !Number.isInteger(c.amount) || c.amount < 1)) return false;
-  const byId = new Map(entries.filter((c) => c.card && c.card._id).map((c) => [entryCardId(c), c.card]));
+  const byId = new Map(entries.filter((c) => isPopulatedCard(c.card)).map((c) => [entryCardId(c), c.card]));
   const overLimit = mergeEntries(entries).some(({ card, amount }) => byId.has(card) && amount > maxCopiesOf(byId.get(card)));
   if (overLimit) return false;
   const { totalMain, totalFusion } = deckSizes(deck);

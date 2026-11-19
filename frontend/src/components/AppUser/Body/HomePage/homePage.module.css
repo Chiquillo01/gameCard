@@ -733,11 +733,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .playerIcon svg {
   width: 2.5rem;
   height: 2.5rem;
+}
+
+/* The uploaded profile photo fills the round frame; the frame keeps its border and shadow. */
+.playerAvatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .playerMenu {
@@ -757,6 +766,7 @@
   color: #4a2a10;
   margin-bottom: 0.625rem;
   text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .playerMenuItem {
@@ -836,4 +846,10 @@
   text-decoration: underline;
   background: none;
   border: none;
+}
+
+/* The news bell, just left of the player icon (Layout/NewsBell). */
+button.homeNewsBell {
+  top: 3.8rem;
+  right: 9.25rem;
 }

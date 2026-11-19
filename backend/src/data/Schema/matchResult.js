@@ -8,6 +8,11 @@ const matchResultSchema = new Schema(
       {
         userId: { type: String, required: true },
         isBot: { type: Boolean, default: false },
+        // What the duel paid this player (null for the bot).
+        reward: {
+          pixelcoins: { type: Number, default: 0 },
+          pixelgems: { type: Number, default: 0 },
+        },
       },
     ],
     winnerIndex: { type: Number },

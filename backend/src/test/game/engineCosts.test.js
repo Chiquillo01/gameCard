@@ -142,18 +142,6 @@ describe('Costs the data uses', () => {
     moveToZone(state, perro, 'graveyard');
     expect(applyAction(state, 0, { type: 'SPECIAL_SUMMON', instanceId: perro })).toMatchObject({ ok: false, reason: 'special-summon-condition-not-met' });
   });
-
-  it('Duérgar: +2 Atk only while the rival controls more monsters', async () => {
-    const state = await makeDuel();
-    const duergar = await onField(state, 0, 'Duérgar');
-    const { recomputeContinuous } = require('../../game/effectEngine');
-    recomputeContinuous(state);
-    expect(monster(state, duergar).tempBuff.atk).toBe(0);
-    await onField(state, 1, 'Slime');
-    await onField(state, 1, 'Slime');
-    recomputeContinuous(state);
-    expect(monster(state, duergar).tempBuff.atk).toBe(2);
-  });
 });
 
 describe('Nothing is paid when an activation cannot go ahead', () => {

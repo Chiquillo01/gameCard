@@ -23,20 +23,20 @@ describe('User Controller TEST', () => {
     const regular = await fakeRequest.post('/auth/register').send({
       userName: 'Regular User',
       email: 'regular.user@gmail.com',
-      password: '123456Ab',
+      password: '123456Ab!',
     });
     regularToken = regular.body.token;
 
     await fakeRequest.post('/auth/register').send({
       userName: 'Soon Admin',
       email: 'admin.user@gmail.com',
-      password: '123456Ab',
+      password: '123456Ab!',
     });
     await User.updateOne({ email: 'admin.user@gmail.com' }, { admin: true });
 
     const adminLogin = await fakeRequest.post('/auth/login').send({
       email: 'admin.user@gmail.com',
-      password: '123456Ab',
+      password: '123456Ab!',
     });
     adminToken = adminLogin.body.token;
   });
@@ -60,6 +60,23 @@ describe('User Controller TEST', () => {
       response.body.forEach((user) => {
         expect(user.password).toBeUndefined();
       });
+    });
+  });
+
+  describe('POST /admin/create', () => {
+    it('applies the registration password rule to users an admin creates', async () => {
+      const weak = await fakeRequest
+        .post('/admin/create')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ newUser: { userName: 'Created Weak', email: 'created.weak@gmail.com', password: '123456Ab' } });
+      expect(weak.status).toBe(400);
+      expect(weak.body.error).toMatch(/carácter especial/);
+
+      const ok = await fakeRequest
+        .post('/admin/create')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ newUser: { userName: 'Created Ok', email: 'created.ok@gmail.com', password: '123456Ab!' } });
+      expect(ok.status).toBe(200);
     });
   });
 
@@ -95,7 +112,7 @@ describe('User Controller TEST', () => {
       expect(after.password).toBe(before.password);
 
       // The account still logs in with its real password.
-      const login = await fakeRequest.post('/auth/login').send({ email: 'regular.user@gmail.com', password: '123456Ab' });
+      const login = await fakeRequest.post('/auth/login').send({ email: 'regular.user@gmail.com', password: '123456Ab!' });
       expect(login.status).toBe(200);
     });
 
@@ -124,6 +141,24 @@ describe('User Controller TEST', () => {
         .set('Authorization', `Bearer ${regularToken}`)
         .field('userName', 'Soon Admin');
       expect(response.status).toBe(409);
+    });
+
+    it('rejects a profile picture that is not an image, without uploading it', async () => {
+      const response = await fakeRequest
+        .post('/user/update')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .attach('profilePicture', Buffer.from('not an image'), { filename: 'notes.txt', contentType: 'text/plain' });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/imagen/);
+    });
+
+    it('rejects a profile picture over 2 MB', async () => {
+      const response = await fakeRequest
+        .post('/user/update')
+        .set('Authorization', `Bearer ${regularToken}`)
+        .attach('profilePicture', Buffer.alloc(2 * 1024 * 1024 + 1), { filename: 'big.png', contentType: 'image/png' });
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/2 MB/);
     });
   });
 });

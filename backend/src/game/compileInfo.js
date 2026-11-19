@@ -12,6 +12,7 @@ const ZONE_LABELS = { field: 'Campo', hand: 'Mano', graveyard: 'Cementerio', ban
 function requirementLabel(req) {
   const count = req.count || 1;
   const parts = [];
+  if (req.anyOf) return `${count} × ${req.anyOf.map((alt) => requirementLabel({ ...alt, count: 1 }).replace(/^1 × /, '')).join(' o ')}`;
   if (req.name) parts.push(`"${req.name}"`);
   else {
     parts.push(req.category && /compil/i.test(req.category) ? 'Compilación' : 'monstruo');
@@ -22,6 +23,7 @@ function requirementLabel(req) {
     if (req.level != null) parts.push(`de Nivel ${req.level}`);
     if (req.minLevel != null) parts.push(`de Nivel ${req.minLevel} o más`);
     if (req.nameContains) parts.push(`con «${req.nameContains}» en el nombre`);
+    if (req.excludeAttribute) parts.push(`que no sea de ${req.excludeAttribute}`);
   }
   return `${count} × ${parts.join(' ')}`;
 }
@@ -102,6 +104,7 @@ function compileInfo(state, controllerIndex, instanceId, { defaultZones = ['fiel
   else if (!complete) blockedBy = 'Te faltan materiales.';
   else if (!room) blockedBy = 'No tienes zona libre de monstruo.';
   else if (violatesUnique(state, controllerIndex, card)) blockedBy = 'Solo puedes tener una en el Campo.';
+  else if (!require('./summon').summonRequirementsMet(state, controllerIndex, instanceId, card)) blockedBy = 'Ahora no se puede invocar.';
 
   return { requirements, ready: !blockedBy, blockedBy, suggested: blockedBy ? [] : [...used] };
 }

@@ -242,13 +242,13 @@ describe('Actions and flags that used to do nothing', () => {
     const state = await makeDuel();
     toPhase(state, 'main1', 0);
     const doppel = await onField(state, 0, 'Doppelganger');
-    const duergar = await onField(state, 1, 'Duérgar');
+    const ciempies = await onField(state, 1, 'Ciempiés Gigante');
     recomputeContinuous(state);
     expect(matchesFilter(monster(state, doppel), { breed: 'Insecto' })).toBe(true);
-    expect(activate(state, 0, 'DOPPEL_COPY_EFFECT', doppel, [duergar]).ok).toBe(true);
+    expect(activate(state, 0, 'DOPPEL_COPY_EFFECT', doppel, [ciempies]).ok).toBe(true);
     passAll(state);
-    expect(monster(state, duergar)).toBeUndefined();
-    expect(effectCodesOf(monster(state, doppel))).toContain('DUERGAR_BUFF');
+    expect(monster(state, ciempies)).toBeUndefined();
+    expect(effectCodesOf(monster(state, doppel))).toContain('CIEMPIES_GIGANTE_BUFF');
   });
 
   it('Anillo de Boda: for the rest of the turn, when the rival draws or gains VP, so do you', async () => {
@@ -416,7 +416,7 @@ describe('Cards that pick their target', () => {
     toPhase(state, 'main1', 0);
     const orco = await onField(state, 1, 'Orco Guerrero');
     await onField(state, 1, 'Orco Gladiador');
-    const hechizo = await toHand(state, 0, 'Hechizo de volteo');
+    const hechizo = await toHand(state, 0, 'Libro de hechizos - Volteo');
     const ask = applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: hechizo });
     expect(ask).toMatchObject({ ok: false, reason: 'choose-target', prompt: 'Elige el monstruo que pasa a defensa boca abajo' });
     expect(applyAction(state, 0, { type: 'ACTIVATE_SUPPORT', instanceId: hechizo, targets: [orco] }).ok).toBe(true);

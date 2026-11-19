@@ -44,54 +44,6 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a giant muscular purple sea tentacle bursting out of the waves. Setting: the sea at night under the moon.
 ```
 
-## 207 · Libro de hechizos - Castigo
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a golden spellbook with a cross emblem shining with holy light. Setting: an ancient library.
-```
-
-## 208 · Libro de hechizos - Fulminar
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a blue spellbook with a lightning emblem crackling with electricity. Setting: an ancient library.
-```
-
-## 215 · Sunne, Princesa Llama
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: Sunne, a fire princess with flaming hair, a golden tiara and a lava dress, holding a fire staff. Setting: a lava field.
-```
-
-## 216 · Zona de Impacto
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a blazing meteor crashing into the ground and opening a crater. Setting: a night sky over a wasteland.
-```
-
-## 224 · Libro de hechizos - Dragar
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a teal spellbook with an anchor emblem. Setting: the deep sea.
-```
-
-## 225 · Libro de hechizos - Necronomicon
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a leather-bound necronomicon with a skull on the cover, green necrotic glow. Setting: a dark crypt.
-```
-
-## 230 · Bulette
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a bulette, a huge burrowing "land shark" beast with a heavy armoured body of overlapping grey-blue plates, a tall dorsal crest-fin, a massive wedge-shaped head with a gaping maw full of jagged teeth and small fierce yellow eyes, short powerful clawed legs; it bursts upward out of the ground mid-leap, the earth exploding around it in chunks of rock, dirt and dust. Setting: a dry rocky badlands plain at midday, cracked earth, scattered boulders, a ruined wooden fence torn apart by its tunnel.
-```
-
-## 259 · La Tortuga Pagos, las Pesar del Mundo
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: a colossal ancient cosmic turtle, older than time, its wrinkled grey-green skin covered in moss and barnacles, wise glowing golden eyes; on its enormous domed shell rest several small kingdoms — tiny castles, forests, mountains and a waterfall spilling over the edge — as if it carried the whole world on its back; around it float faint golden clock rings and hourglass runes, symbols of time. Setting: drifting slowly through a starry purple-blue cosmos, nebulae and distant planets behind it, stardust trailing from its flippers.
-```
-
 ## 272 · Engranaje maestro
 
 ```text
@@ -116,12 +68,6 @@ Detailed pixel art illustration for a fantasy trading card game, same style as t
 
 ```text
 Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: the Hero of Hope, a legendary armoured champion of light with huge blazing wings of golden fire, wielding a titanic halberd engraved with the heroes' emblem, sparks of pure light radiating from every movement, a determined heroic stance. Setting: a dark, desperate battlefield where his light breaks through the storm clouds and scatters the shadows, fallen banners and allies looking up at him with hope.
-```
-
-## 208 · Libro de hechizos - Fulminar (nuevo)
-
-```text
-Detailed pixel art illustration for a fantasy trading card game, same style as the rest of the set: fine retro pixels, rich textures, dramatic atmospheric lighting, a full detailed background scene, the subject large and centred. No text, no letters, no border, no card frame. Landscape 4:3 (423x308). Subject: an ancient spellbook bound in deep blue leather with silver corners and a jagged lightning-bolt emblem on the cover, floating open in mid-air, its pages flipping wildly; a blinding bolt of white-blue lightning bursts out of the open pages and strikes a glowing magical artefact on a stone pedestal (an enchanted crystal shield wrapped in arcane chains), shattering it into shards and sparks; electric arcs crackle around the book. Setting: a tall, dim arcane library with towering bookshelves and floating candles, the flash of the lightning lighting up the scene in cold blue tones, loose pages swirling in the air.
 ```
 
 ## 238 · Gigante de Rocas (rediseño)

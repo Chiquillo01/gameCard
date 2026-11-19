@@ -27,6 +27,8 @@ const isMainPhase = (state) => state.phase === 'main1' || state.phase === 'main2
 //   - Empty Pila, Speed 2+: any time (whose turn it is being checked by the caller).
 //   - Open Pila: holding priority, Speed 2+, and at least as fast as the link on top.
 function linkBlockReason(state, controllerIndex, speed) {
+  // Anciana de los libros: "tu oponente solo puede jugar cartas en el turno que sea el jugador activo".
+  if (player(state, controllerIndex).onlyOwnTurn && state.turnPlayer !== controllerIndex) return 'not-your-turn';
   if (!state.chain.length) {
     if (speed >= 2) return null;
     if (state.turnPlayer !== controllerIndex) return 'not-your-turn';
@@ -53,8 +55,8 @@ function canAddLink(state, controllerIndex, speed) {
 //                      Tierra stay on the field; a monster's own ignition/quick ability isn't a
 //                      card by itself).
 //   triggered        — an effect that activated on its own (effectEngine.stackTriggered).
-function addLink(state, { controllerIndex, sourceInstanceId, cardName, effects, targets, speed, afterResolve = null, costPaid = [], triggered = false }) {
-  state.chain.push({ controllerIndex, sourceInstanceId, cardName, effects, targets, speed, afterResolve, costPaid });
+function addLink(state, { controllerIndex, sourceInstanceId, cardName, effects, targets, speed, afterResolve = null, costPaid = [], triggered = false, event = null }) {
+  state.chain.push({ controllerIndex, sourceInstanceId, cardName, effects, targets, speed, afterResolve, costPaid, ...(event ? { event } : {}) });
   state.priorityPlayer = opponentIndex(controllerIndex);
   state.chainLastActionWasPass = false;
   log(state, triggered ? `Se activa el efecto de ${cardName} (el rival puede responder).` : `${player(state, controllerIndex).userId} activa ${cardName} (se abre una ventana para responder).`);
@@ -137,7 +139,7 @@ function resolveLink(state, link, resolveActions) {
     return;
   }
   (link.effects || []).forEach((effect) => {
-    resolveActions({ state, controllerIndex: link.controllerIndex, sourceInstanceId: link.sourceInstanceId, effect, costPaid: link.costPaid || [] }, effect, link.targets);
+    resolveActions({ state, controllerIndex: link.controllerIndex, sourceInstanceId: link.sourceInstanceId, effect, costPaid: link.costPaid || [], ...(link.event ? { event: link.event } : {}) }, effect, link.targets);
   });
   log(state, `Se resuelve ${link.cardName}.`);
   if (link.afterResolve === 'graveyard') moveToZone(state, link.sourceInstanceId, 'graveyard');

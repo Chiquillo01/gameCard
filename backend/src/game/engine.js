@@ -280,6 +280,8 @@ function viewFor(state, viewerIndex) {
     startingVp: rules().startingVp, // what the VP bars are measured against
     // Why the duel ended ("se queda sin VP", "se rinde"...), once it has.
     endReason: state.endReason ? readableLogLine(state, { message: state.endReason }, names).message : null,
+    // What the duel paid this viewer, once it's over ({ pixelcoins, pixelgems }, or null).
+    reward: (state.rewards && state.rewards[viewerIndex]) || null,
     you: viewerIndex,
     players: state.players.map(redactPlayer),
     log: state.log.slice(-80).map((line) => readableLogLine(state, line, names)),

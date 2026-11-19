@@ -13,6 +13,7 @@ import CreateNewDeck from './components/AppUser/Body/CreateNewDeck';
 import Store from './components/AppUser/Body/Store';
 import MarketPage from './components/AppUser/Body/Market';
 import DuelPage from './components/AppUser/Body/Duel';
+import NewsPage from './components/AppUser/Body/News';
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { getUserToken } from './lib/utils/localStorage.utils';
@@ -68,6 +69,7 @@ const App = () => {
             <Route path='friends' element={<UserFriendsManagement />} />
             <Route path='duel' element={<DuelPage />} />
             <Route path='duel/:matchId' element={<DuelPage />} />
+            <Route path='news' element={<NewsPage />} />
           </Route>
         </Routes>
       </UserContextProvider>

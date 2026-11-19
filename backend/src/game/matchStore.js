@@ -1,4 +1,5 @@
 const { MatchResult } = require('../data/Schema/matchResult');
+const { grantDuelRewards } = require('../services/duelRewards');
 
 // Matches live in memory only — fine while the game is being tested (a server restart ends every
 // duel in progress). What must not happen is memory growing forever: a match nobody touches for
@@ -31,14 +32,24 @@ function removePending(matchId) {
   pendingChallenges.delete(matchId);
 }
 
+// The challenges still waiting on `userId`'s answer (expired ones left out), newest first.
+function pendingFor(userId) {
+  return [...pendingChallenges.keys()]
+    .map(getPending)
+    .filter((p) => p && String(p.opponentId) === String(userId))
+    .sort((a, b) => b.createdAt - a.createdAt);
+}
+
 function save(state) {
   state.updatedAt = Date.now();
   matches.set(state.id, state);
   state.players.forEach((p) => userToMatch.set(p.userId, state.id));
   if (state.status === 'finished' && !state.resultRecorded) {
     state.resultRecorded = true;
+    // Sets state.rewards right away (so the end-of-duel screen can show them) and pays them.
+    grantDuelRewards(state).catch((e) => console.error('Duel rewards failed:', e));
     MatchResult.create({
-      players: state.players.map((p) => ({ userId: p.userId, isBot: p.userId === 'BOT' })),
+      players: state.players.map((p, i) => ({ userId: p.userId, isBot: p.userId === 'BOT', reward: (state.rewards && state.rewards[i]) || undefined })),
       winnerIndex: state.winnerIndex,
       turnCount: state.turnNumber,
       vsBot: state.vsBot,
@@ -75,4 +86,4 @@ function sweep(now = Date.now()) {
 // unref(): the sweep never keeps the process (or a test run) alive on its own.
 setInterval(sweep, SWEEP_EVERY_MS).unref();
 
-module.exports = { save, get, getForUser, remove, savePending, getPending, removePending, sweep, ABANDONED_MATCH_MS };
+module.exports = { save, get, getForUser, remove, savePending, getPending, removePending, pendingFor, sweep, ABANDONED_MATCH_MS };

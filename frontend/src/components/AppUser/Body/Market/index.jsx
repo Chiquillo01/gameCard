@@ -5,6 +5,7 @@ import CardFace from '../CreateNewDeck/CardModal/CardFace';
 import { useUser } from '../../../../context/userContext';
 import { successToast, errorToast } from '../../../../lib/toastify/toast';
 import { PIXELCOIN_ICON } from '../../../../lib/utils/storeConstants';
+import { getSocket } from '../../../../lib/socket';
 import {
   getMarketSummary,
   getCardListings,
@@ -68,6 +69,10 @@ const MarketPage = () => {
 
   useEffect(() => {
     reload();
+    // Someone bought one of your cards: "Mis ventas" changes (the toast is shown by the Layout).
+    const socket = getSocket();
+    socket.on('market:sold', reload);
+    return () => socket.off('market:sold', reload);
   }, [reload]);
 
   // After any change: refresh the market, and the player's balance when a purchase changed it.

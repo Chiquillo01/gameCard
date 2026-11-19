@@ -1039,7 +1039,17 @@ function runAction(ctx, step, targets) {
   // "Destruye ..., y si lo haces, X" (Héroe Fénix, Héroe de la Esperanza): the destroy before it
   // destroyed something.
   if (step.args && step.args.ifPreviousSucceeded && !(ctx.destroyedCount > 0)) return;
-  impl(ctx, step.args || {}, targets);
+  // "..., si controlas a \"Anciana de los libros\" también robas 1 carta": only this step depends on it.
+  if (step.args && step.args.ifConditions && !require('./conditions').checkConditions(ctx, step.args.ifConditions)) return;
+  // Whose effect is moving cards right now (zones.moveToZone notes it for "si deja el Campo por un
+  // efecto de carta de tu oponente").
+  const acting = ctx.state.actingController;
+  ctx.state.actingController = ctx.controllerIndex;
+  try {
+    impl(ctx, step.args || {}, targets);
+  } finally {
+    ctx.state.actingController = acting;
+  }
 }
 
 module.exports = { applyPenalty, payPenalty, PENALTY_POOLS, runAction, registry, checkWin, requestDiscard, relocateSelfFromChoice, equipsOn, columnMonsters, allFieldMonsters, fieldEntry, graveyardMonstersToReturn };

@@ -68,7 +68,9 @@ async function renumberByName(cards, renames, { prune = false } = {}) {
   const parking = gone.filter((d) => d.number > 0);
   if (moving.length || parking.length) {
     // Two steps through negative numbers, so no two documents ever share one (it's unique).
-    await Card.bulkWrite([...moving, ...parking].map((d, i) => ({ updateOne: { filter: { _id: d._id }, update: { $set: { number: -1 - i } } } })));
+    // Start below any number already parked by an earlier run.
+    const base = Math.min(0, ...docs.map((d) => d.number));
+    await Card.bulkWrite([...moving, ...parking].map((d, i) => ({ updateOne: { filter: { _id: d._id }, update: { $set: { number: base - 1 - i } } } })));
     await Card.bulkWrite(moving.map((d) => ({ updateOne: { filter: { _id: d._id }, update: { $set: { number: target.get(d._id.toString()) } } } })));
     if (moving.length) console.log(`Renumbered ${moving.length} card(s).`);
   }
